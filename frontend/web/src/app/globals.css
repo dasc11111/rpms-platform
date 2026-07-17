@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 8%;
+    --surface: 0 0% 100%;
+    --surface-elevated: 0 0% 99%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 217 91% 60%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --accent-subtle: 217 91% 96%;
+    --success: 158 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-subtle: 158 84% 95%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-subtle: 38 92% 95%;
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
+    --danger-subtle: 0 84% 96%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --info-subtle: 217 91% 95%;
+  }
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --surface: 240 10% 6%;
+    --surface-elevated: 240 8% 9%;
+    --surface-overlay: 240 8% 11%;
+    --border: 240 6% 14%;
+    --input: 240 6% 14%;
+    --ring: 217 91% 65%;
+    --muted: 240 6% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 217 91% 65%;
+    --accent-foreground: 240 10% 4%;
+    --accent-subtle: 217 91% 15%;
+    --success: 158 66% 46%;
+    --success-foreground: 0 0% 100%;
+    --success-subtle: 158 40% 13%;
+    --warning: 38 92% 60%;
+    --warning-foreground: 240 10% 4%;
+    --warning-subtle: 38 50% 13%;
+    --danger: 0 72% 55%;
+    --danger-foreground: 0 0% 100%;
+    --danger-subtle: 0 40% 15%;
+    --info: 217 91% 65%;
+    --info-foreground: 240 10% 4%;
+    --info-subtle: 217 40% 15%;
+  }
+ * { @apply border-border; }
+  body { @apply bg-background text-foreground antialiased; }
+}
