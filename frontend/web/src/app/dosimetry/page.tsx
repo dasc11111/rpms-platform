@@ -1,5 +1,6 @@
 import { Users, ShieldCheck, AlertTriangle, ShieldAlert } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
+import { DoseReportModal } from "@/components/dosimetry/dose-report-modal";
 import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export default async function DosimetryPage() {
       <p className="mb-4 text-xs text-muted-foreground">
         {latestLabel ? `Último período cargado: ${latestLabel}` : "Sin datos cargados"} · Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigación ≥ 1,6 mSv · Intervención ≥ 5 mSv
       </p>
+
+      <DoseReportModal />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KPICard label="Trabajadores monitoreados" value={totalWorkers} href="/dosimetry" icon={Users} />
