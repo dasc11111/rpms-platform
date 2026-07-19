@@ -15,10 +15,10 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
         <ChevronLeft className="h-3 w-3" />Trabajadores
       </Link>
       <h1 className="text-xl font-semibold mb-1">{w.fullName}</h1>
-      <p className="text-xs text-muted-foreground mb-4">{w.role} ₷ {w.service} · Categoría {w.category} (ICRP)</p>
+      <p className="text-xs text-muted-foreground mb-4">{w.role} · {w.service} · Categoría {w.category} (ICRP)</p>
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold mb-3">Dosis Hp(10) últimos 12 meses</h2>
-        <p className="text-xs text-muted-foreground mb-2">Anual: {formatMSv(w.annualDose)} ₷ 5-anual: {formatMSv(w.fiveYearDose)}</p>
+        <p className="text-xs text-muted-foreground mb-2">Anual: {formatMSv(w.annualDose)} · 5-anual: {formatMSv(w.fiveYearDose)}</p>
         <div className="flex h-16 items-end gap-1">
           {w.monthlyDoses.map((v, i) => {
             const max = Math.max(...w.monthlyDoses);
