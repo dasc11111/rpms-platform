@@ -3,22 +3,22 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-function toNum(v) {
+function toNum(v: unknown): number {
   const s = String(v ?? "").trim();
   if (!s) return 0;
   const n = Number(s.replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 }
 
-function levelFor(dose) {
+function levelFor(dose: number): string {
   if (dose >= 5) return "intervencion";
   if (dose >= 1.6) return "investigacion";
   if (dose >= 0.1) return "registro";
   return "normal";
 }
 
-export async function POST(request) {
-  const body = await request.json().catch(() => ({}));
+export async function POST(request: Request) {
+  const body: any = await request.json().catch(() => ({}));
   const worker_rut = String(body?.worker_rut ?? "").trim();
   const year = Number(body?.year);
   const quarter = Number(body?.quarter);
@@ -58,7 +58,7 @@ export async function POST(request) {
   if (workerRows.length === 0) {
     return NextResponse.json({ ok: false, error: "No se encontró un trabajador con ese RUT." }, { status: 404 });
   }
-  const worker = workerRows[0];
+  const worker: any = workerRows[0];
 
   const dose_body = toNum(body?.dose_body);
   const dose_lens = toNum(body?.dose_lens);
