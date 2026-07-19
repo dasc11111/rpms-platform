@@ -36,15 +36,18 @@ export default function DocumentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {DOCUMENTS.map((d) => (
-              <tr key={d.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{d.name}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{d.category}</td>
-                <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.version}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{d.expires}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[d.status].className}`}>{STATUS_LABEL[d.status].label}</td>
-              </tr>
-            ))}
+            {DOCUMENTS.map((d) => {
+              const st = STATUS_LABEL[d.status] ?? { label: d.status, className: "text-muted-foreground" };
+              return (
+                <tr key={d.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{d.name}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{d.category}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{d.version}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{d.expires}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
