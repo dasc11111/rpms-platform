@@ -18,6 +18,17 @@ export async function GET() {
     );
   `;
 
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS dv TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS sex TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS address TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS phone TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS email TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS birth_date TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS estamento TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS contract_type TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS unit TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS dosimetry_readings (
       id SERIAL PRIMARY KEY,
