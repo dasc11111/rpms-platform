@@ -20,7 +20,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
     WHERE rut = ${rut}
     LIMIT 1
   `;
-  const worker = workerRows[0];
+  const worker: any = workerRows[0];
   if (!worker) return notFound();
 
   const { rows: readingRows } = await sql`
