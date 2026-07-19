@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { sql } from "@/lib/db";
 import { CsvImport } from "@/components/import/csv-import";
+import { WorkerFormModal } from "@/components/workers/worker-form-modal";
+import { StatusActionButton } from "@/components/workers/status-action-button";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,7 @@ async function getWorkers(): Promise<WorkerRow[]> {
     const { rows } = await sql`
       SELECT rut, name, role, service, category, status, annual_dose
       FROM workers
+      WHERE status <> 'inactive'
       ORDER BY name ASC
     `;
     return rows as WorkerRow[];
@@ -27,12 +30,30 @@ async function getWorkers(): Promise<WorkerRow[]> {
   }
 }
 
+async function getInactiveCount(): Promise<number> {
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM workers WHERE status = 'inactive'`;
+    return rows[0]?.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export default async function WorkersPage() {
-  const workers = await getWorkers();
+  const [workers, inactiveCount] = await Promise.all([getWorkers(), getInactiveCount()]);
 
   return (
     <div className="mx-auto max-w-[1400px] p-6">
-      <h1 className="text-lg font-semibold mb-4">Trabajadores</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Trabajadores</h1>
+        <Link
+          href="/workers/inactive"
+          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Ver trabajadores inactivos ({inactiveCount})
+        </Link>
+      </div>
+      <WorkerFormModal />
       <CsvImport
         endpoint="/api/workers"
         label="Importar CSV de trabajadores"
@@ -47,6 +68,7 @@ export default async function WorkersPage() {
               <th className="px-3 py-2">Servicio</th>
               <th className="px-3 py-2">Estado</th>
               <th className="px-3 py-2 text-right">Dosis 2026</th>
+              <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
@@ -61,12 +83,15 @@ export default async function WorkersPage() {
                   {w.status === "active" ? <span className="text-success">Activa</span> : <span className="text-warning">Suspendida</span>}
                 </td>
                 <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(w.annual_dose).toFixed(2)} mSv</td>
+                <td className="px-3 py-2.5 text-right">
+                  <StatusActionButton rut={w.rut} active={true} />
+                </td>
               </tr>
             ))}
             {workers.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                  No hay trabajadores cargados todavía. Importa un CSV para comenzar.
+                <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
+                  No hay trabajadores cargados todavía. Importa un CSV o agrega uno manualmente para comenzar.
                 </td>
               </tr>
             )}
