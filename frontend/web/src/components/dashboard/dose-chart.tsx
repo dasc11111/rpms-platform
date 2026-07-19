@@ -1,14 +1,16 @@
 "use client";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
 const DATA = [
   { month: "Ago 25", radiotherapy: 1.2, nuclearMedicine: 2.1, imaging: 0.8, interventional: 1.5 },
   { month: "Sep 25", radiotherapy: 1.4, nuclearMedicine: 2.3, imaging: 0.9, interventional: 1.6 },
   { month: "Jun 26", radiotherapy: 1.5, nuclearMedicine: 2.6, imaging: 0.9, interventional: 1.8 },
   { month: "Jul 26", radiotherapy: 1.2, nuclearMedicine: 2.3, imaging: 0.8, interventional: 1.5 },
 ];
+
 export function DoseChart() {
   return (
-    <div className="h-[220px] width-full">
+    <div className="h-[220px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={DATA}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
