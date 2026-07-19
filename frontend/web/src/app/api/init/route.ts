@@ -33,7 +33,8 @@ export async function GET() {
   `;
 
   const { rows: workerCount } = await sql`SELECT COUNT(*)::int AS count FROM workers`;
-  if (workerCount[0].count === 0) {
+  const workersTotal = workerCount[0]?.count ?? 0;
+  if (workersTotal === 0) {
     await sql`
       INSERT INTO workers (rut, name, role, service, category, status, annual_dose) VALUES
       ('17.245.892-0', 'Javiera Muñoz', 'Físico Médico', 'Radioterapia', 'A', 'active', 3.2),
@@ -45,7 +46,8 @@ export async function GET() {
   }
 
   const { rows: readingCount } = await sql`SELECT COUNT(*)::int AS count FROM dosimetry_readings`;
-  if (readingCount[0].count === 0) {
+  const readingsTotal = readingCount[0]?.count ?? 0;
+  if (readingsTotal === 0) {
     await sql`
       INSERT INTO dosimetry_readings (worker_rut, worker_name, dosimeter_type, period, dose, status) VALUES
       ('17.245.892-0', 'Javiera Muñoz', 'TLD cuerpo entero', '2026-06', 0.28, 'read'),
