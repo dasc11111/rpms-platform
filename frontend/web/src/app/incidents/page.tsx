@@ -41,15 +41,19 @@ export default function IncidentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {INCIDENTS.map((i) => (
-              <tr key={i.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{i.title}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.date}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.service}</td>
-                <td className={`px-3 py-2.5 ${SEVERITY_LABEL[i.severity].className}`}>{SEVERITY_LABEL[i.severity].label}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[i.status].className}`}>{STATUS_LABEL[i.status].label}</td>
-              </tr>
-            ))}
+            {INCIDENTS.map((i) => {
+              const sev = SEVERITY_LABEL[i.severity] ?? { label: i.severity, className: "text-muted-foreground" };
+              const st = STATUS_LABEL[i.status] ?? { label: i.status, className: "text-muted-foreground" };
+              return (
+                <tr key={i.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{i.title}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{i.date}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{i.service}</td>
+                  <td className={`px-3 py-2.5 ${sev.className}`}>{sev.label}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
