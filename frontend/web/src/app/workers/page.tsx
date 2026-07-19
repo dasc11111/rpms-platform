@@ -24,7 +24,7 @@ export default function WorkersPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {WORKERS,Íap((w) => (
+            {WORKERS.map((w) => (
               <tr key={w.id} className="hover:bg-muted/40">
                 <td className="px-3 py-2.5">
                   <Link href={`/workers/${w.id}`} className="font-medium hover:text-accent">{w.name}</Link>
