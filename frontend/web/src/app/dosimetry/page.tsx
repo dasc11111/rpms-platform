@@ -37,15 +37,18 @@ export default function DosimetryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {READINGS.map((r) => (
-              <tr key={r.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{r.worker}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{r.type}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{r.period}</td>
-                <td className="px-3 py-2.5 text-right text-muted-foreground">{r.dose.toFixed(2)}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[r.status].className}`}>{STATUS_LABEL[r.status].label}</td>
-              </tr>
-            ))}
+            {READINGS.map((r) => {
+              const st = STATUS_LABEL[r.status] ?? { label: r.status, className: "text-muted-foreground" };
+              return (
+                <tr key={r.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{r.worker}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{r.type}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{r.period}</td>
+                  <td className="px-3 py-2.5 text-right text-muted-foreground">{r.dose.toFixed(2)}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
