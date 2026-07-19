@@ -18,7 +18,6 @@ export default async function Dashboard() {
     GROUP BY status, 2
   `;
 
-  const byService: { service: string; count: number }[] = [];
   const serviceTotals = new Map<string, number>();
   let totalActive = 0;
   let totalSuspended = 0;
@@ -27,16 +26,16 @@ export default async function Dashboard() {
     const count = Number(row.count) || 0;
     if (row.status === "active") {
       totalActive += count;
-      serviceTotals.set(row.service, (serviceTotals.get(row.service) ?? 0) + count);
+      const label = String(row.service).trim().toUpperCase();
+      serviceTotals.set(label, (serviceTotals.get(label) ?? 0) + count);
     } else if (row.status === "suspended") {
       totalSuspended += count;
     }
   }
 
-  for (const [service, count] of serviceTotals.entries()) {
-    byService.push({ service, count });
-  }
-  byService.sort((a, b) => b.count - a.count || a.service.localeCompare(b.service));
+  const byService = Array.from(serviceTotals.entries())
+    .map(([service, count]) => ({ service, count }))
+    .sort((a, b) => b.count - a.count || a.service.localeCompare(b.service));
 
   return (
     <div className="mx-auto max-w-[1400px] p-6">
