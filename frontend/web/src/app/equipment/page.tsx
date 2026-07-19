@@ -37,16 +37,19 @@ export default function EquipmentPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {EQUIPMENT.map((e) => (
-              <tr key={e.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{e.name}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{e.type}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{e.service} · {e.room}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{e.lastQA}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{e.nextQA}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[e.status].className}`}>{STATUS_LABEL[e.status].label}</td>
-              </tr>
-            ))}
+            {EQUIPMENT.map((e) => {
+              const st = STATUS_LABEL[e.status] ?? { label: e.status, className: "text-muted-foreground" };
+              return (
+                <tr key={e.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{e.name}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{e.type}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{e.service} · {e.room}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{e.lastQA}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{e.nextQA}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
