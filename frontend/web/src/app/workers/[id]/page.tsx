@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { formatMSv } from "@/lib/utils";
 import { sql } from "@/lib/db";
 import { StatusActionButton } from "@/components/workers/status-action-button";
+import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,10 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
       </Link>
       <div className="mb-1 flex items-center justify-between">
         <h1 className="text-xl font-semibold">{worker.name}</h1>
-        <StatusActionButton rut={worker.rut} active={isActive} />
+        <div className="flex items-center gap-2">
+          <WorkerEditModal worker={worker} />
+          <StatusActionButton rut={worker.rut} active={isActive} />
+        </div>
       </div>
       <p className="text-xs text-muted-foreground mb-4">{worker.role} · {worker.service} · Categoría {worker.category} (ICRP)</p>
 
