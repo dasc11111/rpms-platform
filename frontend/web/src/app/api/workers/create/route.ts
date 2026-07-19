@@ -34,9 +34,9 @@ export async function POST(request: Request) {
   const { rows: existingRows } = await sql`SELECT rut, status FROM workers WHERE rut = ${rut} LIMIT 1`;
   const existing = existingRows[0];
 
-  if (existing && existing.status === "active") {
+  if (existing && existing.status !== "inactive") {
     return NextResponse.json(
-      { ok: false, error: "Ya existe un trabajador activo con ese RUT." },
+      { ok: false, error: "Ya existe un trabajador activo (o suspendido) con ese RUT." },
       { status: 409 }
     );
   }
