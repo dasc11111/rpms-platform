@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { CsvImport } from "@/components/import/csv-import";
 import { WorkerFormModal } from "@/components/workers/worker-form-modal";
 import { StatusActionButton } from "@/components/workers/status-action-button";
+import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +15,22 @@ type WorkerRow = {
   category: string | null;
   status: string;
   annual_dose: string;
+  dv: string | null;
+  sex: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  birth_date: string | null;
+  estamento: string | null;
+  contract_type: string | null;
+  unit: string | null;
 };
 
 async function getWorkers(): Promise<WorkerRow[]> {
   try {
     const { rows } = await sql`
-      SELECT rut, name, role, service, category, status, annual_dose
+      SELECT rut, name, role, service, category, status, annual_dose,
+             dv, sex, address, phone, email, birth_date, estamento, contract_type, unit
       FROM workers
       WHERE status <> 'inactive'
       ORDER BY name ASC
@@ -84,7 +95,10 @@ export default async function WorkersPage() {
                 </td>
                 <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(w.annual_dose).toFixed(2)} mSv</td>
                 <td className="px-3 py-2.5 text-right">
-                  <StatusActionButton rut={w.rut} active={true} />
+                  <div className="flex justify-end gap-1.5">
+                    <WorkerEditModal worker={w} />
+                    <StatusActionButton rut={w.rut} active={true} />
+                  </div>
                 </td>
               </tr>
             ))}
