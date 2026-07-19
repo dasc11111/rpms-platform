@@ -15,8 +15,12 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }
 
-function normRut(v: unknown): string {
-  return String(v ?? "").toUpperCase().replace(/[^0-9K]/g, "");
+// Uses only the numeric body of the RUN/RUT (before the dash), ignoring the
+// check digit, since source datasets are inconsistent with check-digit formatting.
+function rutBody(v: unknown): string {
+  const s = String(v ?? "").toUpperCase().trim();
+  const beforeDash = s.split("-")[0] ?? s;
+  return beforeDash.replace(/[^0-9]/g, "");
 }
 
 function toNum(v: unknown): number {
@@ -80,7 +84,8 @@ export async function POST(request: Request) {
   const { rows: workers } = await sql`SELECT rut, name FROM workers`;
   const rutMap = new Map<string, { rut: string; name: string }>();
   for (const w of workers as any[]) {
-    rutMap.set(normRut(w.rut), w as any);
+    const key = rutBody(w.rut);
+    if (key) rutMap.set(key, w as any);
   }
 
   const agg = new Map<string, Agg>();
@@ -89,9 +94,9 @@ export async function POST(request: Request) {
 
   for (const r of rows) {
     const run = String(r[0] ?? "").trim();
-    const norm = normRut(run);
-    const worker = rutMap.get(norm);
-    if (!worker || !norm) {
+    const key0 = rutBody(run);
+    const worker = rutMap.get(key0);
+    if (!worker || !key0) {
       unmatched++;
       if (unmatchedSamples.length < 30) unmatchedSamples.push(run);
       continue;
