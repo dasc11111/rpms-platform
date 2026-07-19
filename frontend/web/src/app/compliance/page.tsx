@@ -35,15 +35,18 @@ export default function CompliancePage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {REQUIREMENTS.map((r) => (
-              <tr key={r.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{r.requirement}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{r.regulation}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{r.owner}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{r.nextReview}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[r.status].className}`}>{STATUS_LABEL[r.status].label}</td>
-              </tr>
-            ))}
+            {REQUIREMENTS.map((r) => {
+              const st = STATUS_LABEL[r.status] ?? { label: r.status, className: "text-muted-foreground" };
+              return (
+                <tr key={r.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{r.requirement}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{r.regulation}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{r.owner}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{r.nextReview}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
