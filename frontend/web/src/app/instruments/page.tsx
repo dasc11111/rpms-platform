@@ -35,15 +35,18 @@ export default function InstrumentsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {INSTRUMENTS.map((i) => (
-              <tr key={i.id} className="hover:bg-muted/40">
-                <td className="px-3 py-2.5 font-medium">{i.name}</td>
-                <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i.serial}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.lastCal}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.nextCal}</td>
-                <td className={`px-3 py-2.5 ${STATUS_LABEL[i.status].className}`}>{STATUS_LABEL[i.status].label}</td>
-              </tr>
-            ))}
+            {INSTRUMENTS.map((i) => {
+              const st = STATUS_LABEL[i.status] ?? { label: i.status, className: "text-muted-foreground" };
+              return (
+                <tr key={i.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{i.name}</td>
+                  <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i.serial}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{i.lastCal}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{i.nextCal}</td>
+                  <td className={`px-3 py-2.5 ${st.className}`}>{st.label}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
