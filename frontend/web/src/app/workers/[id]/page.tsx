@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, GraduationCap } from "lucide-react";
 import { formatMSv } from "@/lib/utils";
 import { sql } from "@/lib/db";
 import { StatusActionButton } from "@/components/workers/status-action-button";
 import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
+import { buildAuthSummary, formatDaysRemaining, AUTH_STATUS_LABEL, SEMAPHORE_DOT_CLASS, SEMAPHORE_TEXT_CLASS } from "@/lib/authorization";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,9 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
 
   const { rows: workerRows } = await sql`
     SELECT rut, name, role, service, category, status, annual_dose,
-           dv, sex, address, phone, email, birth_date, estamento, contract_type, unit
+      dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+      course_pr_completed, course_pr_date,
+      authorization_number, authorization_issue_date, authorization_expiry_date, notes
     FROM workers
     WHERE rut = ${rut}
     LIMIT 1
@@ -34,6 +38,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
   const annualDose = Number(worker.annual_dose);
   const max = monthlyDoses.length > 0 ? Math.max(...monthlyDoses) : 1;
   const isActive = worker.status !== "inactive";
+  const auth = buildAuthSummary(worker);
 
   const contactFields: { label: string; value: string | null }[] = [
     { label: "Sexo", value: worker.sex },
@@ -79,6 +84,52 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
           </div>
         </div>
       )}
+
+      <div className="mb-4 rounded-lg border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold mb-3">Curso PR y Autorización de Desempeño</h2>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">Curso de Protección Radiológica</span>
+            <span className="flex items-center gap-1">
+              {worker.course_pr_completed ? (
+                <>
+                  <GraduationCap className="h-3.5 w-3.5 text-success" /> Completado{worker.course_pr_date ? ` (${worker.course_pr_date})` : ""}
+                </>
+              ) : (
+                "No registrado"
+              )}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">N° de autorización</span>
+            <span>{worker.authorization_number || "—"}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">Fecha emisión</span>
+            <span>{worker.authorization_issue_date || "—"}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">Fecha vencimiento</span>
+            <span>{worker.authorization_expiry_date || "—"}</span>
+          </div>
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">Días restantes</span>
+            <span className={cn("flex items-center gap-1.5 font-medium", SEMAPHORE_TEXT_CLASS[auth.semaphore])}>
+              <span className={cn("h-1.5 w-1.5 rounded-full", SEMAPHORE_DOT_CLASS[auth.semaphore])} />
+              {formatDaysRemaining(auth.days)}
+            </span>
+          </div>
+          <div className="flex justify-between border-b border-border/60 pb-1">
+            <span className="text-muted-foreground">Estado</span>
+            <span>{AUTH_STATUS_LABEL[auth.status]}</span>
+          </div>
+        </div>
+        {worker.notes && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Observaciones: </span>{worker.notes}
+          </p>
+        )}
+      </div>
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold mb-3">Dosis Hp(10) registradas</h2>
