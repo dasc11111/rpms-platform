@@ -1,7 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardPlus, X, Loader2, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+
+type Worker = { rut: string; name: string; status?: string };
 
 const emptyManual = {
   worker_rut: "",
@@ -19,7 +21,9 @@ const emptyManual = {
   departamento: "",
 };
 
-function norm(s) {
+type FormState = typeof emptyManual;
+
+function norm(s: unknown): string {
   return String(s ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -27,9 +31,9 @@ function norm(s) {
     .trim();
 }
 
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
   let field = "";
   let inQuotes = false;
   for (let i = 0; i < text.length; i++) {
@@ -68,7 +72,7 @@ function parseCSV(text) {
   return rows;
 }
 
-function findCol(headers, keywords) {
+function findCol(headers: string[], keywords: string[]): number {
   const normed = headers.map(norm);
   return normed.findIndex((h) => keywords.every((k) => h.includes(k)));
 }
@@ -76,13 +80,13 @@ function findCol(headers, keywords) {
 export function DoseReportModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState("manual");
-  const [workers, setWorkers] = useState([]);
-  const [form, setForm] = useState(emptyManual);
-  const [manualState, setManualState] = useState("idle");
+  const [tab, setTab] = useState<"manual" | "csv">("manual");
+  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [form, setForm] = useState<FormState>(emptyManual);
+  const [manualState, setManualState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [manualMsg, setManualMsg] = useState("");
 
-  const [csvState, setCsvState] = useState("idle");
+  const [csvState, setCsvState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [csvMsg, setCsvMsg] = useState("");
   const [fileName, setFileName] = useState("");
 
@@ -90,12 +94,12 @@ export function DoseReportModal() {
     if (open && workers.length === 0) {
       fetch("/api/workers")
         .then((r) => r.json())
-        .then((d) => setWorkers((d.workers || []).filter((w) => w.status !== "inactive")))
+        .then((d) => setWorkers((d.workers || []).filter((w: Worker) => w.status !== "inactive")))
         .catch(() => {});
     }
-  }, [open]);
+  }, [open, workers.length]);
 
-  function update(field, value) {
+  function update(field: keyof FormState, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -139,7 +143,7 @@ export function DoseReportModal() {
     }
   }
 
-  async function handleFile(e) {
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     setFileName(file.name);
@@ -174,7 +178,7 @@ export function DoseReportModal() {
         return;
       }
 
-      const get = (r, idx) => (idx >= 0 ? r[idx] ?? "" : "");
+      const get = (r: string[], idx: number) => (idx >= 0 ? r[idx] ?? "" : "");
       const rows = table
         .slice(1)
         .filter((r) => get(r, runIdx).trim() !== "")
