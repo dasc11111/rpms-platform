@@ -3,6 +3,10 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+function toBool(v: unknown): boolean {
+  return v === true || v === "true" || v === "on" || v === "1" || v === 1;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
@@ -43,6 +47,14 @@ export async function POST(request: Request) {
   const contractType = String(body.contract_type ?? "").trim() || null;
   const unit = String(body.unit ?? "").trim() || null;
 
+  // Curso de Proteccion Radiologica y Autorizacion de Desempeno.
+  const coursePrCompleted = toBool(body.course_pr_completed);
+  const coursePrDate = String(body.course_pr_date ?? "").trim() || null;
+  const authorizationNumber = String(body.authorization_number ?? "").trim() || null;
+  const authorizationIssueDate = String(body.authorization_issue_date ?? "").trim() || null;
+  const authorizationExpiryDate = String(body.authorization_expiry_date ?? "").trim() || null;
+  const notes = String(body.notes ?? "").trim() || null;
+
   await sql`
     UPDATE workers SET
       rut = ${rut},
@@ -60,6 +72,12 @@ export async function POST(request: Request) {
       estamento = ${estamento},
       contract_type = ${contractType},
       unit = ${unit},
+      course_pr_completed = ${coursePrCompleted},
+      course_pr_date = ${coursePrDate},
+      authorization_number = ${authorizationNumber},
+      authorization_issue_date = ${authorizationIssueDate},
+      authorization_expiry_date = ${authorizationExpiryDate},
+      notes = ${notes},
       updated_at = now()
     WHERE rut = ${originalRut}
   `;
