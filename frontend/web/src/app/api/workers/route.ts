@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const status = searchParams.get("status");
   const all = searchParams.get("all") === "1";
 
-  let rows;
+  let rows: any[];
   if (all) {
     // Usado por la exportacion de trabajadores: incluye TODOS los registros
     // (activos, suspendidos e inactivos) para no perder informacion.
