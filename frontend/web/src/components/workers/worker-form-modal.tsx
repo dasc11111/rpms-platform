@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, X, Loader2 } from "lucide-react";
+import { daysRemaining, getAuthStatus, AUTH_STATUS_LABEL, formatDaysRemaining } from "@/lib/authorization";
 
 const emptyForm = {
   rut: "",
@@ -19,6 +20,12 @@ const emptyForm = {
   estamento: "",
   contract_type: "",
   unit: "",
+  course_pr_completed: false,
+  course_pr_date: "",
+  authorization_number: "",
+  authorization_issue_date: "",
+  authorization_expiry_date: "",
+  notes: "",
 };
 
 type FormState = typeof emptyForm;
@@ -38,6 +45,14 @@ const fields: { key: keyof FormState; label: string; required?: boolean }[] = [
   { key: "phone", label: "Teléfono" },
   { key: "email", label: "Correo electrónico" },
   { key: "address", label: "Dirección particular" },
+];
+
+const authFields: { key: keyof FormState; label: string }[] = [
+  { key: "course_pr_date", label: "Fecha Curso PR (AAAA-MM-DD)" },
+  { key: "authorization_number", label: "N° de autorización" },
+  { key: "authorization_issue_date", label: "Fecha emisión (AAAA-MM-DD)" },
+  { key: "authorization_expiry_date", label: "Fecha vencimiento (AAAA-MM-DD)" },
+  { key: "notes", label: "Observaciones" },
 ];
 
 export function WorkerFormModal() {
@@ -94,6 +109,11 @@ export function WorkerFormModal() {
     );
   }
 
+  // Vista previa de dias restantes / estado: se calcula siempre en el momento,
+  // nunca se ingresa manualmente.
+  const previewDays = daysRemaining(form.authorization_expiry_date || null);
+  const previewStatus = getAuthStatus(previewDays);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-surface p-5">
@@ -116,13 +136,45 @@ export function WorkerFormModal() {
               </span>
               <input
                 type="text"
-                value={form[f.key]}
+                value={form[f.key] as string}
                 onChange={(e) => update(f.key, e.target.value)}
                 className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
               />
             </label>
           ))}
         </div>
+
+        <div className="mt-4 border-t border-border pt-3">
+          <h3 className="mb-2 text-xs font-semibold">Curso PR y Autorización de Desempeño</h3>
+          <label className="mb-2.5 flex items-center gap-2 text-[11px]">
+            <input
+              type="checkbox"
+              checked={form.course_pr_completed}
+              onChange={(e) => setForm((f) => ({ ...f, course_pr_completed: e.target.checked }))}
+              className="h-3.5 w-3.5 rounded border-border"
+            />
+            <span>Completó el Curso de Protección Radiológica</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2.5">
+            {authFields.map((f) => (
+              <label key={f.key} className={f.key === "notes" ? "col-span-2 text-[11px]" : "text-[11px]"}>
+                <span className="mb-1 block text-muted-foreground">{f.label}</span>
+                <input
+                  type="text"
+                  value={form[f.key] as string}
+                  onChange={(e) => update(f.key, e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+                />
+              </label>
+            ))}
+          </div>
+          {form.authorization_expiry_date && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Días restantes calculados automáticamente: <span className="font-medium text-foreground">{formatDaysRemaining(previewDays)}</span> · Estado: {AUTH_STATUS_LABEL[previewStatus]}
+            </p>
+          )}
+        </div>
+
         {message && (
           <p className={`mt-3 text-xs ${state === "error" ? "text-danger" : "text-success"}`}>{message}</p>
         )}
