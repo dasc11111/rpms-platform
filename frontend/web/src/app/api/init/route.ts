@@ -29,6 +29,17 @@ export async function GET() {
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS unit TEXT`;
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`;
 
+  // Curso de Proteccion Radiologica (Curso PR)
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS course_pr_completed BOOLEAN NOT NULL DEFAULT false`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS course_pr_date TEXT`;
+
+  // Autorizacion de Desempeno: numero, fecha de emision y fecha de vencimiento.
+  // Los dias restantes y el estado se calculan siempre en tiempo real (ver src/lib/authorization.ts).
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS authorization_number TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS authorization_issue_date TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS authorization_expiry_date TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS notes TEXT`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS dosimetry_readings (
       id SERIAL PRIMARY KEY,
