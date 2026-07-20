@@ -8,6 +8,10 @@ function clean(v: unknown): string | null {
   return s.length > 0 ? s : null;
 }
 
+function toBool(v: unknown): boolean {
+  return v === true || v === "true" || v === "on" || v === "1" || v === 1;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
@@ -30,6 +34,14 @@ export async function POST(request: Request) {
   const estamento = clean(body.estamento);
   const contractType = clean(body.contract_type);
   const unit = clean(body.unit);
+
+  // Curso de Proteccion Radiologica y Autorizacion de Desempeno.
+  const coursePrCompleted = toBool(body.course_pr_completed);
+  const coursePrDate = clean(body.course_pr_date);
+  const authorizationNumber = clean(body.authorization_number);
+  const authorizationIssueDate = clean(body.authorization_issue_date);
+  const authorizationExpiryDate = clean(body.authorization_expiry_date);
+  const notes = clean(body.notes);
 
   const { rows: existingRows } = await sql`SELECT rut, status FROM workers WHERE rut = ${rut} LIMIT 1`;
   const existing = existingRows[0];
@@ -59,6 +71,12 @@ export async function POST(request: Request) {
         estamento = COALESCE(${estamento}, estamento),
         contract_type = COALESCE(${contractType}, contract_type),
         unit = COALESCE(${unit}, unit),
+        course_pr_completed = ${coursePrCompleted},
+        course_pr_date = COALESCE(${coursePrDate}, course_pr_date),
+        authorization_number = COALESCE(${authorizationNumber}, authorization_number),
+        authorization_issue_date = COALESCE(${authorizationIssueDate}, authorization_issue_date),
+        authorization_expiry_date = COALESCE(${authorizationExpiryDate}, authorization_expiry_date),
+        notes = COALESCE(${notes}, notes),
         updated_at = now()
       WHERE rut = ${rut}
     `;
@@ -67,9 +85,13 @@ export async function POST(request: Request) {
 
   await sql`
     INSERT INTO workers (rut, name, role, service, category, status, annual_dose,
-      dv, sex, address, phone, email, birth_date, estamento, contract_type, unit)
+      dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+      course_pr_completed, course_pr_date,
+      authorization_number, authorization_issue_date, authorization_expiry_date, notes)
     VALUES (${rut}, ${name}, ${role}, ${service}, ${category}, 'active', ${annualDose},
-      ${dv}, ${sex}, ${address}, ${phone}, ${email}, ${birthDate}, ${estamento}, ${contractType}, ${unit})
+      ${dv}, ${sex}, ${address}, ${phone}, ${email}, ${birthDate}, ${estamento}, ${contractType}, ${unit},
+      ${coursePrCompleted}, ${coursePrDate},
+      ${authorizationNumber}, ${authorizationIssueDate}, ${authorizationExpiryDate}, ${notes})
   `;
   return NextResponse.json({ ok: true, created: true });
 }
