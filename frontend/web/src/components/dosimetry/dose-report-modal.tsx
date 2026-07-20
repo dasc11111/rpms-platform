@@ -157,7 +157,7 @@ export function DoseReportModal() {
         setCsvMsg("El archivo no contiene datos.");
         return;
       }
-      const headers = table[0];
+      const headers = table[0] ?? [];
       const runIdxRun = findCol(headers, ["run"]);
       const runIdx = runIdxRun >= 0 ? runIdxRun : findCol(headers, ["rut"]);
       const periodoIdx = findCol(headers, ["periodo"]);
