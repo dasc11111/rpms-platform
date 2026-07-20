@@ -6,22 +6,41 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
+  const all = searchParams.get("all") === "1";
 
-  const { rows } = status
-    ? await sql`
-        SELECT rut, name, role, service, category, status, annual_dose,
-               dv, sex, address, phone, email, birth_date, estamento, contract_type, unit
-        FROM workers
-        WHERE status = ${status}
-        ORDER BY name ASC
-      `
-    : await sql`
-        SELECT rut, name, role, service, category, status, annual_dose,
-               dv, sex, address, phone, email, birth_date, estamento, contract_type, unit
-        FROM workers
-        WHERE status <> 'inactive'
-        ORDER BY name ASC
-      `;
+  let rows;
+  if (all) {
+    // Usado por la exportacion de trabajadores: incluye TODOS los registros
+    // (activos, suspendidos e inactivos) para no perder informacion.
+    ({ rows } = await sql`
+      SELECT rut, name, role, service, category, status, annual_dose,
+        dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+        course_pr_completed, course_pr_date,
+        authorization_number, authorization_issue_date, authorization_expiry_date, notes
+      FROM workers
+      ORDER BY name ASC
+    `);
+  } else if (status) {
+    ({ rows } = await sql`
+      SELECT rut, name, role, service, category, status, annual_dose,
+        dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+        course_pr_completed, course_pr_date,
+        authorization_number, authorization_issue_date, authorization_expiry_date, notes
+      FROM workers
+      WHERE status = ${status}
+      ORDER BY name ASC
+    `);
+  } else {
+    ({ rows } = await sql`
+      SELECT rut, name, role, service, category, status, annual_dose,
+        dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+        course_pr_completed, course_pr_date,
+        authorization_number, authorization_issue_date, authorization_expiry_date, notes
+      FROM workers
+      WHERE status <> 'inactive'
+      ORDER BY name ASC
+    `);
+  }
 
   return NextResponse.json({ workers: rows });
 }
