@@ -20,27 +20,27 @@ export async function GET(request: Request) {
   const sortColumn = SORTABLE[sortByParam] ?? "created_at";
   const sortDir = sortDirParam === "asc" ? "ASC" : "DESC";
 
-if (!categoryId) {
-  return NextResponse.json({ documents: [] });
-}
+  if (!categoryId) {
+    return NextResponse.json({ documents: [] });
+  }
 
-const params: unknown[] = [categoryId];
+  const params: unknown[] = [categoryId];
   let where = "category_id = $1";
   if (search) {
     params.push(`%${search}%`);
     where += ` AND original_name ILIKE $${params.length}`;
   }
 
-const { rows } = await sql.query(
-  `SELECT id, original_name, blob_url, size_bytes, mime_type, uploaded_by, created_at, updated_at
-  FROM documents
-  WHERE ${where}
-  ORDER BY ${sortColumn} ${sortDir}
-  LIMIT 500`,
-  params
+  const { rows } = await sql.query(
+    `SELECT id, original_name, blob_url, size_bytes, mime_type, uploaded_by, created_at, updated_at
+     FROM documents
+     WHERE ${where}
+     ORDER BY ${sortColumn} ${sortDir}
+     LIMIT 500`,
+    params
   );
 
-return NextResponse.json({ documents: rows });
+  return NextResponse.json({ documents: rows });
 }
 
 export async function POST(request: Request) {
@@ -49,23 +49,23 @@ export async function POST(request: Request) {
   const categoryId = Number(form.get("categoryId") || 0);
   const uploadedBy = (form.get("uploadedBy") as string) || "Usuario RPMS";
 
-if (!(file instanceof File) || !categoryId) {
-  return NextResponse.json({ error: "invalid_request" }, { status: 400 });
-}
+  if (!(file instanceof File) || !categoryId) {
+    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
 
-const { rows: catRows } = await sql`SELECT id FROM document_categories WHERE id = ${categoryId}`;
+  const { rows: catRows } = await sql`SELECT id FROM document_categories WHERE id = ${categoryId}`;
   if (catRows.length === 0) {
     return NextResponse.json({ error: "category_not_found" }, { status: 404 });
   }
 
-const pathname = `documents/${categoryId}/${Date.now()}-${file.name}`;
-  const blob = await put(pathname, file, { access: "public" });
+  const pathname = `documents/${categoryId}/${Date.now()}-${file.name}`;
+  const blob = await put(pathname, file, { access: "private" });
 
-const { rows } = await sql`
-INSERT INTO documents (category_id, original_name, blob_url, blob_pathname, size_bytes, mime_type, uploaded_by)
-VALUES (${categoryId}, ${file.name}, ${blob.url}, ${blob.pathname}, ${file.size}, ${file.type || null}, ${uploadedBy})
-RETURNING id, original_name, blob_url, size_bytes, mime_type, uploaded_by, created_at, updated_at
-`;
+  const { rows } = await sql`
+    INSERT INTO documents (category_id, original_name, blob_url, blob_pathname, size_bytes, mime_type, uploaded_by)
+    VALUES (${categoryId}, ${file.name}, ${blob.url}, ${blob.pathname}, ${file.size}, ${file.type || null}, ${uploadedBy})
+    RETURNING id, original_name, blob_url, size_bytes, mime_type, uploaded_by, created_at, updated_at
+  `;
 
-return NextResponse.json({ document: rows[0] });
+  return NextResponse.json({ document: rows[0] });
 }
