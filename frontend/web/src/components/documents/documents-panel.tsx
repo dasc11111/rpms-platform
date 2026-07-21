@@ -72,7 +72,8 @@ export function DocumentsPanel({
     setUploading(true);
     setError(null);
     try {
-      for (const file of Array.from(files)) {
+      const fileArray: File[] = Array.from(files);
+      for (const file of fileArray) {
         const form = new FormData();
         form.append("file", file);
         form.append("categoryId", String(categoryId));
@@ -89,12 +90,13 @@ export function DocumentsPanel({
   }
 
   async function handleReplace(id: number, files: FileList | null) {
-    if (!files || files.length === 0) return;
+    const file = files && files.length > 0 ? files.item(0) : null;
+    if (!file) return;
     setUploading(true);
     setError(null);
     try {
       const form = new FormData();
-      form.append("file", files[0]);
+      form.append("file", file);
       const res = await fetch(`/api/documents/${id}`, { method: "PUT", body: form });
       if (!res.ok) throw new Error("replace_failed");
       await load();
