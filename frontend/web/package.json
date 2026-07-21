@@ -28,8 +28,8 @@
     "date-fns": "^4.1.0",
     "cmdk": "^1.0.0",
     "@vercel/postgres": "^0.10.0",
-        "@vercel/blob": "^1.1.1",
-        "xlsx": "^0.18.5"
+    "@vercel/blob": "^2.6.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
