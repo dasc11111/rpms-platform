@@ -184,7 +184,7 @@ export function DocumentsPanel({
               docs.map((d) => (
                 <tr key={d.id} className="hover:bg-muted/40">
                   <td className="px-3 py-2.5 font-medium">
-                    <a href={d.blob_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <a href={`/api/documents/${d.id}/download`} target="_blank" rel="noopener noreferrer" className="hover:underline">
                       {d.original_name}
                     </a>
                   </td>
@@ -194,7 +194,7 @@ export function DocumentsPanel({
                   <td className="px-3 py-2.5 text-muted-foreground">{new Date(d.updated_at).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-end gap-1.5">
-                      <a href={d.blob_url} download target="_blank" rel="noopener noreferrer" title="Descargar" className="rounded p-1 hover:bg-muted">
+                      <a href={`/api/documents/${d.id}/download?dl=1`} target="_blank" rel="noopener noreferrer" title="Descargar" className="rounded p-1 hover:bg-muted">
                         <Download className="h-4 w-4" />
                       </a>
                       <label title="Reemplazar" className="cursor-pointer rounded p-1 hover:bg-muted">
