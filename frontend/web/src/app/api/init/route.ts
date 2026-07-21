@@ -129,8 +129,10 @@ medicinaNuclearId = rows[0]?.id;
 }
 
 if (medicinaNuclearId) {
-for (let i = 0; i < MEDICINA_NUCLEAR_SUBCATEGORIES.length; i++) {
-const name = MEDICINA_NUCLEAR_SUBCATEGORIES[i];
+const subcategoryNames: string[] = MEDICINA_NUCLEAR_SUBCATEGORIES;
+for (let i = 0; i < subcategoryNames.length; i++) {
+const name: string = subcategoryNames[i] ?? "";
+if (!name) continue;
 const slug = `medicina-nuclear-${slugify(name)}`;
 await sql`
 INSERT INTO document_categories (name, slug, parent_id, sort_order)
