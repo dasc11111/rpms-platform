@@ -15,7 +15,7 @@ export type I131SuggestionField = (typeof I131_SUGGESTION_FIELDS)[number];
 
 export const I131_SUGGESTION_FIELD_LABELS: Record<string, string> = {
   radiofarmaco: "Radiofármaco",
-  medico_solicitante: "Médico solicitante",
+  medico_solicitante: "Médico Nuclear",
   procedencia: "Procedencia",
   diagnostico: "Diagnóstico",
   protocolo: "Protocolo",
