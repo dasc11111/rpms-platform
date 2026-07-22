@@ -321,7 +321,7 @@ export async function POST(req: NextRequest) {
                                                                                                                                                       RETURNING *
                                                                                                                                                         `;
 
-  const created = rows[0];
+  const created = rows[0]!;
     await logHistory(created.id, "create", created, responsable);
     await upsertSuggestions({ ...body, punto_medicion, radionuclido, responsable });
 
