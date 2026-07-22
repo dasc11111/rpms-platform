@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import type { I131Filters } from "./i131-search-panel";
-import type { I131Record } from "@/lib/i131";
+import { pad2, type I131Record } from "@/lib/i131";
 
 type ColumnKey =
   | "admin_date"
@@ -149,11 +149,10 @@ export function I131RecordsTable({
   }
 
   function fmtCell(row: I131Record, key: ColumnKey): string {
-    const v = row[key as keyof I131Record];
-    if (key === "admin_date" && typeof v === "string") {
-      const [y, m, d] = v.split("-");
-      return `${d}-${m}-${y}`;
+    if (key === "admin_date") {
+      return `${pad2(row.admin_day)}-${pad2(row.admin_month)}-${row.admin_year}`;
     }
+    const v = row[key as keyof I131Record];
     if (v === null || v === undefined || v === "") return "—";
     return String(v);
   }
