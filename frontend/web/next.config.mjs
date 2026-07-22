@@ -16,6 +16,17 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: "/api/documents/:id/download",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          {
+            key: "Content-Security-Policy",
+            value:
+              "default-src 'self'; frame-ancestors 'self';",
+          },
+        ],
+      },
     ];
   },
 };
