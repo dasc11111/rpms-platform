@@ -163,7 +163,7 @@ export function I131SearchPanel({
         </div>
 
         <div>
-          <label className={LABEL}>Médico solicitante</label>
+          <label className={LABEL}>Médico Nuclear</label>
           <input
             className={INPUT}
             value={filters.medico_solicitante}
