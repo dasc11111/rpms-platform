@@ -223,7 +223,7 @@ export function I131Dashboard({ filters, version }: { filters: I131Filters; vers
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Top 10 médicos solicitantes">
+        <ChartCard title="Top 10 Médico Nuclear">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={topMedico} layout="vertical" margin={{ left: 40 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
