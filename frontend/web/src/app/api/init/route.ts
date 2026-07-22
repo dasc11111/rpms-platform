@@ -296,5 +296,19 @@ ON CONFLICT (slug) DO NOTHING
 }
 }
 
+
+// Nueva subcategoria "Administración de I-131" directamente dentro de
+// MEDICINA NUCLEAR, con las mismas acciones que cualquier otra carpeta
+// (subir, reemplazar, eliminar, descargar, vista previa, buscar).
+if (medicinaNuclearId) {
+const i131Name = "Administración de I-131";
+const i131Slug = `medicina-nuclear-${slugify(i131Name)}`;
+await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${i131Name}, ${i131Slug}, ${medicinaNuclearId}, 59)
+ON CONFLICT (slug) DO NOTHING
+`;
+}
+
 return NextResponse.json({ ok: true });
 }
