@@ -310,5 +310,217 @@ ON CONFLICT (slug) DO NOTHING
 `;
 }
 
+
+// --- Modulo Administracion de I-131 ---------------------------------------
+// Tabla principal de administraciones (una fila = una dosis administrada a un
+// paciente en una fecha). Se organiza cronologicamente por admin_date, con
+// admin_year/admin_month/admin_day disponibles para filtros rapidos. Incluye
+// campos preparados para futuras funciones (RUN, medico solicitante,
+// procedencia, tipo de examen, equipo, motivo, protocolo) aunque no existian
+// en la planilla original.
+await sql`
+CREATE TABLE IF NOT EXISTS i131_administrations (
+id SERIAL PRIMARY KEY,
+admin_year INTEGER NOT NULL,
+admin_month INTEGER NOT NULL,
+admin_day INTEGER NOT NULL,
+admin_date DATE NOT NULL,
+partida TEXT,
+pedido_numero TEXT,
+radiofarmaco TEXT NOT NULL DEFAULT 'I-131',
+cantidad_solicitada NUMERIC,
+paciente_nombre TEXT NOT NULL,
+paciente_run TEXT,
+ficha_clinica TEXT,
+prevision TEXT,
+diagnostico TEXT,
+medico_solicitante TEXT,
+procedencia TEXT,
+tipo_examen TEXT,
+equipo TEXT,
+motivo TEXT,
+protocolo TEXT,
+tasa_dosis TEXT,
+dosis_administrada NUMERIC,
+responsable TEXT NOT NULL DEFAULT 'Médico Nuclear',
+notas TEXT,
+dedupe_key TEXT UNIQUE,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_i131_admin_date ON i131_administrations(admin_date)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_i131_paciente ON i131_administrations(lower(paciente_nombre))`;
+await sql`CREATE INDEX IF NOT EXISTS idx_i131_radiofarmaco ON i131_administrations(radiofarmaco)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_i131_year_month ON i131_administrations(admin_year, admin_month)`;
+
+// Catalogo de sugerencias inteligentes: acumula valores usados por campo y
+// cuenta su frecuencia para alimentar el autocompletado del formulario.
+await sql`
+CREATE TABLE IF NOT EXISTS i131_field_suggestions (
+id SERIAL PRIMARY KEY,
+field_name TEXT NOT NULL,
+value TEXT NOT NULL,
+usage_count INTEGER NOT NULL DEFAULT 1,
+last_used_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+UNIQUE (field_name, value)
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_i131_suggestions_field ON i131_field_suggestions(field_name, usage_count DESC)`;
+
+// Semilla historica: registros migrados desde la planilla "ADMINISTRACION DOSIS DE YODO"
+// (hoja BD). Se preserva toda la informacion original tal cual fue registrada.
+const { rows: i131Count } = await sql`SELECT COUNT(*)::int AS count FROM i131_administrations`;
+if ((i131Count[0]?.count ?? 0) === 0) {
+const i131SeedRows: Array<{
+y: number; mo: number; d: number; partida: string | null; pedido: string | null;
+cantidad: number | null; paciente: string; tasaDosis: string | null; dosis: number | null;
+ficha: string | null; prevision: string | null; diagnostico: string | null; responsable: string | null;
+}> = [
+  { y: 2026, mo: 7, d: 10, partida: "3137", pedido: "M10626005", cantidad: 100, paciente: "Javiera Constanza Marquez Cardenas", tasaDosis: null, dosis: 95, ficha: "145487", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 10, partida: "3135", pedido: "M10626005", cantidad: 30, paciente: "Claudia Alejandra Gonzalez Reyes", tasaDosis: null, dosis: 27, ficha: "381782", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 10, partida: "3136", pedido: "M10626005", cantidad: 30, paciente: "Dalila Odeth San Martin Muñoz", tasaDosis: null, dosis: 27, ficha: "724766", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 10, partida: "3134", pedido: "M10626005", cantidad: 20, paciente: "Stephanie Betzabe Diaz Leiva", tasaDosis: null, dosis: 22, ficha: "734898", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 3, partida: "3016", pedido: "M10626005", cantidad: 30, paciente: "Margarita Ines Venegas Vega", tasaDosis: null, dosis: 33, ficha: "911483", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 3, partida: "3017", pedido: "M10626005", cantidad: 30, paciente: "Paola Beatriz Saravia Navarrete", tasaDosis: null, dosis: 31, ficha: "1292560", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 3, partida: "3018", pedido: "M10626005", cantidad: 30, paciente: "Marcela Alejandra Albarran Flores", tasaDosis: null, dosis: 28, ficha: "1277201", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 7, d: 3, partida: "3019", pedido: "M10626005", cantidad: 150, paciente: "Aurora del Carmen Estrada Ramirez", tasaDosis: null, dosis: 138, ficha: "27245", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 26, partida: "107252", pedido: "M10626005", cantidad: 30, paciente: "Estela Leiva Antileo", tasaDosis: null, dosis: 29, ficha: "107252", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 26, partida: "2917", pedido: "M10626005", cantidad: 30, paciente: "Rosa Maria Morales Millaqueo", tasaDosis: null, dosis: 29, ficha: "36956", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 26, partida: "2916", pedido: "M10626005", cantidad: 20, paciente: "Luisa Lina Cural Curivil", tasaDosis: null, dosis: 19, ficha: "26613", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 26, partida: "2919", pedido: "M10626005", cantidad: 150, paciente: "Jorge Edgardo Perez Muñoz", tasaDosis: null, dosis: 147, ficha: "22433", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 19, partida: "2830", pedido: "M10626005", cantidad: 20, paciente: "Margarita Erika Barrientos Lipilao", tasaDosis: null, dosis: 19, ficha: "1305107", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 19, partida: "2831", pedido: "M10626005", cantidad: 20, paciente: "Viola Del Rosario Ojeda Ruiz", tasaDosis: null, dosis: 18, ficha: "109322", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 19, partida: "2832", pedido: "M10626005", cantidad: 20, paciente: "Emilia Patricia Llancañir Mora", tasaDosis: null, dosis: 18, ficha: "1238559", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 19, partida: "2829", pedido: "M10626005", cantidad: 20, paciente: "Maria Elena Urrutia Riquelme", tasaDosis: null, dosis: 21, ficha: "899718", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 19, partida: "2833", pedido: "M10626005", cantidad: 100, paciente: "Marcos Juvenal Coloma Saez", tasaDosis: null, dosis: 96, ficha: "31020", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 5, partida: "1940", pedido: "M10426004", cantidad: 10, paciente: "Alejandra Guillermina Dominguez Hechtle", tasaDosis: null, dosis: 6, ficha: null, prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 5, partida: "2053", pedido: "M10426004", cantidad: 20, paciente: "Luis Antonio Carrasco Peña", tasaDosis: null, dosis: 22, ficha: "421110", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 5, partida: "2052", pedido: "M10426004", cantidad: 20, paciente: "Luis Felipe Vidal Segura", tasaDosis: null, dosis: 22, ficha: "1305220", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 5, partida: "2055", pedido: "M10426004", cantidad: 100, paciente: "Javiera Francisca Meliñir Marihuan", tasaDosis: null, dosis: 93, ficha: "1191890", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 6, d: 5, partida: "2054", pedido: "M10426004", cantidad: 100, paciente: "Javiera Francisca Meliñir Marihuan", tasaDosis: null, dosis: 98, ficha: "1191890", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 29, partida: "1942", pedido: "M10426004", cantidad: 30, paciente: "Nathaly Huenchual Escobar", tasaDosis: null, dosis: 30, ficha: "776665", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 29, partida: "1941", pedido: "M10426004", cantidad: 30, paciente: "Julio Jara Delgado", tasaDosis: null, dosis: 30, ficha: "1278753", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 29, partida: null, pedido: "M10426004", cantidad: 150, paciente: "Maria Cecilia Rifo Muñoz", tasaDosis: null, dosis: 141, ficha: "1266944", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 15, partida: "1822", pedido: "M10426003", cantidad: 20, paciente: "Laura Burgos Medina", tasaDosis: null, dosis: 19, ficha: "78765", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 15, partida: "1823", pedido: "M10426003", cantidad: 30, paciente: "Jose Lizama Vera", tasaDosis: null, dosis: 28, ficha: "147729", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 15, partida: "1824", pedido: "M10426003", cantidad: 30, paciente: "Sofia Martinez Parra", tasaDosis: null, dosis: 28, ficha: "160798", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 15, partida: "1825", pedido: "M10426003", cantidad: 30, paciente: "Juan Igor Catricura", tasaDosis: null, dosis: 28, ficha: "147524", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 1, partida: "1644", pedido: "M10426003", cantidad: 100, paciente: "Hector Castillo Molina", tasaDosis: null, dosis: 99, ficha: "347594", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 5, d: 1, partida: "1645", pedido: "M10426003", cantidad: 100, paciente: "Hector Castillo Molina", tasaDosis: null, dosis: 100, ficha: "347594", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 30, partida: "1642", pedido: "M10426003", cantidad: 30, paciente: "Sergio Fabian Garrido Garrido", tasaDosis: null, dosis: 32, ficha: "24241", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 30, partida: "1641", pedido: "M10426003", cantidad: 20, paciente: "Dariela Iveth Castro Gatica", tasaDosis: null, dosis: 22, ficha: "197886", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 30, partida: "1643", pedido: "M10426003", cantidad: 30, paciente: "Karina Johana Araneda Leiva", tasaDosis: null, dosis: 33, ficha: "134937", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 24, partida: "1615", pedido: "M10426003", cantidad: 100, paciente: "Angela Quintriqueo Nahuelan", tasaDosis: null, dosis: 103, ficha: "120048", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 24, partida: "1614", pedido: "M10426003", cantidad: 30, paciente: "Pamela Montre Morales", tasaDosis: null, dosis: 30.1, ficha: "134232", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 24, partida: "1613", pedido: "M10426003", cantidad: 30, paciente: "Yessenia Yañez Yañez", tasaDosis: null, dosis: 30.1, ficha: "1280801", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 10, partida: "1432", pedido: "M10326002", cantidad: 100, paciente: "Cecilia Ponce Valenzuela", tasaDosis: null, dosis: 98, ficha: "61369", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 10, partida: "1430", pedido: "M10326002", cantidad: 30, paciente: "Maria Jose Meza Collinao", tasaDosis: null, dosis: 29, ficha: "144125", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 4, d: 10, partida: "1431", pedido: "M10326002", cantidad: 50, paciente: "Eduardo Leal Chavez", tasaDosis: null, dosis: 47, ficha: "928305", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 27, partida: "1257", pedido: "M10126001", cantidad: 10, paciente: "", tasaDosis: null, dosis: null, ficha: null, prevision: "FONASA", diagnostico: "PROGRAMADA PARA EXPLORACION DG, PACIENTE TENIA PROGRAMADA CIRUGIA, SE DIFIERE", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 27, partida: "1258", pedido: "M10126001", cantidad: 20, paciente: "Luis Humberto Rodriguez Fuentes", tasaDosis: null, dosis: 20, ficha: "110107", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 27, partida: "1259", pedido: "M10126001", cantidad: 20, paciente: "Jesenia Araceli Palma Henriquez", tasaDosis: null, dosis: 20, ficha: "1275809", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 27, partida: "1260", pedido: "M10126001", cantidad: 20, paciente: "Maria Angelica Leal Sandoval", tasaDosis: null, dosis: 19, ficha: "43517", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 20, partida: "1174", pedido: "M10126001", cantidad: 20, paciente: "Veronica de Lourdes Fuentes Opazo", tasaDosis: null, dosis: 19, ficha: "1298568", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 20, partida: "1173", pedido: "M10126001", cantidad: 20, paciente: "Cinthia Paola Diaz Lopez", tasaDosis: null, dosis: 19, ficha: "1111797", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 3, d: 20, partida: "1172", pedido: "M10126001", cantidad: 20, paciente: "Maryorie Yalily Hormazabal Concha", tasaDosis: null, dosis: 19, ficha: "729102", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 13, partida: null, pedido: "M10126001", cantidad: 150, paciente: "Cristobal Andres Figueroa Muñoz", tasaDosis: null, dosis: 145, ficha: "128804", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 13, partida: "978", pedido: "M10126001", cantidad: 29, paciente: "Pabla Luisa Salazar Oliveros", tasaDosis: null, dosis: 29, ficha: "1262781", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 13, partida: "976", pedido: "M10126001", cantidad: 29, paciente: "Scarlett Marucela Rubilar Tapia", tasaDosis: null, dosis: 29, ficha: "777919", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 6, partida: "853", pedido: "M11225015", cantidad: 10, paciente: "Bersabeth Gonzalez Fuentes", tasaDosis: null, dosis: null, ficha: null, prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 6, partida: "913", pedido: "M11225015", cantidad: 50, paciente: "Aura Alicia Vidal Sinisterra", tasaDosis: "101", dosis: 54, ficha: "61039", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 2, d: 6, partida: "855", pedido: "M11225015", cantidad: 100, paciente: "Aura Alicia Vidal Sinisterra", tasaDosis: "101", dosis: 47, ficha: "61039", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 23, partida: "751", pedido: "M11225015", cantidad: 20, paciente: "Soledad Maldonado Bustamante", tasaDosis: null, dosis: 21, ficha: "259893", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 23, partida: "752", pedido: "M11225015", cantidad: 20, paciente: "Elizabeth Giacomozzi Reyes", tasaDosis: null, dosis: 22, ficha: "1295714", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 23, partida: "750", pedido: "M11225015", cantidad: 20, paciente: "Ricardo Castro Martinez", tasaDosis: null, dosis: 20, ficha: "1200726", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 16, partida: "656", pedido: "M11225015", cantidad: 30, paciente: "Viviana Figueroa Rodriguez", tasaDosis: null, dosis: 26, ficha: "57383", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 16, partida: "654", pedido: "M11225015", cantidad: 20, paciente: "Daniela Verdugo Montanares", tasaDosis: null, dosis: 18, ficha: "540601", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 16, partida: "657", pedido: "M11225015", cantidad: 100, paciente: "Audolina Aliante Ñancupan", tasaDosis: null, dosis: 102, ficha: "74642", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2026, mo: 1, d: 16, partida: "655", pedido: "M11225015", cantidad: 30, paciente: "Yacqueline Colipe Schmidt", tasaDosis: null, dosis: 30, ficha: "152089", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 12, d: 12, partida: "4902", pedido: "M11125013", cantidad: 100, paciente: "Jose Figueroa Mendoza", tasaDosis: null, dosis: 60, ficha: "1277001", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 12, d: 12, partida: "5035", pedido: "M11125013", cantidad: 100, paciente: "Jose Figueroa Mendoza", tasaDosis: null, dosis: 99, ficha: "1277001", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 12, d: 5, partida: "4901", pedido: "M11125013", cantidad: 30, paciente: "Ana Delicia Mendoza Castillo", tasaDosis: null, dosis: 33, ficha: "141326", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 12, d: 5, partida: "4900", pedido: "M11125013", cantidad: 30, paciente: "Elizabeth Andrea Jaramillo Levil", tasaDosis: null, dosis: 33, ficha: "125558", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 28, partida: "4864", pedido: "M10925012", cantidad: 30, paciente: "Ana Silva Burgos", tasaDosis: null, dosis: 27, ficha: "1263657", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 28, partida: "4865", pedido: "M10925012", cantidad: 50, paciente: "Amada Aqueveque Guerrero", tasaDosis: null, dosis: 45, ficha: "1271784", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 21, partida: "4781", pedido: "M10925012", cantidad: 100, paciente: "Camila Painen Nain", tasaDosis: null, dosis: 96, ficha: "117874", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 21, partida: "4655", pedido: "M10925012", cantidad: 10, paciente: "Ana Maria Herrera Acevedo", tasaDosis: null, dosis: 6, ficha: null, prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 21, partida: "4654", pedido: "M10925012", cantidad: 10, paciente: "Anita Cristina Vargas Velasquez", tasaDosis: null, dosis: 6, ficha: null, prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 21, partida: "4653", pedido: "M10925012", cantidad: 10, paciente: "Maria Isabel Sanhueza Carrillo", tasaDosis: null, dosis: 6, ficha: null, prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 14, partida: null, pedido: "M10925012", cantidad: 20, paciente: "Valentina Diaz Aravena", tasaDosis: null, dosis: 23, ficha: "128735", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 10, d: 10, partida: "4524", pedido: null, cantidad: 30, paciente: "Ximena Claverie Valenzuela", tasaDosis: null, dosis: 33, ficha: "1238030", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 7, partida: "4524", pedido: "M10925012", cantidad: 29, paciente: "Clara Huenchual Navarrete", tasaDosis: null, dosis: 29, ficha: "1261050", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 7, partida: "4526", pedido: "M10925012", cantidad: 50, paciente: "Claudia Bustos Fuentes", tasaDosis: null, dosis: 50, ficha: "781570", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 7, partida: "4527", pedido: "M10925012", cantidad: 100, paciente: "Maria Sepulveda Lavin", tasaDosis: null, dosis: 93, ficha: "667552", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 11, d: 7, partida: "4525", pedido: "M10925012", cantidad: 29, paciente: "Maritza Valderrama Navarrete", tasaDosis: null, dosis: 31, ficha: "1254360", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 10, d: 17, partida: "4339", pedido: null, cantidad: 20, paciente: "Yudihx Marin Mellado", tasaDosis: null, dosis: 19, ficha: "1247220", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 10, d: 17, partida: "4338", pedido: null, cantidad: 20, paciente: "Nidia Ñancupil Ñancuan", tasaDosis: null, dosis: 19, ficha: "734443", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 10, d: 17, partida: "4337", pedido: null, cantidad: 18, paciente: "Fabiola Flores Pinto", tasaDosis: null, dosis: 20, ficha: "228078", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 9, d: 12, partida: "3995", pedido: "M10825010", cantidad: 18, paciente: "Sandra Valencia Caicedo", tasaDosis: null, dosis: 20, ficha: "49160", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 9, d: 12, partida: "3997", pedido: "M10825010", cantidad: 18, paciente: "Marlenne Luengo Leal", tasaDosis: null, dosis: 19, ficha: "76334", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 9, d: 12, partida: "3996", pedido: "M10825010", cantidad: 20, paciente: "Edwin Duque Rosales", tasaDosis: null, dosis: 20, ficha: "54256", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 8, d: 8, partida: "3620", pedido: "M10725008", cantidad: 20, paciente: "Scarlett Antipe Vasquez", tasaDosis: null, dosis: 20, ficha: "90372", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 7, d: 4, partida: "3154", pedido: "M10525007", cantidad: 20, paciente: "Gloria Cayupul Ñanco", tasaDosis: null, dosis: 19, ficha: "445779", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 7, d: 4, partida: "3153", pedido: "M10525007", cantidad: 25, paciente: "Margarita Rain Paillamil", tasaDosis: null, dosis: 27, ficha: "586", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 7, d: 4, partida: "3152", pedido: "M1052007", cantidad: 18, paciente: "Hector Huenupil Antillanca", tasaDosis: null, dosis: 19, ficha: "47562", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 7, d: 4, partida: "3151", pedido: "M1052007", cantidad: 18, paciente: "Javier Rojas Valdes", tasaDosis: null, dosis: 19, ficha: "4817", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 4, d: 25, partida: "1797", pedido: "M10325004", cantidad: 50, paciente: "Karina Montecinos Cayufilo", tasaDosis: null, dosis: 48, ficha: "1230769", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 4, d: 25, partida: "1798", pedido: "M10325004", cantidad: 100, paciente: "Alicia Garrido Fernandez", tasaDosis: null, dosis: 95, ficha: "327792", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 6, d: 13, partida: "2404", pedido: "M10525006", cantidad: 18, paciente: "Norma Huenulao Veloso", tasaDosis: null, dosis: 20, ficha: "2004488", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 6, d: 13, partida: "2401", pedido: "M10525006", cantidad: 20, paciente: "Ana Torres Opazo", tasaDosis: null, dosis: 20, ficha: "1282392", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 6, d: 6, partida: "2335", pedido: "M10525006", cantidad: 29, paciente: "Celso Gonzalez Pino", tasaDosis: null, dosis: 29, ficha: "1250814", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 6, d: 6, partida: "2336", pedido: "M10525006", cantidad: 29, paciente: "Carla Aravena Seguel", tasaDosis: null, dosis: 29, ficha: "1262722", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 6, d: 13, partida: "2402", pedido: "M10525006", cantidad: 20, paciente: "Gloria Leiva Sobarzo", tasaDosis: null, dosis: 21, ficha: "1269399", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 4, d: 11, partida: "2403", pedido: "M10525006", cantidad: 18, paciente: "Maribel Navarrete Vidal", tasaDosis: null, dosis: 20, ficha: "1274803", prevision: "FONASA", diagnostico: "HIPERTIROIDISMO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 9, partida: "1989", pedido: "M10425005", cantidad: 100, paciente: "Macarena Elgueta Pereira", tasaDosis: null, dosis: 98, ficha: "890761", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 23, partida: "2164", pedido: "M10425005", cantidad: 100, paciente: "Flor Cofre Mondaca", tasaDosis: null, dosis: 101, ficha: "85527", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 9, partida: "1987", pedido: "M10425005", cantidad: 29, paciente: "Juana Contreras Navarrete", tasaDosis: null, dosis: 32, ficha: "111248", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 9, partida: "1988", pedido: "M10425005", cantidad: 29, paciente: "Juana Contreras Navarrete", tasaDosis: null, dosis: 31, ficha: "1212139", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 9, partida: "1990", pedido: "M10425005", cantidad: 50, paciente: "Yenny Muñoz Mellado", tasaDosis: null, dosis: 49, ficha: "1261032", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 15, partida: "1989", pedido: "M10425005", cantidad: 29, paciente: "Susan Quilodran Acuña", tasaDosis: null, dosis: 30, ficha: "1270698", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 23, partida: "2165", pedido: "M10425005", cantidad: 29, paciente: "Victor Espinoza Figueroa", tasaDosis: null, dosis: 31, ficha: "103445", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 23, partida: "2166", pedido: "M10425005", cantidad: 29, paciente: "Guacolda Traipe Hueniñir", tasaDosis: null, dosis: 31, ficha: "1077120", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 30, partida: "2167", pedido: "M10425005", cantidad: 50, paciente: "Claudia Huentenao Painehual", tasaDosis: null, dosis: 52, ficha: "798847", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 30, partida: "2253", pedido: "M10525006", cantidad: 50, paciente: "Cecilia Escobar Ulloa", tasaDosis: null, dosis: 49, ficha: "1271086", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 30, partida: "2250", pedido: "M10525006", cantidad: 29, paciente: "Ingrid Nahuelan Astete", tasaDosis: null, dosis: 30, ficha: "117867", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 30, partida: "2251", pedido: "M10525006", cantidad: 29, paciente: "Mannoly Leon Benavides", tasaDosis: null, dosis: 30, ficha: "1269418", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+  { y: 2025, mo: 5, d: 30, partida: "2252", pedido: "M10525006", cantidad: 29, paciente: "Feliz Monsalves Contreras", tasaDosis: "29", dosis: 29, ficha: "1267607", prevision: "FONASA", diagnostico: "CANCER DE TIROIDES OPERADO", responsable: "VICTOR VERA" },
+];
+
+for (const r of i131SeedRows) {
+const admin_date = `${r.y}-${String(r.mo).padStart(2, "0")}-${String(r.d).padStart(2, "0")}`;
+const dedupeKey = [admin_date, (r.ficha ?? "").toUpperCase(), r.paciente.trim().toUpperCase(), r.dosis ?? "", r.partida ?? ""].join("|");
+await sql`
+INSERT INTO i131_administrations (
+admin_year, admin_month, admin_day, admin_date, partida, pedido_numero, radiofarmaco,
+cantidad_solicitada, paciente_nombre, ficha_clinica, prevision, diagnostico, tasa_dosis,
+dosis_administrada, responsable, dedupe_key
+) VALUES (
+${r.y}, ${r.mo}, ${r.d}, ${admin_date}, ${r.partida}, ${r.pedido}, 'I-131',
+${r.cantidad}, ${r.paciente}, ${r.ficha}, ${r.prevision}, ${r.diagnostico}, ${r.tasaDosis},
+${r.dosis}, ${r.responsable || "Médico Nuclear"}, ${dedupeKey}
+)
+ON CONFLICT (dedupe_key) DO NOTHING
+`;
+
+const suggestionPairs: [string, string | null][] = [
+["radiofarmaco", "I-131"],
+["diagnostico", r.diagnostico],
+["prevision", r.prevision],
+["paciente_nombre", r.paciente],
+];
+for (const [field, value] of suggestionPairs) {
+if (!value) continue;
+await sql`
+INSERT INTO i131_field_suggestions (field_name, value, usage_count, last_used_at)
+VALUES (${field}, ${value}, 1, now())
+ON CONFLICT (field_name, value) DO UPDATE SET
+usage_count = i131_field_suggestions.usage_count + 1,
+last_used_at = now()
+`;
+}
+}
+}
+
 return NextResponse.json({ ok: true });
 }
