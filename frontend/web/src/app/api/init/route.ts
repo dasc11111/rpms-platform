@@ -248,5 +248,53 @@ ON CONFLICT (slug) DO NOTHING
 }
 }
 
+// Subcategorias de "Detectores de Contaminación": Geiger Muller MN,
+// Geiger Muller PR, Detector de Manos y Pies, Cámara de Ionización.
+if (medicinaNuclearId) {
+const detContSlug = `medicina-nuclear-${slugify("Detectores de Contaminación")}`;
+const { rows: dcRows } = await sql`
+SELECT id FROM document_categories
+WHERE parent_id = ${medicinaNuclearId} AND slug = ${detContSlug}
+`;
+const detContId = dcRows[0]?.id as number | undefined;
+if (detContId) {
+const names: string[] = ["Geiger Muller MN", "Geiger Muller PR", "Detector de Manos y Pies", "Cámara de Ionización"];
+for (let i = 0; i < names.length; i++) {
+const name = names[i] ?? "";
+if (!name) continue;
+const slug = `${detContSlug}-${slugify(name)}`;
+await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${name}, ${slug}, ${detContId}, ${i + 1})
+ON CONFLICT (slug) DO NOTHING
+`;
+}
+}
+}
+
+// Subcategorias de "Detectores Portátiles": Dosímetro de Lectura Directa
+// Medicina Interna, Dosímetro de Lectura Directa OPR.
+if (medicinaNuclearId) {
+const detPortSlug = `medicina-nuclear-${slugify("Detectores Portátiles")}`;
+const { rows: dpRows } = await sql`
+SELECT id FROM document_categories
+WHERE parent_id = ${medicinaNuclearId} AND slug = ${detPortSlug}
+`;
+const detPortId = dpRows[0]?.id as number | undefined;
+if (detPortId) {
+const names: string[] = ["Dosímetro de Lectura Directa Medicina Interna", "Dosímetro de Lectura Directa OPR"];
+for (let i = 0; i < names.length; i++) {
+const name = names[i] ?? "";
+if (!name) continue;
+const slug = `${detPortSlug}-${slugify(name)}`;
+await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${name}, ${slug}, ${detPortId}, ${i + 1})
+ON CONFLICT (slug) DO NOTHING
+`;
+}
+}
+}
+
 return NextResponse.json({ ok: true });
 }
