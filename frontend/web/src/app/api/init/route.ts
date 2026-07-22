@@ -181,5 +181,72 @@ ON CONFLICT (slug) DO NOTHING
 `;
 }
 
+// Estructura de "Capacitación": Medicina Interna, Medicina Nuclear y
+// Transporte, cada una organizada por año (2026-2030). Dentro de cada año,
+// Medicina Interna y Medicina Nuclear tienen carpetas "Capacitación" y
+// "Simulacro"; Transporte solo tiene carpeta "Capacitación".
+if (medicinaNuclearId) {
+const capacitacionSlug = `medicina-nuclear-${slugify("Capacitación")}`;
+const { rows: capRows } = await sql`
+SELECT id FROM document_categories
+WHERE parent_id = ${medicinaNuclearId} AND slug = ${capacitacionSlug}
+`;
+const capacitacionId = capRows[0]?.id as number | undefined;
+if (capacitacionId) {
+const years = [2026, 2027, 2028, 2029, 2030];
+const groups: { name: string; withSimulacro: boolean }[] = [
+{ name: "Medicina Interna", withSimulacro: true },
+{ name: "Medicina Nuclear", withSimulacro: true },
+{ name: "Transporte", withSimulacro: false },
+];
+for (let g = 0; g < groups.length; g++) {
+const group = groups[g];
+if (!group) continue;
+const groupSlug = `${capacitacionSlug}-${slugify(group.name)}`;
+const { rows: groupRows } = await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${group.name}, ${groupSlug}, ${capacitacionId}, ${g + 1})
+ON CONFLICT (slug) DO NOTHING
+RETURNING id
+`;
+let groupId = groupRows[0]?.id as number | undefined;
+if (!groupId) {
+const { rows } = await sql`SELECT id FROM document_categories WHERE slug = ${groupSlug}`;
+groupId = rows[0]?.id;
+}
+if (groupId) {
+for (let y = 0; y < years.length; y++) {
+const year = years[y];
+const yearSlug = `${groupSlug}-${year}`;
+const { rows: yearRows } = await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${String(year)}, ${yearSlug}, ${groupId}, ${y + 1})
+ON CONFLICT (slug) DO NOTHING
+RETURNING id
+`;
+let yearId = yearRows[0]?.id as number | undefined;
+if (!yearId) {
+const { rows } = await sql`SELECT id FROM document_categories WHERE slug = ${yearSlug}`;
+yearId = rows[0]?.id;
+}
+if (yearId) {
+const folders = group.withSimulacro ? ["Capacitación", "Simulacro"] : ["Capacitación"];
+for (let f = 0; f < folders.length; f++) {
+const folderName = folders[f] ?? "";
+if (!folderName) continue;
+const folderSlug = `${yearSlug}-${slugify(folderName)}`;
+await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${folderName}, ${folderSlug}, ${yearId}, ${f + 1})
+ON CONFLICT (slug) DO NOTHING
+`;
+}
+}
+}
+}
+}
+}
+}
+
 return NextResponse.json({ ok: true });
 }
