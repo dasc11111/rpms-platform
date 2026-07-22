@@ -42,7 +42,7 @@ const SORTABLE = new Set([
   "equipo",
 ]);
 
-export function buildI131Filters(searchParams: URLSearchParams) {
+function buildFilters(searchParams: URLSearchParams) {
   const conditions: string[] = [];
   const params: unknown[] = [];
 
@@ -96,7 +96,7 @@ export function buildI131Filters(searchParams: URLSearchParams) {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const { where, params } = buildI131Filters(searchParams);
+  const { where, params } = buildFilters(searchParams);
 
   const sortField = searchParams.get("sort") ?? "admin_date";
   const sortCol = SORTABLE.has(sortField) ? sortField : "admin_date";
