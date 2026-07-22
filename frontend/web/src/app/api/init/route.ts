@@ -522,5 +522,139 @@ last_used_at = now()
 }
 }
 
+
+// Nueva subcategoria "Registro de Contaminación" directamente dentro de
+// MEDICINA NUCLEAR, con las mismas acciones que cualquier otra carpeta
+// (subir, reemplazar, eliminar, descargar, vista previa, buscar).
+if (medicinaNuclearId) {
+const contName = "Registro de Contaminación";
+const contSlug = `medicina-nuclear-${slugify(contName)}`;
+await sql`
+INSERT INTO document_categories (name, slug, parent_id, sort_order)
+VALUES (${contName}, ${contSlug}, ${medicinaNuclearId}, 60)
+ON CONFLICT (slug) DO NOTHING
+`;
+}
+
+// --- Modulo Registro de Contaminacion --------------------------------------
+// Monitoreo de contaminacion superficial. Cada fila es una medicion en un
+// punto/fecha determinados. Los campos calculados (conteo neto, actividad
+// superficial en Bq/cm2 y Bq/m2, porcentaje del limite, clasificacion y
+// semaforo) se recalculan siempre en el backend (ver /api/contamination),
+// nunca se ingresan manualmente. Ver src/lib/contamination.ts para el
+// detalle y la validacion cientifica de las formulas empleadas.
+await sql`
+CREATE TABLE IF NOT EXISTS contamination_records (
+id SERIAL PRIMARY KEY,
+monitor_year INTEGER NOT NULL,
+monitor_month INTEGER NOT NULL,
+monitor_day INTEGER NOT NULL,
+monitor_date DATE NOT NULL,
+area TEXT,
+sala TEXT,
+dependencia TEXT,
+punto_medicion TEXT NOT NULL,
+equipo TEXT,
+superficie TEXT,
+radionuclido TEXT NOT NULL DEFAULT 'TC-99M',
+instrumento TEXT,
+numero_serie_detector TEXT,
+factor_calibracion NUMERIC,
+factor_eficiencia NUMERIC NOT NULL DEFAULT 0.15,
+area_monitoreada_cm2 NUMERIC NOT NULL DEFAULT 15,
+tiempo_medicion_seg NUMERIC,
+fondo_cps NUMERIC NOT NULL DEFAULT 0,
+conteo_bruto_cps NUMERIC NOT NULL DEFAULT 0,
+conteo_neto_cps NUMERIC NOT NULL DEFAULT 0,
+actividad_bq_cm2 NUMERIC NOT NULL DEFAULT 0,
+actividad_bq_m2 NUMERIC NOT NULL DEFAULT 0,
+tasa_dosis_usv_h NUMERIC,
+limite_bq_m2_aplicado NUMERIC,
+pct_limite NUMERIC,
+clasificacion TEXT NOT NULL DEFAULT 'sin_contaminacion',
+semaforo TEXT NOT NULL DEFAULT 'verde',
+requiere_limpieza BOOLEAN NOT NULL DEFAULT false,
+limpieza_realizada BOOLEAN NOT NULL DEFAULT false,
+conteo_post_limpieza_cps NUMERIC,
+actividad_post_limpieza_bq_cm2 NUMERIC,
+factor_descontaminacion NUMERIC,
+pct_actividad_residual NUMERIC,
+accion_correctiva TEXT,
+estado TEXT NOT NULL DEFAULT 'ABIERTO',
+motivo TEXT,
+responsable TEXT NOT NULL,
+observaciones TEXT,
+dedupe_key TEXT UNIQUE,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_date ON contamination_records(monitor_date)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_punto ON contamination_records(lower(punto_medicion))`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_radionuclido ON contamination_records(radionuclido)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_year_month ON contamination_records(monitor_year, monitor_month)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_clasificacion ON contamination_records(clasificacion)`;
+
+// Catalogo de sugerencias inteligentes (autocompletado), igual patron que I-131.
+await sql`
+CREATE TABLE IF NOT EXISTS contamination_field_suggestions (
+id SERIAL PRIMARY KEY,
+field_name TEXT NOT NULL,
+value TEXT NOT NULL,
+usage_count INTEGER NOT NULL DEFAULT 1,
+last_used_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+UNIQUE (field_name, value)
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_suggestions_field ON contamination_field_suggestions(field_name, usage_count DESC)`;
+
+// Historial de cambios (trazabilidad): se conserva incluso si el registro
+// original es eliminado (no tiene FK con ON DELETE CASCADE), cumpliendo con
+// el requisito de no eliminar la trazabilidad.
+await sql`
+CREATE TABLE IF NOT EXISTS contamination_history (
+id SERIAL PRIMARY KEY,
+record_id INTEGER NOT NULL,
+action TEXT NOT NULL,
+changed_by TEXT,
+snapshot JSONB,
+changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_contamination_history_record ON contamination_history(record_id)`;
+
+// Limites de contaminacion superficial configurables por radionuclido. Los
+// valores por defecto son parametros iniciales razonables (consistentes con
+// el nivel de referencia de 370.000 Bq/m2 ya utilizado en la planilla
+// original para el caso general, aplicando un limite mas estricto para I-131
+// dada su mayor radiotoxicidad). Deben ser revisados y ajustados por el
+// Oficial de Proteccion Radiologica segun la normativa nacional vigente y las
+// guias IAEA/ICRP aplicables: estos valores se pueden modificar en cualquier
+// momento desde el panel "Limites" del modulo, sin tocar el codigo.
+await sql`
+CREATE TABLE IF NOT EXISTS contamination_limits (
+id SERIAL PRIMARY KEY,
+radionuclido TEXT UNIQUE NOT NULL,
+limite_bq_m2 NUMERIC NOT NULL,
+pct_registro NUMERIC NOT NULL DEFAULT 5,
+pct_investigacion NUMERIC NOT NULL DEFAULT 30,
+pct_intervencion NUMERIC NOT NULL DEFAULT 50,
+unidad TEXT NOT NULL DEFAULT 'Bq/m2',
+notas TEXT,
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+
+const { rows: limitsCount } = await sql`SELECT COUNT(*)::int AS count FROM contamination_limits`;
+if ((limitsCount[0]?.count ?? 0) === 0) {
+await sql`
+INSERT INTO contamination_limits (radionuclido, limite_bq_m2, pct_registro, pct_investigacion, pct_intervencion, notas) VALUES
+('TC-99M', 370000, 5, 30, 50, 'Valor por defecto configurable, consistente con el nivel de referencia usado en la planilla original. Debe ser validado por el OPR segun normativa vigente (IAEA/ICRP/normativa nacional).'),
+('I-131', 37000, 5, 30, 50, 'Valor por defecto configurable, 10 veces mas estricto que Tc-99m dada la mayor radiotoxicidad del I-131 (afinidad tiroidea). Debe ser validado por el OPR segun normativa vigente.'),
+('GENERICO', 370000, 5, 30, 50, 'Limite generico aplicado cuando el radionuclido registrado no tiene un limite especifico configurado.')
+ON CONFLICT (radionuclido) DO NOTHING;
+`;
+}
+
 return NextResponse.json({ ok: true });
 }
