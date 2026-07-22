@@ -183,7 +183,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                                                                                                                                                                                                                                                               RETURNING *
                                                                                                                                                                                                                                                                 `;
 
-  const updated = rows[0];
+  const updated = rows[0]!;
     await logHistory(updated.id, "update", { before: current, after: updated }, responsable);
     await upsertSuggestions({ ...body, punto_medicion, radionuclido, responsable });
 
