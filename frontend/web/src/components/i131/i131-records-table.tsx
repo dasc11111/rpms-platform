@@ -43,7 +43,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; core?: boolean }[] = [
   { key: "ficha_clinica", label: "Ficha" },
   { key: "prevision", label: "Previsión" },
   { key: "diagnostico", label: "Diagnóstico" },
-  { key: "medico_solicitante", label: "Médico solicitante" },
+  { key: "medico_solicitante", label: "Médico Nuclear" },
   { key: "procedencia", label: "Procedencia" },
   { key: "tipo_examen", label: "Tipo examen" },
   { key: "equipo", label: "Equipo" },
