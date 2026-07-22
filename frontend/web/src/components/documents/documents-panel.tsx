@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, RefreshCw, Trash2, Upload, Search, ArrowUpDown } from "lucide-react";
+import { Download, RefreshCw, Trash2, Upload, Search, ArrowUpDown, Eye, X } from "lucide-react";
 import { formatBytes } from "@/lib/documents";
 import type { DocumentSortField, SortDir } from "@/lib/documents";
 
@@ -15,6 +15,73 @@ type DocumentRow = {
   created_at: string;
   updated_at: string;
 };
+
+function isPreviewable(mime: string | null): "image" | "pdf" | "text" | null {
+  if (!mime) return null;
+  if (mime.startsWith("image/")) return "image";
+  if (mime === "application/pdf") return "pdf";
+  if (mime.startsWith("text/")) return "text";
+  return null;
+}
+
+function PreviewModal({ doc, onClose }: { doc: DocumentRow; onClose: () => void }) {
+  const kind = isPreviewable(doc.mime_type);
+  const src = `/api/documents/${doc.id}/download`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-surface shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+          <h3 className="truncate text-sm font-semibold" title={doc.original_name}>
+            {doc.original_name}
+          </h3>
+          <div className="flex items-center gap-1.5">
+            <a
+              href={`/api/documents/${doc.id}/download?dl=1`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Descargar"
+              className="rounded p-1.5 hover:bg-muted"
+            >
+              <Download className="h-4 w-4" />
+            </a>
+            <button title="Cerrar" onClick={onClose} className="rounded p-1.5 hover:bg-muted">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto bg-muted/20">
+          {kind === "image" ? (
+            <div className="flex h-full items-center justify-center p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={doc.original_name} className="max-h-full max-w-full object-contain" />
+            </div>
+          ) : kind === "pdf" || kind === "text" ? (
+            <iframe src={src} title={doc.original_name} className="h-full w-full border-0" />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-sm text-muted-foreground">
+              <p>La vista previa no está disponible para este tipo de archivo.</p>
+              <a
+                href={`/api/documents/${doc.id}/download?dl=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium hover:bg-muted/60"
+              >
+                Descargar para ver el archivo
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function DocumentsPanel({
   categoryId,
@@ -32,6 +99,7 @@ export function DocumentsPanel({
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null);
 
   const load = useCallback(async () => {
     if (!categoryId) return;
@@ -194,6 +262,9 @@ export function DocumentsPanel({
                   <td className="px-3 py-2.5 text-muted-foreground">{new Date(d.updated_at).toLocaleString("es-CL")}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-end gap-1.5">
+                      <button title="Vista previa" onClick={() => setPreviewDoc(d)} className="rounded p-1 hover:bg-muted">
+                        <Eye className="h-4 w-4" />
+                      </button>
                       <a href={`/api/documents/${d.id}/download?dl=1`} target="_blank" rel="noopener noreferrer" title="Descargar" className="rounded p-1 hover:bg-muted">
                         <Download className="h-4 w-4" />
                       </a>
@@ -212,6 +283,8 @@ export function DocumentsPanel({
           </tbody>
         </table>
       </div>
+
+      {previewDoc && <PreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />}
     </div>
   );
 }
