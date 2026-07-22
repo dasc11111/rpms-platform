@@ -372,7 +372,7 @@ export function I131FormModal({
             </div>
 
             <div>
-              <label className={FIELD_LABEL}>Médico solicitante</label>
+              <label className={FIELD_LABEL}>Médico Nuclear</label>
               <AutocompleteInput
                 field="medico_solicitante"
                 value={form.medico_solicitante}
