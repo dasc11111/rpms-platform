@@ -112,12 +112,13 @@ export function I131RecordsTable({
       pageSize: String(pageSize),
     });
     fetch(`/api/i131?${qs}`)
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!active) return;
+        if (!active || !data) return;
         setRows(data.rows ?? []);
         setTotal(data.total ?? 0);
       })
+      .catch(() => {})
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
