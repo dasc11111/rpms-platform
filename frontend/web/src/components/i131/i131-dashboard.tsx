@@ -110,8 +110,11 @@ export function I131Dashboard({ filters, version }: { filters: I131Filters; vers
     let active = true;
     const qs = filtersToQuery(filters);
     fetch(`/api/i131/stats?${qs}`)
-      .then((res) => res.json())
-      .then((data) => active && setStats(data));
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data) setStats(data);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
