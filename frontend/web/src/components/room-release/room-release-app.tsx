@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, FileText, Recycle } from "lucide-react";
+import { Boxes, LayoutDashboard, FileText, Recycle } from "lucide-react";
 import { RoomReleaseRecordsTable } from "./room-release-records-table";
 import { RoomReleaseFormModal } from "./room-release-form-modal";
 import { WasteLabelConfirmModal } from "./waste-label-confirm-modal";
 import { WasteLabelsTable } from "./waste-labels-table";
 import { WasteDashboard } from "./waste-dashboard";
+import { WasteInventoryApp } from "./waste-inventory-app";
 import type { RoomReleaseRecord } from "@/lib/waste";
 
-type Tab = "acta" | "residuos" | "dashboard";
+type Tab = "acta" | "residuos" | "inventario" | "dashboard";
 
 export function RoomReleaseApp() {
   const [tab, setTab] = useState<Tab>("acta");
@@ -35,8 +36,9 @@ export function RoomReleaseApp() {
       <div className="mb-4">
         <h1 className="text-lg font-semibold">Liberación de Sala Hospitalizado</h1>
         <p className="text-xs text-muted-foreground">
-          Acta de Liberación de Sala y Gestión de Residuos Radiactivos, totalmente integradas: la
-          información del acta se reutiliza automáticamente para generar el rótulo del residuo.
+          Acta de Liberación de Sala, Gestión de Residuos Radiactivos e Inventario / Almacenamiento Temporal,
+          totalmente integrados: la información del acta se reutiliza automáticamente para generar el rótulo del
+          residuo y su seguimiento en almacenamiento.
         </p>
       </div>
 
@@ -58,6 +60,14 @@ export function RoomReleaseApp() {
           <Recycle className="h-4 w-4" /> Gestión de Residuos Radiactivos
         </button>
         <button
+          onClick={() => setTab("inventario")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 ${
+            tab === "inventario" ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+          }`}
+        >
+          <Boxes className="h-4 w-4" /> Inventario y Almacenamiento
+        </button>
+        <button
           onClick={() => setTab("dashboard")}
           className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 ${
             tab === "dashboard" ? "bg-accent text-accent-foreground" : "hover:bg-muted"
@@ -72,6 +82,8 @@ export function RoomReleaseApp() {
       )}
 
       {tab === "residuos" && <WasteLabelsTable version={version} onChanged={bump} />}
+
+      {tab === "inventario" && <WasteInventoryApp version={version} onChanged={bump} />}
 
       {tab === "dashboard" && <WasteDashboard version={version} />}
 
