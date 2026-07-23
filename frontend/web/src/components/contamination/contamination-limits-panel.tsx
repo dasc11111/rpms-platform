@@ -67,7 +67,7 @@ export function ContaminationLimitsPanel({ open }: { open: boolean }) {
         const data = await res.json().catch(() => ({}));
         setMessage(data.error ?? "No se pudo guardar el límite.");
       } else {
-        setMessage(\`Límite de \${row.radionuclido} actualizado.\`);
+        setMessage(`Límite de ${row.radionuclido} actualizado.`);
         load();
       }
     } catch {
