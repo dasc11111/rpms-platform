@@ -35,6 +35,7 @@ const SORTABLE = new Set([
     "punto_medicion",
     "radionuclido",
     "actividad_bq_m2",
+    "actividad_bq_cm2",
     "pct_limite",
     "clasificacion",
     "estado",
