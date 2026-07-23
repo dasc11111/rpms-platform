@@ -91,7 +91,7 @@ const COLUMNS: { key: string; label: string }[] = [
   { key: "conteo_bruto_cps", label: "Conteo bruto (cps)" },
   { key: "conteo_neto_cps", label: "Conteo neto (cps)" },
   { key: "actividad_bq_cm2", label: "Actividad (Bq/cm²)" },
-  { key: "tasa_dosis_usv_h", label: "Tasa de dosis (µSv/h)" },
+  { key: "tasa_dosis_usv_h", label: "Tasa de dosis (uSv/h)" },
   { key: "pct_limite", label: "% del límite" },
   { key: "clasificacion", label: "Resultado" },
   { key: "semaforo", label: "Semáforo" },
