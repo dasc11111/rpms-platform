@@ -693,5 +693,178 @@ ON CONFLICT (radionuclido) DO NOTHING;
     `;
   }
   
+  // --- Modulo Liberacion de Sala Hospitalizado / Gestion de Residuos Radiactivos ---
+  // Categoria funcional integrada (no es un modulo independiente): el Acta de
+  // Liberacion de Sala y la Gestion de Residuos Radiactivos comparten la misma
+  // tabla principal "room_release_records". El rotulo de residuo reutiliza
+  // automaticamente todos los datos ya ingresados en el acta, sin solicitarlos
+  // de nuevo.
+  
+  // Catalogo parametrizable de radionuclidos: permite habilitar en el futuro
+  // Tc-99m, F-18, Ga-68, Lu-177, Y-90, Ra-223, Sm-153, I-123, etc. sin tocar el
+  // codigo ni la estructura de la base de datos (solo activar el registro).
+  await sql`
+    CREATE TABLE IF NOT EXISTS radionuclides (
+        code TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+                half_life_days NUMERIC NOT NULL,
+                    unit TEXT NOT NULL DEFAULT 'mCi',
+                        release_criteria_activity NUMERIC,
+                            release_criteria_dose_rate_usvh NUMERIC,
+                                active BOOLEAN NOT NULL DEFAULT true,
+                                    sort_order INTEGER NOT NULL DEFAULT 0,
+                                        notes TEXT,
+                                            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                                                  );
+                                                  `;
+  
+  const { rows: radioCount } = await sql`SELECT COUNT(*)::int AS count FROM radionuclides`;
+  if ((radioCount[0]?.count ?? 0) === 0) {
+    await sql`
+    INSERT INTO radionuclides (code, name, half_life_days, unit, release_criteria_activity, release_criteria_dose_rate_usvh, active, sort_order, notes) VALUES
+    ('I-131', 'Yodo-131', 8.02, 'mCi', 30, 30, true, 1, 'Unico radionuclido habilitado inicialmente.'),
+    ('TC-99M', 'Tecnecio-99m', 0.25, 'mCi', 30, 30, false, 2, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('F-18', 'Fluor-18', 0.0076, 'mCi', 30, 30, false, 3, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('GA-68', 'Galio-68', 0.0475, 'mCi', 30, 30, false, 4, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('LU-177', 'Lutecio-177', 6.65, 'mCi', 30, 30, false, 5, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('Y-90', 'Itrio-90', 2.67, 'mCi', 30, 30, false, 6, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('RA-223', 'Radio-223', 11.43, 'mCi', 30, 30, false, 7, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('SM-153', 'Samario-153', 1.93, 'mCi', 30, 30, false, 8, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.'),
+    ('I-123', 'Yodo-123', 0.55, 'mCi', 30, 30, false, 9, 'Parametro de referencia para escalabilidad futura, pendiente de habilitar.')
+    ON CONFLICT (code) DO NOTHING;
+    `;
+  }
+  
+  // Acta de Liberacion de Sala Hospitalizado: un registro por paciente/alta.
+  // Es la unica fuente de datos: el rotulo de residuo se genera leyendo esta
+  // tabla, sin volver a solicitar informacion ya ingresada.
+  await sql`
+  CREATE TABLE IF NOT EXISTS room_release_records (
+  id SERIAL PRIMARY KEY,
+  release_date DATE NOT NULL,
+  admission_date DATE,
+  service TEXT NOT NULL,
+  sala TEXT NOT NULL,
+  room_number TEXT,
+  paciente_nombre TEXT NOT NULL,
+  paciente_run TEXT,
+  ficha_clinica TEXT,
+  radionuclide_code TEXT NOT NULL REFERENCES radionuclides(code),
+  actividad_administrada NUMERIC,
+  actividad_medida_liberacion NUMERIC,
+  unidad_actividad TEXT NOT NULL DEFAULT 'mCi',
+  tasa_dosis_medida TEXT,
+  criterio_liberacion TEXT,
+  responsable_opr TEXT NOT NULL DEFAULT 'Oficial de Proteccion Radiologica',
+  observaciones TEXT,
+  status TEXT NOT NULL DEFAULT 'en_sala',
+  waste_label_generated BOOLEAN NOT NULL DEFAULT false,
+  created_by TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_room_release_date ON room_release_records(release_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_room_release_paciente ON room_release_records(lower(paciente_nombre))`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_room_release_status ON room_release_records(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_room_release_service ON room_release_records(service)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_room_release_sala ON room_release_records(sala)`;
+  
+  // Secuencia de numeracion correlativa de rotulos, por anio. Se reserva un
+  // numero para cada rotulo generado y nunca se reutiliza, incluso si el
+  // registro es eliminado despues (se mantiene la trazabilidad completa).
+  await sql`
+  CREATE TABLE IF NOT EXISTS waste_label_sequence (
+  label_year INTEGER PRIMARY KEY,
+  last_correlative INTEGER NOT NULL DEFAULT 0
+  );
+  `;
+  
+  // Rotulo de Gestion de Residuos Radiactivos: reutiliza automaticamente los
+  // datos del Acta de Liberacion de Sala (room_release_id). No se vuelve a
+  // solicitar informacion ya ingresada.
+  await sql`
+  CREATE TABLE IF NOT EXISTS radioactive_waste_labels (
+  id SERIAL PRIMARY KEY,
+  label_number TEXT UNIQUE NOT NULL,
+  label_year INTEGER NOT NULL,
+  correlative INTEGER NOT NULL,
+  room_release_id INTEGER NOT NULL REFERENCES room_release_records(id) ON DELETE RESTRICT,
+  generation_date DATE NOT NULL,
+  service TEXT NOT NULL,
+  sala TEXT NOT NULL,
+  room_number TEXT,
+  paciente_nombre TEXT,
+  radionuclide_code TEXT NOT NULL REFERENCES radionuclides(code),
+  actividad_estimada_residual NUMERIC,
+  unidad_actividad TEXT NOT NULL DEFAULT 'mCi',
+  waste_type TEXT,
+  waste_classification TEXT,
+  container TEXT,
+  storage_location TEXT,
+  entry_date DATE NOT NULL,
+  responsible TEXT NOT NULL DEFAULT 'Oficial de Proteccion Radiologica',
+  observations TEXT,
+  status TEXT NOT NULL DEFAULT 'pendiente',
+  print_count INTEGER NOT NULL DEFAULT 0,
+  last_printed_at TIMESTAMPTZ,
+  created_by TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (label_year, correlative)
+  );
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_room_release ON radioactive_waste_labels(room_release_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_status ON radioactive_waste_labels(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_radionuclide ON radioactive_waste_labels(radionuclide_code)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_service ON radioactive_waste_labels(service)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_sala ON radioactive_waste_labels(sala)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_labels_year ON radioactive_waste_labels(label_year)`;
+  
+  // Historial de cambios del rotulo (auditoria): se conserva siempre, incluso
+  // si el rotulo es eliminado, para no perder trazabilidad.
+  await sql`
+  CREATE TABLE IF NOT EXISTS waste_label_history (
+  id SERIAL PRIMARY KEY,
+  label_id INTEGER NOT NULL,
+  label_number TEXT,
+  action TEXT NOT NULL,
+  changed_by TEXT,
+  snapshot JSONB,
+  changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_label_history_label ON waste_label_history(label_id)`;
+  
+  // Nueva categoria "Liberacion de Sala Hospitalizado" dentro de la biblioteca
+  // de documentos, con su subcategoria integrada "Gestion de Residuos
+  // Radiactivos" (comparten el Acta de Liberacion de Sala, no es un modulo
+  // independiente).
+  if (medicinaNuclearId) {
+    const liberacionSalaName = "Liberación de Sala Hospitalizado";
+    const liberacionSalaSlug = `medicina-nuclear-${slugify(liberacionSalaName)}`;
+    const { rows: lsRows } = await sql`
+    INSERT INTO document_categories (name, slug, parent_id, sort_order)
+    VALUES (${liberacionSalaName}, ${liberacionSalaSlug}, ${medicinaNuclearId}, 61)
+    ON CONFLICT (slug) DO NOTHING
+    RETURNING id
+    `;
+    let liberacionSalaId = lsRows[0]?.id as number | undefined;
+    if (!liberacionSalaId) {
+      const { rows } = await sql`SELECT id FROM document_categories WHERE slug = ${liberacionSalaSlug}`;
+      liberacionSalaId = rows[0]?.id;
+    }
+    if (liberacionSalaId) {
+      const grrName = "Gestión de Residuos Radiactivos";
+      const grrSlug = `${liberacionSalaSlug}-${slugify(grrName)}`;
+      await sql`
+      INSERT INTO document_categories (name, slug, parent_id, sort_order)
+      VALUES (${grrName}, ${grrSlug}, ${liberacionSalaId}, 1)
+      ON CONFLICT (slug) DO NOTHING
+      `;
+    }
+  }
+  
   return NextResponse.json({ ok: true });
 }
