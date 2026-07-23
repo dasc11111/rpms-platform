@@ -443,7 +443,7 @@ export function ContaminationFormModal({
                   />
                 </div>
                 <div>
-                  <label className={FIELD_LABEL}>Tasa de dosis (µSv/h)</label>
+                  <label className={FIELD_LABEL}>Tasa de dosis (uSv/h)</label>
                   <input
                     type="number"
                     step="0.01"
