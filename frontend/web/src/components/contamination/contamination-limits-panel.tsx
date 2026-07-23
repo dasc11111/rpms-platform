@@ -14,8 +14,20 @@ type LimitRow = {
 
 const INPUT = "w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-accent";
 
+// Conversion de despliegue: el limite se almacena internamente en Bq/m2 (para
+// mantener compatibilidad con el calculo de clasificacion en el backend), pero
+// se mide e informa al usuario en Bq/cm2, la unidad en la que efectivamente se
+// registra y compara la actividad superficial en este modulo.
+// 1 Bq/cm2 = 10000 Bq/m2.
+function bqM2ToBqCm2(bqM2: number): number {
+  return bqM2 / 10000;
+}
+function bqCm2ToBqM2(bqCm2: number): number {
+  return bqCm2 * 10000;
+}
+
 // Panel de configuracion de limites de contaminacion superficial. Permite
-// ajustar, para cada radionuclido, el nivel de referencia derivado (Bq/m2) y
+// ajustar, para cada radionuclido, el nivel de referencia derivado (Bq/cm²) y
 // los tres umbrales porcentuales (Registro / Investigacion / Intervencion)
 // SIN modificar el codigo de la aplicacion (ver /api/contamination/limits).
 export function ContaminationLimitsPanel({ open }: { open: boolean }) {
@@ -55,7 +67,7 @@ export function ContaminationLimitsPanel({ open }: { open: boolean }) {
         const data = await res.json().catch(() => ({}));
         setMessage(data.error ?? "No se pudo guardar el límite.");
       } else {
-        setMessage(`Límite de ${row.radionuclido} actualizado.`);
+        setMessage(\`Límite de \${row.radionuclido} actualizado.\`);
         load();
       }
     } catch {
@@ -72,7 +84,7 @@ export function ContaminationLimitsPanel({ open }: { open: boolean }) {
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
         Estos valores son parámetros ajustables, no están fijos en el código. Cada medición se compara
-        automáticamente contra el límite derivado (Bq/m²) del radionúclido correspondiente, y se clasifica según los
+        automáticamente contra el límite derivado (Bq/cm²) del radionúclido correspondiente, y se clasifica según los
         umbrales de Registro / Investigación / Intervención definidos aquí.
       </p>
       {message && <div className="mb-3 rounded-md border border-accent/30 bg-accent-subtle px-3 py-2 text-xs">{message}</div>}
@@ -84,12 +96,13 @@ export function ContaminationLimitsPanel({ open }: { open: boolean }) {
               <input className={INPUT} value={row.radionuclido} disabled />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium uppercase text-muted-foreground">Límite (Bq/m²)</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase text-muted-foreground">Límite (Bq/cm²)</label>
               <input
                 type="number"
+                step="0.0001"
                 className={INPUT}
-                value={row.limite_bq_m2}
-                onChange={(e) => update(row.radionuclido, { limite_bq_m2: Number(e.target.value) })}
+                value={bqM2ToBqCm2(row.limite_bq_m2)}
+                onChange={(e) => update(row.radionuclido, { limite_bq_m2: bqCm2ToBqM2(Number(e.target.value)) })}
               />
             </div>
             <div>
