@@ -42,7 +42,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; core?: boolean }[] = [
   { key: "area", label: "Área" },
   { key: "sala", label: "Sala" },
   { key: "instrumento", label: "Instrumento" },
-  { key: "tasa_dosis_usv_h", label: "Tasa de dosis (µSv/h)" },
+  { key: "tasa_dosis_usv_h", label: "Tasa de dosis (uSv/h)" },
   { key: "pct_limite", label: "% del límite" },
   { key: "requiere_limpieza", label: "Requiere limpieza" },
   { key: "estado", label: "Estado" },
@@ -172,7 +172,7 @@ export function ContaminationRecordsTable({
     }
     if (key === "tasa_dosis_usv_h") {
       return row.tasa_dosis_usv_h !== null && row.tasa_dosis_usv_h !== undefined
-        ? `${Number(row.tasa_dosis_usv_h).toFixed(2)} µSv/h`
+        ? `${Number(row.tasa_dosis_usv_h).toFixed(2)} uSv/h`
         : "—";
     }
     if (key === "pct_limite") {
