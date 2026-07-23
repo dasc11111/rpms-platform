@@ -33,16 +33,28 @@ export function WasteLabelsTable({ version, onChanged }: { version: number; onCh
         </div>
         <div className="flex gap-2">
           <a
-            href="/api/waste-labels/export?format=csv"
+            href="/api/waste-labels/export?dataset=labels&format=csv"
             className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
           >
             <Download className="h-3.5 w-3.5" /> CSV
           </a>
           <a
-            href="/api/waste-labels/export?format=xlsx"
+            href="/api/waste-labels/export?dataset=labels&format=xlsx"
             className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
           >
             <Download className="h-3.5 w-3.5" /> Excel
+          </a>
+          <a
+            href="/api/waste-labels/export?dataset=history&format=csv"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            <Download className="h-3.5 w-3.5" /> Historial CSV
+          </a>
+          <a
+            href="/api/waste-labels/export?dataset=history&format=xlsx"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            <Download className="h-3.5 w-3.5" /> Historial Excel
           </a>
         </div>
       </div>
