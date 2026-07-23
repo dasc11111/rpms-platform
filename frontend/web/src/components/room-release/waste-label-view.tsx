@@ -35,6 +35,7 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
   const [tab, setTab] = useState<TabKey>("rotulo");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,6 +88,94 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
     load();
   }
 
+  async function handleDownloadPdf() {
+    if (!data?.row) return;
+    setGeneratingPdf(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      const row = data.row;
+      // Formato A6 (105 x 148 mm), segun lo requerido para la plantilla de impresion.
+      const doc = new jsPDF({ unit: "mm", format: [105, 148] });
+      const marginX = 6;
+      let y = 10;
+
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      doc.text("RPMS · Medicina Nuclear", marginX, y);
+      y += 5;
+      doc.setFontSize(12);
+      doc.setTextColor(20);
+      doc.text("Rótulo de Residuo Radiactivo", marginX, y);
+      y += 7;
+
+      doc.setFontSize(9);
+      doc.setTextColor(90);
+      doc.text("N° de rótulo", marginX, y);
+      y += 5;
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(row.label_number, marginX, y);
+      y += 7;
+
+      if (qrDataUrl) {
+        try {
+          doc.addImage(qrDataUrl, "PNG", 105 - 6 - 28, 10, 28, 28);
+        } catch {
+          // Si falla la insercion del QR, el PDF igual se genera sin el.
+        }
+      }
+
+      const fields: [string, string][] = [
+        ["Fecha de generación", row.generation_date],
+        ["Radionúclido", row.radionuclide_code],
+        ["Servicio", row.service],
+        ["Sala", row.sala],
+        ["N° de habitación", row.room_number ?? "—"],
+        ["Paciente", row.paciente_nombre ?? "—"],
+        ["Actividad estimada residual", formatActividad(row.actividad_estimada_residual, row.unidad_actividad)],
+        ["Tipo de residuo", row.waste_type ?? "—"],
+        ["Clasificación", row.waste_classification ?? "—"],
+        ["Contenedor", row.container ?? "—"],
+        ["Ubicación de almacenamiento", row.storage_location ?? "—"],
+        ["Fecha de ingreso", row.entry_date],
+        ["Responsable", row.responsible],
+        ["Estado", WASTE_LABEL_STATUS_LABELS[row.status]],
+      ];
+
+      doc.setFontSize(8.5);
+      for (const [label, value] of fields) {
+        doc.setTextColor(120);
+        doc.text(label, marginX, y);
+        y += 4;
+        doc.setTextColor(10);
+        doc.text(String(value), marginX, y);
+        y += 5.5;
+      }
+
+      if (row.observations) {
+        doc.setTextColor(120);
+        doc.text("Observaciones", marginX, y);
+        y += 4;
+        doc.setTextColor(10);
+        const lines = doc.splitTextToSize(row.observations, 105 - marginX * 2);
+        doc.text(lines, marginX, y);
+        y += lines.length * 4.5;
+      }
+
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.text(
+        `Impresiones: ${row.print_count} · Escanee el QR para ver el registro completo`,
+        marginX,
+        142
+      );
+
+      doc.save(`${row.label_number}.pdf`);
+    } finally {
+      setGeneratingPdf(false);
+    }
+  }
+
   async function handleStatusChange(newStatus: WasteLabelStatus) {
     setSavingStatus(true);
     try {
@@ -132,6 +221,13 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
           <p className="text-sm text-gray-500">Gestión de Residuos Radiactivos</p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={generatingPdf}
+            className="rounded-md border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+          >
+            {generatingPdf ? "Generando PDF…" : "Descargar PDF"}
+          </button>
           <button
             onClick={handlePrint}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
