@@ -64,6 +64,14 @@ const CLASIFICACION_COLORS: Record<string, string> = {
   sobre_limite: "#dc2626",
 };
 
+// Conversion de la actividad superficial almacenada (Bq/m2, base fisica de la
+// clasificacion contra el limite configurable) a la unidad en la que se mide
+// e informa al usuario: Bq/cm2 (magnitud leida directamente por el detector
+// sobre el area monitoreada). 1 Bq/cm2 = 10000 Bq/m2.
+function bqM2ToBqCm2(bqM2: number): number {
+  return bqM2 / 10000;
+}
+
 function StatCard({
   label,
   value,
@@ -115,7 +123,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
   useEffect(() => {
     let active = true;
     const qs = filtersToQuery(filters);
-    fetch(`/api/contamination/stats?${qs}`)
+    fetch(\`/api/contamination/stats?\${qs}\`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (active && data) setStats(data);
@@ -132,14 +140,14 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
 
   const t = stats.totals;
   const tendencia = stats.tendenciaMensual.map((r) => ({
-    label: `${mesNombre(r.month).slice(0, 3)} ${String(r.year).slice(2)}`,
+    label: \`\${mesNombre(r.month).slice(0, 3)} \${String(r.year).slice(2)}\`,
     count: r.count,
-    avgActividad: Number(r.avg_actividad),
+    avgActividad: bqM2ToBqCm2(Number(r.avg_actividad)),
   }));
   const evolucion = stats.evolucionAnual.map((r) => ({
     year: String(r.year),
     count: r.count,
-    avgActividad: Number(r.avg_actividad),
+    avgActividad: bqM2ToBqCm2(Number(r.avg_actividad)),
   }));
   const porClasificacionData = stats.porClasificacion.map((r) => ({
     name: CLASIFICACION_LABELS[r.clasificacion as keyof typeof CLASIFICACION_LABELS] ?? r.clasificacion,
@@ -162,8 +170,8 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
         <StatCard label="Conformes" value={t.conformes} icon={CheckCircle2} />
         <StatCard label="Cercanos al límite" value={t.cercanos} icon={AlertTriangle} />
         <StatCard label="Sobre el límite" value={t.sobreLimite} icon={AlertTriangle} />
-        <StatCard label="Actividad máxima" value={`${t.maxActividad.toFixed(0)} Bq/m²`} icon={Zap} />
-        <StatCard label="Actividad promedio" value={`${t.avgActividad.toFixed(1)} Bq/m²`} icon={Gauge} />
+        <StatCard label="Actividad máxima" value={\`\${bqM2ToBqCm2(t.maxActividad).toFixed(3)} Bq/cm²\`} icon={Zap} />
+        <StatCard label="Actividad promedio" value={\`\${bqM2ToBqCm2(t.avgActividad).toFixed(3)} Bq/cm²\`} icon={Gauge} />
         <StatCard label="Promedio diario" value={t.promedioDiario} icon={TrendingUp} />
         <StatCard label="Promedio mensual" value={t.promedioMensual} icon={TrendingUp} />
       </div>
@@ -268,7 +276,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
         <ChartCard title="Ranking Top 10 — áreas con mayor número de eventos">
           <ol className="space-y-1.5 text-sm">
             {stats.areasTop.map((r, i) => (
-              <li key={`${r.punto_medicion}-${i}`} className="flex items-center gap-2">
+              <li key={\`\${r.punto_medicion}-\${i}\`} className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
                   {i + 1}
                 </span>
@@ -276,7 +284,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
                 <span className="w-24 shrink-0">
                   <span
                     className="block h-2 rounded bg-accent"
-                    style={{ width: `${Math.max(6, (r.count / maxAreaCount) * 100)}%` }}
+                    style={{ width: \`\${Math.max(6, (r.count / maxAreaCount) * 100)}%\` }}
                   />
                 </span>
                 <span className="font-medium tabular-nums">{r.count}</span>
@@ -311,8 +319,8 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
                         <td key={i} className="px-1 py-1">
                           <div
                             className="mx-auto flex h-6 w-6 items-center justify-center rounded"
-                            style={{ backgroundColor: `rgba(37, 99, 235, ${intensity})` }}
-                            title={`${count} monitoreos`}
+                            style={{ backgroundColor: \`rgba(37, 99, 235, \${intensity})\` }}
+                            title={\`\${count} monitoreos\`}
                           >
                             {count > 0 ? count : ""}
                           </div>
@@ -326,14 +334,14 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
           </div>
         </ChartCard>
 
-        <ChartCard title="Actividad superficial promedio (Bq/m²) por mes">
+        <ChartCard title="Actividad superficial promedio (Bq/cm²) por mes">
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={tendencia}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
               <XAxis dataKey="label" fontSize={10} />
               <YAxis fontSize={10} />
               <Tooltip />
-              <Line type="monotone" dataKey="avgActividad" stroke="#dc2626" strokeWidth={2} dot={false} name="Actividad promedio (Bq/m²)" />
+              <Line type="monotone" dataKey="avgActividad" stroke="#dc2626" strokeWidth={2} dot={false} name="Actividad promedio (Bq/cm²)" />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
