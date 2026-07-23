@@ -866,5 +866,54 @@ ON CONFLICT (radionuclido) DO NOTHING;
     }
   }
   
-  return NextResponse.json({ ok: true });
+  // --- Modulo: Inventario de Residuos y Almacenamiento Temporal --------------
+// Extiende Gestion de Residuos Radiactivos con control fisico del inventario:
+// ubicaciones de almacenamiento temporal, movimientos (ingreso, traslado,
+// liberacion) y trazabilidad completa. Reutiliza el rotulo ya generado como
+// unica fuente de datos, sin solicitar informacion nueva al usuario.
+await sql`
+  CREATE TABLE IF NOT EXISTS waste_storage_locations (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    capacity INTEGER,
+    active BOOLEAN NOT NULL DEFAULT true,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+`;
+
+const { rows: locCount } = await sql`SELECT COUNT(*)::int AS count FROM waste_storage_locations`;
+if ((locCount[0]?.count ?? 0) === 0) {
+  await sql`
+    INSERT INTO waste_storage_locations (name, description, capacity, sort_order) VALUES
+    ('Sala de Decaimiento - Estante A', 'Estante A dentro de la sala de decaimiento de Medicina Nuclear', 20, 1),
+    ('Sala de Decaimiento - Estante B', 'Estante B dentro de la sala de decaimiento de Medicina Nuclear', 20, 2),
+    ('Bodega de Residuos - Contenedor 1', 'Contenedor blindado 1 en bodega de residuos radiactivos', 10, 3),
+    ('Bodega de Residuos - Contenedor 2', 'Contenedor blindado 2 en bodega de residuos radiactivos', 10, 4)
+    ON CONFLICT (name) DO NOTHING;
+  `;
+}
+
+await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS storage_location_id INTEGER REFERENCES waste_storage_locations(id)`;
+
+await sql`
+  CREATE TABLE IF NOT EXISTS waste_inventory_movements (
+    id SERIAL PRIMARY KEY,
+    waste_label_id INTEGER NOT NULL REFERENCES radioactive_waste_labels(id) ON DELETE RESTRICT,
+    label_number TEXT,
+    movement_type TEXT NOT NULL,
+    from_location TEXT,
+    to_location TEXT,
+    moved_by TEXT,
+    observaciones TEXT,
+    moved_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_label ON waste_inventory_movements(waste_label_id)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_type ON waste_inventory_movements(movement_type)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_date ON waste_inventory_movements(moved_at)`;
+
+return NextResponse.json({ ok: true });
 }
