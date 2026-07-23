@@ -114,7 +114,7 @@ export function ContaminationRecordsTable({
       page: String(page),
       pageSize: String(pageSize),
     });
-    fetch(\`/api/contamination?\${qs}\`)
+    fetch(`/api/contamination?${qs}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!active || !data) return;
@@ -144,39 +144,39 @@ export function ContaminationRecordsTable({
   async function handleDelete(id: number) {
     if (!confirm("¿Eliminar este registro de monitoreo de contaminación? Esta acción no se puede deshacer."))
       return;
-    const res = await fetch(\`/api/contamination/\${id}\`, { method: "DELETE" });
+    const res = await fetch(`/api/contamination/${id}`, { method: "DELETE" });
     if (res.ok) onChanged();
   }
 
   function exportUrl(format: string) {
     const qs = filtersToQuery(filters, { format });
-    return \`/api/contamination/export?\${qs}\`;
+    return `/api/contamination/export?${qs}`;
   }
 
   function fmtCell(row: ContaminationRecord, key: ColumnKey): React.ReactNode {
     if (key === "monitor_date") {
-      return \`\${pad2(row.monitor_day)}-\${pad2(row.monitor_month)}-\${row.monitor_year}\`;
+      return `${pad2(row.monitor_day)}-${pad2(row.monitor_month)}-${row.monitor_year}`;
     }
     if (key === "clasificacion") {
       return (
         <span className="flex items-center gap-1.5">
-          <span className={\`h-2 w-2 rounded-full \${SEMAFORO_DOT[row.semaforo] ?? "bg-muted"}\`} />
+          <span className={`h-2 w-2 rounded-full ${SEMAFORO_DOT[row.semaforo] ?? "bg-muted"}`} />
           {CLASIFICACION_LABELS[row.clasificacion] ?? row.clasificacion}
         </span>
       );
     }
     if (key === "actividad_bq_cm2") {
       return row.actividad_bq_cm2 !== null && row.actividad_bq_cm2 !== undefined
-        ? \`\${Number(row.actividad_bq_cm2).toFixed(3)}\`
+        ? `${Number(row.actividad_bq_cm2).toFixed(3)}`
         : "—";
     }
     if (key === "tasa_dosis_usv_h") {
       return row.tasa_dosis_usv_h !== null && row.tasa_dosis_usv_h !== undefined
-        ? \`\${Number(row.tasa_dosis_usv_h).toFixed(2)} µSv/h\`
+        ? `${Number(row.tasa_dosis_usv_h).toFixed(2)} µSv/h`
         : "—";
     }
     if (key === "pct_limite") {
-      return row.pct_limite !== null && row.pct_limite !== undefined ? \`\${Number(row.pct_limite).toFixed(1)}%\` : "—";
+      return row.pct_limite !== null && row.pct_limite !== undefined ? `${Number(row.pct_limite).toFixed(1)}%` : "—";
     }
     if (key === "requiere_limpieza") {
       return row.requiere_limpieza ? "Sí" : "No";
@@ -190,7 +190,7 @@ export function ContaminationRecordsTable({
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs text-muted-foreground">
-          {loading ? "Cargando..." : \`\${total} registro\${total === 1 ? "" : "s"}\`}
+          {loading ? "Cargando..." : `${total} registro${total === 1 ? "" : "s"}`}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
