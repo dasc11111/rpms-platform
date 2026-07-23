@@ -123,7 +123,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
   useEffect(() => {
     let active = true;
     const qs = filtersToQuery(filters);
-    fetch(\`/api/contamination/stats?\${qs}\`)
+    fetch(`/api/contamination/stats?${qs}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (active && data) setStats(data);
@@ -140,7 +140,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
 
   const t = stats.totals;
   const tendencia = stats.tendenciaMensual.map((r) => ({
-    label: \`\${mesNombre(r.month).slice(0, 3)} \${String(r.year).slice(2)}\`,
+    label: `${mesNombre(r.month).slice(0, 3)} ${String(r.year).slice(2)}`,
     count: r.count,
     avgActividad: bqM2ToBqCm2(Number(r.avg_actividad)),
   }));
@@ -170,8 +170,8 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
         <StatCard label="Conformes" value={t.conformes} icon={CheckCircle2} />
         <StatCard label="Cercanos al límite" value={t.cercanos} icon={AlertTriangle} />
         <StatCard label="Sobre el límite" value={t.sobreLimite} icon={AlertTriangle} />
-        <StatCard label="Actividad máxima" value={\`\${bqM2ToBqCm2(t.maxActividad).toFixed(3)} Bq/cm²\`} icon={Zap} />
-        <StatCard label="Actividad promedio" value={\`\${bqM2ToBqCm2(t.avgActividad).toFixed(3)} Bq/cm²\`} icon={Gauge} />
+        <StatCard label="Actividad máxima" value={`${bqM2ToBqCm2(t.maxActividad).toFixed(3)} Bq/cm²`} icon={Zap} />
+        <StatCard label="Actividad promedio" value={`${bqM2ToBqCm2(t.avgActividad).toFixed(3)} Bq/cm²`} icon={Gauge} />
         <StatCard label="Promedio diario" value={t.promedioDiario} icon={TrendingUp} />
         <StatCard label="Promedio mensual" value={t.promedioMensual} icon={TrendingUp} />
       </div>
@@ -276,7 +276,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
         <ChartCard title="Ranking Top 10 — áreas con mayor número de eventos">
           <ol className="space-y-1.5 text-sm">
             {stats.areasTop.map((r, i) => (
-              <li key={\`\${r.punto_medicion}-\${i}\`} className="flex items-center gap-2">
+              <li key={`${r.punto_medicion}-${i}`} className="flex items-center gap-2">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-semibold">
                   {i + 1}
                 </span>
@@ -284,7 +284,7 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
                 <span className="w-24 shrink-0">
                   <span
                     className="block h-2 rounded bg-accent"
-                    style={{ width: \`\${Math.max(6, (r.count / maxAreaCount) * 100)}%\` }}
+                    style={{ width: `${Math.max(6, (r.count / maxAreaCount) * 100)}%` }}
                   />
                 </span>
                 <span className="font-medium tabular-nums">{r.count}</span>
@@ -319,8 +319,8 @@ export function ContaminationDashboard({ filters, version }: { filters: Contamin
                         <td key={i} className="px-1 py-1">
                           <div
                             className="mx-auto flex h-6 w-6 items-center justify-center rounded"
-                            style={{ backgroundColor: \`rgba(37, 99, 235, \${intensity})\` }}
-                            title={\`\${count} monitoreos\`}
+                            style={{ backgroundColor: `rgba(37, 99, 235, ${intensity})` }}
+                            title={`${count} monitoreos`}
                           >
                             {count > 0 ? count : ""}
                           </div>
