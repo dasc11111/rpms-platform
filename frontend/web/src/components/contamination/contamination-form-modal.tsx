@@ -146,7 +146,6 @@ export function ContaminationFormModal({
   const area = Number(form.area_monitoreada_cm2) || 0;
   const neto = Math.max(0, bruto - fondo);
   const actividadCm2 = eficiencia && area ? neto / (eficiencia * area) : 0;
-  const actividadM2 = actividadCm2 * 10000;
 
   async function submit(force = false) {
     setError(null);
@@ -472,7 +471,7 @@ export function ContaminationFormModal({
                 <div>
                   <p>
                     Conteo neto: <span className="font-medium">{neto.toFixed(2)} cps</span> · Actividad superficial:{" "}
-                    <span className="font-medium">{actividadCm2.toFixed(3)} Bq/cm²</span> ({actividadM2.toFixed(0)} Bq/m²)
+                    <span className="font-medium">{actividadCm2.toFixed(3)} Bq/cm²</span>
                   </p>
                   <p className="text-muted-foreground">
                     Clasificación y semáforo se calculan automáticamente al guardar, comparando contra el límite
