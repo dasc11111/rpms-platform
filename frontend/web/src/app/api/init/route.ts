@@ -656,5 +656,42 @@ ON CONFLICT (radionuclido) DO NOTHING;
 `;
 }
 
-return NextResponse.json({ ok: true });
+// Semilla de areas y puntos de medicion segun el documento origen (planilla
+  // "REGISTRO DE CONTAMINACION", hojas FORMULARIO/PLANILLA): alimenta el
+  // autocompletado de "area" y "punto de medicion" para que esten disponibles
+  // desde el primer uso, sin depender de que el usuario los escriba a mano.
+  const contaminationAreaSeed: string[] = ["LABORATORIO", "SALA DE PACIENTES"];
+  for (const value of contaminationAreaSeed) {
+    await sql`
+    INSERT INTO contamination_field_suggestions (field_name, value, usage_count, last_used_at)
+    VALUES ('area', ${value}, 1, now())
+    ON CONFLICT (field_name, value) DO NOTHING
+    `;
+  }
+  
+  const contaminationPuntoSeed: string[] = [
+    "Mesón de laboratorio",
+    "Bandejas",
+    "Capacho plomado",
+    "Mesa de punción",
+    "Portajeringas",
+    "Camilla laboratorio",
+    "Piso gammacámara",
+    "Sala de pacientes",
+    "Piso baño de pacientes",
+    "WC de pacientes",
+    "Lavamanos pacientes",
+    "Piso baño personal",
+    "Lavamanos baño personal",
+    "Basurero cortopunzante",
+    ];
+  for (const value of contaminationPuntoSeed) {
+    await sql`
+    INSERT INTO contamination_field_suggestions (field_name, value, usage_count, last_used_at)
+    VALUES ('punto_medicion', ${value}, 1, now())
+    ON CONFLICT (field_name, value) DO NOTHING
+    `;
+  }
+  
+  return NextResponse.json({ ok: true });
 }
