@@ -156,3 +156,79 @@ export function formatActividad(v: number | null | undefined, unidad = "mCi"): s
     if (v === null || v === undefined) return "—";
     return `${Number(v).toFixed(2)} ${unidad}`;
 }
+
+// --- Modulo: Inventario de Residuos y Almacenamiento Temporal ---------------
+//
+// Extiende la Gestion de Residuos Radiactivos con el control fisico del
+// inventario: donde esta almacenado cada rotulo, sus movimientos (ingreso,
+// traslado, liberacion) y el calculo automatico de cuando un residuo cumple
+// el criterio de liberacion por decaimiento (por defecto 10 periodos de
+// semidesintegracion, ajustable segun el criterio configurado por
+// radionuclido). No se solicita informacion ya ingresada: reutiliza el
+// rotulo generado en Gestion de Residuos Radiactivos como unica fuente de datos.
+
+export const STORAGE_MOVEMENT_TYPES = ["ingreso", "traslado", "liberacion", "ajuste"] as const;
+export type StorageMovementType = (typeof STORAGE_MOVEMENT_TYPES)[number];
+
+export const STORAGE_MOVEMENT_LABELS: Record<StorageMovementType, string> = {
+  ingreso: "Ingreso a almacenamiento",
+  traslado: "Traslado de ubicación",
+  liberacion: "Liberación del residuo",
+  ajuste: "Ajuste / corrección",
+};
+
+export const DEFAULT_REQUIRED_HALF_LIVES = 10;
+
+export type WasteStorageLocation = {
+  id: number;
+  name: string;
+  description: string | null;
+  capacity: number | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  current_count?: number;
+};
+
+export type WasteInventoryMovement = {
+  id: number;
+  waste_label_id: number;
+  label_number: string | null;
+  movement_type: StorageMovementType;
+  from_location: string | null;
+  to_location: string | null;
+  moved_by: string | null;
+  observaciones: string | null;
+  moved_at: string;
+};
+
+export type WasteInventoryItem = WasteLabel & {
+  half_life_days: number | null;
+  elapsed_days: number;
+  half_lives_elapsed: number;
+  actividad_actual: number | null;
+  release_eligible: boolean;
+  days_until_release_eligible: number;
+  location_name: string | null;
+};
+
+// Dias que faltan para cumplir el criterio de liberacion por decaimiento
+// (por defecto 10 periodos de semidesintegracion). Retorna 0 si ya se cumplio.
+export function daysUntilReleaseEligible(
+  halfLifeDays: number,
+  elapsedDays: number,
+  requiredHalfLives: number = DEFAULT_REQUIRED_HALF_LIVES
+): number {
+  if (!halfLifeDays || halfLifeDays <= 0) return 0;
+  const requiredDays = halfLifeDays * requiredHalfLives;
+  return Math.max(0, requiredDays - elapsedDays);
+}
+
+export function isReleaseEligible(
+  halfLifeDays: number,
+  elapsedDays: number,
+  requiredHalfLives: number = DEFAULT_REQUIRED_HALF_LIVES
+): boolean {
+  return daysUntilReleaseEligible(halfLifeDays, elapsedDays, requiredHalfLives) <= 0;
+}
