@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Tag, RefreshCw } from "lucide-react";
+import { Download, Plus, Tag, RefreshCw } from "lucide-react";
 import type { RoomReleaseRecord } from "@/lib/waste";
 
 export function RoomReleaseRecordsTable({
@@ -39,12 +39,26 @@ export function RoomReleaseRecordsTable({
         <div className="text-sm font-medium">
           Actas de Liberación de Sala <span className="text-muted-foreground">({total})</span>
         </div>
-        <button
-          onClick={onNew}
-          className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Nueva Acta
-        </button>
+        <div className="flex gap-2">
+          <a
+            href="/api/waste-labels/export?dataset=room-release&format=csv"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            <Download className="h-3.5 w-3.5" /> CSV
+          </a>
+          <a
+            href="/api/waste-labels/export?dataset=room-release&format=xlsx"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            <Download className="h-3.5 w-3.5" /> Excel
+          </a>
+          <button
+            onClick={onNew}
+            className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Nueva Acta
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
