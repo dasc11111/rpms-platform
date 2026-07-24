@@ -770,6 +770,8 @@ ON CONFLICT (radionuclido) DO NOTHING;
   await sql`CREATE INDEX IF NOT EXISTS idx_room_release_status ON room_release_records(status)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_room_release_service ON room_release_records(service)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_room_release_sala ON room_release_records(sala)`;
+  await sql`ALTER TABLE room_release_records ADD COLUMN IF NOT EXISTS ubicacion TEXT`;
+  await sql`ALTER TABLE room_release_records ADD COLUMN IF NOT EXISTS puntos_medicion JSONB`;
   
   // Secuencia de numeracion correlativa de rotulos, por anio. Se reserva un
   // numero para cada rotulo generado y nunca se reutiliza, incluso si el
