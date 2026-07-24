@@ -75,6 +75,7 @@ export type WasteLabel = {
     waste_classification: string | null;
     container: string | null;
     storage_location: string | null;
+    storage_location_id: number | null;
     entry_date: string;
     responsible: string;
     observations: string | null;
