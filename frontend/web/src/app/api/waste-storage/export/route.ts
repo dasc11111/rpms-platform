@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 function toCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
-  const headers = Object.keys(rows[0]);
+  const headers = Object.keys(rows[0] ?? {});
   const escape = (v: unknown) => {
     const s = v === null || v === undefined ? "" : String(v);
     if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
