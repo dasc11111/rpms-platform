@@ -99,7 +99,12 @@ export function RoomReleaseFormModal({
   }
 
   function setPunto(key: string, field: keyof PuntoInput, value: string) {
-    setPuntos((p) => ({ ...p, [key]: { ...p[key], [field]: value } }));
+    setPuntos((p) => {
+      const current = p[key] ?? { cps: "", tasa_dosis_usv_h: "" };
+      const updated: PuntoInput =
+        field === "cps" ? { ...current, cps: value } : { ...current, tasa_dosis_usv_h: value };
+      return { ...p, [key]: updated };
+    });
   }
 
   async function submit() {
