@@ -6,16 +6,17 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { rows } = await sql`SELECT * FROM radioactive_waste_labels WHERE id = ${Number(id)}`;
-  if (!rows[0]) {
+  const label = rows[0];
+  if (!label) {
     return NextResponse.json({ error: "Rótulo no encontrado" }, { status: 404 });
   }
   const { rows: history } = await sql`
     SELECT * FROM waste_label_history WHERE label_id = ${Number(id)} ORDER BY changed_at DESC
   `;
   const { rows: releaseRows } = await sql`
-    SELECT * FROM room_release_records WHERE id = ${rows[0].room_release_id}
+    SELECT * FROM room_release_records WHERE id = ${label.room_release_id}
   `;
-  return NextResponse.json({ row: rows[0], history, roomRelease: releaseRows[0] ?? null });
+  return NextResponse.json({ row: label, history, roomRelease: releaseRows[0] ?? null });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -23,18 +24,19 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const body = await req.json();
 
   const { rows: existingRows } = await sql`SELECT * FROM radioactive_waste_labels WHERE id = ${Number(id)}`;
-  if (!existingRows[0]) {
+  const existing = existingRows[0];
+  if (!existing) {
     return NextResponse.json({ error: "Rótulo no encontrado" }, { status: 404 });
   }
 
   const { rows } = await sql`
     UPDATE radioactive_waste_labels SET
-      waste_type = ${body.waste_type ?? existingRows[0].waste_type},
-      waste_classification = ${body.waste_classification ?? existingRows[0].waste_classification},
-      container = ${body.container ?? existingRows[0].container},
-      storage_location = ${body.storage_location ?? existingRows[0].storage_location},
-      observations = ${body.observations ?? existingRows[0].observations},
-      status = ${body.status ?? existingRows[0].status},
+      waste_type = ${body.waste_type ?? existing.waste_type},
+      waste_classification = ${body.waste_classification ?? existing.waste_classification},
+      container = ${body.container ?? existing.container},
+      storage_location = ${body.storage_location ?? existing.storage_location},
+      observations = ${body.observations ?? existing.observations},
+      status = ${body.status ?? existing.status},
       updated_at = now()
     WHERE id = ${Number(id)}
     RETURNING *
