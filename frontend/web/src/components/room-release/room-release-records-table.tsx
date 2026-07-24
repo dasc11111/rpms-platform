@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Plus, Tag, RefreshCw } from "lucide-react";
+import { Download, Plus, Tag, RefreshCw, FileText } from "lucide-react";
 import type { RoomReleaseRecord } from "@/lib/waste";
 
 export function RoomReleaseRecordsTable({
@@ -91,14 +91,23 @@ export function RoomReleaseRecordsTable({
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  {!r.waste_label_generated && (
-                    <button
-                      onClick={() => onGenerateLabel(r)}
+                  <div className="flex flex-wrap gap-1.5">
+                    <a
+                      href={`/api/room-release/${r.id}/acta`}
                       className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                      title="Generar Acta Entrega de Sala (I-131) en PDF"
                     >
-                      <Tag className="h-3.5 w-3.5" /> Generar rótulo
-                    </button>
-                  )}
+                      <FileText className="h-3.5 w-3.5" /> Generar Acta
+                    </a>
+                    {!r.waste_label_generated && (
+                      <button
+                        onClick={() => onGenerateLabel(r)}
+                        className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+                      >
+                        <Tag className="h-3.5 w-3.5" /> Generar rótulo
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
