@@ -14,17 +14,21 @@ export async function GET(req: NextRequest) {
   const pageSize = Math.min(500, Math.max(1, Number(searchParams.get("pageSize") ?? "100")));
   const offset = (page - 1) * pageSize;
 
-  const where = wasteLabelId ? sql`WHERE m.waste_label_id = ${Number(wasteLabelId)}` : sql``;
+  const whereClause = wasteLabelId ? "WHERE m.waste_label_id = $1" : "";
+  const baseParams: unknown[] = wasteLabelId ? [Number(wasteLabelId)] : [];
 
-  const { rows } = await sql`
+  const dataQuery = `
     SELECT m.*, l.service, l.sala, l.radionuclide_code, l.status AS label_status
     FROM waste_inventory_movements m
     LEFT JOIN radioactive_waste_labels l ON l.id = m.waste_label_id
-    ${where}
+    ${whereClause}
     ORDER BY m.moved_at DESC, m.id DESC
-    LIMIT ${pageSize} OFFSET ${offset}
+    LIMIT $${baseParams.length + 1} OFFSET $${baseParams.length + 2}
   `;
-  const { rows: countRows } = await sql`SELECT COUNT(*)::int AS count FROM waste_inventory_movements m ${where}`;
+  const { rows } = await sql.query(dataQuery, [...baseParams, pageSize, offset]);
+
+  const countQuery = `SELECT COUNT(*)::int AS count FROM waste_inventory_movements m ${whereClause}`;
+  const { rows: countRows } = await sql.query(countQuery, baseParams);
 
   return NextResponse.json({ rows, total: countRows[0]?.count ?? 0, page, pageSize });
 }
