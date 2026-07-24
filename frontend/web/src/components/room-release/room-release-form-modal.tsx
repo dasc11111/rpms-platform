@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
-import { RESPONSABLE_OPR_FIJO, type RoomReleaseRecord } from "@/lib/waste";
+import {
+  RESPONSABLE_OPR_FIJO,
+  type RoomReleaseRecord,
+  ACTA_PUNTOS_INTERES,
+  calcActaActividadBqCm2,
+  clasificarActaPunto,
+  buildActaPuntosMedicion,
+} from "@/lib/waste";
 
 type Radionuclide = { code: string; name: string; active: boolean };
 
@@ -12,6 +19,7 @@ type FormState = {
   service: string;
   sala: string;
   room_number: string;
+  ubicacion: string;
   paciente_nombre: string;
   paciente_run: string;
   ficha_clinica: string;
@@ -24,12 +32,15 @@ type FormState = {
   observaciones: string;
 };
 
+type PuntoInput = { cps: string; tasa_dosis_usv_h: string };
+
 const EMPTY: FormState = {
   release_date: new Date().toISOString().slice(0, 10),
   admission_date: "",
   service: "",
   sala: "",
   room_number: "",
+  ubicacion: "",
   paciente_nombre: "",
   paciente_run: "",
   ficha_clinica: "",
@@ -41,6 +52,14 @@ const EMPTY: FormState = {
   criterio_liberacion: "",
   observaciones: "",
 };
+
+function emptyPuntos(): Record<string, PuntoInput> {
+  const out: Record<string, PuntoInput> = {};
+  for (const p of ACTA_PUNTOS_INTERES) {
+    out[p.key] = { cps: "", tasa_dosis_usv_h: "" };
+  }
+  return out;
+}
 
 const FIELD_LABEL = "mb-1 block text-[11px] font-medium uppercase text-muted-foreground";
 const INPUT_CLASS =
@@ -56,6 +75,7 @@ export function RoomReleaseFormModal({
   onSaved: (record: RoomReleaseRecord) => void;
 }) {
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [puntos, setPuntos] = useState<Record<string, PuntoInput>>(emptyPuntos());
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [radionuclides, setRadionuclides] = useState<Radionuclide[]>([]);
@@ -63,6 +83,7 @@ export function RoomReleaseFormModal({
   useEffect(() => {
     if (open) {
       setForm(EMPTY);
+      setPuntos(emptyPuntos());
       setError(null);
       fetch("/api/radionuclides?active=true")
         .then((res) => (res.ok ? res.json() : { rows: [] }))
@@ -77,6 +98,10 @@ export function RoomReleaseFormModal({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function setPunto(key: string, field: keyof PuntoInput, value: string) {
+    setPuntos((p) => ({ ...p, [key]: { ...p[key], [field]: value } }));
+  }
+
   async function submit() {
     setError(null);
     if (!form.release_date || !form.service.trim() || !form.sala.trim() || !form.paciente_nombre.trim()) {
@@ -84,12 +109,24 @@ export function RoomReleaseFormModal({
       return;
     }
     setSaving(true);
+
+    const puntosInputs: Record<string, { cps: number | null; tasa_dosis_usv_h: number | null }> = {};
+    for (const p of ACTA_PUNTOS_INTERES) {
+      const raw = puntos[p.key] ?? { cps: "", tasa_dosis_usv_h: "" };
+      puntosInputs[p.key] = {
+        cps: raw.cps !== "" ? Number(raw.cps) : null,
+        tasa_dosis_usv_h: raw.tasa_dosis_usv_h !== "" ? Number(raw.tasa_dosis_usv_h) : null,
+      };
+    }
+    const puntosMedicion = buildActaPuntosMedicion(puntosInputs);
+
     const payload = {
       release_date: form.release_date,
       admission_date: form.admission_date || null,
       service: form.service.trim(),
       sala: form.sala.trim(),
       room_number: form.room_number || null,
+      ubicacion: form.ubicacion || null,
       paciente_nombre: form.paciente_nombre.trim(),
       paciente_run: form.paciente_run || null,
       ficha_clinica: form.ficha_clinica || null,
@@ -102,6 +139,7 @@ export function RoomReleaseFormModal({
       responsable_opr: RESPONSABLE_OPR_FIJO,
       observaciones: form.observaciones || null,
       status: "liberado",
+      puntos_medicion: puntosMedicion,
     };
     try {
       const res = await fetch("/api/room-release", {
@@ -125,7 +163,7 @@ export function RoomReleaseFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg border border-border bg-surface p-5">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Nueva Acta de Liberación de Sala</h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-muted">
@@ -173,6 +211,15 @@ export function RoomReleaseFormModal({
               className={INPUT_CLASS}
               value={form.room_number}
               onChange={(e) => set("room_number", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className={FIELD_LABEL}>Ubicación</label>
+            <input
+              className={INPUT_CLASS}
+              value={form.ubicacion}
+              onChange={(e) => set("ubicacion", e.target.value)}
+              placeholder="ej. 5° piso del edificio principal"
             />
           </div>
           <div>
@@ -268,6 +315,73 @@ export function RoomReleaseFormModal({
           <div className="col-span-2 text-[11px] text-muted-foreground">
             Responsable: <span className="font-medium text-foreground">{RESPONSABLE_OPR_FIJO}</span> (fijo, no
             editable)
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-border pt-4">
+          <h3 className="mb-1 text-sm font-semibold">Puntos de medición — Acta Entrega de Sala (I-131)</h3>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            Ingrese solo las cuentas por segundo (cps) y la tasa de dosis medidas en cada punto. La actividad en
+            Bq/cm² y la observación (Contaminado / No Contaminado) se calculan automáticamente.
+          </p>
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-2 py-1.5 text-left font-medium">Punto</th>
+                  <th className="px-2 py-1.5 text-left font-medium">CPS</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Tasa de dosis (µSv/hr)</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Actividad (Bq/cm²)</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Observación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ACTA_PUNTOS_INTERES.map((p) => {
+                  const val = puntos[p.key] ?? { cps: "", tasa_dosis_usv_h: "" };
+                  const actividad = calcActaActividadBqCm2(val.cps !== "" ? Number(val.cps) : null);
+                  const observacion = clasificarActaPunto(p.categoria, actividad);
+                  return (
+                    <tr key={p.key} className="border-t border-border">
+                      <td className="px-2 py-1.5">{p.label}</td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          className={INPUT_CLASS}
+                          value={val.cps}
+                          onChange={(e) => setPunto(p.key, "cps", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          className={INPUT_CLASS}
+                          value={val.tasa_dosis_usv_h}
+                          onChange={(e) => setPunto(p.key, "tasa_dosis_usv_h", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 tabular-nums">{val.cps !== "" ? actividad.toFixed(1) : "—"}</td>
+                      <td className="px-2 py-1.5">
+                        {val.cps !== "" ? (
+                          <span
+                            className={
+                              observacion === "Contaminado"
+                                ? "font-medium text-danger"
+                                : "font-medium text-emerald-600"
+                            }
+                          >
+                            {observacion}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
