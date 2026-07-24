@@ -142,6 +142,9 @@ export async function POST(req: NextRequest) {
     RETURNING *
   `;
   const label = rows[0];
+  if (!label) {
+    return NextResponse.json({ error: "No se pudo generar el rótulo" }, { status: 500 });
+  }
 
   await sql`
     INSERT INTO waste_label_history (label_id, label_number, action, changed_by, snapshot)
