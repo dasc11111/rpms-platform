@@ -32,7 +32,7 @@ type FormState = {
   observaciones: string;
 };
 
-type PuntoInput = { cps: string; tasa_dosis_usv_h: string };
+type PuntoInput = { cps: string; cps_fondo: string; tasa_dosis_usv_h: string };
 
 const EMPTY: FormState = {
   release_date: new Date().toISOString().slice(0, 10),
@@ -56,7 +56,7 @@ const EMPTY: FormState = {
 function emptyPuntos(): Record<string, PuntoInput> {
   const out: Record<string, PuntoInput> = {};
   for (const p of ACTA_PUNTOS_INTERES) {
-    out[p.key] = { cps: "", tasa_dosis_usv_h: "" };
+    out[p.key] = { cps: "", cps_fondo: "", tasa_dosis_usv_h: "" };
   }
   return out;
 }
@@ -100,9 +100,13 @@ export function RoomReleaseFormModal({
 
   function setPunto(key: string, field: keyof PuntoInput, value: string) {
     setPuntos((p) => {
-      const current = p[key] ?? { cps: "", tasa_dosis_usv_h: "" };
+      const current = p[key] ?? { cps: "", cps_fondo: "", tasa_dosis_usv_h: "" };
       const updated: PuntoInput =
-        field === "cps" ? { ...current, cps: value } : { ...current, tasa_dosis_usv_h: value };
+        field === "cps"
+          ? { ...current, cps: value }
+          : field === "cps_fondo"
+            ? { ...current, cps_fondo: value }
+            : { ...current, tasa_dosis_usv_h: value };
       return { ...p, [key]: updated };
     });
   }
@@ -115,11 +119,15 @@ export function RoomReleaseFormModal({
     }
     setSaving(true);
 
-    const puntosInputs: Record<string, { cps: number | null; tasa_dosis_usv_h: number | null }> = {};
+    const puntosInputs: Record<
+      string,
+      { cps: number | null; cps_fondo: number | null; tasa_dosis_usv_h: number | null }
+    > = {};
     for (const p of ACTA_PUNTOS_INTERES) {
-      const raw = puntos[p.key] ?? { cps: "", tasa_dosis_usv_h: "" };
+      const raw = puntos[p.key] ?? { cps: "", cps_fondo: "", tasa_dosis_usv_h: "" };
       puntosInputs[p.key] = {
         cps: raw.cps !== "" ? Number(raw.cps) : null,
+        cps_fondo: raw.cps_fondo !== "" ? Number(raw.cps_fondo) : null,
         tasa_dosis_usv_h: raw.tasa_dosis_usv_h !== "" ? Number(raw.tasa_dosis_usv_h) : null,
       };
     }
@@ -137,7 +145,9 @@ export function RoomReleaseFormModal({
       ficha_clinica: form.ficha_clinica || null,
       radionuclide_code: form.radionuclide_code,
       actividad_administrada: form.actividad_administrada ? Number(form.actividad_administrada) : null,
-      actividad_medida_liberacion: form.actividad_medida_liberacion ? Number(form.actividad_medida_liberacion) : null,
+      actividad_medida_liberacion: form.actividad_medida_liberacion
+        ? Number(form.actividad_medida_liberacion)
+        : null,
       unidad_actividad: form.unidad_actividad || "mCi",
       tasa_dosis_medida: form.tasa_dosis_medida || null,
       criterio_liberacion: form.criterio_liberacion || null,
@@ -326,8 +336,9 @@ export function RoomReleaseFormModal({
         <div className="mt-5 border-t border-border pt-4">
           <h3 className="mb-1 text-sm font-semibold">Puntos de medición — Acta Entrega de Sala (I-131)</h3>
           <p className="mb-3 text-[11px] text-muted-foreground">
-            Ingrese solo las cuentas por segundo (cps) y la tasa de dosis medidas en cada punto. La actividad en
-            Bq/cm² y la observación (Contaminado / No Contaminado) se calculan automáticamente.
+            Ingrese las cuentas por segundo (cps), el fondo radiactivo (cps de fondo) y la tasa de dosis medidas en
+            cada punto. La actividad neta en Bq/cm² (cps neto = cps − fondo) y la observación (Contaminado / No
+            Contaminado) se calculan automáticamente.
           </p>
           <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full text-xs">
@@ -335,6 +346,7 @@ export function RoomReleaseFormModal({
                 <tr>
                   <th className="px-2 py-1.5 text-left font-medium">Punto</th>
                   <th className="px-2 py-1.5 text-left font-medium">CPS</th>
+                  <th className="px-2 py-1.5 text-left font-medium">CPS Fondo</th>
                   <th className="px-2 py-1.5 text-left font-medium">Tasa de dosis (µSv/hr)</th>
                   <th className="px-2 py-1.5 text-left font-medium">Actividad (Bq/cm²)</th>
                   <th className="px-2 py-1.5 text-left font-medium">Observación</th>
@@ -342,8 +354,11 @@ export function RoomReleaseFormModal({
               </thead>
               <tbody>
                 {ACTA_PUNTOS_INTERES.map((p) => {
-                  const val = puntos[p.key] ?? { cps: "", tasa_dosis_usv_h: "" };
-                  const actividad = calcActaActividadBqCm2(val.cps !== "" ? Number(val.cps) : null);
+                  const val = puntos[p.key] ?? { cps: "", cps_fondo: "", tasa_dosis_usv_h: "" };
+                  const actividad = calcActaActividadBqCm2(
+                    val.cps !== "" ? Number(val.cps) : null,
+                    val.cps_fondo !== "" ? Number(val.cps_fondo) : null
+                  );
                   const observacion = clasificarActaPunto(p.categoria, actividad);
                   return (
                     <tr key={p.key} className="border-t border-border">
@@ -355,6 +370,15 @@ export function RoomReleaseFormModal({
                           className={INPUT_CLASS}
                           value={val.cps}
                           onChange={(e) => setPunto(p.key, "cps", e.target.value)}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          className={INPUT_CLASS}
+                          value={val.cps_fondo}
+                          onChange={(e) => setPunto(p.key, "cps_fondo", e.target.value)}
                         />
                       </td>
                       <td className="px-2 py-1.5">
