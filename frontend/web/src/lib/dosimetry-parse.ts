@@ -35,6 +35,112 @@ export type ParsedDoseRow = {
   raw_block: string;
 };
 
+export type PdfToken = { x: number; str: string };
+export type PdfLine = { y: number; tokens: PdfToken[] };
+
+const HP_HEADER_RE = /^Hp\(/i;
+const RUN_TOKEN_RE = /^\d{1,2}\.?\d{3}\.?\d{3}-?[\dkK]$/;
+const DATE_TOKEN_RE = /^\d{2}\/\d{2}\/\d{4}$/;
+const VALUE_NUM_RE = /^-?\d+[.,]\d+$/;
+const VALUE_CODE_RE = /^(MNR|NU|NR)$/i;
+
+function extractColumnsFromLines(lines: PdfLine[]): number[] | null {
+  const hpX: number[] = [];
+  for (const line of lines) {
+    for (const t of line.tokens) {
+      if (HP_HEADER_RE.test(t.str)) hpX.push(t.x);
+    }
+  }
+  if (hpX.length < 3) return null;
+  hpX.sort((a, b) => a - b);
+  return hpX;
+}
+
+function nearestColumnIndex(x: number, columns: number[]): number {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < columns.length; i++) {
+    const d = Math.abs(x - columns[i]);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  return bestDist <= 18 ? best : -1;
+}
+
+function extractRowsFromPageLines(lines: PdfLine[], columns: number[]): (ParsedDoseRow & { hasPeriod: boolean })[] {
+  const rows: (ParsedDoseRow & { hasPeriod: boolean })[] = [];
+  for (const line of lines) {
+    const tokens = line.tokens;
+    const runIdx = tokens.findIndex((t) => RUN_TOKEN_RE.test(t.str));
+    if (runIdx < 0) continue;
+    const runToken = tokens[runIdx].str;
+
+    const dateIdxs: number[] = [];
+    for (let i = runIdx + 1; i < tokens.length; i++) {
+      if (DATE_TOKEN_RE.test(tokens[i].str)) dateIdxs.push(i);
+      if (dateIdxs.length >= 2) break;
+    }
+    if (dateIdxs.length === 0) continue;
+    const hastaIdx = dateIdxs.length >= 2 ? dateIdxs[1] : dateIdxs[0];
+    const nombreEnd = dateIdxs[0];
+    const nombre = tokens.slice(runIdx + 1, nombreEnd).map((t) => t.str).join(" ").trim();
+    const toe = runIdx > 0 ? tokens[0].str : "";
+    const tde = runIdx > 1 ? tokens[1].str : "";
+
+    let hp10: number | null = null;
+    let hp007: number | null = null;
+    let hp3: number | null = null;
+    let accum12: number | null = null;
+    let accum60: number | null = null;
+
+    for (let i = hastaIdx + 1; i < tokens.length; i++) {
+      const str = tokens[i].str;
+      let val: number | null = null;
+      if (VALUE_CODE_RE.test(str)) {
+        val = /^MNR$/i.test(str) ? 0 : null;
+      } else if (VALUE_NUM_RE.test(str)) {
+        const n = Number(str.replace(",", "."));
+        val = Number.isFinite(n) ? n : null;
+      } else {
+        continue;
+      }
+      if (val === null) continue;
+      const col = nearestColumnIndex(tokens[i].x, columns);
+      if (col < 0) continue;
+      if (col === 0) hp10 = val;
+      else if (col === 1) hp007 = val;
+      else if (col === 2) hp3 = val;
+      else if (col === 3) accum12 = val;
+      else if (col === 6) accum60 = val;
+    }
+
+    rows.push({
+      worker_run: runToken,
+      worker_name: nombre,
+      institucion: "",
+      departamento: "",
+      year: null,
+      quarter: null,
+      period_label: "",
+      dosimeter_number: tde,
+      dosimeter_type: toe,
+      radiation_type: "",
+      proceso: "",
+      hp10,
+      hp3,
+      hp007,
+      accum_year_body: null,
+      accum_12m_body: accum12,
+      accum_60m_body: accum60,
+      raw_block: tokens.map((t) => t.str).join(" ").slice(0, 800),
+      hasPeriod: false,
+    });
+  }
+  return rows;
+}
+
 export type ParseResult = {
   rows: ParsedDoseRow[];
   workersDetected: number;
@@ -186,7 +292,7 @@ function extractRowFromBlock(run: string, block: string): ParsedDoseRow & { hasP
   };
 }
 
-export function parseDosimetryReport(pagesTextInput: string[] | string): ParseResult {
+export function parseDosimetryReport(pagesTextInput: string[] | string, pagesLinesInput?: PdfLine[][]): ParseResult {
   const pagesText = Array.isArray(pagesTextInput) ? pagesTextInput : [pagesTextInput];
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -219,9 +325,27 @@ export function parseDosimetryReport(pagesTextInput: string[] | string): ParseRe
 
   const rawRows: (ParsedDoseRow & { hasPeriod: boolean })[] = [];
 
-  for (const pageText of pagesText) {
+let lastColumns: number[] | null = null;
+  for (let pageIdx = 0; pageIdx < pagesText.length; pageIdx++) {
+    const pageText = pagesText[pageIdx];
     const text = (pageText || "").replace(/\r/g, "");
     if (!text || text.trim().length < 10) continue;
+
+    const pageLines = pagesLinesInput && pagesLinesInput[pageIdx] ? pagesLinesInput[pageIdx] : null;
+    let coordRows: (ParsedDoseRow & { hasPeriod: boolean })[] = [];
+    if (pageLines && pageLines.length > 0) {
+      const cols = extractColumnsFromLines(pageLines);
+      if (cols) lastColumns = cols;
+      if (lastColumns) {
+        coordRows = extractRowsFromPageLines(pageLines, lastColumns);
+      }
+    }
+
+    if (coordRows.length > 0) {
+      rawRows.push(...coordRows);
+      continue;
+    }
+
     const segments = parsePageSegments(text);
     for (const seg of segments) {
       if (!seg.run) continue;
