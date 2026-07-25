@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardPlus, X, Loader2, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { ClipboardPlus, X, Loader2, Upload, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 
 type Worker = { rut: string; name: string; status?: string };
 
@@ -77,10 +77,36 @@ function findCol(headers: string[], keywords: string[]): number {
   return normed.findIndex((h) => keywords.every((k) => h.includes(k)));
 }
 
+type PdfRow = {
+  rowIndex: number;
+  worker_run: string;
+  worker_rut: string;
+  worker_name_report: string;
+  worker_name_system: string;
+  worker_matched: boolean;
+  institucion: string;
+  departamento: string;
+  year: number | null;
+  quarter: number | null;
+  period_label: string;
+  dosimeter_number: string;
+  dosimeter_type: string;
+  radiation_type: string;
+  proceso: string;
+  hp10: number | null;
+  hp3: number | null;
+  hp007: number | null;
+  accum_year_body: number | null;
+  accum_12m_body: number | null;
+  accum_60m_body: number | null;
+  conflict: boolean;
+  resolution: string;
+};
+
 export function DoseReportModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"manual" | "csv">("manual");
+  const [tab, setTab] = useState<"manual" | "csv" | "pdf">("manual");
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [form, setForm] = useState<FormState>(emptyManual);
   const [manualState, setManualState] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -89,6 +115,15 @@ export function DoseReportModal() {
   const [csvState, setCsvState] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [csvMsg, setCsvMsg] = useState("");
   const [fileName, setFileName] = useState("");
+
+  const [pdfState, setPdfState] = useState<"idle" | "reading" | "ocr" | "analyzing" | "preview" | "saving" | "ok" | "error">("idle");
+  const [pdfMsg, setPdfMsg] = useState("");
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<any>(null);
+  const [pdfRows, setPdfRows] = useState<PdfRow[]>([]);
+  const [pdfUsedOcr, setPdfUsedOcr] = useState(false);
+  const [pdfHash, setPdfHash] = useState("");
 
   useEffect(() => {
     if (open && workers.length === 0) {
@@ -103,6 +138,17 @@ export function DoseReportModal() {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function resetPdfTab() {
+    setPdfState("idle");
+    setPdfMsg("");
+    setPdfFileName("");
+    setPdfFile(null);
+    setPdfPreview(null);
+    setPdfRows([]);
+    setPdfUsedOcr(false);
+    setPdfHash("");
+  }
+
   function close() {
     setOpen(false);
     setForm(emptyManual);
@@ -111,13 +157,14 @@ export function DoseReportModal() {
     setCsvState("idle");
     setCsvMsg("");
     setFileName("");
+    resetPdfTab();
     setTab("manual");
   }
 
   async function submitManual() {
     if (!form.worker_rut || !form.year || !form.quarter) {
       setManualState("error");
-      setManualMsg("Selecciona trabajador, año y trimestre.");
+      setManualMsg("Selecciona trabajador, ano y trimestre.");
       return;
     }
     setManualState("loading");
@@ -211,7 +258,7 @@ export function DoseReportModal() {
       }
       setCsvState("ok");
       setCsvMsg(
-        "Archivo procesado: " + data.totalRows + " filas leídas · " + data.matchedGroups +
+        "Archivo procesado: " + data.totalRows + " filas leidas · " + data.matchedGroups +
           " registros de trabajadores actualizados · " + data.unmatched +
           " filas sin coincidencia (nombres no encontrados en el listado de trabajadores)."
       );
@@ -219,6 +266,115 @@ export function DoseReportModal() {
     } catch (err) {
       setCsvState("error");
       setCsvMsg("No se pudo leer o procesar el archivo CSV.");
+    }
+  }
+
+  function setRowResolution(idx: number, resolution: string) {
+    setPdfRows((rs) => rs.map((r) => (r.rowIndex === idx ? { ...r, resolution } : r)));
+  }
+
+  async function handlePdfFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setPdfFile(file);
+    setPdfFileName(file.name);
+    setPdfPreview(null);
+    setPdfRows([]);
+    setPdfState("reading");
+    setPdfMsg("Leyendo PDF...");
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
+      const fileHash = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      setPdfHash(fileHash);
+
+      const pdfjsLib: any = await import("pdfjs-dist");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((it: any) => it.str ?? "").join(" ") + "\n";
+      }
+
+      let usedOcr = false;
+      if (text.trim().length < 40 * pdf.numPages) {
+        setPdfState("ocr");
+        setPdfMsg("Texto no detectado: aplicando reconocimiento OCR (puede tardar unos segundos por pagina)...");
+        const Tesseract: any = await import("tesseract.js");
+        let ocrText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            const { data } = await Tesseract.recognize(canvas, "spa");
+            ocrText += (data?.text || "") + "\n";
+          }
+        }
+        text = ocrText;
+        usedOcr = true;
+      }
+      setPdfUsedOcr(usedOcr);
+
+      setPdfState("analyzing");
+      setPdfMsg("Analizando contenido del documento...");
+      const res = await fetch("/api/dosimetry/import-pdf/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileHash, rawText: text, usedOcr }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setPdfState("error");
+        setPdfMsg(data.error || "No se pudo analizar el documento.");
+        return;
+      }
+      setPdfPreview(data);
+      setPdfRows(data.rows || []);
+      setPdfState("preview");
+      setPdfMsg("");
+    } catch (err) {
+      setPdfState("error");
+      setPdfMsg("No se pudo leer o procesar el archivo PDF.");
+    }
+  }
+
+  async function confirmPdfImport() {
+    if (!pdfFile) return;
+    setPdfState("saving");
+    setPdfMsg("Guardando importacion...");
+    try {
+      const fd = new FormData();
+      fd.append("file", pdfFile);
+      fd.append("rows", JSON.stringify(pdfRows));
+      fd.append("usedOcr", String(pdfUsedOcr));
+      fd.append("fileHash", pdfHash);
+      fd.append("uploadedBy", "Usuario RPMS");
+      const res = await fetch("/api/dosimetry/import-pdf/confirm", { method: "POST", body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setPdfState("error");
+        setPdfMsg(data.error || "No se pudo guardar la importacion.");
+        return;
+      }
+      setPdfState("ok");
+      setPdfMsg(
+        "Importacion completada: " + data.created + " nuevo(s) - " + data.updated + " actualizado(s) - " +
+          data.duplicated + " duplicado(s) - " + data.skipped + " omitido(s)."
+      );
+      setPdfPreview(null);
+      setPdfRows([]);
+      router.refresh();
+    } catch {
+      setPdfState("error");
+      setPdfMsg("No se pudo guardar la importacion.");
     }
   }
 
@@ -237,7 +393,7 @@ export function DoseReportModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-surface p-5">
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-5">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Ingreso de reporte de dosis</h2>
           <button type="button" onClick={close} className="text-muted-foreground hover:text-foreground">
@@ -258,7 +414,14 @@ export function DoseReportModal() {
             onClick={() => setTab("csv")}
             className={"flex-1 rounded px-2 py-1.5 font-medium " + (tab === "csv" ? "bg-accent text-white" : "text-muted-foreground")}
           >
-            Carga automática (CSV)
+            Carga automatica (CSV)
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("pdf")}
+            className={"flex-1 rounded px-2 py-1.5 font-medium " + (tab === "pdf" ? "bg-accent text-white" : "text-muted-foreground")}
+          >
+            Importar PDF
           </button>
         </div>
 
@@ -284,7 +447,7 @@ export function DoseReportModal() {
               </label>
               <label className="text-[11px]">
                 <span className="mb-1 block text-muted-foreground">
-                  Año <span className="text-danger">*</span>
+                  Ano <span className="text-danger">*</span>
                 </span>
                 <input
                   type="number"
@@ -336,7 +499,7 @@ export function DoseReportModal() {
                 />
               </label>
               <label className="text-[11px]">
-                <span className="mb-1 block text-muted-foreground">Acumulado 5 años - cuerpo (mSv)</span>
+                <span className="mb-1 block text-muted-foreground">Acumulado 5 anos - cuerpo (mSv)</span>
                 <input
                   type="text"
                   value={form.accum_60m_body}
@@ -345,7 +508,7 @@ export function DoseReportModal() {
                 />
               </label>
               <label className="text-[11px]">
-                <span className="mb-1 block text-muted-foreground">Institución</span>
+                <span className="mb-1 block text-muted-foreground">Institucion</span>
                 <input
                   type="text"
                   value={form.institucion}
@@ -364,7 +527,7 @@ export function DoseReportModal() {
               </label>
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Niveles de referencia (cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigación ≥ 1,6 mSv · Intervención ≥ 5 mSv. El nivel se calcula automáticamente.
+              Niveles de referencia (cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv. El nivel se calcula automaticamente.
             </p>
             {manualMsg && (
               <p className={"mt-3 flex items-center gap-1 text-xs " + (manualState === "error" ? "text-danger" : "text-success")}>
@@ -392,8 +555,8 @@ export function DoseReportModal() {
         {tab === "csv" && (
           <div>
             <p className="mb-3 text-[11px] text-muted-foreground">
-              Sube un archivo .csv con el formato estándar del proveedor de dosimetría (columnas INSTITUCIÓN, DEPARTAMENTO, PERIODO, NOMBRE, RUN
-              y las columnas de dosis trimestrales/acumuladas). Solo se cargarán filas cuyo RUN coincida con el listado de trabajadores.
+              Sube un archivo .csv con el formato estandar del proveedor de dosimetria (columnas INSTITUCION, DEPARTAMENTO, PERIODO, NOMBRE, RUN
+              y las columnas de dosis trimestrales/acumuladas). Solo se cargaran filas cuyo RUN coincida con el listado de trabajadores.
             </p>
             <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-border p-6 text-center hover:border-accent">
               <Upload className="h-5 w-5 text-muted-foreground" />
@@ -413,6 +576,153 @@ export function DoseReportModal() {
                 Cerrar
               </button>
             </div>
+          </div>
+        )}
+
+        {tab === "pdf" && (
+          <div>
+            {pdfState === "idle" && (
+              <>
+                <p className="mb-3 text-[11px] text-muted-foreground">
+                  Sube un archivo PDF con el reporte oficial de dosimetria personal. El sistema extrae el texto automaticamente
+                  (usando OCR si el documento es una imagen escaneada), identifica trabajadores, periodos/trimestres y dosis, y
+                  muestra una vista previa antes de guardar.
+                </p>
+                <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-border p-6 text-center hover:border-accent">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-xs font-medium">{pdfFileName || "Selecciona un archivo .pdf"}</span>
+                  <input type="file" accept=".pdf,application/pdf" className="hidden" onChange={handlePdfFile} />
+                </label>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={close} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
+                    Cerrar
+                  </button>
+                </div>
+              </>
+            )}
+
+            {(pdfState === "reading" || pdfState === "ocr" || pdfState === "analyzing" || pdfState === "saving") && (
+              <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border p-6 text-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">{pdfMsg}</span>
+              </div>
+            )}
+
+            {pdfState === "error" && (
+              <div>
+                <p className="flex items-start gap-1 text-xs text-danger">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{pdfMsg}</span>
+                </p>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button type="button" onClick={resetPdfTab} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
+                    Intentar de nuevo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {pdfState === "ok" && (
+              <div>
+                <p className="flex items-center gap-1 text-xs text-success">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {pdfMsg}
+                </p>
+                <div className="mt-3 flex justify-end gap-2">
+                  <button type="button" onClick={resetPdfTab} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
+                    Importar otro documento
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {pdfState === "preview" && pdfPreview && (
+              <div>
+                <div className="mb-3 rounded-md border border-border bg-background p-3 text-[11px]">
+                  <p className="mb-1 font-medium">{pdfFileName}{pdfUsedOcr ? " (procesado con OCR)" : ""}</p>
+                  <p className="text-muted-foreground">
+                    Trabajadores detectados: {pdfPreview.workersDetected} · Registros encontrados: {pdfPreview.recordsFound} ·{" "}
+                    Periodos: {(pdfPreview.periodsIdentified || []).join(", ") || "N/D"}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    Nuevos: {pdfPreview.newRecords} · Existentes (conflicto): {pdfPreview.existingRecords}
+                    {pdfPreview.duplicateFile ? " · Este archivo ya fue importado antes" : ""}
+                  </p>
+                  {pdfPreview.errors?.length > 0 && (
+                    <ul className="mt-2 list-disc pl-4 text-danger">
+                      {pdfPreview.errors.map((e: string, i: number) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {pdfPreview.warnings?.length > 0 && (
+                    <ul className="mt-2 list-disc pl-4 text-warning">
+                      {pdfPreview.warnings.map((w: string, i: number) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="max-h-64 overflow-y-auto rounded-md border border-border">
+                  <table className="w-full text-[11px]">
+                    <thead className="sticky top-0 bg-muted/60 text-left">
+                      <tr>
+                        <th className="px-2 py-1.5">Trabajador</th>
+                        <th className="px-2 py-1.5">RUN</th>
+                        <th className="px-2 py-1.5">Periodo</th>
+                        <th className="px-2 py-1.5 text-right">Hp(10)</th>
+                        <th className="px-2 py-1.5 text-right">Hp(3)</th>
+                        <th className="px-2 py-1.5 text-right">Hp(0.07)</th>
+                        <th className="px-2 py-1.5">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {pdfRows.map((r) => (
+                        <tr key={r.rowIndex}>
+                          <td className="px-2 py-1.5">{r.worker_name_system || r.worker_name_report || "(sin nombre)"}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{r.worker_run || "-"}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground">{r.period_label || "-"}</td>
+                          <td className="px-2 py-1.5 text-right">{r.hp10 ?? "-"}</td>
+                          <td className="px-2 py-1.5 text-right">{r.hp3 ?? "-"}</td>
+                          <td className="px-2 py-1.5 text-right">{r.hp007 ?? "-"}</td>
+                          <td className="px-2 py-1.5">
+                            {!r.worker_matched ? (
+                              <span className="text-danger">RUN no encontrado</span>
+                            ) : r.conflict ? (
+                              <select
+                                value={r.resolution}
+                                onChange={(e) => setRowResolution(r.rowIndex, e.target.value)}
+                                className="rounded border border-border bg-background px-1 py-0.5 text-[10px]"
+                              >
+                                <option value="actualizar">Actualizar</option>
+                                <option value="duplicar">Duplicar</option>
+                                <option value="cancelar">Omitir</option>
+                              </select>
+                            ) : (
+                              <span className="text-success">Nuevo</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 flex justify-end gap-2">
+                  <button type="button" onClick={resetPdfTab} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmPdfImport}
+                    className="flex items-center gap-1.5 rounded-md border border-accent bg-accent px-3 py-1.5 text-xs font-medium text-white"
+                  >
+                    Confirmar importacion
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
