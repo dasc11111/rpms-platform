@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { parseDosimetryText } from "@/lib/dosimetry-parse";
+import { parseDosimetryReport } from "@/lib/dosimetry-parse";
 
 export const dynamic = "force-dynamic";
 
@@ -10,51 +10,66 @@ function rutBody(v: unknown): string {
   return beforeDash.replace(/[^0-9]/g, "");
 }
 
+function normName(v: unknown): string {
+  return String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const rawText = String(body?.rawText ?? "");
+  const pagesTextInput = Array.isArray(body?.pagesText) ? body.pagesText : null;
+  const pagesText: string[] = pagesTextInput && pagesTextInput.length > 0 ? pagesTextInput : [rawText];
   const fileName = String(body?.fileName ?? "");
   const fileHash = String(body?.fileHash ?? "");
   const usedOcr = Boolean(body?.usedOcr);
 
-const parsed = parseDosimetryText(rawText);
+  const parsed = parseDosimetryReport(pagesText);
 
-await sql`
-CREATE TABLE IF NOT EXISTS dosimetry_documents (
-id SERIAL PRIMARY KEY,
-filename TEXT NOT NULL,
-blob_url TEXT,
-mime_type TEXT,
-size_bytes INT,
-file_hash TEXT UNIQUE,
-source_type TEXT DEFAULT 'pdf',
-provider TEXT,
-period_label TEXT,
-year INT,
-uploaded_by TEXT,
-uploaded_at TIMESTAMP DEFAULT now(),
-used_ocr BOOLEAN DEFAULT false,
-records_count INT DEFAULT 0,
-status TEXT DEFAULT 'processed'
-)
-`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS dosimetry_documents (
+      id SERIAL PRIMARY KEY,
+      filename TEXT NOT NULL,
+      blob_url TEXT,
+      mime_type TEXT,
+      size_bytes INT,
+      file_hash TEXT UNIQUE,
+      source_type TEXT DEFAULT 'pdf',
+      provider TEXT,
+      period_label TEXT,
+      year INT,
+      uploaded_by TEXT,
+      uploaded_at TIMESTAMP DEFAULT now(),
+      used_ocr BOOLEAN DEFAULT false,
+      records_count INT DEFAULT 0,
+      status TEXT DEFAULT 'processed'
+    )
+  `;
 
-let duplicateFile = false;
+  let duplicateFile = false;
   if (fileHash) {
     const { rows: existingDocs } = await sql`
-    SELECT id, filename, uploaded_at FROM dosimetry_documents WHERE file_hash = ${fileHash} LIMIT 1
+      SELECT id, filename, uploaded_at FROM dosimetry_documents WHERE file_hash = ${fileHash} LIMIT 1
     `;
     duplicateFile = existingDocs.length > 0;
   }
 
-const { rows: workers } = await sql`SELECT rut, name FROM workers`;
+  const { rows: workers } = await sql`SELECT rut, name FROM workers`;
   const rutMap = new Map<string, { rut: string; name: string }>();
+  const nameMap = new Map<string, { rut: string; name: string }>();
   for (const w of workers as any[]) {
     const key = rutBody(w.rut);
     if (key) rutMap.set(key, w as any);
+    const nKey = normName(w.name);
+    if (nKey) nameMap.set(nKey, w as any);
   }
 
-const existingKeys = new Set<string>();
+  const existingKeys = new Set<string>();
   if (parsed.rows.length > 0) {
     const { rows: existingQ } = await sql`SELECT worker_rut, year, quarter FROM dosimetry_quarterly`;
     for (const r of existingQ as any[]) {
@@ -62,45 +77,59 @@ const existingKeys = new Set<string>();
     }
   }
 
-const enrichedRows = parsed.rows.map((r, idx) => {
-  const key0 = rutBody(r.worker_run);
-  const worker = rutMap.get(key0);
-  const matched = Boolean(worker);
-  const workerRut = worker ? worker.rut : "";
-  const conflict = matched && r.year && r.quarter ? existingKeys.has(`${workerRut}__${r.year}__${r.quarter}`) : false;
-  return {
-    rowIndex: idx,
-    ...r,
-    worker_rut: workerRut,
-    worker_matched: matched,
-    worker_name_report: r.worker_name,
-    worker_name_system: worker ? worker.name : "",
-    conflict,
-    resolution: conflict ? "actualizar" : "nuevo",
-  };
-});
+  let matchedByName = 0;
 
-const newRecords = enrichedRows.filter((r) => r.worker_matched && !r.conflict).length;
+  const enrichedRows = parsed.rows.map((r, idx) => {
+    const key0 = rutBody(r.worker_run);
+    let worker = rutMap.get(key0);
+    let matchedVia: "rut" | "name" | "none" = worker ? "rut" : "none";
+    if (!worker) {
+      const nKey = normName(r.worker_name);
+      const byName = nKey ? nameMap.get(nKey) : undefined;
+      if (byName) {
+        worker = byName;
+        matchedVia = "name";
+        matchedByName++;
+      }
+    }
+    const matched = Boolean(worker);
+    const workerRut = worker ? worker.rut : "";
+    const conflict = matched && r.year && r.quarter ? existingKeys.has(`${workerRut}__${r.year}__${r.quarter}`) : false;
+    return {
+      rowIndex: idx,
+      ...r,
+      worker_rut: workerRut,
+      worker_matched: matched,
+      worker_match_via: matchedVia,
+      worker_name_report: r.worker_name,
+      worker_name_system: worker ? worker.name : "",
+      conflict,
+      resolution: conflict ? "actualizar" : "nuevo",
+    };
+  });
+
+  const newRecords = enrichedRows.filter((r) => r.worker_matched && !r.conflict).length;
   const existingRecords = enrichedRows.filter((r) => r.conflict).length;
   const unmatchedRecords = enrichedRows.filter((r) => !r.worker_matched).length;
 
-return NextResponse.json({
-  ok: true,
-  fileName,
-  fileHash,
-  usedOcr,
-  duplicateFile,
-  workersDetected: parsed.workersDetected,
-  recordsFound: enrichedRows.length,
-  periodsIdentified: parsed.periodsIdentified,
-  quartersIdentified: parsed.quartersIdentified,
-  errors: parsed.errors,
-  warnings: [
-    ...parsed.warnings,
-    ...(unmatchedRecords > 0 ? [`${unmatchedRecords} registro(s) no coinciden con ningun RUN del listado de trabajadores.`] : []),
+  return NextResponse.json({
+    ok: true,
+    fileName,
+    fileHash,
+    usedOcr,
+    duplicateFile,
+    workersDetected: parsed.workersDetected,
+    recordsFound: enrichedRows.length,
+    periodsIdentified: parsed.periodsIdentified,
+    quartersIdentified: parsed.quartersIdentified,
+    errors: parsed.errors,
+    warnings: [
+      ...parsed.warnings,
+      ...(matchedByName > 0 ? [`${matchedByName} registro(s) se relacionaron por coincidencia de nombre (el RUN no coincidia exactamente).`] : []),
+      ...(unmatchedRecords > 0 ? [`${unmatchedRecords} registro(s) no coinciden con ningun RUN ni nombre del listado de trabajadores.`] : []),
     ],
-  newRecords,
-  existingRecords,
-  rows: enrichedRows,
-});
+    newRecords,
+    existingRecords,
+    rows: enrichedRows,
+  });
 }
