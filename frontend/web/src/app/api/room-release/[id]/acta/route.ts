@@ -44,12 +44,19 @@ type JsPdfLike = {
 // CON I 131" a partir de un Acta de Liberacion de Sala ya guardada, usando
 // exactamente los mismos puntos de interes, referencias y pie de firma del
 // modelo original. La fecha se registra automaticamente desde el Acta.
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+//
+// Soporta el parametro de consulta "preview=1" para servir el PDF con
+// Content-Disposition "inline" (vista previa en el navegador) en lugar de
+// forzar la descarga del archivo.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: idParam } = await params;
   const id = Number(idParam);
   if (!id) {
     return NextResponse.json({ error: "ID invalido" }, { status: 400 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const preview = searchParams.get("preview") === "1";
 
   const { rows } = await sql`SELECT * FROM room_release_records WHERE id = ${id}`;
   const record = rows[0];
@@ -183,7 +190,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new NextResponse(Buffer.from(arrayBuffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `${preview ? "inline" : "attachment"}; filename="${filename}"`,
     },
   });
 }
