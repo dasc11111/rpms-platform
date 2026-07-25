@@ -3,31 +3,59 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+type PdfItem = { str: string; x: number; y: number };
+
+function buildPageText(items: PdfItem[]): string {
+  const cleaned = items.filter((it) => it.str && it.str.trim().length > 0);
+  const sorted = [...cleaned].sort((a, b) => b.y - a.y || a.x - b.x);
+  const lines: PdfItem[][] = [];
+  for (const it of sorted) {
+    const line = lines.find((l) => Math.abs((l[0]?.y ?? 0) - it.y) < 3);
+    if (line) line.push(it);
+    else lines.push([it]);
+  }
+  return lines
+    .map((l) => l.sort((a, b) => a.x - b.x).map((it) => it.str).join(" "))
+    .join("\n");
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const docId = searchParams.get("docId");
+  const docId = Number(searchParams.get("docId") || "1");
+  const pageArg = Number(searchParams.get("page") || "1");
 
-  const { rows: byPeriod } = await sql`
-    SELECT period_label, year, quarter, source_document_id, entry_method, count(*)::int as cnt,
-      sum(case when dose_body = 0 and dose_lens = 0 and dose_skin = 0 then 1 else 0 end)::int as all_zero
-    FROM dosimetry_quarterly
-    GROUP BY period_label, year, quarter, source_document_id, entry_method
-    ORDER BY year DESC, quarter DESC
-  `;
+  const { rows } = await sql`SELECT blob_url FROM dosimetry_documents WHERE id = ${docId}`;
+  const blobUrl = rows[0]?.blob_url as string | undefined;
+  if (!blobUrl) return NextResponse.json({ error: "no_document" }, { status: 404 });
 
-  let sampleQuery;
-  if (docId) {
-    sampleQuery = sql`SELECT worker_rut, worker_name, departamento, year, quarter, period_label, dose_body, dose_lens, dose_skin, dosimeter_number, dosimeter_type, entry_method, source_document_id FROM dosimetry_quarterly WHERE source_document_id = ${Number(docId)} ORDER BY worker_name LIMIT 40`;
-  } else {
-    sampleQuery = sql`SELECT worker_rut, worker_name, departamento, year, quarter, period_label, dose_body, dose_lens, dose_skin, dosimeter_number, dosimeter_type, entry_method, source_document_id FROM dosimetry_quarterly ORDER BY updated_at DESC LIMIT 40`;
+  let resp = await fetch(blobUrl);
+  if (!resp.ok) {
+    resp = await fetch(blobUrl, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN || ""}` } });
   }
-  const { rows: sample } = await sampleQuery;
+  if (!resp.ok) {
+    return NextResponse.json({ error: "fetch_failed", status: resp.status, blobUrl }, { status: 502 });
+  }
+  const buf = await resp.arrayBuffer();
 
-  const { rows: dupRutCheck } = await sql`
-    SELECT worker_rut, count(*)::int as cnt FROM dosimetry_quarterly
-    WHERE source_document_id = ${docId ? Number(docId) : null}
-    GROUP BY worker_rut HAVING count(*) > 1 ORDER BY cnt DESC LIMIT 20
-  `;
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(buf), disableWorker: true } as any);
+  const pdf = await loadingTask.promise;
 
-  return NextResponse.json({ byPeriod, sample, dupRutCheck });
+  const numPages = pdf.numPages;
+  const pageNum = Math.min(Math.max(1, pageArg), numPages);
+  const page = await pdf.getPage(pageNum);
+  const content = await page.getTextContent();
+  const items: PdfItem[] = (content.items as any[])
+    .map((it) => ({ str: it.str as string, x: it.transform[4] as number, y: it.transform[5] as number }))
+    .filter((it) => it.str.trim().length > 0);
+  const pageText = buildPageText(items);
+
+  return NextResponse.json({
+    numPages,
+    pageNum,
+    byteLength: buf.byteLength,
+    itemCount: items.length,
+    pageText,
+    rawItemsSample: items.slice(0, 40),
+  });
 }
