@@ -16,14 +16,31 @@ export function RoomReleaseApp() {
   const [tab, setTab] = useState<Tab>("acta");
   const [version, setVersion] = useState(0);
   const [formOpen, setFormOpen] = useState(false);
+  const [editRecord, setEditRecord] = useState<RoomReleaseRecord | null>(null);
   const [confirmRecord, setConfirmRecord] = useState<RoomReleaseRecord | null>(null);
 
   function bump() {
     setVersion((v) => v + 1);
   }
 
+  function handleNew() {
+    setEditRecord(null);
+    setFormOpen(true);
+  }
+
+  function handleEdit(record: RoomReleaseRecord) {
+    setEditRecord(record);
+    setFormOpen(true);
+  }
+
+  function handleCloseForm() {
+    setFormOpen(false);
+    setEditRecord(null);
+  }
+
   function handleActaSaved(record: RoomReleaseRecord) {
     setFormOpen(false);
+    setEditRecord(null);
     bump();
     // Automatizacion: al terminar el registro de Liberacion de Sala, el
     // sistema pregunta automaticamente si se desea generar el rotulo,
@@ -78,7 +95,12 @@ export function RoomReleaseApp() {
       </div>
 
       {tab === "acta" && (
-        <RoomReleaseRecordsTable version={version} onNew={() => setFormOpen(true)} onGenerateLabel={setConfirmRecord} />
+        <RoomReleaseRecordsTable
+          version={version}
+          onNew={handleNew}
+          onGenerateLabel={setConfirmRecord}
+          onEdit={handleEdit}
+        />
       )}
 
       {tab === "residuos" && <WasteLabelsTable version={version} onChanged={bump} />}
@@ -87,7 +109,7 @@ export function RoomReleaseApp() {
 
       {tab === "dashboard" && <WasteDashboard version={version} />}
 
-      <RoomReleaseFormModal open={formOpen} onClose={() => setFormOpen(false)} onSaved={handleActaSaved} />
+      <RoomReleaseFormModal open={formOpen} record={editRecord} onClose={handleCloseForm} onSaved={handleActaSaved} />
 
       <WasteLabelConfirmModal
         record={confirmRecord}
