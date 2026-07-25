@@ -76,7 +76,11 @@ export async function GET(request: Request) {
 
   if (raw) {
     return new NextResponse(new Uint8Array(buf), {
-      headers: { "Content-Type": "application/pdf", "Cache-Control": "no-store" },
+      headers: {
+        "Content-Type": "application/pdf",
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   }
 
