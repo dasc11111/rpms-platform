@@ -1,21 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Plus, Tag, RefreshCw, FileText } from "lucide-react";
+import { Download, Plus, Tag, RefreshCw, FileText, MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
 import type { RoomReleaseRecord } from "@/lib/waste";
 
 export function RoomReleaseRecordsTable({
   version,
   onNew,
   onGenerateLabel,
+  onEdit,
 }: {
   version: number;
   onNew: () => void;
   onGenerateLabel: (record: RoomReleaseRecord) => void;
+  onEdit: (record: RoomReleaseRecord) => void;
 }) {
   const [rows, setRows] = useState<RoomReleaseRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -32,6 +36,31 @@ export function RoomReleaseRecordsTable({
       active = false;
     };
   }, [version]);
+
+  // Elimina un Acta de Liberacion de Sala, previa confirmacion explicita del
+  // usuario. Si el Acta ya tiene un rotulo de residuo generado, el servidor
+  // rechaza el borrado (409) para evitar dejar referencias huerfanas.
+  async function handleDelete(r: RoomReleaseRecord) {
+    const ok = window.confirm(
+      `¿Eliminar el Acta de Liberación de Sala de ${r.paciente_nombre} (Sala ${r.sala}, ${r.release_date})? Esta acción no se puede deshacer.`
+    );
+    if (!ok) return;
+    setDeletingId(r.id);
+    try {
+      const res = await fetch(`/api/room-release/${r.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error ?? "No se pudo eliminar el Acta.");
+        return;
+      }
+      setRows((prev) => prev.filter((row) => row.id !== r.id));
+      setTotal((t) => Math.max(0, t - 1));
+    } catch {
+      alert("Error de red al eliminar el Acta.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <div className="rounded-lg border border-border bg-surface">
@@ -91,7 +120,7 @@ export function RoomReleaseRecordsTable({
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="relative flex flex-wrap items-center gap-1.5">
                     <a
                       href={`/api/room-release/${r.id}/acta`}
                       className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
@@ -106,6 +135,48 @@ export function RoomReleaseRecordsTable({
                       >
                         <Tag className="h-3.5 w-3.5" /> Generar rótulo
                       </button>
+                    )}
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === r.id ? null : r.id)}
+                      className="flex items-center rounded-md border border-border p-1.5 text-xs hover:bg-muted"
+                      title="Más acciones"
+                    >
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </button>
+                    {openMenuId === r.id && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md border border-border bg-surface shadow-lg">
+                          <a
+                            href={`/api/room-release/${r.id}/acta?preview=1`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setOpenMenuId(null)}
+                            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Vista previa
+                          </a>
+                          <button
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              onEdit(r);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted"
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Editar
+                          </button>
+                          <button
+                            disabled={deletingId === r.id}
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              handleDelete(r);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </td>
