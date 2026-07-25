@@ -103,9 +103,8 @@ export default async function DosimetryPage() {
 
   const latest = all[0];
   const latestLabel = latest?.period_label ?? null;
-  const latestRows = latestLabel ? all.filter((r) => r.period_label === latestLabel) : [];
 
-  const countByLevel = (lvl: string) => latestRows.filter((r) => r.level === lvl).length;
+  const countByLevel = (lvl: string) => all.filter((r) => r.level === lvl).length;
   const totalWorkers = new Set(all.map((r) => r.worker_rut)).size;
 
   return (
@@ -147,7 +146,7 @@ export default async function DosimetryPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
-            {latestRows.map((r, i) => {
+            {all.map((r, i) => {
               const lv = LEVEL_LABEL[r.level] ?? { label: r.level, className: "text-muted-foreground" };
               return (
                 <tr key={i} className="hover:bg-muted/40">
@@ -171,7 +170,7 @@ export default async function DosimetryPage() {
                 </tr>
               );
             })}
-            {latestRows.length === 0 && (
+            {all.length === 0 && (
               <tr>
                 <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
                   No hay lecturas dosimetricas cargadas todavia.
