@@ -60,7 +60,7 @@ function nearestColumnIndex(x: number, columns: number[]): number {
   let best = 0;
   let bestDist = Infinity;
   for (let i = 0; i < columns.length; i++) {
-    const d = Math.abs(x - columns[i]);
+    const c = columns[i]; if (c === undefined) continue; const d = Math.abs(x - c);
     if (d < bestDist) {
       bestDist = d;
       best = i;
@@ -75,19 +75,22 @@ function extractRowsFromPageLines(lines: PdfLine[], columns: number[]): (ParsedD
     const tokens = line.tokens;
     const runIdx = tokens.findIndex((t) => RUN_TOKEN_RE.test(t.str));
     if (runIdx < 0) continue;
-    const runToken = tokens[runIdx].str;
+    const runTokenObj = tokens[runIdx];
+    if (!runTokenObj) continue;
+    const runToken = runTokenObj.str;
 
     const dateIdxs: number[] = [];
     for (let i = runIdx + 1; i < tokens.length; i++) {
-      if (DATE_TOKEN_RE.test(tokens[i].str)) dateIdxs.push(i);
+      const tk = tokens[i];
+      if (tk && DATE_TOKEN_RE.test(tk.str)) dateIdxs.push(i);
       if (dateIdxs.length >= 2) break;
     }
     if (dateIdxs.length === 0) continue;
-    const hastaIdx = dateIdxs.length >= 2 ? dateIdxs[1] : dateIdxs[0];
-    const nombreEnd = dateIdxs[0];
+    const hastaIdx = dateIdxs.length >= 2 ? dateIdxs[1]! : dateIdxs[0]!;
+    const nombreEnd = dateIdxs[0]!;
     const nombre = tokens.slice(runIdx + 1, nombreEnd).map((t) => t.str).join(" ").trim();
-    const toe = runIdx > 0 ? tokens[0].str : "";
-    const tde = runIdx > 1 ? tokens[1].str : "";
+    const toe = runIdx > 0 ? (tokens[0]?.str ?? "") : "";
+    const tde = runIdx > 1 ? (tokens[1]?.str ?? "") : "";
 
     let hp10: number | null = null;
     let hp007: number | null = null;
@@ -96,7 +99,9 @@ function extractRowsFromPageLines(lines: PdfLine[], columns: number[]): (ParsedD
     let accum60: number | null = null;
 
     for (let i = hastaIdx + 1; i < tokens.length; i++) {
-      const str = tokens[i].str;
+      const tk = tokens[i];
+      if (!tk) continue;
+      const str = tk.str;
       let val: number | null = null;
       if (VALUE_CODE_RE.test(str)) {
         val = /^MNR$/i.test(str) ? 0 : null;
@@ -107,7 +112,7 @@ function extractRowsFromPageLines(lines: PdfLine[], columns: number[]): (ParsedD
         continue;
       }
       if (val === null) continue;
-      const col = nearestColumnIndex(tokens[i].x, columns);
+      const col = nearestColumnIndex(tk.x, columns);
       if (col < 0) continue;
       if (col === 0) hp10 = val;
       else if (col === 1) hp007 = val;
