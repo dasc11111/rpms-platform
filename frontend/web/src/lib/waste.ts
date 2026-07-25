@@ -242,11 +242,12 @@ export function isReleaseEligible(
 // CON I 131", reutilizando la fecha, servicio, sala y radionuclido ya
 // registrados en el Acta de Liberacion de Sala. El usuario solo ingresa, por
 // cada punto de interes fijo del modelo original, las cuentas por segundo
-// (cps) medidas y la tasa de dosis (uSv/hr); el sistema calcula
-// automaticamente la actividad superficial en Bq/cm2 para I-131 aplicando la
-// misma formula ya validada en el modulo de Registro de Contaminacion:
+// (cps) medidas, las cuentas por segundo de fondo radiactivo (cps de fondo) y
+// la tasa de dosis (uSv/hr); el sistema calcula automaticamente la actividad
+// superficial neta en Bq/cm2 para I-131 aplicando la misma formula ya
+// validada en el modulo de Registro de Contaminacion:
 //
-//   Actividad (Bq/cm2) = cps / (eficiencia del detector x area monitoreada)
+// Actividad (Bq/cm2) = (cps medida - cps de fondo) / (eficiencia del detector x area monitoreada)
 //
 // Eficiencia y area quedan fijas para este documento, confirmadas por el
 // Oficial de Proteccion Radiologica para el equipo/sonda usado en mediciones
@@ -254,10 +255,15 @@ export function isReleaseEligible(
 export const ACTA_I131_EFICIENCIA_DETECTOR = 0.15;
 export const ACTA_I131_AREA_MONITOREADA_CM2 = 15;
 
-export function calcActaActividadBqCm2(cps: number | null | undefined): number {
+export function calcActaActividadBqCm2(
+  cps: number | null | undefined,
+  cpsFondo: number | null | undefined = 0
+): number {
   const c = Number(cps ?? 0);
-  if (!c || c <= 0) return 0;
-  return c / (ACTA_I131_EFICIENCIA_DETECTOR * ACTA_I131_AREA_MONITOREADA_CM2);
+  const fondo = Number(cpsFondo ?? 0);
+  const neto = c - fondo;
+  if (!neto || neto <= 0) return 0;
+  return neto / (ACTA_I131_EFICIENCIA_DETECTOR * ACTA_I131_AREA_MONITOREADA_CM2);
 }
 
 export type ActaPuntoCategoria = "controlada" | "publica_ropa_basura";
@@ -296,6 +302,7 @@ export type ActaPuntoMedicion = {
   label: string;
   categoria: ActaPuntoCategoria;
   cps: number | null;
+  cps_fondo: number | null;
   tasa_dosis_usv_h: number | null;
   actividad_bq_cm2: number;
   observacion: "Contaminado" | "No Contaminado";
@@ -311,16 +318,17 @@ export function clasificarActaPunto(
 }
 
 export function buildActaPuntosMedicion(
-  inputs: Record<string, { cps: number | null; tasa_dosis_usv_h: number | null }>
+  inputs: Record<string, { cps: number | null; cps_fondo: number | null; tasa_dosis_usv_h: number | null }>
 ): ActaPuntoMedicion[] {
   return ACTA_PUNTOS_INTERES.map((p) => {
-    const input = inputs[p.key] ?? { cps: null, tasa_dosis_usv_h: null };
-    const actividad = calcActaActividadBqCm2(input.cps);
+    const input = inputs[p.key] ?? { cps: null, cps_fondo: null, tasa_dosis_usv_h: null };
+    const actividad = calcActaActividadBqCm2(input.cps, input.cps_fondo);
     return {
       key: p.key,
       label: p.label,
       categoria: p.categoria,
       cps: input.cps,
+      cps_fondo: input.cps_fondo,
       tasa_dosis_usv_h: input.tasa_dosis_usv_h,
       actividad_bq_cm2: actividad,
       observacion: clasificarActaPunto(p.categoria, actividad),
