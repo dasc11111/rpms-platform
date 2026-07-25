@@ -51,6 +51,56 @@ function extractTextFromContentStream(content: string): string {
   return out;
 }
 
+function parseToUnicodeMap(cmapText: string): Map<number, string> {
+  const map = new Map<number, string>();
+  const bfcharBlocks = cmapText.match(/beginbfchar([\s\S]*?)endbfchar/g) || [];
+  for (const block of bfcharBlocks) {
+    const pairRe = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+    let pm: RegExpExecArray | null;
+    while ((pm = pairRe.exec(block))) {
+      const src = parseInt(pm[1] as string, 16);
+      const dstHex = pm[2] as string;
+      let dstStr = "";
+      for (let i = 0; i < dstHex.length; i += 4) dstStr += String.fromCharCode(parseInt(dstHex.slice(i, i + 4), 16));
+      map.set(src, dstStr);
+    }
+  }
+  const bfrangeBlocks = cmapText.match(/beginbfrange([\s\S]*?)endbfrange/g) || [];
+  for (const block of bfrangeBlocks) {
+    const arrRe = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*\[([\s\S]*?)\]/g;
+    let am: RegExpExecArray | null;
+    while ((am = arrRe.exec(block))) {
+      const start = parseInt(am[1] as string, 16);
+      const items = (am[3] as string).match(/<([0-9A-Fa-f]+)>/g) || [];
+      items.forEach((it, idx) => {
+        const hex = it.replace(/[<>]/g, "");
+        let s = "";
+        for (let i = 0; i < hex.length; i += 4) s += String.fromCharCode(parseInt(hex.slice(i, i + 4), 16));
+        map.set(start + idx, s);
+      });
+    }
+    const simpleRe = /<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+    let sm2: RegExpExecArray | null;
+    while ((sm2 = simpleRe.exec(block))) {
+      const start = parseInt(sm2[1] as string, 16);
+      const end = parseInt(sm2[2] as string, 16);
+      const dstStart = parseInt(sm2[3] as string, 16);
+      for (let c = start; c <= end; c++) map.set(c, String.fromCharCode(dstStart + (c - start)));
+    }
+  }
+  return map;
+}
+
+function applyToUnicode(text: string, map: Map<number, string>): string {
+  if (map.size === 0) return text;
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    out += map.has(code) ? map.get(code) : text[i];
+  }
+  return out;
+}
+
 async function fetchBlob(blobUrl: string): Promise<Response> {
   let resp = await fetch(blobUrl);
   if (!resp.ok) {
@@ -69,7 +119,7 @@ export async function GET(request: Request) {
   if (!blobUrl) return NextResponse.json({ error: "no_document" }, { status: 404 });
 
   const resp = await fetchBlob(blobUrl);
-  if (!resp.ok) return NextResponse.json({ error: "fetch_failed", status: resp.status, blobUrl, hasToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN) }, { status: 502 });
+  if (!resp.ok) return NextResponse.json({ error: "fetch_failed", status: resp.status }, { status: 502 });
   const arrBuf = await resp.arrayBuffer();
   const buf = Buffer.from(arrBuf);
   const binStr = buf.toString("latin1");
@@ -80,20 +130,31 @@ export async function GET(request: Request) {
   let streamCount = 0;
   let inflateOk = 0;
   let inflateFail = 0;
+  let cmapText = "";
+  const contentStreams: string[] = [];
   while ((m = streamRe.exec(binStr))) {
     streamCount++;
     const rawStreamStr = m[1] || "";
     const rawBuf = Buffer.from(rawStreamStr, "latin1");
+    let contentStr: string | null = null;
     try {
-      const inflated = zlib.inflateSync(rawBuf);
-      const contentStr = inflated.toString("latin1");
-      if (/\bTj\b|\bTJ\b/.test(contentStr)) {
-        allText += extractTextFromContentStream(contentStr) + "\n----STREAM-BREAK----\n";
-        inflateOk++;
-      }
+      contentStr = zlib.inflateSync(rawBuf).toString("latin1");
+      inflateOk++;
     } catch (e) {
+      contentStr = rawStreamStr;
       inflateFail++;
     }
+    if (contentStr.includes("beginbfchar") || contentStr.includes("beginbfrange")) {
+      cmapText += contentStr;
+    } else if (/\bTj\b|\bTJ\b/.test(contentStr)) {
+      contentStreams.push(contentStr);
+    }
+  }
+
+  const unicodeMap = parseToUnicodeMap(cmapText);
+  for (const cs of contentStreams) {
+    const raw = extractTextFromContentStream(cs);
+    allText += applyToUnicode(raw, unicodeMap) + "\n----STREAM-BREAK----\n";
   }
 
   return NextResponse.json({
@@ -101,7 +162,8 @@ export async function GET(request: Request) {
     streamCount,
     inflateOk,
     inflateFail,
+    cmapEntries: unicodeMap.size,
     textLength: allText.length,
-    textSample: allText.slice(0, 8000),
+    textSample: allText.slice(0, 10000),
   });
 }
