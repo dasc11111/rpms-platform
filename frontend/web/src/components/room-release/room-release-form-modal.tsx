@@ -61,16 +61,61 @@ function emptyPuntos(): Record<string, PuntoInput> {
   return out;
 }
 
+// Reconstruye el estado del formulario a partir de un Acta ya guardada, para
+// permitir su edicion sin perder ningun dato previamente ingresado.
+function recordToForm(r: RoomReleaseRecord): FormState {
+  const numOrEmpty = (v: number | null | undefined) => (v === null || v === undefined ? "" : String(v));
+  return {
+    release_date: r.release_date ? r.release_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    admission_date: r.admission_date ? r.admission_date.slice(0, 10) : "",
+    service: r.service ?? "",
+    sala: r.sala ?? "",
+    room_number: r.room_number ?? "",
+    ubicacion: r.ubicacion ?? "",
+    paciente_nombre: r.paciente_nombre ?? "",
+    paciente_run: r.paciente_run ?? "",
+    ficha_clinica: r.ficha_clinica ?? "",
+    radionuclide_code: r.radionuclide_code ?? "I-131",
+    actividad_administrada: numOrEmpty(r.actividad_administrada),
+    actividad_medida_liberacion: numOrEmpty(r.actividad_medida_liberacion),
+    unidad_actividad: r.unidad_actividad ?? "mCi",
+    tasa_dosis_medida: r.tasa_dosis_medida ?? "",
+    criterio_liberacion: r.criterio_liberacion ?? "",
+    observaciones: r.observaciones ?? "",
+  };
+}
+
+// Reconstruye los puntos de medicion (cps, cps de fondo y tasa de dosis) ya
+// guardados en el Acta, para que la edicion parta con los mismos valores
+// originales en vez de solicitarlos nuevamente.
+function recordToPuntos(r: RoomReleaseRecord): Record<string, PuntoInput> {
+  const out = emptyPuntos();
+  const list = Array.isArray(r.puntos_medicion) ? r.puntos_medicion : [];
+  for (const p of list) {
+    if (out[p.key]) {
+      out[p.key] = {
+        cps: p.cps !== null && p.cps !== undefined ? String(p.cps) : "",
+        cps_fondo: p.cps_fondo !== null && p.cps_fondo !== undefined ? String(p.cps_fondo) : "",
+        tasa_dosis_usv_h:
+          p.tasa_dosis_usv_h !== null && p.tasa_dosis_usv_h !== undefined ? String(p.tasa_dosis_usv_h) : "",
+      };
+    }
+  }
+  return out;
+}
+
 const FIELD_LABEL = "mb-1 block text-[11px] font-medium uppercase text-muted-foreground";
 const INPUT_CLASS =
   "w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm outline-none focus:border-accent";
 
 export function RoomReleaseFormModal({
   open,
+  record,
   onClose,
   onSaved,
 }: {
   open: boolean;
+  record?: RoomReleaseRecord | null;
   onClose: () => void;
   onSaved: (record: RoomReleaseRecord) => void;
 }) {
@@ -80,17 +125,24 @@ export function RoomReleaseFormModal({
   const [saving, setSaving] = useState(false);
   const [radionuclides, setRadionuclides] = useState<Radionuclide[]>([]);
 
+  const isEdit = Boolean(record);
+
   useEffect(() => {
     if (open) {
-      setForm(EMPTY);
-      setPuntos(emptyPuntos());
+      if (record) {
+        setForm(recordToForm(record));
+        setPuntos(recordToPuntos(record));
+      } else {
+        setForm(EMPTY);
+        setPuntos(emptyPuntos());
+      }
       setError(null);
       fetch("/api/radionuclides?active=true")
         .then((res) => (res.ok ? res.json() : { rows: [] }))
         .then((data) => setRadionuclides(data.rows ?? []))
         .catch(() => setRadionuclides([]));
     }
-  }, [open]);
+  }, [open, record]);
 
   if (!open) return null;
 
@@ -105,8 +157,8 @@ export function RoomReleaseFormModal({
         field === "cps"
           ? { ...current, cps: value }
           : field === "cps_fondo"
-            ? { ...current, cps_fondo: value }
-            : { ...current, tasa_dosis_usv_h: value };
+          ? { ...current, cps_fondo: value }
+          : { ...current, tasa_dosis_usv_h: value };
       return { ...p, [key]: updated };
     });
   }
@@ -157,8 +209,10 @@ export function RoomReleaseFormModal({
       puntos_medicion: puntosMedicion,
     };
     try {
-      const res = await fetch("/api/room-release", {
-        method: "POST",
+      const url = isEdit ? `/api/room-release/${record!.id}` : "/api/room-release";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -180,7 +234,9 @@ export function RoomReleaseFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Nueva Acta de Liberación de Sala</h2>
+          <h2 className="text-sm font-semibold">
+            {isEdit ? "Editar Acta de Liberación de Sala" : "Nueva Acta de Liberación de Sala"}
+          </h2>
           <button onClick={onClose} className="rounded-md p-1 hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
@@ -423,7 +479,7 @@ export function RoomReleaseFormModal({
             onClick={submit}
             className="rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {saving ? "Guardando..." : "Guardar Acta"}
+            {saving ? "Guardando..." : isEdit ? "Actualizar Acta" : "Guardar Acta"}
           </button>
         </div>
       </div>
