@@ -77,6 +77,32 @@ function findCol(headers: string[], keywords: string[]): number {
   return normed.findIndex((h) => keywords.every((k) => h.includes(k)));
 }
 
+type PdfItem = { str: string; x: number; y: number };
+
+function buildPageText(items: PdfItem[]): string {
+  if (items.length === 0) return "";
+  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+  const yTol = 3;
+  const lines: { y: number; items: PdfItem[] }[] = [];
+  for (const it of sorted) {
+    let line = lines.find((l) => Math.abs(l.y - it.y) <= yTol);
+    if (!line) {
+      line = { y: it.y, items: [] };
+      lines.push(line);
+    }
+    line.items.push(it);
+  }
+  lines.sort((a, b) => b.y - a.y);
+  return lines
+    .map((l) =>
+      [...l.items]
+        .sort((a, b) => a.x - b.x)
+        .map((i) => i.str)
+        .join(" ")
+    )
+    .join("\n");
+}
+
 type PdfRow = {
   rowIndex: number;
   worker_run: string;
@@ -84,6 +110,7 @@ type PdfRow = {
   worker_name_report: string;
   worker_name_system: string;
   worker_matched: boolean;
+  worker_match_via?: string;
   institucion: string;
   departamento: string;
   year: number | null;
@@ -102,7 +129,6 @@ type PdfRow = {
   conflict: boolean;
   resolution: string;
 };
-
 export function DoseReportModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -189,7 +215,6 @@ export function DoseReportModal() {
       setManualMsg("No se pudo guardar el reporte. Intenta nuevamente.");
     }
   }
-
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -292,19 +317,27 @@ export function DoseReportModal() {
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-      let text = "";
+      let pagesText: string[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        text += content.items.map((it: any) => it.str ?? "").join(" ") + "\n";
+        const items: PdfItem[] = content.items
+          .map((it: any) => ({
+            str: it.str ?? "",
+            x: Array.isArray(it.transform) ? it.transform[4] : 0,
+            y: Array.isArray(it.transform) ? it.transform[5] : 0,
+          }))
+          .filter((it: PdfItem) => it.str.trim() !== "");
+        pagesText.push(buildPageText(items));
       }
+      let text = pagesText.join("\n\n");
 
       let usedOcr = false;
       if (text.trim().length < 40 * pdf.numPages) {
         setPdfState("ocr");
         setPdfMsg("Texto no detectado: aplicando reconocimiento OCR (puede tardar unos segundos por pagina)...");
         const Tesseract: any = await import("tesseract.js");
-        let ocrText = "";
+        const ocrPages: string[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const viewport = page.getViewport({ scale: 2 });
@@ -315,10 +348,13 @@ export function DoseReportModal() {
           if (ctx) {
             await page.render({ canvasContext: ctx, viewport }).promise;
             const { data } = await Tesseract.recognize(canvas, "spa");
-            ocrText += (data?.text || "") + "\n";
+            ocrPages.push(data?.text || "");
+          } else {
+            ocrPages.push("");
           }
         }
-        text = ocrText;
+        pagesText = ocrPages;
+        text = ocrPages.join("\n\n");
         usedOcr = true;
       }
       setPdfUsedOcr(usedOcr);
@@ -328,7 +364,7 @@ export function DoseReportModal() {
       const res = await fetch("/api/dosimetry/import-pdf/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, fileHash, rawText: text, usedOcr }),
+        body: JSON.stringify({ fileName: file.name, fileHash, rawText: text, pagesText, usedOcr }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
@@ -377,7 +413,6 @@ export function DoseReportModal() {
       setPdfMsg("No se pudo guardar la importacion.");
     }
   }
-
   if (!open) {
     return (
       <button
@@ -527,7 +562,7 @@ export function DoseReportModal() {
               </label>
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Niveles de referencia (cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv. El nivel se calcula automaticamente.
+              Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv. El nivel se calcula automaticamente.
             </p>
             {manualMsg && (
               <p className={"mt-3 flex items-center gap-1 text-xs " + (manualState === "error" ? "text-danger" : "text-success")}>
@@ -551,7 +586,6 @@ export function DoseReportModal() {
             </div>
           </div>
         )}
-
         {tab === "csv" && (
           <div>
             <p className="mb-3 text-[11px] text-muted-foreground">
@@ -635,7 +669,6 @@ export function DoseReportModal() {
                 </div>
               </div>
             )}
-
             {pdfState === "preview" && pdfPreview && (
               <div>
                 <div className="mb-3 rounded-md border border-border bg-background p-3 text-[11px]">
@@ -680,7 +713,12 @@ export function DoseReportModal() {
                     <tbody className="divide-y divide-border">
                       {pdfRows.map((r) => (
                         <tr key={r.rowIndex}>
-                          <td className="px-2 py-1.5">{r.worker_name_system || r.worker_name_report || "(sin nombre)"}</td>
+                          <td className="px-2 py-1.5">
+                            {r.worker_name_system || r.worker_name_report || "(sin nombre)"}
+                            {r.worker_matched && r.worker_match_via === "name" && (
+                              <span className="ml-1 text-[9px] text-warning">(por nombre)</span>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-muted-foreground">{r.worker_run || "-"}</td>
                           <td className="px-2 py-1.5 text-muted-foreground">{r.period_label || "-"}</td>
                           <td className="px-2 py-1.5 text-right">{r.hp10 ?? "-"}</td>
