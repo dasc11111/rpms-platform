@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Download, Plus, Tag, RefreshCw, FileText, MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
 import type { RoomReleaseRecord } from "@/lib/waste";
+
+type MenuState = { id: number; top: number; left: number } | null;
 
 export function RoomReleaseRecordsTable({
   version,
@@ -18,7 +21,7 @@ export function RoomReleaseRecordsTable({
   const [rows, setRows] = useState<RoomReleaseRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [openMenu, setOpenMenu] = useState<MenuState>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -61,6 +64,17 @@ export function RoomReleaseRecordsTable({
       setDeletingId(null);
     }
   }
+
+  function toggleMenu(e: React.MouseEvent<HTMLButtonElement>, id: number) {
+    if (openMenu?.id === id) {
+      setOpenMenu(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setOpenMenu({ id, top: rect.bottom + 4, left: Math.max(8, rect.right - 176) });
+  }
+
+  const activeRow = openMenu ? rows.find((r) => r.id === openMenu.id) ?? null : null;
 
   return (
     <div className="rounded-lg border border-border bg-surface">
@@ -120,7 +134,7 @@ export function RoomReleaseRecordsTable({
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  <div className="relative flex flex-wrap items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <a
                       href={`/api/room-release/${r.id}/acta`}
                       className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
@@ -137,47 +151,12 @@ export function RoomReleaseRecordsTable({
                       </button>
                     )}
                     <button
-                      onClick={() => setOpenMenuId(openMenuId === r.id ? null : r.id)}
+                      onClick={(e) => toggleMenu(e, r.id)}
                       className="flex items-center rounded-md border border-border p-1.5 text-xs hover:bg-muted"
                       title="Más acciones"
                     >
                       <MoreVertical className="h-3.5 w-3.5" />
                     </button>
-                    {openMenuId === r.id && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
-                        <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md border border-border bg-surface shadow-lg">
-                          <a
-                            href={`/api/room-release/${r.id}/acta?preview=1`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setOpenMenuId(null)}
-                            className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted"
-                          >
-                            <Eye className="h-3.5 w-3.5" /> Vista previa
-                          </a>
-                          <button
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              onEdit(r);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted"
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> Editar
-                          </button>
-                          <button
-                            disabled={deletingId === r.id}
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              handleDelete(r);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> Eliminar
-                          </button>
-                        </div>
-                      </>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -199,6 +178,49 @@ export function RoomReleaseRecordsTable({
           </tbody>
         </table>
       </div>
+
+      {openMenu &&
+        activeRow &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+            <div
+              className="fixed z-50 w-44 overflow-hidden rounded-md border border-border bg-surface shadow-lg"
+              style={{ top: openMenu.top, left: openMenu.left }}
+            >
+              <a
+                href={`/api/room-release/${activeRow.id}/acta?preview=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpenMenu(null)}
+                className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted"
+              >
+                <Eye className="h-3.5 w-3.5" /> Vista previa
+              </a>
+              <button
+                onClick={() => {
+                  setOpenMenu(null);
+                  onEdit(activeRow);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </button>
+              <button
+                disabled={deletingId === activeRow.id}
+                onClick={() => {
+                  setOpenMenu(null);
+                  handleDelete(activeRow);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Eliminar
+              </button>
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }
