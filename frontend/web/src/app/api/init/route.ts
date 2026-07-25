@@ -917,5 +917,184 @@ await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_label ON waste_inventor
 await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_type ON waste_inventory_movements(movement_type)`;
 await sql`CREATE INDEX IF NOT EXISTS idx_waste_movements_date ON waste_inventory_movements(moved_at)`;
 
+// --- Modulo: Instrumentos - Sistema Integral de Gestion Metrologica -------
+// Tablas normalizadas para instrumentos de proteccion radiologica: tipos
+// extensibles, instrumentos, empresas calibradoras, calibraciones (historial
+// completo, nunca se sobrescribe), documentos (poli­morficos: instrumento,
+// calibracion, falla o mantenimiento), fallas, mantenimientos e historial de
+// cambios de campos.
+
+await sql`
+CREATE TABLE IF NOT EXISTS instrument_types (
+id SERIAL PRIMARY KEY,
+name TEXT UNIQUE NOT NULL,
+slug TEXT UNIQUE NOT NULL,
+sort_order INTEGER NOT NULL DEFAULT 0,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+
+const { rows: instrumentTypeCount } = await sql`SELECT COUNT(*)::int AS count FROM instrument_types`;
+if ((instrumentTypeCount[0]?.count ?? 0) === 0) {
+  const defaultInstrumentTypes = [
+    "Camara de Ionizacion",
+    "Detector Geiger-Muller",
+    "Dosimetro de Lectura Directa",
+    "Activimetro",
+    "Contador Proporcional",
+    "Contador de Centelleo",
+    "Monitor de Contaminacion Superficial",
+    "Monitor de Tasa de Dosis",
+    "Otros Detectores",
+    ];
+  for (let i = 0; i < defaultInstrumentTypes.length; i++) {
+    const name = defaultInstrumentTypes[i] ?? "";
+    if (!name) continue;
+    const slug = slugify(name);
+    await sql`
+    INSERT INTO instrument_types (name, slug, sort_order) VALUES (${name}, ${slug}, ${i + 1})
+    ON CONFLICT (name) DO NOTHING;
+    `;
+  }
+}
+
+await sql`
+CREATE TABLE IF NOT EXISTS calibration_companies (
+id SERIAL PRIMARY KEY,
+name TEXT UNIQUE NOT NULL,
+kind TEXT,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+
+const { rows: calCompanyCount } = await sql`SELECT COUNT(*)::int AS count FROM calibration_companies`;
+if ((calCompanyCount[0]?.count ?? 0) === 0) {
+  await sql`
+  INSERT INTO calibration_companies (name, kind) VALUES
+  ('CCHEN', 'CCHEN'),
+  ('Laboratorio Acreditado', 'Laboratorio acreditado'),
+  ('Fabricante', 'Fabricante'),
+  ('Otro', 'Otro')
+  ON CONFLICT (name) DO NOTHING;
+  `;
+}
+
+await sql`
+CREATE TABLE IF NOT EXISTS instruments (
+id SERIAL PRIMARY KEY,
+code TEXT UNIQUE NOT NULL,
+name TEXT NOT NULL,
+type_id INTEGER REFERENCES instrument_types(id),
+brand TEXT,
+model TEXT,
+serial_number TEXT,
+manufacturer TEXT,
+service TEXT,
+unit TEXT,
+location TEXT,
+acquisition_date DATE,
+provider TEXT,
+status TEXT NOT NULL DEFAULT 'operativo',
+notes TEXT,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_code ON instruments(code)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_serial ON instruments(serial_number)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_type ON instruments(type_id)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_service ON instruments(service)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_status ON instruments(status)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instruments_name ON instruments(lower(name))`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS calibrations (
+id SERIAL PRIMARY KEY,
+instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+calibration_date DATE NOT NULL,
+expiry_date DATE,
+company_id INTEGER REFERENCES calibration_companies(id),
+company_name TEXT,
+certificate_number TEXT,
+calibration_factor NUMERIC,
+magnitude TEXT,
+units TEXT,
+method TEXT,
+standard_used TEXT,
+notes TEXT,
+created_by TEXT,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_calibrations_instrument ON calibrations(instrument_id)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_calibrations_expiry ON calibrations(expiry_date)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_calibrations_company ON calibrations(company_id)`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS instrument_documents (
+id SERIAL PRIMARY KEY,
+owner_type TEXT NOT NULL CHECK (owner_type IN ('instrument','calibration','failure','maintenance')),
+owner_id INTEGER NOT NULL,
+category TEXT,
+original_name TEXT NOT NULL,
+blob_url TEXT NOT NULL,
+blob_pathname TEXT NOT NULL,
+size_bytes BIGINT NOT NULL DEFAULT 0,
+mime_type TEXT,
+uploaded_by TEXT,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instrument_documents_owner ON instrument_documents(owner_type, owner_id)`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS instrument_failures (
+id SERIAL PRIMARY KEY,
+instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+failure_date DATE NOT NULL,
+failure_type TEXT,
+description TEXT NOT NULL,
+diagnosis TEXT,
+corrective_action TEXT,
+responsible TEXT,
+status TEXT NOT NULL DEFAULT 'abierta',
+notes TEXT,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instrument_failures_instrument ON instrument_failures(instrument_id)`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instrument_failures_status ON instrument_failures(status)`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS instrument_maintenances (
+id SERIAL PRIMARY KEY,
+instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+maintenance_type TEXT NOT NULL DEFAULT 'preventivo',
+maintenance_date DATE NOT NULL,
+company TEXT,
+responsible TEXT,
+notes TEXT,
+cost NUMERIC,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instrument_maintenances_instrument ON instrument_maintenances(instrument_id)`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS instrument_history (
+id SERIAL PRIMARY KEY,
+instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+changed_by TEXT,
+changed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+field_name TEXT NOT NULL,
+old_value TEXT,
+new_value TEXT
+);
+`;
+await sql`CREATE INDEX IF NOT EXISTS idx_instrument_history_instrument ON instrument_history(instrument_id)`;
+
+
 return NextResponse.json({ ok: true });
 }
