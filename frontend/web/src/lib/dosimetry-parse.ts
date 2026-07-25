@@ -141,9 +141,11 @@ export function parseDosimetryText(rawText: string): ParseResult {
   const segments: { run: string; block: string }[] = [];
   if (runMatches.length > 0) {
     for (let i = 0; i < runMatches.length; i++) {
-      const start = runMatches[i].index;
-      const end = i + 1 < runMatches.length ? runMatches[i + 1].index : text.length;
-      segments.push({ run: runMatches[i].run, block: text.slice(start, end) });
+      const current = runMatches[i];
+      if (!current) continue;
+      const next = runMatches[i + 1];
+      const end = next ? next.index : text.length;
+      segments.push({ run: current.run, block: text.slice(current.index, end) });
     }
   } else {
     segments.push({ run: "", block: text });
