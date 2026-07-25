@@ -103,6 +103,28 @@ function buildPageText(items: PdfItem[]): string {
     .join("\n");
 }
 
+type PdfLineOut = { y: number; tokens: { x: number; str: string }[] };
+
+function buildPageLinesOut(items: PdfItem[]): PdfLineOut[] {
+  if (items.length === 0) return [];
+  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+  const yTol = 3;
+  const lines: { y: number; items: PdfItem[] }[] = [];
+  for (const it of sorted) {
+    let line = lines.find((l) => Math.abs(l.y - it.y) <= yTol);
+    if (!line) {
+      line = { y: it.y, items: [] };
+      lines.push(line);
+    }
+    line.items.push(it);
+  }
+  lines.sort((a, b) => b.y - a.y);
+  return lines.map((l) => ({
+    y: l.y,
+    tokens: [...l.items].sort((a, b) => a.x - b.x).map((i) => ({ x: i.x, str: i.str })),
+  }));
+}
+
 type PdfRow = {
   rowIndex: number;
   worker_run: string;
@@ -318,6 +340,7 @@ export function DoseReportModal() {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
       let pagesText: string[] = [];
+      let pagesLines: PdfLineOut[][] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
@@ -329,6 +352,7 @@ export function DoseReportModal() {
           }))
           .filter((it: PdfItem) => it.str.trim() !== "");
         pagesText.push(buildPageText(items));
+        pagesLines.push(buildPageLinesOut(items));
       }
       let text = pagesText.join("\n\n");
 
@@ -354,6 +378,7 @@ export function DoseReportModal() {
           }
         }
         pagesText = ocrPages;
+        pagesLines = [];
         text = ocrPages.join("\n\n");
         usedOcr = true;
       }
@@ -364,7 +389,7 @@ export function DoseReportModal() {
       const res = await fetch("/api/dosimetry/import-pdf/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName: file.name, fileHash, rawText: text, pagesText, usedOcr }),
+        body: JSON.stringify({ fileName: file.name, fileHash, rawText: text, pagesText, pagesLines, usedOcr }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
