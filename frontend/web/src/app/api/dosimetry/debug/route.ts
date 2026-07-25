@@ -51,6 +51,15 @@ function extractTextFromContentStream(content: string): string {
   return out;
 }
 
+async function fetchBlob(blobUrl: string): Promise<Response> {
+  let resp = await fetch(blobUrl);
+  if (!resp.ok) {
+    const token = process.env.BLOB_READ_WRITE_TOKEN || "";
+    resp = await fetch(blobUrl, { headers: { Authorization: `Bearer ${token}` } });
+  }
+  return resp;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const docId = Number(searchParams.get("docId") || "1");
@@ -59,8 +68,8 @@ export async function GET(request: Request) {
   const blobUrl = rows[0]?.blob_url as string | undefined;
   if (!blobUrl) return NextResponse.json({ error: "no_document" }, { status: 404 });
 
-  const resp = await fetch(blobUrl);
-  if (!resp.ok) return NextResponse.json({ error: "fetch_failed", status: resp.status }, { status: 502 });
+  const resp = await fetchBlob(blobUrl);
+  if (!resp.ok) return NextResponse.json({ error: "fetch_failed", status: resp.status, blobUrl, hasToken: Boolean(process.env.BLOB_READ_WRITE_TOKEN) }, { status: 502 });
   const arrBuf = await resp.arrayBuffer();
   const buf = Buffer.from(arrBuf);
   const binStr = buf.toString("latin1");
