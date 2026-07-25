@@ -36,13 +36,13 @@ function extractTextFromContentStream(content: string): string {
   let m: RegExpExecArray | null;
   while ((m = re.exec(content))) {
     if (m[1] !== undefined) {
-      out += decodePdfString(m[1]);
+      out += decodePdfString(m[1] || "");
     } else if (m[2] !== undefined) {
-      const arr = m[2];
+      const arr = m[2] || "";
       const strRe = /\(((?:\\.|[^\\()])*)\)/g;
       let sm: RegExpExecArray | null;
       while ((sm = strRe.exec(arr))) {
-        out += decodePdfString(sm[1]);
+        out += decodePdfString(sm[1] || "");
       }
     } else if (m[3] || m[4] || m[5]) {
       out += "\n";
