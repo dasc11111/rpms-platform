@@ -25,11 +25,12 @@ export async function POST(request: Request) {
   const rawText = String(body?.rawText ?? "");
   const pagesTextInput = Array.isArray(body?.pagesText) ? body.pagesText : null;
   const pagesText: string[] = pagesTextInput && pagesTextInput.length > 0 ? pagesTextInput : [rawText];
+  const pagesLinesInput = Array.isArray(body?.pagesLines) && body.pagesLines.length > 0 ? body.pagesLines : undefined;
   const fileName = String(body?.fileName ?? "");
   const fileHash = String(body?.fileHash ?? "");
   const usedOcr = Boolean(body?.usedOcr);
 
-  const parsed = parseDosimetryReport(pagesText);
+  const parsed = parseDosimetryReport(pagesText, pagesLinesInput);
 
   await sql`
     CREATE TABLE IF NOT EXISTS dosimetry_documents (
