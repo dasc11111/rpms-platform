@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { StatusActionButton } from "@/components/workers/status-action-button";
 import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
 import { buildAuthSummary, formatDaysRemaining, AUTH_STATUS_LABEL, SEMAPHORE_DOT_CLASS, SEMAPHORE_TEXT_CLASS } from "@/lib/authorization";
+import { composeWorkerName } from "@/lib/worker-name";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +16,12 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
   if (!id) return notFound();
   const rut = decodeURIComponent(id);
 
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+
   const { rows: workerRows } = await sql`
-    SELECT rut, name, role, service, category, status, annual_dose,
+    SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
       dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
       course_pr_completed, course_pr_date,
       authorization_number, authorization_issue_date, authorization_expiry_date, notes
@@ -39,6 +44,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
   const max = monthlyDoses.length > 0 ? Math.max(...monthlyDoses) : 1;
   const isActive = worker.status !== "inactive";
   const auth = buildAuthSummary(worker);
+  const displayName = composeWorkerName(worker);
 
   const contactFields: { label: string; value: string | null }[] = [
     { label: "Sexo", value: worker.sex },
@@ -57,7 +63,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
         <ChevronLeft className="h-3 w-3" />Trabajadores
       </Link>
       <div className="mb-1 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">{worker.name}</h1>
+        <h1 className="text-xl font-semibold">{displayName}</h1>
         <div className="flex items-center gap-2">
           <WorkerEditModal worker={worker} />
           <StatusActionButton rut={worker.rut} active={isActive} />
