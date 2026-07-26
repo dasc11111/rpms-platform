@@ -23,7 +23,7 @@ export default function CompliancePage() {
         <KPICard label="Pendientes" value={4} href="/compliance" icon={FileWarning} tone="warning" />
         <KPICard label="Inspecciones próx. 90 días" value={2} href="/compliance" icon={ShieldAlert} tone="warning" />
       </div>
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-muted/40 text-left text-xs">
             <tr>
