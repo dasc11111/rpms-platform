@@ -17,14 +17,18 @@ import { CalibrationFormModal } from "@/components/instruments/calibration-form-
 
 export const dynamic = "force-dynamic";
 
-function fmtDate(value: string | null | undefined) {
-  if (!value) return "—";
-  return String(value).slice(0, 10);
+function fmtDate(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toISOString().slice(0, 10);
 }
 
-function fmtDateTime(value: string | null | undefined) {
-  if (!value) return "—";
-  return String(value).slice(0, 16).replace("T", " ");
+function fmtDateTime(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toISOString().slice(0, 16).replace("T", " ");
 }
 
 export default async function InstrumentDetailPage({ params }: { params: Promise<{ id: string }> }) {
