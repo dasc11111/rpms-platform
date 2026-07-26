@@ -73,7 +73,7 @@ export default async function InstrumentsPage() {
         <KPICard label="Con fallas abiertas" value={withFailures} href="/instruments" icon={AlertCircle} tone="danger" />
       </div>
       <InstrumentFormModal />
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-muted/40 text-left text-xs">
             <tr>
