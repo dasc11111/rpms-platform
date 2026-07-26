@@ -58,18 +58,16 @@ const calibrationIds = calibrations.map((c: Record<string, unknown>) => c.id as 
   const failureIds = failures.map((f: Record<string, unknown>) => f.id as number);
   const maintenanceIds = maintenances.map((m: Record<string, unknown>) => m.id as number);
 
-let documents: Record<string, unknown>[] = [];
-  if (calibrationIds.length + failureIds.length + maintenanceIds.length > 0 || true) {
-    const { rows: docRows } = await sql`
-    SELECT * FROM instrument_documents
-    WHERE (owner_type = 'instrument' AND owner_id = ${id})
-    OR (owner_type = 'calibration' AND owner_id = ANY(${calibrationIds.length ? calibrationIds : [0]}))
-    OR (owner_type = 'failure' AND owner_id = ANY(${failureIds.length ? failureIds : [0]}))
-    OR (owner_type = 'maintenance' AND owner_id = ANY(${maintenanceIds.length ? maintenanceIds : [0]}))
-    ORDER BY created_at DESC
-    `;
-    documents = docRows;
-  }
+const { rows: docRows } = await sql.query(
+  `SELECT * FROM instrument_documents
+  WHERE (owner_type = 'instrument' AND owner_id = $1)
+  OR (owner_type = 'calibration' AND owner_id = ANY($2))
+  OR (owner_type = 'failure' AND owner_id = ANY($3))
+  OR (owner_type = 'maintenance' AND owner_id = ANY($4))
+  ORDER BY created_at DESC`,
+  [id, calibrationIds.length ? calibrationIds : [0], failureIds.length ? failureIds : [0], maintenanceIds.length ? maintenanceIds : [0]]
+  );
+  const documents = docRows as Record<string, unknown>[];
 
 return NextResponse.json({ instrument, calibrations, failures, maintenances, history, documents });
 }
