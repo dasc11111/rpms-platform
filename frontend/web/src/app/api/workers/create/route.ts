@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { normalizeRut, cleanRut } from "@/lib/rut";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,18 @@ function toBool(v: unknown): boolean {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
-  const rut = clean(body.rut);
+  const rutInput = clean(body.rut);
   const name = clean(body.name);
-  if (!rut || !name) {
+  if (!rutInput || !name) {
     return NextResponse.json({ ok: false, error: "RUT y nombre son obligatorios." }, { status: 400 });
   }
+
+  const normalized = normalizeRut(rutInput);
+  if (!normalized.ok) {
+    return NextResponse.json({ ok: false, error: normalized.error }, { status: 400 });
+  }
+  const rut = normalized.rut;
+  const rutKey = cleanRut(rut);
 
   const role = clean(body.role);
   const service = clean(body.service);
@@ -43,7 +51,13 @@ export async function POST(request: Request) {
   const authorizationExpiryDate = clean(body.authorization_expiry_date);
   const notes = clean(body.notes);
 
-  const { rows: existingRows } = await sql`SELECT rut, status FROM workers WHERE rut = ${rut} LIMIT 1`;
+  // Comparacion tolerante: detecta al mismo trabajador aunque el RUT ya
+  // guardado tenga puntos, guion o mayusculas distintas.
+  const { rows: existingRows } = await sql`
+    SELECT rut, status FROM workers
+    WHERE regexp_replace(UPPER(rut), '[^0-9K]', '', 'g') = ${rutKey}
+    LIMIT 1
+  `;
   const existing = existingRows[0];
 
   if (existing && existing.status !== "inactive") {
@@ -56,6 +70,7 @@ export async function POST(request: Request) {
   if (existing) {
     await sql`
       UPDATE workers SET
+        rut = ${rut},
         name = ${name},
         role = COALESCE(${role}, role),
         service = COALESCE(${service}, service),
@@ -78,9 +93,9 @@ export async function POST(request: Request) {
         authorization_expiry_date = COALESCE(${authorizationExpiryDate}, authorization_expiry_date),
         notes = COALESCE(${notes}, notes),
         updated_at = now()
-      WHERE rut = ${rut}
+      WHERE rut = ${existing.rut}
     `;
-    return NextResponse.json({ ok: true, reactivated: true });
+    return NextResponse.json({ ok: true, reactivated: true, rut });
   }
 
   await sql`
@@ -93,5 +108,5 @@ export async function POST(request: Request) {
       ${coursePrCompleted}, ${coursePrDate},
       ${authorizationNumber}, ${authorizationIssueDate}, ${authorizationExpiryDate}, ${notes})
   `;
-  return NextResponse.json({ ok: true, created: true });
+  return NextResponse.json({ ok: true, created: true, rut });
 }
