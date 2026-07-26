@@ -7,6 +7,7 @@ import { StatusActionButton } from "@/components/workers/status-action-button";
 import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
 import { ExportWorkersButton } from "@/components/workers/export-workers-button";
 import { buildAuthSummary, formatDaysRemaining, SEMAPHORE_DOT_CLASS, SEMAPHORE_TEXT_CLASS } from "@/lib/authorization";
+import { composeWorkerName } from "@/lib/worker-name";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ export const dynamic = "force-dynamic";
 type WorkerRow = {
   rut: string;
   name: string;
+  last_name_1: string | null;
+  last_name_2: string | null;
+  first_names: string | null;
   role: string | null;
   service: string | null;
   category: string | null;
@@ -36,16 +40,23 @@ type WorkerRow = {
   notes: string | null;
 };
 
+async function ensureNameColumns() {
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+}
+
 async function getWorkers(): Promise<WorkerRow[]> {
   try {
+    await ensureNameColumns();
     const { rows } = await sql`
-      SELECT rut, name, role, service, category, status, annual_dose,
+      SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
         course_pr_completed, course_pr_date,
         authorization_number, authorization_issue_date, authorization_expiry_date, notes
       FROM workers
       WHERE status <> 'inactive'
-      ORDER BY name ASC
+      ORDER BY COALESCE(NULLIF(last_name_1, ''), name) ASC
     `;
     return rows as WorkerRow[];
   } catch {
@@ -83,7 +94,7 @@ export default async function WorkersPage() {
       <CsvImport
         endpoint="/api/workers"
         label="Importar CSV de trabajadores"
-        hint="Columnas: rut, nombre, cargo, servicio, categoria, estado, dosis_anual"
+        hint="Columnas: rut, apellido_paterno, apellido_materno, nombres, cargo, servicio, categoria, estado, dosis_anual"
       />
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full">
@@ -102,10 +113,11 @@ export default async function WorkersPage() {
           <tbody className="divide-y divide-border text-sm">
             {workers.map((w) => {
               const auth = buildAuthSummary(w);
+              const displayName = composeWorkerName(w);
               return (
                 <tr key={w.rut} className="hover:bg-muted/40">
                   <td className="px-3 py-2.5">
-                    <Link href={`/workers/${encodeURIComponent(w.rut)}`} className="font-medium hover:text-accent">{w.name}</Link>
+                    <Link href={`/workers/${encodeURIComponent(w.rut)}`} className="font-medium hover:text-accent">{displayName}</Link>
                   </td>
                   <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{w.rut}</td>
                   <td className="px-3 py-2.5 text-muted-foreground">{w.service}</td>
