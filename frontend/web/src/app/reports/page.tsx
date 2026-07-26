@@ -16,7 +16,7 @@ export default function ReportsPage() {
         <KPICard label="Reportes generados (mes)" value={12} href="/reports" icon={FileText} />
         <KPICard label="Programados" value={4} href="/reports" icon={BarChart3} tone="info" />
       </div>
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-muted/40 text-left text-xs">
             <tr>
