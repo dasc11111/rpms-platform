@@ -13,6 +13,7 @@ import {
 } from "@/lib/instruments";
 import { cn } from "@/lib/utils";
 import { InstrumentEditModal } from "@/components/instruments/instrument-edit-modal";
+import { CalibrationFormModal } from "@/components/instruments/calibration-form-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,10 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
       </div>
 
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
-        <h2 className="text-sm font-semibold mb-3">Historial de calibraciones</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Historial de calibraciones</h2>
+          <CalibrationFormModal instrumentId={id} />
+        </div>
         {calibrations.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
