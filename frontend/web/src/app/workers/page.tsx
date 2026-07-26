@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { sql } from "@/lib/db";
+import { rutMatchKey } from "@/lib/rut";
 import { CsvImport } from "@/components/import/csv-import";
 import { WorkerFormModal } from "@/components/workers/worker-form-modal";
 import { ExportWorkersButton } from "@/components/workers/export-workers-button";
@@ -13,19 +14,52 @@ async function ensureNameColumns() {
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
 }
 
+// Trae, para cada RUT (clave tolerante), si el trabajador tiene algun
+// registro de dosimetria trimestral y si tiene el reporte del trimestre
+// en curso, para poder filtrarlos en el listado (fase 4).
+async function getDosimetryFlags(): Promise<{ any: Set<string>; current: Set<string> }> {
+  try {
+    const { rows } = await sql`SELECT worker_rut, year, quarter FROM dosimetry_quarterly`;
+    const now = new Date();
+    const year = now.getFullYear();
+    const quarter = Math.floor(now.getMonth() / 3) + 1;
+    const any = new Set<string>();
+    const current = new Set<string>();
+    for (const r of rows as any[]) {
+      const key = rutMatchKey(String(r.worker_rut ?? ""));
+      if (!key) continue;
+      any.add(key);
+      if (Number(r.year) === year && Number(r.quarter) === quarter) current.add(key);
+    }
+    return { any, current };
+  } catch {
+    return { any: new Set(), current: new Set() };
+  }
+}
+
 async function getWorkers(): Promise<WorkerRow[]> {
   try {
     await ensureNameColumns();
-    const { rows } = await sql`
-      SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
-        dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
-        course_pr_completed, course_pr_date,
-        authorization_number, authorization_issue_date, authorization_expiry_date, notes
-      FROM workers
-      WHERE status <> 'inactive'
-      ORDER BY COALESCE(NULLIF(last_name_1, ''), name) ASC
-    `;
-    return rows as WorkerRow[];
+    const [{ rows }, flags] = await Promise.all([
+      sql`
+        SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
+               dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+               course_pr_completed, course_pr_date,
+               authorization_number, authorization_issue_date, authorization_expiry_date, notes
+        FROM workers
+        WHERE status <> 'inactive'
+        ORDER BY COALESCE(NULLIF(last_name_1, ''), name) ASC
+      `,
+      getDosimetryFlags(),
+    ]);
+    return rows.map((w: any) => {
+      const key = rutMatchKey(String(w.rut ?? ""));
+      return {
+        ...w,
+        has_dosimetry: flags.any.has(key),
+        has_current_quarter: flags.current.has(key),
+      };
+    }) as WorkerRow[];
   } catch {
     return [];
   }
