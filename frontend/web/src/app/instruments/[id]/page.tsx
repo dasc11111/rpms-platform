@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, FileText } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { sql } from "@/lib/db";
 import {
   INSTRUMENT_STATUS_LABELS,
@@ -9,11 +9,11 @@ import {
   getCalibrationAlertLevel,
   FAILURE_STATUS_LABELS,
   MAINTENANCE_TYPE_LABELS,
-  formatBytes,
 } from "@/lib/instruments";
 import { cn } from "@/lib/utils";
 import { InstrumentEditModal } from "@/components/instruments/instrument-edit-modal";
 import { CalibrationFormModal } from "@/components/instruments/calibration-form-modal";
+import { InstrumentDocumentsPanel } from "@/components/instruments/instrument-documents-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -251,24 +251,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
         )}
       </div>
 
-      <div className="mb-4 rounded-lg border border-border bg-surface p-4">
-        <h2 className="text-sm font-semibold mb-3">Documentos</h2>
-        {documents.length > 0 ? (
-          <ul className="space-y-1.5 text-xs">
-            {(documents as any[]).map((d) => (
-              <li key={d.id} className="flex items-center justify-between border-b border-border/60 pb-1.5">
-                <a href={d.blob_url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-accent">
-                  <FileText className="h-3.5 w-3.5" />
-                  {d.original_name}
-                </a>
-                <span className="text-muted-foreground">{formatBytes(Number(d.size_bytes))} · {d.owner_type}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-xs text-muted-foreground">Sin documentos adjuntos.</p>
-        )}
-      </div>
+      <InstrumentDocumentsPanel instrumentId={id} documents={documents as any} />
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold mb-3">Historial de auditoría</h2>
