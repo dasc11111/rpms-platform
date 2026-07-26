@@ -73,8 +73,7 @@ function toRow(w: ExportWorker): (string | number)[] {
 
 function toCsvValue(v: string | number): string {
   const s = String(v ?? "");
-  if (/["
-,]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  if (/["\n,]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
 
@@ -104,9 +103,8 @@ export function ExportWorkersButton() {
       const stamp = new Date().toISOString().slice(0, 10);
 
       if (format === "csv") {
-        const csv = [HEADERS, ...rows].map((r) => r.map(toCsvValue).join(",")).join("
-");
-        downloadBlob(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }), `trabajadores-${stamp}.csv`);
+        const csv = [HEADERS, ...rows].map((r) => r.map(toCsvValue).join(",")).join("\r\n");
+        downloadBlob(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }), `trabajadores-${stamp}.csv`);
       } else {
         const XLSX = await import("xlsx");
         const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows]);
