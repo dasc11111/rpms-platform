@@ -9,6 +9,8 @@ import {
   getCalibrationAlertLevel,
 } from "@/lib/instruments";
 import { cn } from "@/lib/utils";
+import { InstrumentFormModal } from "@/components/instruments/instrument-form-modal";
+import { InstrumentEditModal } from "@/components/instruments/instrument-edit-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,7 @@ export default async function InstrumentsPage() {
         <KPICard label="Vencidos" value={expiredCount} href="/instruments" icon={AlertTriangle} tone="danger" />
         <KPICard label="Con fallas abiertas" value={withFailures} href="/instruments" icon={AlertCircle} tone="danger" />
       </div>
+      <InstrumentFormModal />
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full">
           <thead className="border-b border-border bg-muted/40 text-left text-xs">
@@ -75,6 +78,7 @@ export default async function InstrumentsPage() {
               <th className="px-3 py-2">Vencimiento</th>
               <th className="px-3 py-2">Calibración</th>
               <th className="px-3 py-2">Estado</th>
+              <th className="px-3 py-2 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
@@ -93,11 +97,16 @@ export default async function InstrumentsPage() {
                   </span>
                 </td>
                 <td className="px-3 py-2.5 text-muted-foreground">{INSTRUMENT_STATUS_LABELS[i.status]}</td>
+                <td className="px-3 py-2.5 text-right">
+                  <div className="flex justify-end gap-1.5">
+                    <InstrumentEditModal instrument={i} />
+                  </div>
+                </td>
               </tr>
             ))}
             {enriched.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                <td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">
                   No hay instrumentos registrados todavía. Agrega uno para comenzar.
                 </td>
               </tr>
