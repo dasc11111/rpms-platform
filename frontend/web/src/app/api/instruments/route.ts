@@ -86,7 +86,13 @@ LIMIT 5000
 const { rows } = await sql.query(query, params);
 
 type Row = Record<string, unknown>;
-  let items = (rows as Row[]).map((row) => {
+  type EnrichedRow = Row & {
+    alert_level: string;
+    days_remaining: number | null;
+    tracking_checkpoint: number | null;
+    in_maintenance: boolean;
+  };
+  let items: EnrichedRow[] = (rows as Row[]).map((row) => {
     const alert = getCalibrationAlertLevel((row.last_calibration_expiry as string) ?? null);
     return {
       ...row,
@@ -94,7 +100,7 @@ type Row = Record<string, unknown>;
       days_remaining: alert.daysRemaining,
       tracking_checkpoint: getTrackingCheckpoint(alert.daysRemaining),
       in_maintenance: row.status === "en_mantenimiento",
-    };
+    } as EnrichedRow;
   });
 
 if (companyFilter) {
