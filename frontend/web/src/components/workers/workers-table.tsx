@@ -35,6 +35,8 @@ export type WorkerRow = {
   authorization_issue_date: string | null;
   authorization_expiry_date: string | null;
   notes: string | null;
+  has_dosimetry?: boolean;
+  has_current_quarter?: boolean;
 };
 
 type SortField = "apellido" | "rut" | "service" | "unit" | "role" | "status" | "authorization";
@@ -59,6 +61,8 @@ export function WorkersTable({ workers }: { workers: WorkerRow[] }) {
   const [status, setStatus] = useState(ALL);
   const [authFilter, setAuthFilter] = useState(ALL);
   const [coursePr, setCoursePr] = useState(ALL);
+  const [dosimetryFilter, setDosimetryFilter] = useState(ALL);
+  const [quarterFilter, setQuarterFilter] = useState(ALL);
   const [sortField, setSortField] = useState<SortField>("apellido");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -93,6 +97,10 @@ export function WorkersTable({ workers }: { workers: WorkerRow[] }) {
       if (authFilter !== ALL && auth.status !== authFilter) return false;
       if (coursePr === "si" && !w.course_pr_completed) return false;
       if (coursePr === "no" && w.course_pr_completed) return false;
+      if (dosimetryFilter === "si" && !w.has_dosimetry) return false;
+      if (dosimetryFilter === "no" && w.has_dosimetry) return false;
+      if (quarterFilter === "si" && !w.has_current_quarter) return false;
+      if (quarterFilter === "no" && w.has_current_quarter) return false;
       return true;
     });
 
@@ -109,7 +117,7 @@ export function WorkersTable({ workers }: { workers: WorkerRow[] }) {
     });
 
     return filtered;
-  }, [workers, search, service, unit, role, status, authFilter, coursePr, sortField, sortDir]);
+  }, [workers, search, service, unit, role, status, authFilter, coursePr, dosimetryFilter, quarterFilter, sortField, sortDir]);
 
   function SortHeader({ field, label, align }: { field: SortField; label: string; align?: "right" | "center" }) {
     const active = sortField === field;
@@ -168,6 +176,16 @@ export function WorkersTable({ workers }: { workers: WorkerRow[] }) {
           <option value={ALL}>Curso PR (todos)</option>
           <option value="si">Con curso PR</option>
           <option value="no">Sin curso PR</option>
+        </select>
+        <select value={dosimetryFilter} onChange={(e) => setDosimetryFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent">
+          <option value={ALL}>Dosimetría (todos)</option>
+          <option value="si">Con dosimetría</option>
+          <option value="no">Sin dosimetría</option>
+        </select>
+        <select value={quarterFilter} onChange={(e) => setQuarterFilter(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent">
+          <option value={ALL}>Reporte trimestre actual (todos)</option>
+          <option value="si">Con reporte del trimestre</option>
+          <option value="no">Sin reporte del trimestre</option>
         </select>
         <span className="text-[11px] text-muted-foreground">{rows.length} de {workers.length} trabajadores</span>
       </div>
