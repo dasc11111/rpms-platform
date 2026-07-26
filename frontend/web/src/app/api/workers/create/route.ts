@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeRut, cleanRut } from "@/lib/rut";
+import { composeWorkerName } from "@/lib/worker-name";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,28 @@ function toBool(v: unknown): boolean {
   return v === true || v === "true" || v === "on" || v === "1" || v === 1;
 }
 
+async function ensureNameColumns() {
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
+  await ensureNameColumns();
+
   const rutInput = clean(body.rut);
-  const name = clean(body.name);
+  const lastName1 = clean(body.last_name_1);
+  const lastName2 = clean(body.last_name_2);
+  const firstNames = clean(body.first_names);
+  const name = composeWorkerName({
+    last_name_1: lastName1,
+    last_name_2: lastName2,
+    first_names: firstNames,
+    name: body.name,
+  }) || null;
+
   if (!rutInput || !name) {
     return NextResponse.json({ ok: false, error: "RUT y nombre son obligatorios." }, { status: 400 });
   }
@@ -72,6 +90,9 @@ export async function POST(request: Request) {
       UPDATE workers SET
         rut = ${rut},
         name = ${name},
+        last_name_1 = COALESCE(${lastName1}, last_name_1),
+        last_name_2 = COALESCE(${lastName2}, last_name_2),
+        first_names = COALESCE(${firstNames}, first_names),
         role = COALESCE(${role}, role),
         service = COALESCE(${service}, service),
         category = COALESCE(${category}, category),
@@ -99,11 +120,11 @@ export async function POST(request: Request) {
   }
 
   await sql`
-    INSERT INTO workers (rut, name, role, service, category, status, annual_dose,
+    INSERT INTO workers (rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
       dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
       course_pr_completed, course_pr_date,
       authorization_number, authorization_issue_date, authorization_expiry_date, notes)
-    VALUES (${rut}, ${name}, ${role}, ${service}, ${category}, 'active', ${annualDose},
+    VALUES (${rut}, ${name}, ${lastName1}, ${lastName2}, ${firstNames}, ${role}, ${service}, ${category}, 'active', ${annualDose},
       ${dv}, ${sex}, ${address}, ${phone}, ${email}, ${birthDate}, ${estamento}, ${contractType}, ${unit},
       ${coursePrCompleted}, ${coursePrDate},
       ${authorizationNumber}, ${authorizationIssueDate}, ${authorizationExpiryDate}, ${notes})
