@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeRut, cleanRut } from "@/lib/rut";
+import { composeWorkerName } from "@/lib/worker-name";
 
 export const dynamic = "force-dynamic";
 
@@ -8,12 +9,28 @@ function toBool(v: unknown): boolean {
   return v === true || v === "true" || v === "on" || v === "1" || v === 1;
 }
 
+async function ensureNameColumns() {
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
+  await ensureNameColumns();
+
   const originalRut = String(body.original_rut ?? "").trim();
   const rutInput = String(body.rut ?? "").trim();
-  const name = String(body.name ?? "").trim();
+  const lastName1 = String(body.last_name_1 ?? "").trim() || null;
+  const lastName2 = String(body.last_name_2 ?? "").trim() || null;
+  const firstNames = String(body.first_names ?? "").trim() || null;
+  const name = composeWorkerName({
+    last_name_1: lastName1,
+    last_name_2: lastName2,
+    first_names: firstNames,
+    name: body.name,
+  });
 
   if (!originalRut) {
     return NextResponse.json({ error: "Falta el RUT original del trabajador." }, { status: 400 });
@@ -72,6 +89,9 @@ export async function POST(request: Request) {
     UPDATE workers SET
       rut = ${rut},
       name = ${name},
+      last_name_1 = ${lastName1},
+      last_name_2 = ${lastName2},
+      first_names = ${firstNames},
       role = ${role},
       service = ${service},
       category = ${category},
