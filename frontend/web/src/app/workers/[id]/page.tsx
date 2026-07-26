@@ -11,6 +11,20 @@ import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const LEVEL_LABEL: Record<string, string> = {
+  normal: "Normal",
+  registro: "Nivel de registro",
+  investigacion: "Nivel de investigación",
+  intervencion: "Nivel de intervención",
+};
+
+const LEVEL_CLASS: Record<string, string> = {
+  normal: "text-muted-foreground",
+  registro: "text-sky-600",
+  investigacion: "text-warning",
+  intervencion: "text-red-600 font-semibold",
+};
+
 export default async function WorkerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!id) return notFound();
@@ -22,9 +36,9 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
 
   const { rows: workerRows } = await sql`
     SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
-      dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
-      course_pr_completed, course_pr_date,
-      authorization_number, authorization_issue_date, authorization_expiry_date, notes
+           dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+           course_pr_completed, course_pr_date,
+           authorization_number, authorization_issue_date, authorization_expiry_date, notes
     FROM workers
     WHERE rut = ${rut}
     LIMIT 1
@@ -38,6 +52,22 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
     WHERE worker_rut = ${rut}
     ORDER BY period ASC
   `;
+
+  const rutDigits = rut.split("-")[0].replace(/[^0-9]/g, "");
+  let quarterlyRows: any[] = [];
+  try {
+    const { rows } = await sql`
+      SELECT year, quarter, period_label, dose_body, dose_lens, dose_skin,
+             accum_year_body, accum_12m_body, accum_60m_body, accum_60m_lens, accum_60m_skin,
+             level, institucion, departamento
+      FROM dosimetry_quarterly
+      WHERE regexp_replace(split_part(worker_rut, '-', 1), '[^0-9]', '', 'g') = ${rutDigits}
+      ORDER BY year DESC, quarter DESC
+    `;
+    quarterlyRows = rows;
+  } catch {
+    quarterlyRows = [];
+  }
 
   const monthlyDoses = readingRows.map((r: any) => Number(r.dose));
   const annualDose = Number(worker.annual_dose);
@@ -137,8 +167,48 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
         )}
       </div>
 
+      <div className="mb-4 rounded-lg border border-border bg-surface p-4">
+        <h2 className="text-sm font-semibold mb-3">Dosimetría trimestral (Hp10 / Hp3 / Hp0,07)</h2>
+        {quarterlyRows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-left text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-1.5">Periodo</th>
+                  <th className="px-2 py-1.5">Institución</th>
+                  <th className="px-2 py-1.5 text-right">Hp(10)</th>
+                  <th className="px-2 py-1.5 text-right">Hp(3)</th>
+                  <th className="px-2 py-1.5 text-right">Hp(0,07)</th>
+                  <th className="px-2 py-1.5 text-right">Acum. año</th>
+                  <th className="px-2 py-1.5 text-right">Acum. 12m</th>
+                  <th className="px-2 py-1.5 text-right">Acum. 60m</th>
+                  <th className="px-2 py-1.5">Nivel</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {quarterlyRows.map((r: any, i: number) => (
+                  <tr key={i}>
+                    <td className="px-2 py-1.5 font-medium">{r.period_label}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{r.institucion || "—"}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.dose_body))}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.dose_lens))}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.dose_skin))}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.accum_year_body))}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.accum_12m_body))}</td>
+                    <td className="px-2 py-1.5 text-right">{formatMSv(Number(r.accum_60m_body))}</td>
+                    <td className={cn("px-2 py-1.5", LEVEL_CLASS[r.level] || "")}>{LEVEL_LABEL[r.level] || r.level || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Sin registros trimestrales de dosimetría vinculados a este RUT.</p>
+        )}
+      </div>
+
       <div className="rounded-lg border border-border bg-surface p-4">
-        <h2 className="text-sm font-semibold mb-3">Dosis Hp(10) registradas</h2>
+        <h2 className="text-sm font-semibold mb-3">Histórico mensual (Hp10)</h2>
         <p className="text-xs text-muted-foreground mb-2">Anual acumulada: {formatMSv(annualDose)}</p>
         {monthlyDoses.length > 0 ? (
           <div className="flex h-16 items-end gap-1">
