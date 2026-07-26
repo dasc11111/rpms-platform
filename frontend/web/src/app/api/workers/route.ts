@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { normalizeRut, cleanRut } from "@/lib/rut";
+import { composeWorkerName } from "@/lib/worker-name";
 
 export const dynamic = "force-dynamic";
 
+async function ensureNameColumns() {
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+}
+
 export async function GET(request: Request) {
+  await ensureNameColumns();
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const all = searchParams.get("all") === "1";
@@ -14,7 +22,7 @@ export async function GET(request: Request) {
     // Usado por la exportacion de trabajadores: incluye TODOS los registros
     // (activos, suspendidos e inactivos) para no perder informacion.
     ({ rows } = await sql`
-      SELECT rut, name, role, service, category, status, annual_dose,
+      SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
         course_pr_completed, course_pr_date,
         authorization_number, authorization_issue_date, authorization_expiry_date, notes
@@ -23,7 +31,7 @@ export async function GET(request: Request) {
     `);
   } else if (status) {
     ({ rows } = await sql`
-      SELECT rut, name, role, service, category, status, annual_dose,
+      SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
         course_pr_completed, course_pr_date,
         authorization_number, authorization_issue_date, authorization_expiry_date, notes
@@ -33,7 +41,7 @@ export async function GET(request: Request) {
     `);
   } else {
     ({ rows } = await sql`
-      SELECT rut, name, role, service, category, status, annual_dose,
+      SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
         course_pr_completed, course_pr_date,
         authorization_number, authorization_issue_date, authorization_expiry_date, notes
@@ -50,13 +58,23 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const rows: any[] = Array.isArray(body?.rows) ? body.rows : [];
 
+  await ensureNameColumns();
+
   let inserted = 0;
   let skipped = 0;
   const errors: string[] = [];
 
   for (const r of rows) {
     const rutRaw = String(r.rut ?? r.run ?? "").trim();
-    const name = String(r.name ?? r.nombre ?? "").trim();
+    const lastName1 = String(r.apellido_paterno ?? r.last_name_1 ?? "").trim() || null;
+    const lastName2 = String(r.apellido_materno ?? r.last_name_2 ?? "").trim() || null;
+    const firstNames = String(r.nombres ?? r.first_names ?? "").trim() || null;
+    const name = composeWorkerName({
+      last_name_1: lastName1,
+      last_name_2: lastName2,
+      first_names: firstNames,
+      name: r.name ?? r.nombre,
+    });
     if (!rutRaw || !name) {
       skipped++;
       continue;
@@ -96,13 +114,16 @@ export async function POST(request: Request) {
     const targetRut = existingRows[0]?.rut ?? rut;
 
     await sql`
-      INSERT INTO workers (rut, name, role, service, category, status, annual_dose,
+      INSERT INTO workers (rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit)
-      VALUES (${targetRut}, ${name}, ${role}, ${service}, ${category}, ${status}, ${annualDose},
+      VALUES (${targetRut}, ${name}, ${lastName1}, ${lastName2}, ${firstNames}, ${role}, ${service}, ${category}, ${status}, ${annualDose},
         ${dv}, ${sex}, ${address}, ${phone}, ${email}, ${birthDate}, ${estamento}, ${contractType}, ${unit})
       ON CONFLICT (rut) DO UPDATE SET
         rut = ${rut},
         name = EXCLUDED.name,
+        last_name_1 = COALESCE(EXCLUDED.last_name_1, workers.last_name_1),
+        last_name_2 = COALESCE(EXCLUDED.last_name_2, workers.last_name_2),
+        first_names = COALESCE(EXCLUDED.first_names, workers.first_names),
         role = EXCLUDED.role,
         service = EXCLUDED.service,
         category = EXCLUDED.category,
