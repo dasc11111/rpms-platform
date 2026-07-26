@@ -15,6 +15,13 @@ import { InstrumentEditModal } from "@/components/instruments/instrument-edit-mo
 
 export const dynamic = "force-dynamic";
 
+function fmtDate(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toISOString().slice(0, 10);
+}
+
 async function getInstruments(): Promise<InstrumentRow[]> {
   try {
     const { rows } = await sql`
@@ -94,8 +101,8 @@ export default async function InstrumentsPage() {
                 <td className="px-3 py-2.5 text-muted-foreground">{i.type_name ?? "—"}</td>
                 <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i.serial_number ?? "—"}</td>
                 <td className="px-3 py-2.5 text-muted-foreground">{i.service ?? "—"}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.last_calibration_date ?? "—"}</td>
-                <td className="px-3 py-2.5 text-muted-foreground">{i.last_calibration_expiry ?? "—"}</td>
+                <td className="px-3 py-2.5 text-muted-foreground">{fmtDate(i.last_calibration_date)}</td>
+                <td className="px-3 py-2.5 text-muted-foreground">{fmtDate(i.last_calibration_expiry)}</td>
                 <td className="px-3 py-2.5">
                   <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium", CALIBRATION_ALERT_COLORS[i.alertLevel])}>
                     {CALIBRATION_ALERT_LABELS[i.alertLevel]}
