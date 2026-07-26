@@ -171,7 +171,7 @@ export function InstrumentDocumentsPanel({
     if (!window.confirm(`\u00bfEliminar "${name}"? Esta acci\u00f3n no se puede deshacer.`)) return;
     setError(null);
     try {
-      const res = await fetch(`/api/instruments/documents/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/instruments/documents/${id}/download`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete_failed");
       router.refresh();
     } catch {
