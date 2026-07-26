@@ -7,6 +7,9 @@ import { daysRemaining, getAuthStatus, AUTH_STATUS_LABEL, formatDaysRemaining } 
 type WorkerData = {
   rut: string;
   name: string;
+  last_name_1?: string | null;
+  last_name_2?: string | null;
+  first_names?: string | null;
   role?: string | null;
   service?: string | null;
   category?: string | null;
@@ -30,7 +33,9 @@ type WorkerData = {
 
 type FormState = {
   rut: string;
-  name: string;
+  last_name_1: string;
+  last_name_2: string;
+  first_names: string;
   role: string;
   service: string;
   category: string;
@@ -52,9 +57,13 @@ type FormState = {
   notes: string;
 };
 
+const nameFields: { key: keyof FormState; label: string; required?: boolean }[] = [
+  { key: "last_name_1", label: "Apellido paterno", required: true },
+  { key: "last_name_2", label: "Apellido materno" },
+  { key: "first_names", label: "Nombres", required: true },
+];
+
 const fields: { key: keyof FormState; label: string; required?: boolean }[] = [
-  { key: "rut", label: "RUT (ej: 12.345.678-9)", required: true },
-  { key: "name", label: "Nombre completo", required: true },
   { key: "role", label: "Cargo / descripción" },
   { key: "service", label: "Servicio" },
   { key: "unit", label: "Unidad" },
@@ -80,7 +89,9 @@ const authFields: { key: keyof FormState; label: string }[] = [
 function toForm(worker: WorkerData): FormState {
   return {
     rut: worker.rut ?? "",
-    name: worker.name ?? "",
+    last_name_1: worker.last_name_1 ?? "",
+    last_name_2: worker.last_name_2 ?? "",
+    first_names: worker.first_names ?? "",
     role: worker.role ?? "",
     service: worker.service ?? "",
     category: worker.category ?? "",
@@ -176,9 +187,43 @@ export function WorkerEditModal({ worker }: { worker: WorkerData }) {
         <p className="mb-3 text-[11px] text-muted-foreground">
           Corrige los datos que estén equivocados y guarda los cambios.
         </p>
+
+        <label className="mb-2.5 block text-[11px]">
+          <span className="mb-1 block text-muted-foreground">
+            RUT (ej: 12.345.678-9)
+            <span className="text-danger"> *</span>
+          </span>
+          <input
+            type="text"
+            value={form.rut}
+            onChange={(e) => update("rut", e.target.value)}
+            className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+          />
+        </label>
+
+        <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+          Nombre (formato Apellido Paterno Apellido Materno Nombres)
+        </p>
+        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
+          {nameFields.map((f) => (
+            <label key={f.key} className={f.key === "first_names" ? "col-span-2 text-[11px]" : "text-[11px]"}>
+              <span className="mb-1 block text-muted-foreground">
+                {f.label}
+                {f.required && <span className="text-danger"> *</span>}
+              </span>
+              <input
+                type="text"
+                value={form[f.key] as string}
+                onChange={(e) => update(f.key, e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+              />
+            </label>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 gap-2.5">
           {fields.map((f) => (
-            <label key={f.key} className={f.key === "name" || f.key === "address" ? "col-span-2 text-[11px]" : "text-[11px]"}>
+            <label key={f.key} className={f.key === "address" ? "col-span-2 text-[11px]" : "text-[11px]"}>
               <span className="mb-1 block text-muted-foreground">
                 {f.label}
                 {f.required && <span className="text-danger"> *</span>}
