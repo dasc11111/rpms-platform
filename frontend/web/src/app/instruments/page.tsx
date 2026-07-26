@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Wrench, ClipboardCheck, AlertTriangle, AlertCircle } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { sql } from "@/lib/db";
@@ -85,7 +86,11 @@ export default async function InstrumentsPage() {
             {enriched.map((i) => (
               <tr key={i.id} className="hover:bg-muted/40">
                 <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i.code}</td>
-                <td className="px-3 py-2.5 font-medium">{i.name}</td>
+                <td className="px-3 py-2.5 font-medium">
+                  <Link href={`/instruments/${i.id}`} className="hover:text-accent hover:underline">
+                    {i.name}
+                  </Link>
+                </td>
                 <td className="px-3 py-2.5 text-muted-foreground">{i.type_name ?? "—"}</td>
                 <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i.serial_number ?? "—"}</td>
                 <td className="px-3 py-2.5 text-muted-foreground">{i.service ?? "—"}</td>
