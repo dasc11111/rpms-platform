@@ -1,10 +1,29 @@
-import { Bell, Building2, Shield, User } from "lucide-react";
+import Link from "next/link";
+import { Bell, Bot, Building2, Shield, User } from "lucide-react";
 
 const SECTIONS = [
   { icon: User, title: "Perfil", description: "Nombre, cargo y datos de contacto del usuario." },
-  { icon: Building2, title: "Institución", description: "Datos del establecimiento, servicios y sedes registradas." },
-  { icon: Bell, title: "Notificaciones", description: "Alertas de vencimientos, dosis e incidentes por correo y en la plataforma." },
-  { icon: Shield, title: "Seguridad y permisos", description: "Roles, autenticación y control de acceso por servicio." },
+  {
+    icon: Building2,
+    title: "Institución",
+    description: "Datos del establecimiento, servicios y sedes registradas.",
+  },
+  {
+    icon: Bell,
+    title: "Notificaciones",
+    description: "Alertas de vencimientos, dosis e incidentes por correo y en la plataforma.",
+  },
+  {
+    icon: Shield,
+    title: "Seguridad y permisos",
+    description: "Roles, autenticación y control de acceso por servicio.",
+  },
+  {
+    icon: Bot,
+    title: "Asistente Inteligente",
+    description: "Proveedor de IA, modelo, clave API y parámetros del asistente.",
+    href: "/settings/assistant",
+  },
 ];
 
 export default function SettingsPage() {
@@ -14,8 +33,8 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {SECTIONS.map((s) => {
           const Icon = s.icon;
-          return (
-            <div key={s.title} className="rounded-lg border border-border bg-surface p-4">
+          const content = (
+            <>
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-subtle text-accent">
                   <Icon className="h-4 w-4" strokeWidth={2} />
@@ -23,6 +42,22 @@ export default function SettingsPage() {
                 <h2 className="text-sm font-semibold">{s.title}</h2>
               </div>
               <p className="text-xs text-muted-foreground">{s.description}</p>
+            </>
+          );
+          if (s.href) {
+            return (
+              <Link
+                key={s.title}
+                href={s.href}
+                className="rounded-lg border border-border bg-surface p-4 transition-colors hover:border-accent"
+              >
+                {content}
+              </Link>
+            );
+          }
+          return (
+            <div key={s.title} className="rounded-lg border border-border bg-surface p-4">
+              {content}
             </div>
           );
         })}
