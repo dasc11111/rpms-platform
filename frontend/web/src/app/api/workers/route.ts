@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { normalizeRut, cleanRut } from "@/lib/rut";
 
 export const dynamic = "force-dynamic";
 
@@ -50,10 +51,25 @@ export async function POST(request: Request) {
   const rows: any[] = Array.isArray(body?.rows) ? body.rows : [];
 
   let inserted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
   for (const r of rows) {
-    const rut = String(r.rut ?? "").trim();
+    const rutRaw = String(r.rut ?? r.run ?? "").trim();
     const name = String(r.name ?? r.nombre ?? "").trim();
-    if (!rut || !name) continue;
+    if (!rutRaw || !name) {
+      skipped++;
+      continue;
+    }
+
+    const normalized = normalizeRut(rutRaw);
+    if (!normalized.ok) {
+      skipped++;
+      if (errors.length < 20) errors.push(`${rutRaw}: ${normalized.error}`);
+      continue;
+    }
+    const rut = normalized.rut;
+    const rutKey = cleanRut(rut);
 
     const role = String(r.role ?? r.cargo ?? "").trim() || null;
     const service = String(r.service ?? r.servicio ?? "").trim() || null;
@@ -70,12 +86,22 @@ export async function POST(request: Request) {
     const contractType = String(r.contract_type ?? r.calidad_contractual ?? "").trim() || null;
     const unit = String(r.unit ?? r.unidad ?? "").trim() || null;
 
+    // Comparacion tolerante: si el mismo RUT ya existe con otro formato,
+    // actualizamos ese registro en vez de crear uno duplicado.
+    const { rows: existingRows } = await sql`
+      SELECT rut FROM workers
+      WHERE regexp_replace(UPPER(rut), '[^0-9K]', '', 'g') = ${rutKey}
+      LIMIT 1
+    `;
+    const targetRut = existingRows[0]?.rut ?? rut;
+
     await sql`
       INSERT INTO workers (rut, name, role, service, category, status, annual_dose,
         dv, sex, address, phone, email, birth_date, estamento, contract_type, unit)
-      VALUES (${rut}, ${name}, ${role}, ${service}, ${category}, ${status}, ${annualDose},
+      VALUES (${targetRut}, ${name}, ${role}, ${service}, ${category}, ${status}, ${annualDose},
         ${dv}, ${sex}, ${address}, ${phone}, ${email}, ${birthDate}, ${estamento}, ${contractType}, ${unit})
       ON CONFLICT (rut) DO UPDATE SET
+        rut = ${rut},
         name = EXCLUDED.name,
         role = EXCLUDED.role,
         service = EXCLUDED.service,
@@ -96,5 +122,5 @@ export async function POST(request: Request) {
     inserted++;
   }
 
-  return NextResponse.json({ ok: true, inserted });
+  return NextResponse.json({ ok: true, inserted, skipped, errors });
 }
