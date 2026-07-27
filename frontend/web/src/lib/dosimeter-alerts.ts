@@ -108,8 +108,10 @@ export async function computeDosimeterAlerts(onlyRut?: string): Promise<Dosimete
     if (years.length >= 2) {
       const lastY = years[years.length - 1];
       const prevY = years[years.length - 2];
-      const lastVal = Number(lastByYear.get(lastY).accum_year_body) || 0;
-      const prevVal = Number(lastByYear.get(prevY).accum_year_body) || 0;
+      const lastRow = lastByYear.get(lastY);
+      const prevRow = lastByYear.get(prevY);
+      const lastVal = Number(lastRow?.accum_year_body) || 0;
+      const prevVal = Number(prevRow?.accum_year_body) || 0;
       if (prevVal > 0 && lastVal > prevVal * 1.2) {
         alerts.push({
           id: `trend-${rut}-${lastY}`,
