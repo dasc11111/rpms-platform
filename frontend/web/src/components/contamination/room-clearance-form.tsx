@@ -157,9 +157,8 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
     if (e.key !== "Enter") return;
     e.preventDefault();
     const idx = flatOrder.indexOf(key);
-    const nextKey = flatOrder[idx + 1];
+    const nextKey = flatOrder[idx + 1] ?? flatOrder[0];
     if (nextKey) inputRefs.current[nextKey]?.focus();
-    else inputRefs.current[flatOrder[0]]?.focus();
   }
 
   function resetForm() {
