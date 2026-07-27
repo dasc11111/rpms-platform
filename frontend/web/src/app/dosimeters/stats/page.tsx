@@ -29,16 +29,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function bucketDose(values: number[]) {
-  const buckets = [
+type Bucket = { label: string; min: number; max: number; n: number };
+
+function bucketDose(values: number[]): Bucket[] {
+  const buckets: Bucket[] = [
     { label: "< 0,1 mSv", min: -Infinity, max: 0.1, n: 0 },
     { label: "0,1 - 0,5 mSv", min: 0.1, max: 0.5, n: 0 },
     { label: "0,5 - 1,6 mSv", min: 0.5, max: 1.6, n: 0 },
     { label: "1,6 - 5 mSv", min: 1.6, max: 5, n: 0 },
     { label: ">= 5 mSv", min: 5, max: Infinity, n: 0 },
   ];
+  const fallback = buckets[buckets.length - 1] as Bucket;
   for (const v of values) {
-    const b = buckets.find((b) => v >= b.min && v < b.max) ?? buckets[buckets.length - 1];
+    const found = buckets.find((b) => v >= b.min && v < b.max);
+    const b: Bucket = found ?? fallback;
     b.n++;
   }
   return buckets;
