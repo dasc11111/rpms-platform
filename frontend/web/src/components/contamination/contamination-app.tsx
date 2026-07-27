@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Search, Settings2, Table2 } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, Search, Settings2, Table2 } from "lucide-react";
 import { ContaminationSearchPanel, EMPTY_FILTERS, type ContaminationFilters } from "./contamination-search-panel";
 import { ContaminationDashboard } from "./contamination-dashboard";
 import { ContaminationRecordsTable } from "./contamination-records-table";
 import { ContaminationFormModal } from "./contamination-form-modal";
 import { ContaminationLimitsPanel } from "./contamination-limits-panel";
+import { RoomClearanceForm } from "./room-clearance-form";
 import type { ContaminationRecord } from "@/lib/contamination";
 
-type Tab = "dashboard" | "registros";
+type Tab = "dashboard" | "registros" | "liberacion";
 
 export function ContaminationApp() {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -81,6 +82,14 @@ export function ContaminationApp() {
         >
           <Table2 className="h-4 w-4" /> Registros
         </button>
+        <button
+          onClick={() => setTab("liberacion")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 ${
+            tab === "liberacion" ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+          }`}
+        >
+          <ClipboardCheck className="h-4 w-4" /> Liberación de Sala
+        </button>
       </div>
 
       <ContaminationLimitsPanel open={limitsOpen} />
@@ -94,8 +103,10 @@ export function ContaminationApp() {
 
       {tab === "dashboard" ? (
         <ContaminationDashboard filters={filters} version={version} />
-      ) : (
+      ) : tab === "registros" ? (
         <ContaminationRecordsTable filters={filters} version={version} onNew={openNew} onEdit={openEdit} onChanged={bump} />
+      ) : (
+        <RoomClearanceForm onSaved={bump} />
       )}
 
       <ContaminationFormModal open={modalOpen} onClose={() => setModalOpen(false)} record={editing} onSaved={bump} />
