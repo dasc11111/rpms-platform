@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
@@ -7,6 +7,9 @@ import { WorkersByService } from "@/components/dashboard/workers-by-service";
 import { ExpiringAuthorizationsTable } from "@/components/dashboard/expiring-authorizations-table";
 import { sql } from "@/lib/db";
 import { buildAuthSummary, type WorkerAuthSummary } from "@/lib/authorization";
+import { computeDosimeterAlerts, ALERT_SEVERITY_LABEL, ALERT_SEVERITY_CLASS } from "@/lib/dosimeter-alerts";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +79,9 @@ export default async function Dashboard() {
     .filter((s) => s.status === "proxima_vencer" || s.status === "vencida")
     .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
 
+  const dosimeterAlerts = await computeDosimeterAlerts();
+  const topDosimeterAlerts = dosimeterAlerts.slice(0, 6);
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -125,6 +131,44 @@ export default async function Dashboard() {
           </div>
           <CopilotSuggestions />
         </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Alertas dosimétricas</h2>
+          {dosimeterAlerts.length > 6 && (
+            <Link href="/dosimeters/alerts" className="text-xs text-accent hover:underline">
+              Ver todas ({dosimeterAlerts.length})
+            </Link>
+          )}
+        </div>
+        {topDosimeterAlerts.length > 0 ? (
+          <div className="space-y-2">
+            {topDosimeterAlerts.map((a) => (
+              <Link
+                key={a.id}
+                href={a.href}
+                className="flex items-start gap-2 rounded-md border border-border/60 p-2 text-xs hover:bg-muted/40"
+              >
+                {a.severity === "alta" ? (
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={2} />
+                ) : (
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2} />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{a.title}</span>
+                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", ALERT_SEVERITY_CLASS[a.severity])}>
+                      {ALERT_SEVERITY_LABEL[a.severity]}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-muted-foreground">{a.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Sin alertas dosimétricas activas.</p>
+        )}
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold mb-1">Autorizaciones próximas a vencer</h2>
