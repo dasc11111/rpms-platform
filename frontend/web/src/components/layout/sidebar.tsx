@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, AlertTriangle, BarChart3, Biohazard, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, Users, Wrench } from "lucide-react";
+import {Tag,  Activity, AlertTriangle, BarChart3, Biohazard, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, Users, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/workers", label: "Trabajadores", icon: Users },
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
+  { href: "/dosimeters", label: "Dosímetros", icon: Tag },
   { href: "/i131", label: "Administración I-131", icon: Syringe },
   { href: "/contamination", label: "Reg. Contaminación", icon: Biohazard },
   { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
