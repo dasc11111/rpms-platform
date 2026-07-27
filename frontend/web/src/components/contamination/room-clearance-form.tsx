@@ -374,7 +374,7 @@ function AreaSection({
           </thead>
           <tbody className="divide-y divide-border">
             {rows.map((row, i) => {
-              const res = resultados[i];
+              const res = resultados[i]!;
               const rowBg = row.cps_medida !== "" ? SEMAFORO_BG[res.semaforo] : "";
               return (
                 <tr key={row.punto} className={rowBg}>
