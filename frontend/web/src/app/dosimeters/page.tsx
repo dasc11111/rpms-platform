@@ -8,6 +8,7 @@ import { rutMatchKey } from "@/lib/rut";
 import { DosimeterFormModal } from "@/components/dosimeters/dosimeter-form-modal";
 import { DosimeterAssignModal } from "@/components/dosimeters/dosimeter-assign-modal";
 import { DosimeterReturnModal } from "@/components/dosimeters/dosimeter-return-modal";
+import { DosimetersSubnav } from "@/components/dosimeters/dosimeters-subnav";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -55,9 +56,11 @@ export default async function DosimetersPage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <h1 className="text-lg font-semibold mb-1">Dosimetros</h1>
-      <p className="mb-4 text-xs text-muted-foreground">
+      <p className="mb-3 text-xs text-muted-foreground">
         Asignacion y control de dosimetros fisicos por codigo XA · Recambio vigente: {currentQuarterLabel}
       </p>
+
+      <DosimetersSubnav active="listado" />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KPICard label="Dosimetros registrados" value={total} href="/dosimeters" icon={Tag} />
@@ -109,9 +112,7 @@ export default async function DosimetersPage() {
                     <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium", DOSIMETER_STATUS_COLORS[d.status])}>
                       {DOSIMETER_STATUS_LABELS[d.status]}
                     </span>
-                    {overdue && (
-                      <span className="ml-1.5 text-[11px] text-danger">+{overdueDays}d</span>
-                    )}
+                    {overdue && <span className="ml-1.5 text-[11px] text-danger">+{overdueDays}d</span>}
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <div className="flex justify-end gap-1.5">
