@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { ensureRoomClearanceSchema } from "@/lib/room-clearance-db";
 import {
   RC_RADIONUCLIDOS,
   RC_LABORATORIO_PUNTOS,
@@ -52,6 +53,7 @@ const FILTERABLE_ESTADOS = new Set([
 ]);
 
 export async function GET(req: NextRequest) {
+  await ensureRoomClearanceSchema();
   const { searchParams } = new URL(req.url);
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -114,6 +116,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  await ensureRoomClearanceSchema();
   const body = await req.json().catch(() => ({}));
 
   const eval_date = (body.eval_date ?? "").toString().trim();
