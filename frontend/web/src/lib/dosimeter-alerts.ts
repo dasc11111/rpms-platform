@@ -106,8 +106,8 @@ export async function computeDosimeterAlerts(onlyRut?: string): Promise<Dosimete
     for (const r of rows) lastByYear.set(r.year, r);
     const years = Array.from(lastByYear.keys()).sort((a, b) => a - b);
     if (years.length >= 2) {
-      const lastY = years[years.length - 1];
-      const prevY = years[years.length - 2];
+      const lastY = years[years.length - 1]!;
+      const prevY = years[years.length - 2]!;
       const lastRow = lastByYear.get(lastY);
       const prevRow = lastByYear.get(prevY);
       const lastVal = Number(lastRow?.accum_year_body) || 0;
