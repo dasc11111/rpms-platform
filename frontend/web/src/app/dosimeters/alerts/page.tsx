@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { AlertTriangle, AlertCircle, Info, ChevronLeft } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { computeDosimeterAlerts, ALERT_SEVERITY_LABEL, ALERT_SEVERITY_CLASS, type DosimeterAlertSeverity } from "@/lib/dosimeter-alerts";
+import { DosimetersSubnav } from "@/components/dosimeters/dosimeters-subnav";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -16,13 +17,12 @@ export default async function DosimeterAlertsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] p-6">
-      <Link href="/dosimeters" className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-3 w-3" />Dosimetros
-      </Link>
-      <h1 className="text-lg font-semibold mb-1">Alertas Dosimetricas</h1>
-      <p className="mb-4 text-xs text-muted-foreground">
+      <h1 className="text-lg font-semibold mb-1">Dosimetros</h1>
+      <p className="mb-3 text-xs text-muted-foreground">
         Analisis automatico de dosis, devoluciones de dosimetros y reportes faltantes, en base a los reportes trimestrales importados.
       </p>
+
+      <DosimetersSubnav active="alertas" />
 
       <div className="mb-4 grid grid-cols-3 gap-2">
         <KPICard label="Alertas altas" value={alta} icon={AlertCircle} tone="danger" href="/dosimeters/alerts" />
