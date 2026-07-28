@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, RotateCcw, Save, Sparkles } from "lucide-react";
 import { AutocompleteInput } from "./autocomplete-input";
 import { CLASIFICACION_LABELS } from "@/lib/contamination";
 import {
@@ -9,12 +9,15 @@ import {
   RC_LABORATORIO_PUNTOS,
   RC_SALA_PACIENTES_PUNTOS,
   RC_ESTADO_GENERAL_LABELS,
+  RC_AREA_LABELS,
   evaluarPuntoRoomClearance,
   calcularResumenArea,
   recomendacionDescontaminacion,
   type RcAreaTipo,
   type RcLimite,
   type RcPointInput,
+  type RcEstadoGeneral,
+  type RcResumenArea,
 } from "@/lib/room-clearance";
 
 type RowState = {
@@ -22,6 +25,17 @@ type RowState = {
   cps_medida: string;
   cps_fondo: string;
   tasa_dosis_usv_h: string;
+};
+
+type SavedEvaluation = {
+  id: number;
+  eval_date: string;
+  responsable: string;
+  radionuclido: string;
+  estado_general_laboratorio: RcEstadoGeneral;
+  resumen_laboratorio: RcResumenArea;
+  estado_general_sala: RcEstadoGeneral;
+  resumen_sala: RcResumenArea;
 };
 
 function emptyRows(puntos: readonly string[]): RowState[] {
@@ -62,6 +76,13 @@ const ESTADO_DOT: Record<string, string> = {
   no_liberado: "bg-red-500",
 };
 
+const ESTADO_TEXT: Record<string, string> = {
+  liberado: "text-green-600",
+  conforme: "text-green-600",
+  requiere_descontaminacion: "text-yellow-600",
+  no_liberado: "text-red-600",
+};
+
 // Formulario de ingreso rapido para la evaluacion diaria de "Liberacion de
 // Sala" (Laboratorio + Sala de Pacientes). Disenado para minimizar clics y
 // escritura: valores por defecto, calculo y clasificacion en vivo mientras se
@@ -69,6 +90,12 @@ const ESTADO_DOT: Record<string, string> = {
 // navegador. No reemplaza ni modifica el modulo de "Registro de
 // Contaminacion" existente (Dashboard/Registros/Limites/Buscar): se agrega
 // como una pestana nueva e independiente en ContaminationApp.
+//
+// Fase 3: evaluacion automatica por area completa. Se incorpora el check de
+// "limpieza realizada" por area (permite distinguir "No liberado" de
+// "Requiere descontaminacion" cuando ya se repitio el aseo y se esta a la
+// espera de una nueva medicion) y un panel de resumen post-guardado con el
+// resultado exacto devuelto por el servidor para ambas areas.
 export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
   const [evalDate, setEvalDate] = useState(todayISO());
   const [responsable, setResponsable] = useState("");
@@ -78,11 +105,14 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
 
   const [laboratorio, setLaboratorio] = useState<RowState[]>(() => emptyRows(RC_LABORATORIO_PUNTOS));
   const [sala, setSala] = useState<RowState[]>(() => emptyRows(RC_SALA_PACIENTES_PUNTOS));
+  const [limpiezaLaboratorio, setLimpiezaLaboratorio] = useState(false);
+  const [limpiezaSala, setLimpiezaSala] = useState(false);
 
   const [limites, setLimites] = useState<Record<string, RcLimite>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<SavedEvaluation | null>(null);
 
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
@@ -132,8 +162,17 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
     [sala, limite]
   );
 
-  const resumenLaboratorio = useMemo(() => calcularResumenArea(laboratorioResultados), [laboratorioResultados]);
-  const resumenSala = useMemo(() => calcularResumenArea(salaResultados), [salaResultados]);
+  const resumenLaboratorio = useMemo(
+    () => calcularResumenArea(laboratorioResultados, limpiezaLaboratorio),
+    [laboratorioResultados, limpiezaLaboratorio]
+  );
+  const resumenSala = useMemo(
+    () => calcularResumenArea(salaResultados, limpiezaSala),
+    [salaResultados, limpiezaSala]
+  );
+
+  const hayContaminacionLaboratorio = laboratorioResultados.some((r) => r.clasificacion === "sobre_limite");
+  const hayContaminacionSala = salaResultados.some((r) => r.clasificacion === "sobre_limite");
 
   function updateRow(area: RcAreaTipo, index: number, field: keyof RowState, value: string) {
     const setter = area === "laboratorio" ? setLaboratorio : setSala;
@@ -166,6 +205,8 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
     setSala(emptyRows(RC_SALA_PACIENTES_PUNTOS));
     setObservaciones("");
     setEvalDate(todayISO());
+    setLimpiezaLaboratorio(false);
+    setLimpiezaSala(false);
     setError(null);
   }
 
@@ -194,6 +235,8 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
           observaciones_generales: observaciones,
           laboratorio: laboratorio.map(toInput),
           sala_pacientes: sala.map(toInput),
+          limpieza_realizada_laboratorio: limpiezaLaboratorio,
+          limpieza_realizada_sala: limpiezaSala,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -202,6 +245,7 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
         return;
       }
       setSuccess(`Evaluación guardada correctamente (#${data.row.id}).`);
+      setLastSaved(data.row as SavedEvaluation);
       resetForm();
       onSaved?.();
     } catch {
@@ -266,12 +310,28 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
         </div>
       )}
 
+      {lastSaved && (
+        <div className="rounded-lg border border-accent/40 bg-accent/5 p-4">
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4" />
+            Resultado de la evaluación #{lastSaved.id} — {lastSaved.eval_date} — {lastSaved.radionuclido}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SavedAreaSummary title="Laboratorio" estado={lastSaved.estado_general_laboratorio} resumen={lastSaved.resumen_laboratorio} />
+            <SavedAreaSummary title="Sala de Pacientes" estado={lastSaved.estado_general_sala} resumen={lastSaved.resumen_sala} />
+          </div>
+        </div>
+      )}
+
       <AreaSection
         title="Laboratorio"
         area="laboratorio"
         rows={laboratorio}
         resultados={laboratorioResultados}
         resumen={resumenLaboratorio}
+        limpiezaRealizada={limpiezaLaboratorio}
+        onLimpiezaChange={setLimpiezaLaboratorio}
+        mostrarLimpieza={hayContaminacionLaboratorio}
         onChange={updateRow}
         onEnter={handleEnter}
         inputRefs={inputRefs}
@@ -283,6 +343,9 @@ export function RoomClearanceForm({ onSaved }: { onSaved?: () => void }) {
         rows={sala}
         resultados={salaResultados}
         resumen={resumenSala}
+        limpiezaRealizada={limpiezaSala}
+        onLimpiezaChange={setLimpiezaSala}
+        mostrarLimpieza={hayContaminacionSala}
         onChange={updateRow}
         onEnter={handleEnter}
         inputRefs={inputRefs}
@@ -319,12 +382,45 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function SavedAreaSummary({ title, estado, resumen }: { title: string; estado: RcEstadoGeneral; resumen: RcResumenArea }) {
+  const dot = ESTADO_DOT[estado] ?? "bg-muted";
+  const text = ESTADO_TEXT[estado] ?? "";
+  return (
+    <div className="rounded-md border border-border bg-surface p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-medium">{title}</span>
+        <span className={`flex items-center gap-1.5 text-xs font-semibold ${text}`}>
+          <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+          {RC_ESTADO_GENERAL_LABELS[estado]}
+        </span>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <dt>Puntos evaluados</dt>
+        <dd className="text-right text-foreground">{resumen.total_puntos}</dd>
+        <dt>Puntos contaminados</dt>
+        <dd className="text-right text-foreground">{resumen.puntos_contaminados}</dd>
+        <dt>Mayor contaminación</dt>
+        <dd className="text-right text-foreground">{resumen.punto_mayor_contaminacion ?? "—"}</dd>
+        <dt>Valor máximo</dt>
+        <dd className="text-right text-foreground">{resumen.max_bq_cm2.toFixed(2)} Bq/cm²</dd>
+        <dt>Mayor tasa de dosis</dt>
+        <dd className="text-right text-foreground">
+          {resumen.mayor_tasa_dosis_usv_h !== null ? `${resumen.mayor_tasa_dosis_usv_h.toFixed(2)} µSv/h` : "—"}
+        </dd>
+      </dl>
+    </div>
+  );
+}
+
 function AreaSection({
   title,
   area,
   rows,
   resultados,
   resumen,
+  limpiezaRealizada,
+  onLimpiezaChange,
+  mostrarLimpieza,
   onChange,
   onEnter,
   inputRefs,
@@ -334,6 +430,9 @@ function AreaSection({
   rows: RowState[];
   resultados: ReturnType<typeof evaluarPuntoRoomClearance>[];
   resumen: ReturnType<typeof calcularResumenArea>;
+  limpiezaRealizada: boolean;
+  onLimpiezaChange: (v: boolean) => void;
+  mostrarLimpieza: boolean;
   onChange: (area: RcAreaTipo, index: number, field: keyof RowState, value: string) => void;
   onEnter: (key: string, e: React.KeyboardEvent) => void;
   inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
@@ -426,6 +525,18 @@ function AreaSection({
           <AlertTriangle className="h-4 w-4 shrink-0" />
           {recomendacionDescontaminacion(resumen.punto_mayor_contaminacion, area)}
         </div>
+      )}
+
+      {mostrarLimpieza && (
+        <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={limpiezaRealizada}
+            onChange={(e) => onLimpiezaChange(e.target.checked)}
+            className="h-3.5 w-3.5 rounded border-border"
+          />
+          Limpieza / descontaminación ya realizada en {RC_AREA_LABELS[area]} (marcar antes de guardar si se repitió el aseo y se está a la espera de una nueva medición)
+        </label>
       )}
     </div>
   );
