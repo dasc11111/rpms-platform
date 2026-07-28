@@ -7,7 +7,7 @@ import { ContaminationDashboard } from "./contamination-dashboard";
 import { ContaminationRecordsTable } from "./contamination-records-table";
 import { ContaminationFormModal } from "./contamination-form-modal";
 import { ContaminationLimitsPanel } from "./contamination-limits-panel";
-import { RoomClearanceForm } from "./room-clearance-form";
+import { RoomClearanceApp } from "./room-clearance-app";
 import type { ContaminationRecord } from "@/lib/contamination";
 
 type Tab = "dashboard" | "registros" | "liberacion";
@@ -106,7 +106,7 @@ export function ContaminationApp() {
       ) : tab === "registros" ? (
         <ContaminationRecordsTable filters={filters} version={version} onNew={openNew} onEdit={openEdit} onChanged={bump} />
       ) : (
-        <RoomClearanceForm onSaved={bump} />
+        <RoomClearanceApp />
       )}
 
       <ContaminationFormModal open={modalOpen} onClose={() => setModalOpen(false)} record={editing} onSaved={bump} />
