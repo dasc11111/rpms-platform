@@ -116,12 +116,12 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                           onClick={() => toggleSection(section)}
                           className="w-full flex items-center justify-between hover:bg-gray-50 p-2 rounded"
                         >
-                        <h3 className="font-semibold text-gray-700">{title}</h3>h3>
+                        <h3 className="font-semibold text-gray-700">{title}</h3>
                         <ChevronDown
                                     size={20}
                                     className={`transition-transform ${expandedSections[section] ? 'rotate-180' : ''}`}
                                   />
-                </button>button>
+                </button>
             {expandedSections[section] && (
                     <div className="mt-3 space-y-2 pl-2">
                       {options.map((option) => (
@@ -138,28 +138,28 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                                                                                     )}
                                                                   className="w-4 h-4"
                                                                 />
-                                                <span className="text-sm text-gray-600">{option}</span>span>
-                                  </label>label>
+                                                <span className="text-sm text-gray-600">{option}</span>
+                                  </label>
                                 ))}
-                    </div>div>
+                    </div>
                 )}
-          </div>div>
+          </div>
         );
   
     return (
           <div className="bg-white rounded-lg shadow p-4 mb-4">
                 <div className="mb-4">
                         <div className="flex items-center justify-between mb-3">
-                                  <h2 className="text-lg font-bold text-gray-800">Filtros y Búsqueda</h2>h2>
+                                  <h2 className="text-lg font-bold text-gray-800">Filtros y Búsqueda</h2>
                           {Object.values(filters).some(f => f && (Array.isArray(f) ? f.length > 0 : true)) && (
                         <button
                                         onClick={clearAllFilters}
                                         className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                       >
                                       <X size={16} /> Limpiar filtros
-                        </button>button>
+                        </button>
                                   )}
-                        </div>div>
+                        </div>
                         <input
                                     type="text"
                                     placeholder="Buscar por inventario, equipo, marca, modelo, serie..."
@@ -167,7 +167,7 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                                     onChange={(e) => handleSearchChange(e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                   />
-                </div>div>
+                </div>
           
                 <div className="space-y-2">
                         <FilterSection title="Servicio" section="service" options={serviceOptions} selectedValues={filters.serviceFilter} />
@@ -175,8 +175,8 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                         <FilterSection title="Marca" section="brand" options={brandOptions} selectedValues={filters.brandFilter} />
                         <FilterSection title="Estado" section="status" options={statusOptions} selectedValues={filters.statusFilter} />
                         <FilterSection title="Autorización" section="authorization" options={authorizationOptions} selectedValues={filters.authorizationStatus} />
-                </div>div>
-          </div>div>
+                </div>
+          </div>
         );
 };
 
