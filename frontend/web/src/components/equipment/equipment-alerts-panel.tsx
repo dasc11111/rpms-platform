@@ -76,29 +76,29 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
     const AlertItem = ({ alert }: { alert: Alert }) => (
           <div className={`border rounded-lg p-3 ${getSeverityColor(alert.severity)}`}>
                   <div className="flex items-start gap-3">
-                          <div className="flex-shrink-0">{getSeverityIcon(alert.severity)}</div>div>
+                          <div className="flex-shrink-0">{getSeverityIcon(alert.severity)}</div>
                           <div className="flex-grow">
                                     <div className="flex items-center justify-between">
-                                                <h4 className="font-semibold text-gray-800">{alert.equipmentName}</h4>h4>
+                                                <h4 className="font-semibold text-gray-800">{alert.equipmentName}</h4>
                                                 <span className="text-xs bg-white px-2 py-1 rounded text-gray-600">
                                                   {alertTypeLabels[alert.type]}
-                                                </span>span>
-                                    </div>div>
-                                    <p className="text-sm text-gray-700 mt-1">{alert.message}</p>p>
+                                                </span>
+                                    </div>
+                                    <p className="text-sm text-gray-700 mt-1">{alert.message}</p>
                                     <div className="flex items-center justify-between mt-2">
-                                                <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>span>
+                                                <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
                                       {onResolveAlert && (
                           <button
                                             onClick={() => onResolveAlert(alert.id)}
                                             className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                                           >
                                           Resolver
-                          </button>button>
+                          </button>
                                                 )}
-                                    </div>div>
-                          </div>div>
-                  </div>div>
-          </div>div>
+                                    </div>
+                          </div>
+                  </div>
+          </div>
         );
   
     return (
@@ -107,58 +107,58 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                   <AlertCircle size={24} className="text-red-600" />
                                   Centro de Alertas
-                        </h2>h2>
+                        </h2>
                   {activeAlerts.length > 0 && (
                       <p className="text-sm text-gray-600 mt-1">
                         {activeAlerts.length} alerta{activeAlerts.length !== 1 ? 's' : ''} pendiente{activeAlerts.length !== 1 ? 's' : ''}
-                      </p>p>
+                      </p>
                         )}
-                </div>div>
+                </div>
           
             {activeAlerts.length === 0 ? (
                     <div className="py-8 text-center">
                               <CheckCircle className="mx-auto mb-3 text-green-600" size={40} />
-                              <p className="text-gray-600">No hay alertas pendientes</p>p>
-                    </div>div>
+                              <p className="text-gray-600">No hay alertas pendientes</p>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {alertsByCategory.critical.length > 0 && (
                                   <div>
                                                 <h3 className="text-sm font-semibold text-red-700 mb-2">
                                                                 Críticas ({alertsByCategory.critical.length})
-                                                </h3>h3>
+                                                </h3>
                                                 <div className="space-y-2">
                                                   {alertsByCategory.critical.slice(0, maxVisible).map((alert) => (
                                                       <AlertItem key={alert.id} alert={alert} />
                                                     ))}
-                                                </div>div>
-                                  </div>div>
+                                                </div>
+                                  </div>
                               )}
                     
                       {alertsByCategory.warning.length > 0 && (
                                   <div>
                                                 <h3 className="text-sm font-semibold text-yellow-700 mb-2">
                                                                 Advertencias ({alertsByCategory.warning.length})
-                                                </h3>h3>
+                                                </h3>
                                                 <div className="space-y-2">
                                                   {alertsByCategory.warning.slice(0, maxVisible).map((alert) => (
                                                       <AlertItem key={alert.id} alert={alert} />
                                                     ))}
-                                                </div>div>
-                                  </div>div>
+                                                </div>
+                                  </div>
                               )}
                     
                       {alertsByCategory.info.length > 0 && (
                                   <div>
                                                 <h3 className="text-sm font-semibold text-blue-700 mb-2">
                                                                 Información ({alertsByCategory.info.length})
-                                                </h3>h3>
+                                                </h3>
                                                 <div className="space-y-2">
                                                   {alertsByCategory.info.slice(0, maxVisible).map((alert) => (
                                                       <AlertItem key={alert.id} alert={alert} />
                                                     ))}
-                                                </div>div>
-                                  </div>div>
+                                                </div>
+                                  </div>
                               )}
                     
                       {Math.max(
@@ -168,11 +168,11 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                                 ) > maxVisible && (
                                   <button className="text-blue-600 hover:text-blue-800 text-sm font-medium w-full py-2 mt-2 border-t">
                                                 Ver todas las alertas
-                                  </button>button>
+                                  </button>
                               )}
-                    </div>div>
+                    </div>
                 )}
-          </div>div>
+          </div>
         );
 };
 
