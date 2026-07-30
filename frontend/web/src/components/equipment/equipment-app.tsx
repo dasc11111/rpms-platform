@@ -5,7 +5,6 @@ import { EquipmentList } from './equipment-list';
 import { EquipmentDetailModal } from './equipment-detail-modal';
 import { EquipmentSearchFilters } from './equipment-search-filters';
 import { EquipmentAlertsPanel } from './equipment-alerts-panel';
-import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 export interface Equipment {
