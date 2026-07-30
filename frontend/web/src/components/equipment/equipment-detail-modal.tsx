@@ -1,4 +1,4 @@
-equipment-detail-modal.tsx'use client';
+'use client';
 import React, { useState } from 'react';
 import { Equipment, EquipmentDocument } from './equipment-app';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
