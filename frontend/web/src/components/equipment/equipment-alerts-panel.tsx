@@ -177,4 +177,4 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
 };
 
 export default EquipmentAlertsPanel;
-export type { Alert, AlertsPanelProps };</div>
+export type { Alert, AlertsPanelProps };
