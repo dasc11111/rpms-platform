@@ -278,4 +278,4 @@ export function EquipmentApp() {
                       />
         </div>
       );
-}</div>
+}
