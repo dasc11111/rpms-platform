@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { EquipmentList } from './equipment-list';
 import { EquipmentDetailModal } from './equipment-detail-modal';
-import { EquipmentSearchFilters, FilterState } from './equipment-search-filters';
-import { EquipmentAlertsPanel, Alert as AlertItem } from './equipment-alerts-panel';
+import EquipmentSearchFilters, { FilterState } from './equipment-search-filters';
+import EquipmentAlertsPanel, { Alert as AlertItem } from './equipment-alerts-panel';
 import { Plus } from 'lucide-react';
 
 export interface Equipment {
