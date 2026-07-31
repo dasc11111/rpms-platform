@@ -124,4 +124,4 @@ export function EquipmentList({ equipment, onSelectEquipment, onDeleteEquipment 
         );
 }
 
-export type { EquipmentListProps };</div>
+export type { EquipmentListProps };
