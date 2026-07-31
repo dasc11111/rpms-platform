@@ -180,4 +180,4 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
         );
 };
 
-export default EquipmentSearchFilters;</div>
+export default EquipmentSearchFilters;
