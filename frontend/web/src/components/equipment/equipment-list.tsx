@@ -65,19 +65,19 @@ export function EquipmentList({ equipment, onSelectEquipment, onDeleteEquipment 
                                           <div className="grid grid-cols-2 gap-3 text-sm">
                                                         <div>
                                                                         <p className="text-slate-600">Marca</p>
-                                                                        <p className="font-semibold">{eq.brand}</p>
+                                                                        <p className="font-semibold text-gray-900">{eq.brand}</p>
                                                         </div>
                                                         <div>
                                                                         <p className="text-slate-600">Modelo</p>
-                                                                        <p className="font-semibold">{eq.model}</p>
+                                                                        <p className="font-semibold text-gray-900">{eq.model}</p>
                                                         </div>
                                                         <div>
                                                                         <p className="text-slate-600">Servicio</p>
-                                                                        <p className="font-semibold">{eq.service}</p>
+                                                                        <p className="font-semibold text-gray-900">{eq.service}</p>
                                                         </div>
                                                         <div>
                                                                         <p className="text-slate-600">Ubicacion</p>
-                                                                        <p className="font-semibold">{eq.location}</p>
+                                                                        <p className="font-semibold text-gray-900">{eq.location}</p>
                                                         </div>
                                           </div>
                               
@@ -106,7 +106,7 @@ export function EquipmentList({ equipment, onSelectEquipment, onDeleteEquipment 
                                           <div className="flex gap-2 pt-2 border-t border-gray-100">
                                                         <button
                                                                           onClick={() => onSelectEquipment(eq)}
-                                                                          className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+                                                                          className="flex-1 flex items-center justify-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
                                                                         >
                                                                         <Eye className="w-4 h-4" /> Ver Detalles
                                                         </button>
