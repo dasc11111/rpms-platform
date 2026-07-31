@@ -1,13 +1,14 @@
 // Main Equipment Management Components
-export { default as EquipmentApp } from './equipment-app';
-export type { Equipment, EquipmentStatus, AuthorizationStatus, Document, EquipmentHistory, TubeChange, ArchitectureChange, EquipmentLoan } from './equipment-app';
+export { EquipmentApp } from './equipment-app';
+export type { Equipment, EquipmentDocument, EquipmentHistoryEntry } from './equipment-app';
+export type { Alert as EquipmentStatusAlert } from './equipment-app';
 
 // Equipment List Component
-export { default as EquipmentList } from './equipment-list';
+export { EquipmentList } from './equipment-list';
 export type { EquipmentListProps } from './equipment-list';
 
 // Equipment Detail Modal
-export { default as EquipmentDetailModal } from './equipment-detail-modal';
+export { EquipmentDetailModal } from './equipment-detail-modal';
 export type { EquipmentDetailModalProps } from './equipment-detail-modal';
 
 // Search & Filters
