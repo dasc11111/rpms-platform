@@ -236,20 +236,20 @@ export function EquipmentApp() {
   };
 
   return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-background">
               <div className="max-w-7xl mx-auto p-6 space-y-6">
                       <div className="flex flex-col gap-4">
                                 <div>
-                                            <h1 className="text-4xl font-bold text-slate-900 mb-2">Gestion de Equipos Radiologicos</h1>
-                                            <p className="text-slate-600">Sistema integral de gestion de equipos generadores de radiacion</p>
+                                            <h1 className="text-4xl font-bold text-foreground mb-2">Gestion de Equipos Radiologicos</h1>
+                                            <p className="text-muted-foreground">Sistema integral de gestion de equipos generadores de radiacion</p>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                            <div className="text-sm text-slate-600">
-                                                          Total de equipos: <span className="font-semibold text-slate-900">{equipment.length}</span>
+                                            <div className="text-sm text-muted-foreground">
+                                                          Total de equipos: <span className="font-semibold text-foreground">{equipment.length}</span>
                                             </div>
                                             <button
                                                             onClick={handleAddEquipment}
-                                                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                                                            className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-md text-sm font-medium"
                                                           >
                                                           <Plus className="w-4 h-4" />
                                                           Nuevo Equipo
