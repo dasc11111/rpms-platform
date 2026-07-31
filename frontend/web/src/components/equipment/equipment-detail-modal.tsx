@@ -215,12 +215,12 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                                                                                     <div className="flex items-center gap-3">
                                                                                                             <FileText className="w-4 h-4 text-gray-500" />
                                                                                                             <div>
-                                                                                                                                      <p className="text-sm font-medium">{doc.name}</p>
+                                                                                                                                      <p className="text-sm font-medium text-gray-900">{doc.name}</p>
                                                                                                                                       <p className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
                                                                                                               </div>
                                                                                       </div>
                                                                                     <div className="flex gap-2">
-                                                                                                            <button className="p-1.5 hover:bg-gray-200 rounded">
+                                                                                                            <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600">
                                                                                                                                       <Download className="w-4 h-4" />
                                                                                                               </button>
                                                                                                             <button onClick={() => handleRemoveDocument(doc.id)} className="p-1.5 hover:bg-red-100 text-red-600 rounded">
@@ -241,7 +241,7 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                                       ) : (
                                         formData.history.map((entry) => (
                                                             <div key={entry.id} className="p-3 border border-gray-200 rounded">
-                                                                                <p className="text-sm font-semibold">{entry.action}</p>
+                                                                                <p className="text-sm font-semibold text-gray-900">{entry.action}</p>
                                                                                 <p className="text-sm text-gray-600">{entry.description}</p>
                                                                                 <p className="text-xs text-gray-400 mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
                                                             </div>
@@ -252,7 +252,7 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                       </div>
               
                       <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
-                                <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
                                             Cancelar
                                 </button>
                                 <button onClick={handleSave} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
