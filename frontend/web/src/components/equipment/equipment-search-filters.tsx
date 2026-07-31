@@ -111,12 +111,12 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
           options: string[];
           selectedValues: string[];
     }) => (
-          <div className="border-b border-gray-200 py-4">
+          <div className="border-b border-border py-4">
                 <button
                           onClick={() => toggleSection(section)}
-                          className="w-full flex items-center justify-between hover:bg-gray-50 p-2 rounded"
+                          className="w-full flex items-center justify-between hover:bg-muted/40 p-2 rounded"
                         >
-                        <h3 className="font-semibold text-gray-700">{title}</h3>
+                        <h3 className="font-semibold text-foreground">{title}</h3>
                         <ChevronDown
                                     size={20}
                                     className={`transition-transform ${expandedSections[section] ? 'rotate-180' : ''}`}
@@ -125,7 +125,7 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
             {expandedSections[section] && (
                     <div className="mt-3 space-y-2 pl-2">
                       {options.map((option) => (
-                                  <label key={option} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                  <label key={option} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 p-1 rounded">
                                                 <input
                                                                   type="checkbox"
                                                                   checked={selectedValues.includes(option)}
@@ -138,7 +138,7 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                                                                                     )}
                                                                   className="w-4 h-4"
                                                                 />
-                                                <span className="text-sm text-gray-600">{option}</span>
+                                                <span className="text-sm text-muted-foreground">{option}</span>
                                   </label>
                                 ))}
                     </div>
@@ -147,14 +147,14 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
         );
   
     return (
-          <div className="bg-white rounded-lg shadow p-4 mb-4">
+          <div className="bg-surface rounded-lg shadow p-4 mb-4">
                 <div className="mb-4">
                         <div className="flex items-center justify-between mb-3">
-                                  <h2 className="text-lg font-bold text-gray-800">Filtros y Búsqueda</h2>
+                                  <h2 className="text-lg font-bold text-foreground">Filtros y Búsqueda</h2>
                           {Object.values(filters).some(f => f && (Array.isArray(f) ? f.length > 0 : true)) && (
                         <button
                                         onClick={clearAllFilters}
-                                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                        className="text-sm text-accent hover:text-accent/80 flex items-center gap-1"
                                       >
                                       <X size={16} /> Limpiar filtros
                         </button>
@@ -165,7 +165,7 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
                                     placeholder="Buscar por inventario, equipo, marca, modelo, serie..."
                                     value={searchTerm}
                                     onChange={(e) => handleSearchChange(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-accent"
                                   />
                 </div>
           
