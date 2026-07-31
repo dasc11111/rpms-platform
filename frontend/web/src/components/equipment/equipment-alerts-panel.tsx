@@ -47,19 +47,19 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
 
     const getSeverityColor = (severity: Alert['severity']) => {
           switch (severity) {
-            case 'critical': return 'bg-red-50 border-red-200';
-            case 'warning': return 'bg-yellow-50 border-yellow-200';
-            case 'info': return 'bg-blue-50 border-blue-200';
-            default: return 'bg-gray-50 border-gray-200';
+            case 'critical': return 'bg-danger-subtle border-danger/30';
+            case 'warning': return 'bg-warning-subtle border-warning/30';
+            case 'info': return 'bg-info-subtle border-info/30';
+            default: return 'bg-muted border-border';
           }
     };
 
     const getSeverityIcon = (severity: Alert['severity']) => {
           switch (severity) {
-            case 'critical': return <AlertCircle className="text-red-600" size={20} />;
-            case 'warning': return <AlertTriangle className="text-yellow-600" size={20} />;
-            case 'info': return <Clock className="text-blue-600" size={20} />;
-            default: return <CheckCircle className="text-gray-600" size={20} />;
+            case 'critical': return <AlertCircle className="text-danger" size={20} />;
+            case 'warning': return <AlertTriangle className="text-warning" size={20} />;
+            case 'info': return <Clock className="text-info" size={20} />;
+            default: return <CheckCircle className="text-muted-foreground" size={20} />;
           }
     };
 
@@ -79,18 +79,18 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                           <div className="flex-shrink-0">{getSeverityIcon(alert.severity)}</div>
                           <div className="flex-grow">
                                     <div className="flex items-center justify-between">
-                                                <h4 className="font-semibold text-gray-800">{alert.equipmentName}</h4>
-                                                <span className="text-xs bg-white px-2 py-1 rounded text-gray-600">
+                                                <h4 className="font-semibold text-foreground">{alert.equipmentName}</h4>
+                                                <span className="text-xs bg-surface px-2 py-1 rounded text-muted-foreground">
                                                   {alertTypeLabels[alert.type]}
                                                 </span>
                                     </div>
-                                    <p className="text-sm text-gray-700 mt-1">{alert.message}</p>
+                                    <p className="text-sm text-foreground mt-1">{alert.message}</p>
                                     <div className="flex items-center justify-between mt-2">
-                                                <span className="text-xs text-gray-500">{formatDate(alert.createdAt)}</span>
+                                                <span className="text-xs text-muted-foreground">{formatDate(alert.createdAt)}</span>
                                       {onResolveAlert && (
                           <button
                                             onClick={() => onResolveAlert(alert.id)}
-                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                            className="text-xs text-accent hover:text-accent/80 font-medium"
                                           >
                                           Resolver
                           </button>
@@ -102,14 +102,14 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
         );
   
     return (
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-surface rounded-lg shadow p-4">
                 <div className="mb-4">
-                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                  <AlertCircle size={24} className="text-red-600" />
+                        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                                  <AlertCircle size={24} className="text-danger" />
                                   Centro de Alertas
                         </h2>
                   {activeAlerts.length > 0 && (
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         {activeAlerts.length} alerta{activeAlerts.length !== 1 ? 's' : ''} pendiente{activeAlerts.length !== 1 ? 's' : ''}
                       </p>
                         )}
@@ -117,14 +117,14 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
           
             {activeAlerts.length === 0 ? (
                     <div className="py-8 text-center">
-                              <CheckCircle className="mx-auto mb-3 text-green-600" size={40} />
-                              <p className="text-gray-600">No hay alertas pendientes</p>
+                              <CheckCircle className="mx-auto mb-3 text-success" size={40} />
+                              <p className="text-muted-foreground">No hay alertas pendientes</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {alertsByCategory.critical.length > 0 && (
                                   <div>
-                                                <h3 className="text-sm font-semibold text-red-700 mb-2">
+                                                <h3 className="text-sm font-semibold text-danger mb-2">
                                                                 Críticas ({alertsByCategory.critical.length})
                                                 </h3>
                                                 <div className="space-y-2">
@@ -137,7 +137,7 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                     
                       {alertsByCategory.warning.length > 0 && (
                                   <div>
-                                                <h3 className="text-sm font-semibold text-yellow-700 mb-2">
+                                                <h3 className="text-sm font-semibold text-warning mb-2">
                                                                 Advertencias ({alertsByCategory.warning.length})
                                                 </h3>
                                                 <div className="space-y-2">
@@ -150,7 +150,7 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                     
                       {alertsByCategory.info.length > 0 && (
                                   <div>
-                                                <h3 className="text-sm font-semibold text-blue-700 mb-2">
+                                                <h3 className="text-sm font-semibold text-info mb-2">
                                                                 Información ({alertsByCategory.info.length})
                                                 </h3>
                                                 <div className="space-y-2">
@@ -166,7 +166,7 @@ const EquipmentAlertsPanel: React.FC<AlertsPanelProps> = ({
                                   alertsByCategory.warning.length,
                                   alertsByCategory.info.length
                                 ) > maxVisible && (
-                                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium w-full py-2 mt-2 border-t">
+                                  <button className="text-accent hover:text-accent/80 text-sm font-medium w-full py-2 mt-2 border-t border-border">
                                                 Ver todas las alertas
                                   </button>
                               )}
