@@ -13,8 +13,8 @@ interface EquipmentDetailModalProps {
 
 type TabKey = 'info' | 'auth' | 'docs' | 'history';
 
-const inputClass = 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500';
-const labelClass = 'block text-xs font-medium text-gray-600 mb-1';
+const inputClass = 'w-full px-3 py-2 border border-border bg-background rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent';
+const labelClass = 'block text-xs font-medium text-muted-foreground mb-1';
 
 const NEW_EQUIPMENT: Equipment = {
     id: '',
@@ -94,22 +94,22 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
 
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-white rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full overflow-y-auto">
-                      <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
-                                <h2 className="text-lg font-bold text-gray-800">
+              <div className="bg-surface rounded-lg shadow-xl max-w-4xl max-h-[90vh] w-full overflow-y-auto">
+                      <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-surface">
+                                <h2 className="text-lg font-bold text-foreground">
                                   {equipment?.id ? 'Editar Equipo' : 'Nuevo Equipo'}
                                 </h2>
-                                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                                <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
                                             <X className="w-5 h-5" />
                                 </button>
                       </div>
               
-                      <div className="flex gap-1 p-4 pb-0 border-b border-gray-200">
+                      <div className="flex gap-1 p-4 pb-0 border-b border-border">
                         {TABS.map((tab) => (
                       <button
                                       key={tab.key}
                                       onClick={() => setActiveTab(tab.key)}
-                                      className={activeTab === tab.key ? 'px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700'}
+                                      className={activeTab === tab.key ? 'px-4 py-2 text-sm font-medium border-b-2 border-accent text-accent' : 'px-4 py-2 text-sm font-medium text-muted-foreground hover:text-gray-700'}
                                     >
                         {tab.label}
                       </button>
@@ -195,7 +195,7 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                       
                         {activeTab === 'docs' && (
                       <div className="space-y-4">
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                                    <div className="border-2 border-dashed border-border rounded-lg p-6">
                                                     <input
                                                                         type="file"
                                                                         multiple
@@ -203,7 +203,7 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                                                                         className="hidden"
                                                                         id="file-upload"
                                                                       />
-                                                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2 text-gray-500">
+                                                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2 text-muted-foreground">
                                                                       <Upload className="w-8 h-8" />
                                                                       <span>Arrastra documentos aqui o haz clic para seleccionar</span>
                                                     </label>
@@ -211,19 +211,19 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                         {formData.documents.length > 0 && (
                                         <div className="space-y-2">
                                           {formData.documents.map((doc) => (
-                                                              <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                                              <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/40 rounded">
                                                                                     <div className="flex items-center gap-3">
-                                                                                                            <FileText className="w-4 h-4 text-gray-500" />
+                                                                                                            <FileText className="w-4 h-4 text-muted-foreground" />
                                                                                                             <div>
-                                                                                                                                      <p className="text-sm font-medium text-gray-900">{doc.name}</p>
-                                                                                                                                      <p className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                                                                                                                                      <p className="text-sm font-medium text-foreground">{doc.name}</p>
+                                                                                                                                      <p className="text-xs text-muted-foreground">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
                                                                                                               </div>
                                                                                       </div>
                                                                                     <div className="flex gap-2">
-                                                                                                            <button className="p-1.5 hover:bg-gray-200 rounded text-gray-600">
+                                                                                                            <button className="p-1.5 hover:bg-muted rounded text-muted-foreground">
                                                                                                                                       <Download className="w-4 h-4" />
                                                                                                               </button>
-                                                                                                            <button onClick={() => handleRemoveDocument(doc.id)} className="p-1.5 hover:bg-red-100 text-red-600 rounded">
+                                                                                                            <button onClick={() => handleRemoveDocument(doc.id)} className="p-1.5 hover:bg-danger-subtle text-danger rounded">
                                                                                                                                       <Trash2 className="w-4 h-4" />
                                                                                                               </button>
                                                                                       </div>
@@ -237,13 +237,13 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                         {activeTab === 'history' && (
                       <div className="space-y-3">
                         {formData.history.length === 0 ? (
-                                        <p className="text-sm text-gray-500">Sin historial</p>
+                                        <p className="text-sm text-muted-foreground">Sin historial</p>
                                       ) : (
                                         formData.history.map((entry) => (
-                                                            <div key={entry.id} className="p-3 border border-gray-200 rounded">
-                                                                                <p className="text-sm font-semibold text-gray-900">{entry.action}</p>
-                                                                                <p className="text-sm text-gray-600">{entry.description}</p>
-                                                                                <p className="text-xs text-gray-400 mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
+                                                            <div key={entry.id} className="p-3 border border-border rounded">
+                                                                                <p className="text-sm font-semibold text-foreground">{entry.action}</p>
+                                                                                <p className="text-sm text-muted-foreground">{entry.description}</p>
+                                                                                <p className="text-xs text-muted-foreground mt-1">{new Date(entry.timestamp).toLocaleString()}</p>
                                                             </div>
                                                           ))
                                       )}
@@ -251,11 +251,11 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                                 )}
                       </div>
               
-                      <div className="flex justify-end gap-2 p-4 border-t border-gray-200">
-                                <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                      <div className="flex justify-end gap-2 p-4 border-t border-border">
+                                <button onClick={onClose} className="px-4 py-2 text-sm border border-border rounded-md text-foreground hover:bg-muted/40">
                                             Cancelar
                                 </button>
-                                <button onClick={handleSave} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                <button onClick={handleSave} className="px-4 py-2 text-sm bg-accent text-accent-foreground rounded-md hover:bg-accent/90">
                                             Guardar
                                 </button>
                       </div>
