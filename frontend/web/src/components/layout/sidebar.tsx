@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {Tag,  Activity, AlertTriangle, BarChart3, Biohazard, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, Users, Wrench } from "lucide-react";
+import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, UserCog, Users, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/auth/auth-provider";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -21,8 +22,15 @@ const NAV = [
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
+const SUPER_ADMIN_NAV = [
+  { href: "/admin/users", label: "Administración de Usuarios", icon: UserCog },
+  { href: "/admin/audit", label: "Auditoría", icon: ClipboardList },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const items = user?.role === "super_admin" ? [...NAV, ...SUPER_ADMIN_NAV] : NAV;
   return (
     <aside className="hidden w-[220px] shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
       <div className="flex h-14 items-center gap-2 border-b border-border px-4">
@@ -32,7 +40,7 @@ export function Sidebar() {
         <span className="text-sm font-semibold">RPMS</span>
       </div>
       <nav className="flex-1 space-y-0.5 px-2 py-4">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
           const Icon = item.icon;
           return (
