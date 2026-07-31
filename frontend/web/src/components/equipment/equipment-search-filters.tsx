@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 
-interface SearchFiltersProps {
+export interface SearchFiltersProps {
     onFiltersChange: (filters: FilterState) => void;
 }
 
