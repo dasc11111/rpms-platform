@@ -264,4 +264,4 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
       );
 }
 
-export type { EquipmentDetailModalProps };</div>
+export type { EquipmentDetailModalProps };
