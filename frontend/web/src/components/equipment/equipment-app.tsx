@@ -147,7 +147,7 @@ function applyFilters(equipment: Equipment[], filters: FilterState): Equipment[]
                             prestamo: 'En préstamo',
                             baja: 'Dado de baja',
                   };
-                  if (!filters.statusFilter.includes(statusLabels[eq.status])) return false;
+                  if (!filters.statusFilter.includes((statusLabels[eq.status] ?? ''))) return false;
           }
           if (filters.authorizationStatus.length > 0) {
                   const authLabels: Record<string, string> = {
@@ -156,7 +156,7 @@ function applyFilters(equipment: Equipment[], filters: FilterState): Equipment[]
                             en_tramite: 'En trámite',
                             suspendida: 'Suspendida',
                   };
-                  if (!filters.authorizationStatus.includes(authLabels[eq.authorizationStatus])) return false;
+                                  if (!filters.authorizationStatus.includes((authLabels[eq.authorizationStatus] ?? ''))) return false;
           }
           return true;
     });
