@@ -39,9 +39,9 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
 
   const { rows: workerRows } = await sql`
     SELECT rut, name, last_name_1, last_name_2, first_names, role, service, category, status, annual_dose,
-           dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
-           course_pr_completed, course_pr_date,
-           authorization_number, authorization_issue_date, authorization_expiry_date, notes
+      dv, sex, address, phone, email, birth_date, estamento, contract_type, unit,
+      course_pr_completed, course_pr_date,
+      authorization_number, authorization_issue_date, authorization_expiry_date, notes
     FROM workers
     WHERE rut = ${rut}
     LIMIT 1
@@ -49,20 +49,13 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
   const worker: any = workerRows[0];
   if (!worker) return notFound();
 
-  const { rows: readingRows } = await sql`
-    SELECT period, dose
-    FROM dosimetry_readings
-    WHERE worker_rut = ${rut}
-    ORDER BY period ASC
-  `;
-
   const rutDigits = (rut.split("-")[0] ?? "").replace(/[^0-9]/g, "");
   let quarterlyRows: any[] = [];
   try {
     const { rows } = await sql`
       SELECT year, quarter, period_label, dose_body, dose_lens, dose_skin,
-             accum_year_body, accum_12m_body, accum_60m_body, accum_60m_lens, accum_60m_skin,
-             level, institucion, departamento
+        accum_year_body, accum_12m_body, accum_60m_body, accum_60m_lens, accum_60m_skin,
+        level, institucion, departamento
       FROM dosimetry_quarterly
       WHERE regexp_replace(split_part(worker_rut, '-', 1), '[^0-9]', '', 'g') = ${rutDigits}
       ORDER BY year DESC, quarter DESC
@@ -70,6 +63,21 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
     quarterlyRows = rows;
   } catch {
     quarterlyRows = [];
+  }
+
+  // Hoja 'Lista de devolucion': historial de devoluciones fisicas de este
+  // trabajador, tal como quedan registradas por el laboratorio.
+  let returnRows: any[] = [];
+  try {
+    const { rows } = await sql`
+      SELECT dosimeter_code, unidad, period_label, estado, observaciones, registered_at
+      FROM dosimetry_returns
+      WHERE regexp_replace(split_part(worker_rut, '-', 1), '[^0-9]', '', 'g') = ${rutDigits}
+      ORDER BY registered_at DESC
+    `;
+    returnRows = rows;
+  } catch {
+    returnRows = [];
   }
 
   const workerAlerts = await computeDosimeterAlerts(rut);
@@ -114,9 +122,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  const monthlyDoses = readingRows.map((r: any) => Number(r.dose));
   const annualDose = Number(worker.annual_dose);
-  const max = monthlyDoses.length > 0 ? Math.max(...monthlyDoses) : 1;
   const isActive = worker.status !== "inactive";
   const auth = buildAuthSummary(worker);
   const displayName = composeWorkerName(worker);
@@ -345,18 +351,39 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
       )}
 
       <div className="rounded-lg border border-border bg-surface p-4">
-        <h2 className="text-sm font-semibold mb-3">Histórico mensual (Hp10)</h2>
-        <p className="text-xs text-muted-foreground mb-2">Anual acumulada: {formatMSv(annualDose)}</p>
-        {monthlyDoses.length > 0 ? (
-          <div className="flex h-16 items-end gap-1">
-            {readingRows.map((r: any, i: number) => {
-              const v = Number(r.dose);
-              const h = (v / max) * 80 + 20;
-              return <div key={i} className="flex-1 rounded-t bg-accent-subtle hover:bg-accent" style={{ height: `${h}%` }} title={`${r.period}: ${v.toFixed(2)} mSv`} />;
-            })}
+        <h2 className="text-sm font-semibold mb-1">Historial de devoluciones (hoja \"Lista de devolución\")</h2>
+        {Number.isFinite(annualDose) && annualDose > 0 && (
+          <p className="mb-2 text-xs text-muted-foreground">Dosis anual acumulada (registro manual): {formatMSv(annualDose)}</p>
+        )}
+        {returnRows.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-left text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-1.5">Fecha</th>
+                  <th className="px-2 py-1.5">Dosímetro</th>
+                  <th className="px-2 py-1.5">Unidad</th>
+                  <th className="px-2 py-1.5">Periodo</th>
+                  <th className="px-2 py-1.5">Estado</th>
+                  <th className="px-2 py-1.5">Observaciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {returnRows.map((r: any, i: number) => (
+                  <tr key={i}>
+                    <td className="px-2 py-1.5 text-muted-foreground">{new Date(r.registered_at).toLocaleDateString("es-CL")}</td>
+                    <td className="px-2 py-1.5 font-medium">{r.dosimeter_code}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{r.unidad || "—"}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{r.period_label || "—"}</td>
+                    <td className="px-2 py-1.5">{r.estado}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{r.observaciones || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">Sin lecturas dosimétricas registradas.</p>
+          <p className="text-xs text-muted-foreground">Sin devoluciones registradas para este trabajador.</p>
         )}
       </div>
     </div>
