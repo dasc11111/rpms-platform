@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNotReturned, setLostFlag } from '@/lib/dosimetry';
+import { sql } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 // Hoja 'No devueltos' de la planilla oficial: dosimetros ya informados en
 // 'Reportes por trimestre' que aun no figuran en la hoja 'Lista de
 // devolucion' para el mismo periodo. Se recalcula en vivo en cada GET.
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    if (url.searchParams.get('debug') === '1') {
+      const total = await sql`SELECT COUNT(*)::int AS n FROM dosimetry_quarterly`;
+      const withCode = await sql`SELECT COUNT(*)::int AS n FROM dosimetry_quarterly WHERE dosimetro IS NOT NULL AND dosimetro <> ''`;
+      const withReturn = await sql`SELECT COUNT(*)::int AS n FROM dosimetry_returns`;
+      const sample = await sql`SELECT worker_name, period_label, dosimetro, tipo FROM dosimetry_quarterly ORDER BY id DESC LIMIT 5`;
+      return NextResponse.json({ ok: true, totalQuarterly: total.rows[0]?.n, withDosimetroCode: withCode.rows[0]?.n, returnsCount: withReturn.rows[0]?.n, sample: sample.rows });
+    }
     const rows = await getNotReturned();
     return NextResponse.json({ ok: true, rows });
   } catch (e: any) {
