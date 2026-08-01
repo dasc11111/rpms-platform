@@ -157,6 +157,15 @@ export async function ensureDosimetryTables() {
       UNIQUE (dosimeter_code, period_label)
     )
   `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS dosimetry_column_config (
+      field_key TEXT PRIMARY KEY,
+      label TEXT,
+      keyword_sets JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
 }
 
 // ---------------------------------------------------------------------------
@@ -302,4 +311,79 @@ export async function getLateReturns(): Promise<LateReturnRow[]> {
     }
   }
   return out;
+}
+
+
+// ---------------------------------------------------------------------------
+// Importacion inteligente: reconocimiento automatico de columnas para la
+// hoja 'Reportes por trimestre'. Cada campo tiene un set de palabras clave
+// por defecto (igual al formato oficial actual). Si el laboratorio cambia
+// el nombre de una columna, el sistema pedira una unica vez que se indique
+// a que campo corresponde y aprendera esa asociacion para futuras cargas,
+// sin necesidad de modificar el codigo.
+export type QuarterlyFieldDef = {
+  key: string;
+  label: string;
+  required: boolean;
+  keywordSets: string[][];
+};
+
+export const QUARTERLY_FIELD_DEFS: QuarterlyFieldDef[] = [
+  { key: 'institucion', label: 'Institucion', required: false, keywordSets: [['instituci']] },
+  { key: 'departamento', label: 'Departamento', required: false, keywordSets: [['departamento']] },
+  { key: 'periodo', label: 'Periodo', required: true, keywordSets: [['periodo']] },
+  { key: 'nombre', label: 'Nombre', required: false, keywordSets: [['nombre']] },
+  { key: 'run', label: 'RUN / RUT', required: true, keywordSets: [['run'], ['rut']] },
+  { key: 'dosis_cuerpo_cualitativo', label: 'Hp(10) cualitativo', required: false, keywordSets: [['cuerpo entero', 'cualitativo']] },
+  { key: 'dosis_cristalino_cualitativo', label: 'Hp(3) cualitativo', required: false, keywordSets: [['cristalino', 'cualitativo']] },
+  { key: 'dosis_piel_cualitativo', label: 'Hp(0.07) cualitativo', required: false, keywordSets: [['piel', 'cualitativo']] },
+  { key: 'dosis_cuerpo_cuantitativo', label: 'Hp(10) cuantitativo', required: true, keywordSets: [['cuerpo entero', 'cuantitativo']] },
+  { key: 'dosis_cristalino_cuantitativo', label: 'Hp(3) cuantitativo', required: false, keywordSets: [['cristalino', 'cuantitativo']] },
+  { key: 'dosis_piel_cuantitativo', label: 'Hp(0.07) cuantitativo', required: false, keywordSets: [['piel', 'cuantitativo']] },
+  { key: 'acum_anio_cuerpo', label: 'Suma Hp(10) ano cal.', required: false, keywordSets: [['cuerpo entero', 'ano calendario']] },
+  { key: 'acum_anio_cristalino', label: 'Suma Hp(3) ano cal.', required: false, keywordSets: [['cristalino', 'ano calendario']] },
+  { key: 'acum_anio_piel', label: 'Suma piel ano cal.', required: false, keywordSets: [['piel', 'ano calendario']] },
+  { key: 'acum_12m_cuerpo', label: 'Suma Hp(10) 12m', required: false, keywordSets: [['cuerpo entero', '12 meses']] },
+  { key: 'acum_12m_cristalino', label: 'Suma Hp(3) 12m', required: false, keywordSets: [['cristalino', '12 meses']] },
+  { key: 'acum_12m_piel', label: 'Suma piel 12m', required: false, keywordSets: [['piel', '12 meses']] },
+  { key: 'acum_60m_cuerpo', label: 'Suma Hp(10) 60m', required: false, keywordSets: [['cuerpo entero', '60 meses']] },
+  { key: 'acum_60m_cristalino', label: 'Suma Hp(3) 60m', required: false, keywordSets: [['cristalino', '60 meses']] },
+  { key: 'acum_60m_piel', label: 'Suma piel 60m', required: false, keywordSets: [['piel', '60 meses']] },
+  { key: 'tipo', label: 'Tipo', required: false, keywordSets: [['tipo']] },
+  { key: 'radiacion', label: 'Radiacion', required: false, keywordSets: [['radiacion']] },
+  { key: 'proceso', label: 'Proceso', required: false, keywordSets: [['proceso']] },
+  { key: 'dosimetro', label: 'Dosimetro', required: false, keywordSets: [['dosimetro']] },
+];
+
+export async function getQuarterlyColumnConfig(): Promise<QuarterlyFieldDef[]> {
+  await ensureDosimetryTables();
+  const { rows } = await sql`SELECT field_key, keyword_sets FROM dosimetry_column_config`;
+  const overrides = new Map<string, string[][]>();
+  for (const r of rows as any[]) overrides.set(r.field_key, r.keyword_sets);
+  return QUARTERLY_FIELD_DEFS.map((f) => ({
+    ...f,
+    keywordSets: overrides.get(f.key) ?? f.keywordSets,
+  }));
+}
+
+export async function learnQuarterlyColumnMapping(fieldKey: string, headerText: string): Promise<boolean> {
+  await ensureDosimetryTables();
+  const def = QUARTERLY_FIELD_DEFS.find((f) => f.key === fieldKey);
+  if (!def) return false;
+  const normalized = String(headerText ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+  if (!normalized) return false;
+  const { rows } = await sql`SELECT keyword_sets FROM dosimetry_column_config WHERE field_key = ${fieldKey}`;
+  const current: string[][] = rows[0]?.keyword_sets ?? def.keywordSets;
+  const alreadyLearned = current.some((g) => g.length === 1 && g[0] === normalized);
+  const updated = alreadyLearned ? current : [...current, [normalized]];
+  await sql`
+    INSERT INTO dosimetry_column_config (field_key, label, keyword_sets, updated_at)
+    VALUES (${fieldKey}, ${def.label}, ${JSON.stringify(updated)}::jsonb, now())
+    ON CONFLICT (field_key) DO UPDATE SET keyword_sets = ${JSON.stringify(updated)}::jsonb, updated_at = now()
+  `;
+  return true;
 }
