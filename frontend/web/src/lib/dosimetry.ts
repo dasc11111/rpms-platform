@@ -109,6 +109,17 @@ export async function ensureDosimetryTables() {
   await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS accum_12m_skin NUMERIC DEFAULT 0`;
   await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS source_document_id INTEGER`;
 
+  // Compatibilidad con la importacion PDF (hoja 'Reportes por trimestre'
+  // leida por OCR), que historicamente escribio el codigo de dosimetro,
+  // tipo y radiacion en columnas con otro nombre. Se agregan aqui tambien
+  // para poder unificarlas en una sola columna canonica sin perder datos.
+  await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS dosimeter_number TEXT`;
+  await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS dosimeter_type TEXT`;
+  await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS radiation_type TEXT`;
+  await sql`UPDATE dosimetry_quarterly SET dosimetro = dosimeter_number WHERE (dosimetro IS NULL OR dosimetro = '') AND dosimeter_number IS NOT NULL AND dosimeter_number <> ''`;
+  await sql`UPDATE dosimetry_quarterly SET radiacion = radiation_type WHERE (radiacion IS NULL OR radiacion = '') AND radiation_type IS NOT NULL AND radiation_type <> ''`;
+  await sql`UPDATE dosimetry_quarterly SET tipo = 'EXTREMIDAD' WHERE dosimeter_type ILIKE '%EXTREM%' AND tipo <> 'EXTREMIDAD'`;
+
   try {
     await sql`ALTER TABLE dosimetry_quarterly DROP CONSTRAINT IF EXISTS dosimetry_quarterly_worker_rut_year_quarter_key`;
   } catch {}
