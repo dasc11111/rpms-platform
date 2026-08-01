@@ -17,6 +17,7 @@ const SECTIONS = [
     icon: Shield,
     title: "Seguridad y permisos",
     description: "Roles, autenticación y control de acceso por servicio.",
+    href: "/settings/security",
   },
   {
     icon: Bot,
