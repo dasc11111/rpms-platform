@@ -8,6 +8,7 @@ import { ExpiringAuthorizationsTable } from "@/components/dashboard/expiring-aut
 import { sql } from "@/lib/db";
 import { buildAuthSummary, type WorkerAuthSummary } from "@/lib/authorization";
 import { computeDosimeterAlerts, ALERT_SEVERITY_LABEL, ALERT_SEVERITY_CLASS } from "@/lib/dosimeter-alerts";
+import { getNotReturned } from "@/lib/dosimetry";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -42,13 +43,6 @@ export default async function Dashboard() {
     .map(([service, count]) => ({ service, count }))
     .sort((a, b) => b.count - a.count || a.service.localeCompare(b.service));
 
-  // Curso de Proteccion Radiologica (Curso PR) y Autorizaciones de Desempeno:
-  // una sola consulta liviana; todo el resto (dias restantes, semaforo, estado
-  // y KPIs) se DERIVA en memoria con funciones puras de src/lib/authorization.ts.
-  // Esto evita N+1 queries y mantiene el Dashboard 100% automatico: al ser un
-  // Server Component "force-dynamic", cada vez que un modulo llama router.refresh()
-  // tras crear/editar/eliminar un registro, esta pagina se vuelve a renderizar
-  // desde cero contra la base de datos, sin necesidad de ningun boton "Actualizar".
   const { rows: authRows } = await sql`
     SELECT rut, name, email, course_pr_completed, authorization_number, authorization_expiry_date
     FROM workers
@@ -82,6 +76,17 @@ export default async function Dashboard() {
   const dosimeterAlerts = await computeDosimeterAlerts();
   const topDosimeterAlerts = dosimeterAlerts.slice(0, 6);
 
+  // Hoja 'No devueltos' de la planilla oficial: se reutiliza el mismo calculo
+  // en vivo que alimenta la vista de Dosimetria, para que el KPI del
+  // Dashboard nunca quede desincronizado del detalle.
+  let pendingReturnCount = 0;
+  let lostCount = 0;
+  try {
+    const notReturned = await getNotReturned();
+    pendingReturnCount = notReturned.filter((r) => !r.extraviado).length;
+    lostCount = notReturned.filter((r) => r.extraviado).length;
+  } catch {}
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -98,8 +103,8 @@ export default async function Dashboard() {
         <KPICard label="Autoriz. próx. vencer" value={totalProximaVencer} href="/workers" icon={UserCog} tone="warning" />
         <KPICard label="Autorización vencida" value={totalVencida} href="/workers" icon={ShieldX} tone="danger" />
         <KPICard label="Sin autorización" value={totalSinAutorizacion} href="/workers" icon={XCircle} tone="warning" />
-        <KPICard label="Dosím. pend. devolver" value={7} href="/dosimetry" icon={Package} tone="warning" />
-        <KPICard label="Dosím. extraviados" value={2} href="/dosimetry" icon={Search} tone="danger" />
+        <KPICard label="Dosím. pend. devolver" value={pendingReturnCount} href="/dosimetry?tab=no-devueltos" icon={Package} tone="warning" />
+        <KPICard label="Dosím. extraviados" value={lostCount} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
         <KPICard label="Equipos pendientes" value={5} href="/equipment" icon={Radio} />
         <KPICard label="Equipos fuera servicio" value={2} href="/equipment" icon={Ban} tone="warning" />
         <KPICard label="Blindajes pendientes" value={1} href="/compliance" icon={ShieldAlert} tone="warning" />
