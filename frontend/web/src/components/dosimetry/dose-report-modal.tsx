@@ -37,6 +37,44 @@ function norm(s: unknown): string {
  .trim();
 }
 
+type QuarterlyFieldDef = { key: string; label: string; required: boolean; keywordSets: string[][] };
+
+const DEFAULT_QUARTERLY_FIELDS: QuarterlyFieldDef[] = [
+  { key: "institucion", label: "Institucion", required: false, keywordSets: [["instituci"]] },
+  { key: "departamento", label: "Departamento", required: false, keywordSets: [["departamento"]] },
+  { key: "periodo", label: "Periodo", required: true, keywordSets: [["periodo"]] },
+  { key: "nombre", label: "Nombre", required: false, keywordSets: [["nombre"]] },
+  { key: "run", label: "RUN / RUT", required: true, keywordSets: [["run"], ["rut"]] },
+  { key: "dosis_cuerpo_cualitativo", label: "Hp(10) cualitativo", required: false, keywordSets: [["cuerpo entero", "cualitativo"]] },
+  { key: "dosis_cristalino_cualitativo", label: "Hp(3) cualitativo", required: false, keywordSets: [["cristalino", "cualitativo"]] },
+  { key: "dosis_piel_cualitativo", label: "Hp(0.07) cualitativo", required: false, keywordSets: [["piel", "cualitativo"]] },
+  { key: "dosis_cuerpo_cuantitativo", label: "Hp(10) cuantitativo", required: true, keywordSets: [["cuerpo entero", "cuantitativo"]] },
+  { key: "dosis_cristalino_cuantitativo", label: "Hp(3) cuantitativo", required: false, keywordSets: [["cristalino", "cuantitativo"]] },
+  { key: "dosis_piel_cuantitativo", label: "Hp(0.07) cuantitativo", required: false, keywordSets: [["piel", "cuantitativo"]] },
+  { key: "acum_anio_cuerpo", label: "Suma Hp(10) ano cal.", required: false, keywordSets: [["cuerpo entero", "ano calendario"]] },
+  { key: "acum_anio_cristalino", label: "Suma Hp(3) ano cal.", required: false, keywordSets: [["cristalino", "ano calendario"]] },
+  { key: "acum_anio_piel", label: "Suma piel ano cal.", required: false, keywordSets: [["piel", "ano calendario"]] },
+  { key: "acum_12m_cuerpo", label: "Suma Hp(10) 12m", required: false, keywordSets: [["cuerpo entero", "12 meses"]] },
+  { key: "acum_12m_cristalino", label: "Suma Hp(3) 12m", required: false, keywordSets: [["cristalino", "12 meses"]] },
+  { key: "acum_12m_piel", label: "Suma piel 12m", required: false, keywordSets: [["piel", "12 meses"]] },
+  { key: "acum_60m_cuerpo", label: "Suma Hp(10) 60m", required: false, keywordSets: [["cuerpo entero", "60 meses"]] },
+  { key: "acum_60m_cristalino", label: "Suma Hp(3) 60m", required: false, keywordSets: [["cristalino", "60 meses"]] },
+  { key: "acum_60m_piel", label: "Suma piel 60m", required: false, keywordSets: [["piel", "60 meses"]] },
+  { key: "tipo", label: "Tipo", required: false, keywordSets: [["tipo"]] },
+  { key: "radiacion", label: "Radiacion", required: false, keywordSets: [["radiacion"]] },
+  { key: "proceso", label: "Proceso", required: false, keywordSets: [["proceso"]] },
+  { key: "dosimetro", label: "Dosimetro", required: false, keywordSets: [["dosimetro"]] },
+];
+
+function matchKeywordSets(headers: string[], keywordSets: string[][]): number {
+  const normed = headers.map(norm);
+  for (const group of keywordSets) {
+    const idx = normed.findIndex((h) => group.every((k) => h.includes(k)));
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
 function parseCSV(text: string): string[][] {
  const rows: string[][] = [];
  let row: string[] = [];
@@ -273,109 +311,128 @@ export function DoseReportModal() {
  }
  }
  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
- const file = e.target.files && e.target.files[0];
- if (!file) return;
- setFileName(file.name);
- setCsvState("loading");
- setCsvMsg("Leyendo archivo...");
- try {
- const text = await file.text();
- const table = parseCSV(text).filter((r) => r.length > 1 && r.some((c) => c.trim() !== ""));
- if (table.length < 2) {
- setCsvState("error");
- setCsvMsg("El archivo no contiene datos.");
- return;
- }
- const headers = table[0] ?? [];
- // Deteccion automatica de columnas: reconoce el mismo orden/nombres de
- // encabezados de la hoja "Reportes por trimestre" de la planilla oficial.
- const institucionIdx = findCol(headers, ["instituci"]);
- const departamentoIdx = findCol(headers, ["departamento"]);
- const periodoIdx = findCol(headers, ["periodo"]);
- const nombreIdx = findCol(headers, ["nombre"]);
- const runIdxRun = findCol(headers, ["run"]);
- const runIdx = runIdxRun >= 0 ? runIdxRun : findCol(headers, ["rut"]);
- const doseBodyQualIdx = findCol(headers, ["cuerpo entero", "cualitativo"]);
- const doseLensQualIdx = findCol(headers, ["cristalino", "cualitativo"]);
- const doseSkinQualIdx = findCol(headers, ["piel", "cualitativo"]);
- const doseBodyIdx = findCol(headers, ["cuerpo entero", "cuantitativo"]);
- const doseLensIdx = findCol(headers, ["cristalino", "cuantitativo"]);
- const doseSkinIdx = findCol(headers, ["piel", "cuantitativo"]);
- const accumYearIdx = findCol(headers, ["cuerpo entero", "ano calendario"]);
- const accumYearLensIdx = findCol(headers, ["cristalino", "ano calendario"]);
- const accumYearSkinIdx = findCol(headers, ["piel", "ano calendario"]);
- const accum12mIdx = findCol(headers, ["cuerpo entero", "12 meses"]);
- const accum12mLensIdx = findCol(headers, ["cristalino", "12 meses"]);
- const accum12mSkinIdx = findCol(headers, ["piel", "12 meses"]);
- const accum60mBodyIdx = findCol(headers, ["cuerpo entero", "60 meses"]);
- const accum60mLensIdx = findCol(headers, ["cristalino", "60 meses"]);
- const accum60mSkinIdx = findCol(headers, ["piel", "60 meses"]);
- const tipoIdx = findCol(headers, ["tipo"]);
- const radiacionIdx = findCol(headers, ["radiacion"]);
- const procesoIdx = findCol(headers, ["proceso"]);
- const dosimetroIdx = findCol(headers, ["dosimetro"]);
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    setFileName(file.name);
+    setCsvState("loading");
+    setCsvMsg("Leyendo archivo...");
+    try {
+      const text = await file.text();
+      const table = parseCSV(text).filter((r) => r.length > 1 && r.some((c) => c.trim() !== ""));
+      if (table.length < 2) {
+        setCsvState("error");
+        setCsvMsg("El archivo no contiene datos.");
+        return;
+      }
+      const headers = table[0] ?? [];
 
- if (runIdx < 0 || periodoIdx < 0 || doseBodyIdx < 0) {
- setCsvState("error");
- setCsvMsg("No se reconocieron las columnas esperadas (RUN, PERIODO, dosis). Verifica el formato del archivo.");
- return;
- }
+      // Deteccion automatica de columnas (importacion inteligente): usa la
+      // configuracion de campos aprendida por el sistema (por defecto es
+      // identica al formato oficial actual) para ubicar cada columna sin
+      // depender del orden en que vengan en el archivo.
+      let fieldDefs: QuarterlyFieldDef[] = DEFAULT_QUARTERLY_FIELDS;
+      try {
+        const cfgRes = await fetch("/api/dosimetry/column-config");
+        const cfgData = await cfgRes.json().catch(() => null);
+        if (cfgData?.ok && Array.isArray(cfgData.fields) && cfgData.fields.length) {
+          fieldDefs = cfgData.fields;
+        }
+      } catch {}
 
- const get = (r: string[], idx: number) => (idx >= 0 ? r[idx] ?? "" : "");
- const rows = table
- .slice(1)
- .filter((r) => get(r, runIdx).trim() !== "")
- .map((r) => [
- get(r, institucionIdx),
- get(r, departamentoIdx),
- get(r, periodoIdx),
- get(r, nombreIdx),
- get(r, runIdx),
- get(r, doseBodyQualIdx),
- get(r, doseLensQualIdx),
- get(r, doseSkinQualIdx),
- get(r, doseBodyIdx),
- get(r, doseLensIdx),
- get(r, doseSkinIdx),
- get(r, accumYearIdx),
- get(r, accumYearLensIdx),
- get(r, accumYearSkinIdx),
- get(r, accum12mIdx),
- get(r, accum12mLensIdx),
- get(r, accum12mSkinIdx),
- get(r, accum60mBodyIdx),
- get(r, accum60mLensIdx),
- get(r, accum60mSkinIdx),
- get(r, tipoIdx) || "C.E.",
- get(r, radiacionIdx),
- get(r, procesoIdx),
- get(r, dosimetroIdx),
- ]);
+      const idxByKey: Record<string, number> = {};
+      for (const f of fieldDefs) idxByKey[f.key] = matchKeywordSets(headers, f.keywordSets);
 
- setCsvMsg("Procesando " + rows.length + " filas...");
- const res = await fetch("/api/dosimetry/import-quarterly", {
- method: "POST",
- headers: { "Content-Type": "application/json" },
- body: JSON.stringify({ rows }),
- });
- const data = await res.json().catch(() => ({}));
- if (!res.ok || !data.ok) {
- setCsvState("error");
- setCsvMsg(data.error || "No se pudo procesar el archivo.");
- return;
- }
- setCsvState("ok");
- setCsvMsg(
- "Archivo procesado: " + data.totalRows + " filas leidas · " + data.matchedGroups +
- " registros de trabajadores actualizados · " + data.unmatched +
- " filas sin coincidencia (nombres no encontrados en el listado de trabajadores)."
- );
- router.refresh();
- } catch (err) {
- setCsvState("error");
- setCsvMsg("No se pudo leer o procesar el archivo CSV.");
- }
- }
+      const missingRequired = fieldDefs.filter((f) => f.required && idxByKey[f.key] < 0);
+      if (missingRequired.length > 0) {
+        const usedIdx = new Set(Object.values(idxByKey).filter((v) => v >= 0));
+        const candidateHeaders = headers
+          .map((h, i) => ({ h, i }))
+          .filter(({ i }) => !usedIdx.has(i));
+        if (candidateHeaders.length === 0) {
+          setCsvState("error");
+          setCsvMsg("No se reconocieron las columnas esperadas (RUN, PERIODO, dosis). Verifica el formato del archivo.");
+          return;
+        }
+        const list = candidateHeaders.map(({ h, i }) => (i + 1) + ". " + h).join("\n");
+        for (const field of missingRequired) {
+          const answer = window.prompt(
+            "Columna nueva detectada: no se reconocio la columna '" + field.label + "'.\n" +
+              "Esto puede pasar porque la planilla oficial cambio de formato.\n" +
+              "Indica el numero de columna que corresponde (una sola vez, el sistema lo recordara):\n\n" + list
+          );
+          const num = Number((answer || "").trim());
+          const chosen = candidateHeaders.find(({ i }) => i + 1 === num);
+          if (!chosen) {
+            setCsvState("error");
+            setCsvMsg("No se pudo identificar la columna '" + field.label + "'. Carga cancelada.");
+            return;
+          }
+          idxByKey[field.key] = chosen.i;
+          try {
+            await fetch("/api/dosimetry/column-config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fieldKey: field.key, headerText: chosen.h }),
+            });
+          } catch {}
+        }
+      }
+
+      const get = (r: string[], idx: number) => (idx >= 0 ? r[idx] ?? "" : "");
+      const rows = table
+        .slice(1)
+        .filter((r) => get(r, idxByKey["run"]).trim() !== "")
+        .map((r) => [
+          get(r, idxByKey["institucion"]),
+          get(r, idxByKey["departamento"]),
+          get(r, idxByKey["periodo"]),
+          get(r, idxByKey["nombre"]),
+          get(r, idxByKey["run"]),
+          get(r, idxByKey["dosis_cuerpo_cualitativo"]),
+          get(r, idxByKey["dosis_cristalino_cualitativo"]),
+          get(r, idxByKey["dosis_piel_cualitativo"]),
+          get(r, idxByKey["dosis_cuerpo_cuantitativo"]),
+          get(r, idxByKey["dosis_cristalino_cuantitativo"]),
+          get(r, idxByKey["dosis_piel_cuantitativo"]),
+          get(r, idxByKey["acum_anio_cuerpo"]),
+          get(r, idxByKey["acum_anio_cristalino"]),
+          get(r, idxByKey["acum_anio_piel"]),
+          get(r, idxByKey["acum_12m_cuerpo"]),
+          get(r, idxByKey["acum_12m_cristalino"]),
+          get(r, idxByKey["acum_12m_piel"]),
+          get(r, idxByKey["acum_60m_cuerpo"]),
+          get(r, idxByKey["acum_60m_cristalino"]),
+          get(r, idxByKey["acum_60m_piel"]),
+          get(r, idxByKey["tipo"]) || "C.E.",
+          get(r, idxByKey["radiacion"]),
+          get(r, idxByKey["proceso"]),
+          get(r, idxByKey["dosimetro"]),
+        ]);
+
+      setCsvMsg("Procesando " + rows.length + " filas...");
+      const res = await fetch("/api/dosimetry/import-quarterly", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setCsvState("error");
+        setCsvMsg(data.error || "No se pudo procesar el archivo.");
+        return;
+      }
+      setCsvState("ok");
+      setCsvMsg(
+        "Archivo procesado: " + data.totalRows + " filas leidas - " + data.matchedGroups +
+          " registros de trabajadores actualizados - " + data.unmatched +
+          " filas sin coincidencia (nombres no encontrados en el listado de trabajadores)."
+      );
+      router.refresh();
+    } catch (err) {
+      setCsvState("error");
+      setCsvMsg("No se pudo leer o procesar el archivo CSV.");
+    }
+  }
 
  function setRowResolution(idx: number, resolution: string) {
  setPdfRows((rs) => rs.map((r) => (r.rowIndex === idx ? { ...r, resolution } : r)));
@@ -756,7 +813,7 @@ export function DoseReportModal() {
  <div>
  <p className="mb-3 text-[11px] text-muted-foreground">
  Sube un archivo .csv con el formato estandar del proveedor de dosimetria (columnas INSTITUCION, DEPARTAMENTO, PERIODO, NOMBRE, RUN
- y las columnas de dosis trimestrales/acumuladas). Solo se cargaran filas cuyo RUN coincida con el listado de trabajadores.
+ y las columnas de dosis trimestrales/acumuladas). El sistema reconoce las columnas automaticamente aunque cambien de orden, y si detecta una columna nueva solo pedira la configuracion una vez para aprenderla. Solo se cargaran filas cuyo RUN coincida con el listado de trabajadores.
  </p>
  <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed border-border p-6 text-center hover:border-accent">
  <Upload className="h-5 w-5 text-muted-foreground" />
