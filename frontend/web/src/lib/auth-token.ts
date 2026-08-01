@@ -62,7 +62,9 @@ export async function verifySession(token: string | undefined | null): Promise<S
   if (!token) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;
-  const [body, sig] = parts;
+  const body = parts[0];
+  const sig = parts[1];
+  if (!body || !sig) return null;
   try {
     const secret = getSecret();
     const key = await getKey(secret);
