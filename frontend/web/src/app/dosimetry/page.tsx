@@ -1,8 +1,11 @@
-import { Users, ShieldCheck, AlertTriangle, ShieldAlert, FileText, FileSpreadsheet, ClipboardCheck, Package, Search, Clock } from "lucide-react";
+import { Users, ShieldCheck, AlertTriangle, ShieldAlert, FileText, FileSpreadsheet, ClipboardCheck, Package, Search } from "lucide-react";
 import Link from "next/link";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseReportModal } from "@/components/dosimetry/dose-report-modal";
 import { NotReturnedTable } from "@/components/dosimetry/not-returned-table";
+import { QuarterlyTable } from "@/components/dosimetry/quarterly-table";
+import { AnnualSummaryTable } from "@/components/dosimetry/annual-summary-table";
+import { LateReturnsTable } from "@/components/dosimetry/late-returns-table";
 import { sql } from "@/lib/db";
 import {
   getAnnualSummary,
@@ -46,13 +49,6 @@ type DocRow = {
   status: string;
 };
 
-const LEVEL_LABEL: Record<string, { label: string; className: string }> = {
-  normal: { label: "Normal", className: "text-muted-foreground" },
-  registro: { label: "Nivel de registro", className: "text-warning" },
-  investigacion: { label: "Nivel de investigacion", className: "text-orange-500" },
-  intervencion: { label: "Nivel de intervencion", className: "text-danger" },
-};
-
 const TABS: { key: string; label: string }[] = [
   { key: "trimestre", label: "Reportes por trimestre" },
   { key: "anual", label: "Resumen anual" },
@@ -65,8 +61,8 @@ async function getData(): Promise<Row[]> {
     await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS source_document_id INT`;
     const { rows } = await sql`
       SELECT q.worker_rut, q.worker_name, q.departamento, q.year, q.quarter, q.period_label,
-        q.dose_body, q.dose_lens, q.dose_skin, q.accum_60m_body, q.level,
-        q.source_document_id, d.blob_url
+             q.dose_body, q.dose_lens, q.dose_skin, q.accum_60m_body, q.level,
+             q.source_document_id, d.blob_url
       FROM dosimetry_quarterly q
       LEFT JOIN dosimetry_documents d ON d.id = q.source_document_id
       ORDER BY q.year DESC, q.quarter DESC, q.worker_name ASC
@@ -149,7 +145,7 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
     <div className="mx-auto max-w-[1400px] p-6">
       <h1 className="text-lg font-semibold mb-1">Dosimetria</h1>
       <p className="mb-4 text-xs text-muted-foreground">
-        {latestLabel ? `Ultimo periodo cargado: ${latestLabel}` : "Planilla oficial 'Resumen - 908.xlsm'"} · Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv
+        {latestLabel ? `Ultimo periodo cargado: ${latestLabel}` : "Planilla oficial Resumen - 908.xlsm"} · Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv
       </p>
 
       <DoseReportModal />
@@ -224,55 +220,8 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
             <KPICard label="Pendientes de validacion" value={stats.pendingValidation} href="/dosimetry" icon={AlertTriangle} tone="warning" />
           </div>
 
-          <div className="mb-6 overflow-hidden rounded-lg border border-border bg-surface">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/40 text-left text-xs">
-                <tr>
-                  <th className="px-3 py-2">Trabajador</th>
-                  <th className="px-3 py-2">Departamento</th>
-                  <th className="px-3 py-2">Periodo</th>
-                  <th className="px-3 py-2 text-right">Cuerpo entero (mSv)</th>
-                  <th className="px-3 py-2 text-right">Cristalino (mSv)</th>
-                  <th className="px-3 py-2 text-right">Piel (mSv)</th>
-                  <th className="px-3 py-2 text-right">Acumulado 5 anos (mSv)</th>
-                  <th className="px-3 py-2">Nivel</th>
-                  <th className="px-3 py-2">Fuente</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-sm">
-                {all.map((r, i) => {
-                  const lv = LEVEL_LABEL[r.level] ?? { label: r.level, className: "text-muted-foreground" };
-                  return (
-                    <tr key={i} className="hover:bg-muted/40">
-                      <td className="px-3 py-2.5 font-medium">{r.worker_name}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{r.departamento}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{r.period_label}</td>
-                      <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(r.dose_body).toFixed(2)}</td>
-                      <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(r.dose_lens).toFixed(2)}</td>
-                      <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(r.dose_skin).toFixed(2)}</td>
-                      <td className="px-3 py-2.5 text-right text-muted-foreground">{Number(r.accum_60m_body).toFixed(2)}</td>
-                      <td className={`px-3 py-2.5 ${lv.className}`}>{lv.label}</td>
-                      <td className="px-3 py-2.5">
-                        {r.blob_url ? (
-                          <a href={r.blob_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                            Ver Reporte Fuente
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {all.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
-                      No hay lecturas dosimetricas cargadas todavia.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="mb-6">
+            <QuarterlyTable rows={all} />
           </div>
 
           <h2 className="mb-2 text-sm font-semibold">Documentos importados</h2>
@@ -324,53 +273,7 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
         </>
       )}
 
-      {tab === "anual" && (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/40 text-left text-xs">
-              <tr>
-                <th className="px-3 py-2">Institucion</th>
-                <th className="px-3 py-2">Departamento</th>
-                <th className="px-3 py-2">Nombre</th>
-                <th className="px-3 py-2">RUN</th>
-                <th className="px-3 py-2">Estado</th>
-                <th className="px-3 py-2">Tipo</th>
-                <th className="px-3 py-2 text-right">Año</th>
-                <th className="px-3 py-2 text-right">T1</th>
-                <th className="px-3 py-2 text-right">T2</th>
-                <th className="px-3 py-2 text-right">T3</th>
-                <th className="px-3 py-2 text-right">T4</th>
-                <th className="px-3 py-2 text-right">Total anual</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border text-sm">
-              {annualRows.map((r, i) => (
-                <tr key={i} className="hover:bg-muted/40">
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.institucion || "—"}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.departamento || "—"}</td>
-                  <td className="px-3 py-2.5 font-medium">{r.nombre}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.run}</td>
-                  <td className="px-3 py-2.5">{r.estado}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.tipod}</td>
-                  <td className="px-3 py-2.5 text-right">{r.anio}</td>
-                  <td className="px-3 py-2.5 text-right">{r.t1.toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right">{r.t2.toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right">{r.t3.toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right">{r.t4.toFixed(2)}</td>
-                  <td className="px-3 py-2.5 text-right font-medium">{r.total.toFixed(2)}</td>
-                </tr>
-              ))}
-              {annualRows.length === 0 && (
-                <tr>
-                  <td colSpan={12} className="px-3 py-6 text-center text-muted-foreground">
-                    Sin datos para el resumen anual todavia.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === "anual" && <AnnualSummaryTable rows={annualRows} />}
 
       {tab === "no-devueltos" && (
         <div>
@@ -382,45 +285,7 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
         </div>
       )}
 
-      {tab === "fuera-plazo" && (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          <table className="w-full">
-            <thead className="border-b border-border bg-muted/40 text-left text-xs">
-              <tr>
-                <th className="px-3 py-2">Institucion</th>
-                <th className="px-3 py-2">Departamento</th>
-                <th className="px-3 py-2">Nombre</th>
-                <th className="px-3 py-2">RUN</th>
-                <th className="px-3 py-2">Periodo</th>
-                <th className="px-3 py-2">Dosimetro</th>
-                <th className="px-3 py-2">Fecha de lectura</th>
-                <th className="px-3 py-2">¿Es alerta de dosis?</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border text-sm">
-              {lateRows.map((r, i) => (
-                <tr key={i} className="hover:bg-muted/40">
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.institucion || "—"}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.departamento || "—"}</td>
-                  <td className="px-3 py-2.5 font-medium">{r.nombre}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.run}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.period_label}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.dosimetro || "—"}</td>
-                  <td className="px-3 py-2.5 text-muted-foreground">{r.fecha_lectura}</td>
-                  <td className="px-3 py-2.5">{r.alerta_dosis ? "Si" : "No"}</td>
-                </tr>
-              ))}
-              {lateRows.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-3 py-6 text-center text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />Sin devoluciones fuera de plazo detectadas.</span>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {tab === "fuera-plazo" && <LateReturnsTable rows={lateRows} />}
     </div>
   );
 }
