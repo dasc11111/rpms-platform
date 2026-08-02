@@ -402,7 +402,7 @@ export function TransportApp({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Transporte de Material Radiactivo</h1>
-          <p className="text-sm text-muted">Registro diario, trazabilidad y cumplimiento normativo (IAEA SSR-6)</p>
+          <p className="text-sm text-muted-foreground">Registro diario, trazabilidad y cumplimiento normativo (IAEA SSR-6)</p>
         </div>
         <button
           onClick={() => openNew()}
@@ -431,7 +431,7 @@ export function TransportApp({
         />
         <KpiBox label="% Cumplimiento normativo" value={complianceAvg !== null ? complianceAvg + "%" : "-"} />
         <div className="rounded-lg border border-border bg-surface p-3">
-          <p className="text-xs text-muted">Autorizacion</p>
+          <p className="text-xs text-muted-foreground">Autorizacion</p>
           {stats?.authorization ? (
             <p className={"mt-1 flex items-center gap-1 text-sm font-medium " + authLevelStyle[stats.authorization.alertLevel]}>
               <ShieldCheck size={14} />
@@ -447,7 +447,7 @@ export function TransportApp({
         <h2 className="mb-3 text-sm font-semibold text-foreground">Dashboard Ejecutivo</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div>
-            <p className="mb-1 text-xs text-muted">Transportes por mes (ultimos 12 meses)</p>
+            <p className="mb-1 text-xs text-muted-foreground">Transportes por mes (ultimos 12 meses)</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={stats?.monthlyTrend ?? []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -459,7 +459,7 @@ export function TransportApp({
             </ResponsiveContainer>
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted">Tendencia anual</p>
+            <p className="mb-1 text-xs text-muted-foreground">Tendencia anual</p>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={stats?.yearlyTrend ?? []}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -471,7 +471,7 @@ export function TransportApp({
             </ResponsiveContainer>
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted">Distribucion por radioisotopo</p>
+            <p className="mb-1 text-xs text-muted-foreground">Distribucion por radioisotopo</p>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={materialPieData} dataKey="value" nameKey="name" outerRadius={70} label>
@@ -484,7 +484,7 @@ export function TransportApp({
             </ResponsiveContainer>
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted">Cumplimiento normativo (%)</p>
+            <p className="mb-1 text-xs text-muted-foreground">Cumplimiento normativo (%)</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={complianceData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -496,7 +496,7 @@ export function TransportApp({
             </ResponsiveContainer>
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted">Actividad total por radioisotopo (mCi)</p>
+            <p className="mb-1 text-xs text-muted-foreground">Actividad total por radioisotopo (mCi)</p>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={activityData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
@@ -514,7 +514,7 @@ export function TransportApp({
 
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface p-3">
         <div className="relative min-w-[200px] flex-1">
-          <Search size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted" />
+          <Search size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -598,9 +598,9 @@ export function TransportApp({
       </div>
 
       <div className="space-y-4">
-        {loading && <p className="text-sm text-muted">Cargando...</p>}
+        {loading && <p className="text-sm text-muted-foreground">Cargando...</p>}
         {!loading && grouped.length === 0 && (
-          <p className="rounded border border-border bg-surface p-4 text-sm text-muted">
+          <p className="rounded border border-border bg-surface p-4 text-sm text-muted-foreground">
             No hay transportes registrados con los filtros seleccionados.
           </p>
         )}
@@ -609,7 +609,7 @@ export function TransportApp({
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border p-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-foreground">{date}</h3>
-                <span className="rounded bg-background px-2 py-0.5 text-xs text-muted">
+                <span className="rounded bg-background px-2 py-0.5 text-xs text-muted-foreground">
                   {records.length} transporte{records.length !== 1 ? "s" : ""}
                 </span>
               </div>
@@ -626,7 +626,7 @@ export function TransportApp({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border text-muted">
+                  <tr className="border-b border-border text-muted-foreground">
                     <th className="p-2">N</th>
                     <th className="p-2">IT</th>
                     <th className="p-2">Contacto</th>
@@ -741,7 +741,7 @@ function KpiBox({
 }) {
   return (
     <div className={"rounded-lg border p-3 " + (tone === "danger" ? "border-danger/40 bg-danger/10" : "border-border bg-surface")}>
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className={"mt-1 flex items-center gap-1 text-lg font-semibold " + (tone === "danger" ? "text-danger" : "text-foreground")}>
         {icon}
         {value}
