@@ -53,7 +53,7 @@ export function DispatchDocButton({ date, actorEmail }: { date: string; actorEma
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`flex items-center gap-1 rounded border px-2 py-1 text-xs ${current ? "border-success/40 text-success" : "border-border text-muted"} hover:bg-background`}
+        className={`flex items-center gap-1 rounded border px-2 py-1 text-xs ${current ? "border-success/40 text-success" : "border-border text-muted-foreground"} hover:bg-background`}
         title="Guía de despacho"
       >
         <Paperclip size={12} /> {current ? "Guía adjunta" : "Adjuntar guía"}
@@ -67,7 +67,7 @@ export function DispatchDocButton({ date, actorEmail }: { date: string; actorEma
           >
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">Guía de despacho &middot; {date}</h4>
-              <button onClick={() => setOpen(false)} className="text-muted hover:text-foreground">
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             </div>
@@ -89,14 +89,14 @@ export function DispatchDocButton({ date, actorEmail }: { date: string; actorEma
             </div>
 
             <div className="space-y-2">
-              {docs.length === 0 && <p className="text-xs text-muted">Sin documentos adjuntos para este día.</p>}
+              {docs.length === 0 && <p className="text-xs text-muted-foreground">Sin documentos adjuntos para este día.</p>}
               {docs.map((d) => (
                 <div key={d.id} className="flex items-center justify-between rounded border border-border p-2 text-xs">
                   <div>
                     <p className="text-foreground">
                       {d.file_name} {d.is_current && <span className="text-success">(vigente)</span>}
                     </p>
-                    <p className="text-muted">v{d.version} &middot; {d.uploaded_by || "—"}</p>
+                    <p className="text-muted-foreground">v{d.version} &middot; {d.uploaded_by || "—"}</p>
                   </div>
                   <div className="flex gap-1">
                     <a
