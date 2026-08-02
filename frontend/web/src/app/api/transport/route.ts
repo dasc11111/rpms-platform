@@ -170,7 +170,7 @@ export async function POST(request: Request) {
     )
     RETURNING id;
   `;
-  const shipmentId = rows[0].id;
+  const shipmentId = rows[0]!.id;
 
   if (materialCode === "I131" && i131Activities.length > 0) {
     for (const act of i131Activities) {
