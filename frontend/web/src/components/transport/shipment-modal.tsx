@@ -194,7 +194,7 @@ export function ShipmentModal({
           <h2 className="text-lg font-semibold text-foreground">
             {editing ? "Editar transporte #" + editing.correlativeNumber : "Nuevo transporte"}
           </h2>
-          <button onClick={onClose} className="rounded p-1 text-muted hover:bg-background">
+          <button onClick={onClose} className="rounded p-1 text-muted-foreground hover:bg-background">
             <X size={18} />
           </button>
         </div>
@@ -205,7 +205,7 @@ export function ShipmentModal({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-xs text-muted">Fecha</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Fecha</label>
             <input
               type="date"
               value={transportDate}
@@ -215,7 +215,7 @@ export function ShipmentModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted">N correlativo (automatico, editable)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">N correlativo (automatico, editable)</label>
             <input
               type="number"
               value={correlativeNumber}
@@ -226,7 +226,7 @@ export function ShipmentModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-muted">Indice de Transporte (IT)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Indice de Transporte (IT)</label>
             <input
               type="number"
               step="0.01"
@@ -236,7 +236,7 @@ export function ShipmentModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted">Contacto con el bulto (uSv/h)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Contacto con el bulto (uSv/h)</label>
             <input
               type="number"
               step="0.01"
@@ -247,7 +247,7 @@ export function ShipmentModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-muted">A 1 metro del bulto (uSv/h) &middot; limite {"<"} 100</label>
+            <label className="mb-1 block text-xs text-muted-foreground">A 1 metro del bulto (uSv/h) &middot; limite {"<"} 100</label>
             <input
               type="number"
               step="0.01"
@@ -262,7 +262,7 @@ export function ShipmentModal({
             )}
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted">Contacto con el vehiculo (uSv/h) &middot; limite {"<"} 2000</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Contacto con el vehiculo (uSv/h) &middot; limite {"<"} 2000</label>
             <input
               type="number"
               step="0.01"
@@ -279,7 +279,7 @@ export function ShipmentModal({
         </div>
 
         <div className="mt-4">
-          <label className="mb-1 block text-xs text-muted">Tipo de material transportado</label>
+          <label className="mb-1 block text-xs text-muted-foreground">Tipo de material transportado</label>
           <div className="flex flex-wrap gap-3">
             {radionuclides.map((r) => (
               <label key={r.code} className="flex items-center gap-2 rounded border border-border bg-background px-3 py-2 text-sm">
@@ -296,7 +296,7 @@ export function ShipmentModal({
 
         {materialCode !== "I131" ? (
           <div className="mt-3">
-            <label className="mb-1 block text-xs text-muted">{selectedMaterial?.activityLabel || "Actividad (mCi)"}</label>
+            <label className="mb-1 block text-xs text-muted-foreground">{selectedMaterial?.activityLabel || "Actividad (mCi)"}</label>
             <input
               type="number"
               step="0.01"
@@ -307,7 +307,7 @@ export function ShipmentModal({
           </div>
         ) : (
           <div className="mt-3">
-            <label className="mb-1 block text-xs text-muted">Actividades individuales (una por paciente/pedido)</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Actividades individuales (una por paciente/pedido)</label>
             <div className="space-y-2">
               {i131Activities.map((act, idx) => (
                 <div key={idx} className="flex gap-2">
@@ -338,7 +338,7 @@ export function ShipmentModal({
                   />
                   <button
                     onClick={() => setI131Activities(i131Activities.filter((_, i) => i !== idx))}
-                    className="rounded border border-border px-2 text-sm text-muted hover:bg-background"
+                    className="rounded border border-border px-2 text-sm text-muted-foreground hover:bg-background"
                   >
                     <X size={14} />
                   </button>
@@ -351,7 +351,7 @@ export function ShipmentModal({
             >
               + Agregar capsula/pedido
             </button>
-            <p className="mt-2 text-xs text-muted">
+            <p className="mt-2 text-xs text-muted-foreground">
               Actividad total: {i131Total.total.toFixed(2)} mCi &middot; N pedidos: {i131Total.count} &middot; Promedio por pedido:{" "}
               {i131Total.avg.toFixed(2)} mCi
             </p>
@@ -359,7 +359,7 @@ export function ShipmentModal({
         )}
 
         <div className="mt-4">
-          <label className="mb-1 block text-xs text-muted">Senaletica obligatoria</label>
+          <label className="mb-1 block text-xs text-muted-foreground">Senaletica obligatoria</label>
           <div className="flex flex-wrap gap-2">
             <label
               className={"flex items-center gap-2 rounded border px-3 py-2 text-sm " + (signageDosimeter ? "border-success bg-success/10 text-success" : "border-border text-foreground")}
@@ -384,7 +384,7 @@ export function ShipmentModal({
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1 block text-xs text-muted">Conductor</label>
+            <label className="mb-1 block text-xs text-muted-foreground">Conductor</label>
             <input
               list="transport-drivers-list"
               value={driverName}
@@ -398,7 +398,7 @@ export function ShipmentModal({
             </datalist>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted">OPR responsable</label>
+            <label className="mb-1 block text-xs text-muted-foreground">OPR responsable</label>
             <input
               list="transport-oprs-list"
               value={oprName}
@@ -414,7 +414,7 @@ export function ShipmentModal({
         </div>
 
         <div className="mt-3">
-          <label className="mb-1 block text-xs text-muted">Notas (opcional)</label>
+          <label className="mb-1 block text-xs text-muted-foreground">Notas (opcional)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
