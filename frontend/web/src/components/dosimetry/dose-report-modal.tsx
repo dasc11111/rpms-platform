@@ -342,7 +342,7 @@ export function DoseReportModal() {
       const idxByKey: Record<string, number> = {};
       for (const f of fieldDefs) idxByKey[f.key] = matchKeywordSets(headers, f.keywordSets);
 
-      const missingRequired = fieldDefs.filter((f) => f.required && idxByKey[f.key] < 0);
+      const missingRequired = fieldDefs.filter((f) => f.required && (idxByKey[f.key] ?? -1) < 0);
       if (missingRequired.length > 0) {
         const usedIdx = new Set(Object.values(idxByKey).filter((v) => v >= 0));
         const candidateHeaders = headers
@@ -378,7 +378,7 @@ export function DoseReportModal() {
         }
       }
 
-      const get = (r: string[], idx: number) => (idx >= 0 ? r[idx] ?? "" : "");
+      const get = (r: string[], idx: number | undefined) => (idx !== undefined && idx >= 0 ? r[idx] ?? "" : "");
       const rows = table
         .slice(1)
         .filter((r) => get(r, idxByKey["run"]).trim() !== "")
