@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Plus, Search, Download, FileSpreadsheet, FileText, AlertTriangle, ShieldCheck, QrCode } from "lucide-react";
+import { Plus, Search, Download, FileSpreadsheet, FileText, AlertTriangle, ShieldCheck, QrCode, Eye } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useAuth } from "@/components/auth/auth-provider";
 import { downloadCsv } from "@/lib/csv";
@@ -341,7 +341,7 @@ export function TransportApp({
     doc.save("transporte-material-radiactivo-" + new Date().toISOString().slice(0, 10) + ".pdf");
   }
 
-  async function generateShipmentPdf(r: NormalizedShipment) {
+  async function generateShipmentPdf(r: NormalizedShipment, mode: "preview" | "download" = "download") {
     const { jsPDF } = await import("jspdf");
     const QRCode = (await import("qrcode")).default;
     const url = window.location.origin + "/transport?shipment=" + r.id;
@@ -387,7 +387,11 @@ export function TransportApp({
     doc.line(300, y + 40, 480, y + 40);
     doc.text("Firma OPR", 300, y + 55);
 
+    if (mode === "preview") {
+    window.open(doc.output("bloburl") as unknown as string, "_blank");
+  } else {
     doc.save("transporte-" + r.correlativeNumber + "-" + String(r.transportDate).slice(0, 10) + ".pdf");
+  }
   }
 
   const authLevelStyle: Record<string, string> = {
@@ -697,11 +701,18 @@ export function TransportApp({
                               Editar
                             </button>
                             <button
-                              onClick={() => generateShipmentPdf(r)}
-                              title="Generar formulario PDF con codigo QR"
-                              className="flex items-center gap-1 rounded border border-border px-2 py-1 text-foreground hover:bg-background"
+                              onClick={() => generateShipmentPdf(r, "preview")}
+                              className="rounded border border-border px-2 py-1 text-foreground hover:bg-background"
+                              title="Vista previa"
                             >
-                              <QrCode size={12} /> PDF
+                              <Eye size={12} />
+                            </button>
+                            <button
+                              onClick={() => generateShipmentPdf(r, "download")}
+                              className="rounded border border-border px-2 py-1 text-foreground hover:bg-background"
+                              title="Descargar guia"
+                            >
+                              <Download size={12} />
                             </button>
                           </div>
                         </td>
