@@ -165,7 +165,7 @@ export function ShipmentModal({
         actorEmail,
       };
 
-      const url = editing ? `/api/transport/${editing.id}` : "/api/transport";
+      const url = editing ? "/api/transport/" + editing.id : "/api/transport";
       const method = editing ? "PATCH" : "POST";
       const res = await fetch(url, {
         method,
@@ -192,7 +192,7 @@ export function ShipmentModal({
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-border bg-surface p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">
-            {editing ? `Editar transporte #${editing.correlativeNumber}` : "Nuevo transporte"}
+            {editing ? "Editar transporte #" + editing.correlativeNumber : "Nuevo transporte"}
           </h2>
           <button onClick={onClose} className="rounded p-1 text-muted hover:bg-background">
             <X size={18} />
@@ -215,7 +215,7 @@ export function ShipmentModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted">N° correlativo (automatico, editable)</label>
+            <label className="mb-1 block text-xs text-muted">N correlativo (automatico, editable)</label>
             <input
               type="number"
               value={correlativeNumber}
@@ -253,7 +253,7 @@ export function ShipmentModal({
               step="0.01"
               value={dose1m}
               onChange={(e) => setDose1m(e.target.value)}
-              className={`w-full rounded border p-2 text-sm text-foreground ${exceeds1m ? "border-danger bg-danger/10" : "border-border bg-background"}`}
+              className={"w-full rounded border p-2 text-sm text-foreground " + (exceeds1m ? "border-danger bg-danger/10" : "border-border bg-background")}
             />
             {exceeds1m && (
               <p className="mt-1 flex items-center gap-1 text-xs text-danger">
@@ -268,7 +268,7 @@ export function ShipmentModal({
               step="0.01"
               value={doseVehicle}
               onChange={(e) => setDoseVehicle(e.target.value)}
-              className={`w-full rounded border p-2 text-sm text-foreground ${exceedsVehicle ? "border-danger bg-danger/10" : "border-border bg-background"}`}
+              className={"w-full rounded border p-2 text-sm text-foreground " + (exceedsVehicle ? "border-danger bg-danger/10" : "border-border bg-background")}
             />
             {exceedsVehicle && (
               <p className="mt-1 flex items-center gap-1 text-xs text-danger">
@@ -316,9 +316,10 @@ export function ShipmentModal({
                     placeholder="Referencia / paciente"
                     value={act.label}
                     onChange={(e) => {
-                      const next = [...i131Activities];
-                      next[idx] = { ...next[idx], label: e.target.value };
-                      setI131Activities(next);
+                      const value = e.target.value;
+                      setI131Activities((prev) =>
+                        prev.map((item, i) => (i === idx ? { ...item, label: value } : item))
+                      );
                     }}
                     className="flex-1 rounded border border-border bg-background p-2 text-sm text-foreground"
                   />
@@ -328,9 +329,10 @@ export function ShipmentModal({
                     placeholder="mCi"
                     value={act.activityMci}
                     onChange={(e) => {
-                      const next = [...i131Activities];
-                      next[idx] = { ...next[idx], activityMci: e.target.value };
-                      setI131Activities(next);
+                      const value = e.target.value;
+                      setI131Activities((prev) =>
+                        prev.map((item, i) => (i === idx ? { ...item, activityMci: value } : item))
+                      );
                     }}
                     className="w-28 rounded border border-border bg-background p-2 text-sm text-foreground"
                   />
@@ -347,32 +349,32 @@ export function ShipmentModal({
               onClick={() => setI131Activities([...i131Activities, { label: "", activityMci: "" }])}
               className="mt-2 rounded border border-border px-3 py-1 text-xs text-foreground hover:bg-background"
             >
-              + Agregar cápsula/pedido
+              + Agregar capsula/pedido
             </button>
             <p className="mt-2 text-xs text-muted">
-              Actividad total: {i131Total.total.toFixed(2)} mCi &middot; N° pedidos: {i131Total.count} &middot; Promedio por pedido:{" "}
+              Actividad total: {i131Total.total.toFixed(2)} mCi &middot; N pedidos: {i131Total.count} &middot; Promedio por pedido:{" "}
               {i131Total.avg.toFixed(2)} mCi
             </p>
           </div>
         )}
 
         <div className="mt-4">
-          <label className="mb-1 block text-xs text-muted">Señalética obligatoria</label>
+          <label className="mb-1 block text-xs text-muted">Senaletica obligatoria</label>
           <div className="flex flex-wrap gap-2">
             <label
-              className={`flex items-center gap-2 rounded border px-3 py-2 text-sm ${signageDosimeter ? "border-success bg-success/10 text-success" : "border-border text-foreground"}`}
+              className={"flex items-center gap-2 rounded border px-3 py-2 text-sm " + (signageDosimeter ? "border-success bg-success/10 text-success" : "border-border text-foreground")}
             >
               <input type="checkbox" checked={signageDosimeter} onChange={(e) => setSignageDosimeter(e.target.checked)} />
-              Uso de Dosímetro
+              Uso de Dosimetro
             </label>
             <label
-              className={`flex items-center gap-2 rounded border px-3 py-2 text-sm ${signageRadiactivo7 ? "border-success bg-success/10 text-success" : "border-border text-foreground"}`}
+              className={"flex items-center gap-2 rounded border px-3 py-2 text-sm " + (signageRadiactivo7 ? "border-success bg-success/10 text-success" : "border-border text-foreground")}
             >
               <input type="checkbox" checked={signageRadiactivo7} onChange={(e) => setSignageRadiactivo7(e.target.checked)} />
-              Señal "RADIACTIVO 7"
+              Senal "RADIACTIVO 7"
             </label>
             <label
-              className={`flex items-center gap-2 rounded border px-3 py-2 text-sm ${signageNu2915 ? "border-success bg-success/10 text-success" : "border-border text-foreground"}`}
+              className={"flex items-center gap-2 rounded border px-3 py-2 text-sm " + (signageNu2915 ? "border-success bg-success/10 text-success" : "border-border text-foreground")}
             >
               <input type="checkbox" checked={signageNu2915} onChange={(e) => setSignageNu2915(e.target.checked)} />
               Panel "NU 2915"
