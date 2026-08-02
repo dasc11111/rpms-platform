@@ -51,5 +51,5 @@ export async function POST(request: Request) {
 
   await logTransportAudit("upload_dispatch_document", uploadedBy, { transportDate, version: nextVersion, fileName: file.name });
 
-  return NextResponse.json({ ok: true, id: rows[0].id, version: nextVersion });
+  return NextResponse.json({ ok: true, id: rows[0]!.id, version: nextVersion });
 }
