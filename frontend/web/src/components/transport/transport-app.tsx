@@ -352,6 +352,7 @@ export function TransportApp({
       addImage: (data: string, format: string, x: number, y: number, w: number, h: number) => void;
       line: (x1: number, y1: number, x2: number, y2: number) => void;
       save: (filename: string) => void;
+      output: (type: string) => string;
     };
     doc.setFontSize(14);
     doc.text("Formulario de Transporte de Material Radiactivo", 40, 40);
