@@ -45,5 +45,5 @@ export async function POST(request: Request) {
 
   await logTransportAudit("upload_transport_authorization", uploadedBy, { number, issuedDate, expiryDate, version: nextVersion });
 
-  return NextResponse.json({ ok: true, id: rows[0].id, version: nextVersion });
+  return NextResponse.json({ ok: true, id: rows[0]!.id, version: nextVersion });
 }
