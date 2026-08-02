@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Plus, Search, Download, FileSpreadsheet, AlertTriangle, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { Plus, Search, Download, FileSpreadsheet, FileText, AlertTriangle, ShieldCheck, QrCode } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { downloadCsv } from "@/lib/csv";
 import { AuthorizationPanel } from "@/components/transport/authorization-panel";
@@ -113,6 +114,9 @@ export function TransportApp({
   const [opr, setOpr] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [day, setDay] = useState("");
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ShipmentRecord | null>(null);
   const [defaultDate, setDefaultDate] = useState<string>("");
@@ -127,13 +131,16 @@ export function TransportApp({
       if (opr) params.set("opr", opr);
       if (dateFrom) params.set("dateFrom", dateFrom);
       if (dateTo) params.set("dateTo", dateTo);
+      if (day) params.set("day", day);
+      if (month) params.set("month", month);
+      if (year) params.set("year", year);
       const res = await fetch("/api/transport?" + params.toString());
       const data = await res.json().catch(() => ({}));
       setShipments((data.shipments || []).map(normalizeShipment));
     } finally {
       setLoading(false);
     }
-  }, [search, material, opr, dateFrom, dateTo]);
+  }, [search, material, opr, dateFrom, dateTo, day, month, year]);
 
   const loadStats = useCallback(async () => {
     const res = await fetch("/api/transport/dashboard");
@@ -151,7 +158,33 @@ export function TransportApp({
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, material, opr, dateFrom, dateTo]);
+  }, [search, material, opr, dateFrom, dateTo, day, month, year]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const shipmentId = sp.get("shipment");
+    if (!shipmentId) return;
+    const existing = shipments.find((s) => String(s.id) === shipmentId);
+    if (existing) {
+      setEditing(existing);
+      setDefaultDate("");
+      setModalOpen(true);
+      return;
+    }
+    fetch("/api/transport/" + shipmentId)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.shipment) {
+          const normalized = normalizeShipment(data.shipment);
+          setEditing(normalized);
+          setDefaultDate("");
+          setModalOpen(true);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const grouped = useMemo(() => {
     const map = new Map<string, NormalizedShipment[]>();
@@ -239,6 +272,84 @@ export function TransportApp({
     XLSX.writeFile(wb, "transporte-material-radiactivo-" + new Date().toISOString().slice(0, 10) + ".xlsx");
   }
 
+  async function exportPdf() {
+    const { jsPDF } = await import("jspdf");
+    await import("jspdf-autotable");
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt" }) as unknown as {
+      text: (t: string, x: number, y: number) => void;
+      autoTable: (opts: Record<string, unknown>) => void;
+      save: (filename: string) => void;
+    };
+    doc.text("Transporte de Material Radiactivo - Reporte", 40, 30);
+    const head = [["Fecha", "N", "IT", "Contacto", "1m", "Vehiculo", "Material", "Actividad (mCi)", "OPR", "Alertas"]];
+    const body = shipments.map((s) => {
+      const act = activityOf(s);
+      return [
+        String(s.transportDate).slice(0, 10),
+        String(s.correlativeNumber),
+        s.itValue !== null ? String(s.itValue) : "",
+        s.doseContact !== null ? String(s.doseContact) : "",
+        s.dose1m !== null ? String(s.dose1m) : "",
+        s.doseVehicle !== null ? String(s.doseVehicle) : "",
+        MATERIAL_LABELS[s.materialCode] || s.materialCode,
+        act !== null && act !== undefined ? Number(act).toFixed(2) : "",
+        s.oprName || "",
+        s.alerts.map((a) => ALERT_LABELS[a] || a).join(", "),
+      ];
+    });
+    doc.autoTable({ head, body, startY: 45, styles: { fontSize: 7 }, headStyles: { fillColor: [30, 64, 175] } });
+    doc.save("transporte-material-radiactivo-" + new Date().toISOString().slice(0, 10) + ".pdf");
+  }
+
+  async function generateShipmentPdf(r: NormalizedShipment) {
+    const { jsPDF } = await import("jspdf");
+    const QRCode = (await import("qrcode")).default;
+    const url = window.location.origin + "/transport?shipment=" + r.id;
+    const qrDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 220 });
+    const doc = new jsPDF({ unit: "pt" }) as unknown as {
+      setFontSize: (n: number) => void;
+      text: (t: string, x: number, y: number) => void;
+      addImage: (data: string, format: string, x: number, y: number, w: number, h: number) => void;
+      line: (x1: number, y1: number, x2: number, y2: number) => void;
+      save: (filename: string) => void;
+    };
+    doc.setFontSize(14);
+    doc.text("Formulario de Transporte de Material Radiactivo", 40, 40);
+    doc.setFontSize(10);
+    let y = 75;
+    const line = (label: string, value: string) => {
+      doc.text(label + ":", 40, y);
+      doc.text(value, 230, y);
+      y += 18;
+    };
+    line("N de Transporte", String(r.correlativeNumber));
+    line("Fecha", String(r.transportDate).slice(0, 10));
+    line("Indice de Transporte (IT)", r.itValue !== null ? String(r.itValue) : "-");
+    line("Contacto con el bulto (uSv/h)", r.doseContact !== null ? String(r.doseContact) : "-");
+    line("A 1 metro del bulto (uSv/h)", r.dose1m !== null ? String(r.dose1m) : "-");
+    line("Contacto con el vehiculo (uSv/h)", r.doseVehicle !== null ? String(r.doseVehicle) : "-");
+    line("Material transportado", MATERIAL_LABELS[r.materialCode] || r.materialCode);
+    const activity = activityOf(r);
+    line("Actividad (mCi)", activity !== null && activity !== undefined ? Number(activity).toFixed(2) : "-");
+    line("Uso de Dosimetro", r.signageDosimeter ? "Si" : "No");
+    line("Senal RADIACTIVO 7", r.signageRadiactivo7 ? "Si" : "No");
+    line("Panel NU 2915", r.signageNu2915 ? "Si" : "No");
+    line("Conductor", r.driverName || "-");
+    line("OPR responsable", r.oprName || "-");
+
+    doc.addImage(qrDataUrl, "PNG", 430, 60, 100, 100);
+    doc.setFontSize(8);
+    doc.text("Escanee para verificar en la plataforma", 415, 172);
+
+    y += 30;
+    doc.line(40, y + 40, 220, y + 40);
+    doc.text("Firma Conductor", 40, y + 55);
+    doc.line(300, y + 40, 480, y + 40);
+    doc.text("Firma OPR", 300, y + 55);
+
+    doc.save("transporte-" + r.correlativeNumber + "-" + String(r.transportDate).slice(0, 10) + ".pdf");
+  }
+
   const authLevelStyle: Record<string, string> = {
     verde: "text-success",
     amarillo: "text-warning",
@@ -319,7 +430,32 @@ export function TransportApp({
           value={opr}
           onChange={(e) => setOpr(e.target.value)}
           placeholder="OPR"
-          className="w-32 rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+          className="w-28 rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+        />
+        <input
+          type="number"
+          min={1}
+          max={31}
+          value={day}
+          onChange={(e) => setDay(e.target.value)}
+          placeholder="Dia"
+          className="w-16 rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+        />
+        <input
+          type="number"
+          min={1}
+          max={12}
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          placeholder="Mes"
+          className="w-16 rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+        />
+        <input
+          type="number"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          placeholder="Ano"
+          className="w-20 rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground"
         />
         <input
           type="date"
@@ -344,6 +480,12 @@ export function TransportApp({
           className="flex items-center gap-1 rounded border border-border px-2 py-1.5 text-xs text-foreground hover:bg-background"
         >
           <FileSpreadsheet size={12} /> Excel
+        </button>
+        <button
+          onClick={exportPdf}
+          className="flex items-center gap-1 rounded border border-border px-2 py-1.5 text-xs text-foreground hover:bg-background"
+        >
+          <FileText size={12} /> PDF
         </button>
       </div>
 
@@ -384,6 +526,7 @@ export function TransportApp({
                     <th className="p-2">Vehiculo</th>
                     <th className="p-2">Material</th>
                     <th className="p-2">Actividad (mCi)</th>
+                    <th className="p-2">Conductor</th>
                     <th className="p-2">OPR</th>
                     <th className="p-2">Alertas</th>
                     <th className="p-2"></th>
@@ -415,6 +558,18 @@ export function TransportApp({
                         <td className="p-2 text-foreground">
                           {activity !== null && activity !== undefined ? Number(activity).toFixed(2) : "-"}
                         </td>
+                        <td className="p-2 text-foreground">
+                          {r.driverName ? (
+                            <Link
+                              href={"/transport/drivers/" + encodeURIComponent(r.driverName)}
+                              className="underline decoration-dotted hover:text-accent"
+                            >
+                              {r.driverName}
+                            </Link>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
                         <td className="p-2 text-foreground">{r.oprName || "-"}</td>
                         <td className="p-2">
                           <div className="flex flex-wrap gap-1">
@@ -426,12 +581,21 @@ export function TransportApp({
                           </div>
                         </td>
                         <td className="p-2">
-                          <button
-                            onClick={() => openEdit(r)}
-                            className="rounded border border-border px-2 py-1 text-foreground hover:bg-background"
-                          >
-                            Editar
-                          </button>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => openEdit(r)}
+                              className="rounded border border-border px-2 py-1 text-foreground hover:bg-background"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => generateShipmentPdf(r)}
+                              title="Generar formulario PDF con codigo QR"
+                              className="flex items-center gap-1 rounded border border-border px-2 py-1 text-foreground hover:bg-background"
+                            >
+                              <QrCode size={12} /> PDF
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
