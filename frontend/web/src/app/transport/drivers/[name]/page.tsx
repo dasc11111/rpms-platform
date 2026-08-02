@@ -36,43 +36,43 @@ export default function DriverFichaPage() {
 
   return (
     <div className="space-y-5 p-4 md:p-6">
-      <Link href="/transport" className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground">
+      <Link href="/transport" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft size={14} /> Volver a Transporte
       </Link>
       <div className="flex items-center gap-2">
         <Truck size={20} />
         <h1 className="text-xl font-semibold text-foreground">Ficha del transportista</h1>
       </div>
-      <p className="text-xs text-muted">
+      <p className="text-xs text-muted-foreground">
         Esta ficha es unicamente informativa y no forma parte del Dashboard General.
       </p>
-      {loading && <p className="text-sm text-muted">Cargando...</p>}
-      {!loading && !driver && <p className="text-sm text-muted">No se encontraron transportes para este conductor.</p>}
+      {loading && <p className="text-sm text-muted-foreground">Cargando...</p>}
+      {!loading && !driver && <p className="text-sm text-muted-foreground">No se encontraron transportes para este conductor.</p>}
       {driver && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Nombre</p>
+              <p className="text-xs text-muted-foreground">Nombre</p>
               <p className="mt-1 text-sm font-semibold text-foreground">{driver.name}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Empresa</p>
+              <p className="text-xs text-muted-foreground">Empresa</p>
               <p className="mt-1 text-sm font-semibold text-foreground">{driver.company || "-"}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Total transportes</p>
+              <p className="text-xs text-muted-foreground">Total transportes</p>
               <p className="mt-1 text-lg font-semibold text-foreground">{driver.totalTransports}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Promedio anual</p>
+              <p className="text-xs text-muted-foreground">Promedio anual</p>
               <p className="mt-1 text-lg font-semibold text-foreground">{driver.avgPerYear}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Primer transporte</p>
+              <p className="text-xs text-muted-foreground">Primer transporte</p>
               <p className="mt-1 text-sm font-semibold text-foreground">{String(driver.firstTransport).slice(0, 10)}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-3">
-              <p className="text-xs text-muted">Ultimo transporte</p>
+              <p className="text-xs text-muted-foreground">Ultimo transporte</p>
               <p className="mt-1 text-sm font-semibold text-foreground">{String(driver.lastTransport).slice(0, 10)}</p>
             </div>
           </div>
@@ -83,7 +83,7 @@ export default function DriverFichaPage() {
             </div>
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border text-muted">
+                <tr className="border-b border-border text-muted-foreground">
                   <th className="p-2">Fecha</th>
                   <th className="p-2">N</th>
                   <th className="p-2">IT</th>
