@@ -115,8 +115,8 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
       {current ? (
         <div className="space-y-1 text-sm">
           <p className="text-foreground">N° autorización: {current.number || "—"}</p>
-          <p className="text-muted">Emision: {current.issued_date ? String(current.issued_date).slice(0, 10) : "—"}</p>
-          <p className="text-muted">Vencimiento: {current.expiry_date ? String(current.expiry_date).slice(0, 10) : "—"}</p>
+          <p className="text-muted-foreground">Emision: {current.issued_date ? String(current.issued_date).slice(0, 10) : "—"}</p>
+          <p className="text-muted-foreground">Vencimiento: {current.expiry_date ? String(current.expiry_date).slice(0, 10) : "—"}</p>
           <div className={`mt-2 inline-flex items-center gap-2 rounded border px-2 py-1 text-xs ${LEVEL_STYLE[level]}`}>
             {days !== null ? `${days} dias restantes` : "Sin fecha de vencimiento"} &middot; {LEVEL_LABEL[level]}
           </div>
@@ -138,7 +138,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-muted">No hay autorización de transporte cargada.</p>
+        <p className="text-sm text-muted-foreground">No hay autorización de transporte cargada.</p>
       )}
 
       {showForm && (
@@ -146,7 +146,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
           <div className="w-full max-w-md rounded-lg border border-border bg-surface p-5">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">Cargar autorización de transporte</h4>
-              <button onClick={() => setShowForm(false)} className="text-muted hover:text-foreground">
+              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             </div>
@@ -159,7 +159,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
               />
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted">Fecha emisión</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">Fecha emisión</label>
                   <input
                     type="date"
                     value={issuedDate}
@@ -168,7 +168,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs text-muted">Fecha vencimiento</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">Fecha vencimiento</label>
                   <input
                     type="date"
                     value={expiryDate}
@@ -205,7 +205,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
           <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg border border-border bg-surface p-5">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-foreground">Historial de autorizaciones</h4>
-              <button onClick={() => setShowHistory(false)} className="text-muted hover:text-foreground">
+              <button onClick={() => setShowHistory(false)} className="text-muted-foreground hover:text-foreground">
                 <X size={16} />
               </button>
             </div>
@@ -216,7 +216,7 @@ export function AuthorizationPanel({ actorEmail }: { actorEmail: string }) {
                     <p className="text-foreground">
                       v{h.version} {h.is_current && <span className="text-success">(actual)</span>}
                     </p>
-                    <p className="text-muted">
+                    <p className="text-muted-foreground">
                       N° {h.number || "—"} &middot; vence {h.expiry_date ? String(h.expiry_date).slice(0, 10) : "—"}
                     </p>
                   </div>
