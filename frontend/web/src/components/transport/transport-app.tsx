@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Plus, Search, Download, FileSpreadsheet, FileText, AlertTriangle, ShieldCheck, QrCode } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useAuth } from "@/components/auth/auth-provider";
 import { downloadCsv } from "@/lib/csv";
 import { AuthorizationPanel } from "@/components/transport/authorization-panel";
@@ -14,6 +15,8 @@ const MATERIAL_LABELS: Record<string, string> = {
   MO_TC99: "Generador Mo-99/Tc-99m",
   I131: "I-131",
 };
+
+const PIE_COLORS = ["#3b82f6", "#f59e0b", "#22c55e", "#ef4444"];
 
 const ALERT_LABELS: Record<string, string> = {
   dose_1m_exceeded: "Supera limite 1m",
@@ -195,6 +198,43 @@ export function TransportApp({
     }
     return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
   }, [shipments]);
+
+  const materialPieData = useMemo(() => {
+    if (!stats) return [] as { name: string; value: number }[];
+    return Object.entries(stats.materialCounts).map(([code, total]) => ({
+      name: MATERIAL_LABELS[code] || code,
+      value: total,
+    }));
+  }, [stats]);
+
+  const complianceData = useMemo(() => {
+    if (!stats) return [] as { name: string; value: number }[];
+    return [
+      { name: "Dosimetro", value: stats.compliance.dosimeterPct },
+      { name: "Radiactivo 7", value: stats.compliance.radiactivo7Pct },
+      { name: "NU 2915", value: stats.compliance.nu2915Pct },
+      { name: "OPR asignado", value: stats.compliance.oprPct },
+    ];
+  }, [stats]);
+
+  const activityData = useMemo(() => {
+    if (!stats) return [] as { name: string; value: number }[];
+    return [
+      { name: "Tc-99m", value: Number(stats.generatorStats.totalActivityMci.toFixed(1)) },
+      { name: "I-131", value: Number(stats.i131Stats.totalActivityMci.toFixed(1)) },
+    ];
+  }, [stats]);
+
+  const complianceAvg =
+    stats
+      ? Math.round(
+          (stats.compliance.dosimeterPct +
+            stats.compliance.radiactivo7Pct +
+            stats.compliance.nu2915Pct +
+            stats.compliance.oprPct) /
+            4
+        )
+      : null;
 
   function openNew(date?: string) {
     setEditing(null);
@@ -389,6 +429,7 @@ export function TransportApp({
           tone={stats && stats.exceededLimits > 0 ? "danger" : undefined}
           icon={stats && stats.exceededLimits > 0 ? <AlertTriangle size={14} /> : undefined}
         />
+        <KpiBox label="% Cumplimiento normativo" value={complianceAvg !== null ? complianceAvg + "%" : "-"} />
         <div className="rounded-lg border border-border bg-surface p-3">
           <p className="text-xs text-muted">Autorizacion</p>
           {stats?.authorization ? (
@@ -399,6 +440,73 @@ export function TransportApp({
           ) : (
             <p className="mt-1 text-sm font-medium text-danger">Sin autorizacion</p>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Dashboard Ejecutivo</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <p className="mb-1 text-xs text-muted">Transportes por mes (ultimos 12 meses)</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={stats?.monthlyTrend ?? []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted">Tendencia anual</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={stats?.yearlyTrend ?? []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="year" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
+                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                <Line type="monotone" dataKey="total" stroke="#22c55e" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted">Distribucion por radioisotopo</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={materialPieData} dataKey="value" nameKey="name" outerRadius={70} label>
+                  {materialPieData.map((entry, i) => (
+                    <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted">Cumplimiento normativo (%)</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={complianceData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted">Actividad total por radioisotopo (mCi)</p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={activityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
