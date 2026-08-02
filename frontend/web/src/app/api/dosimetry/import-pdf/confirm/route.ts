@@ -39,6 +39,10 @@ function levelFor(dose: number): string {
   return "normal";
 }
 
+function tipoFor(dosimeterType?: string | null): string {
+  return dosimeterType && /extrem/i.test(dosimeterType) ? "EXTREMIDAD" : "C.E.";
+}
+
 export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get("file");
@@ -178,6 +182,9 @@ for (const r of rows) {
     dosimeter_number = ${r.dosimeter_number || null},
     dosimeter_type = ${r.dosimeter_type || null},
     radiation_type = ${r.radiation_type || null},
+      dosimetro = ${r.dosimeter_number || null},
+      tipo = ${tipoFor(r.dosimeter_type)},
+      radiacion = ${r.radiation_type || null},
     proceso = ${r.proceso || null},
     updated_at = now()
     WHERE worker_rut = ${r.worker_rut} AND year = ${r.year} AND quarter = ${r.quarter}
@@ -189,14 +196,14 @@ for (const r of rows) {
     worker_rut, worker_name, institucion, departamento, year, quarter, period_label,
     dose_body, dose_lens, dose_skin, accum_year_body, accum_12m_body, accum_60m_body,
     accum_60m_lens, accum_60m_skin, level, source_document_id, entry_method,
-    dosimeter_number, dosimeter_type, radiation_type, proceso, updated_at
+    dosimeter_number, dosimeter_type, radiation_type, dosimetro, tipo, radiacion, proceso, updated_at
     ) VALUES (
     ${r.worker_rut}, ${workerName}, ${r.institucion || null}, ${r.departamento || null},
     ${r.year}, ${r.quarter}, ${periodLabel},
     ${doseBody}, ${doseLens}, ${doseSkin},
     ${toNum(r.accum_year_body) ?? 0}, ${toNum(r.accum_12m_body) ?? 0}, ${toNum(r.accum_60m_body) ?? 0},
     0, 0, ${level}, ${documentId}, 'pdf',
-    ${r.dosimeter_number || null}, ${r.dosimeter_type || null}, ${r.radiation_type || null}, ${r.proceso || null}, now()
+    ${r.dosimeter_number || null}, ${r.dosimeter_type || null}, ${r.radiation_type || null}, ${r.dosimeter_number || null}, ${tipoFor(r.dosimeter_type)}, ${r.radiation_type || null}, ${r.proceso || null}, now()
     )
     `;
     await sql`
