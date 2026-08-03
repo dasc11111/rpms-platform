@@ -72,7 +72,7 @@ export function LinacApp() {
     const data = await res.json();
     if (data.ok) {
       setUnits(data.units);
-      if (!unitId && data.units[0]) setUnitId(data.units[0].id);
+      if (!unitId && data.units[0]) setUnitId(data.units[0]!.id);
     }
   }, [unitId]);
 
@@ -369,7 +369,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
 
 function AuthTab({ unitId, actorEmail }: any) {
   const [list, setList] = useState<any[]>([]);
-  const [docType, setDocType] = useState(AUTH_TYPES[0].value);
+  const [docType, setDocType] = useState(AUTH_TYPES[0]!.value);
   const [documentNumber, setDocumentNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
