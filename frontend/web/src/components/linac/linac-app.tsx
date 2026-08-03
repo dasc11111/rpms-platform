@@ -254,7 +254,7 @@ function DashboardTab({ dashboard }: any) {
               <tr key={a.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{a.doc_type}</td>
                 <td className="p-1 text-foreground">{a.expiry_date ? String(a.expiry_date).slice(0, 10) : "-"}</td>
-                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as string] || "text-foreground")}>{a.vigencyLevel}</td>
+                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as keyof typeof VIGENCY_COLORS] || "text-foreground")}>{a.vigencyLevel}</td>
               </tr>
             ))}
           </tbody>
@@ -443,7 +443,7 @@ function AuthTab({ unitId, actorEmail }: any) {
                 <td className="p-1 text-foreground">{a.document_number || "-"}</td>
                 <td className="p-1 text-foreground">{a.issue_date ? String(a.issue_date).slice(0, 10) : "-"}</td>
                 <td className="p-1 text-foreground">{a.expiry_date ? String(a.expiry_date).slice(0, 10) : "-"}</td>
-                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as string] || "text-foreground")}>{a.vigencyLevel}</td>
+                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as keyof typeof VIGENCY_COLORS] || "text-foreground")}>{a.vigencyLevel}</td>
                 <td className="p-1 text-foreground">v{a.version}</td>
                 <td className="p-1">
                   {a.blob_url && (
