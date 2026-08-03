@@ -22,10 +22,10 @@ export async function POST(request: Request) {
   const file = form.get("file");
   const linacId = Number(form.get("linacId"));
   const docType = String(form.get("docType") || "").trim();
-  const documentNumber = (form.get("documentNumber") || null);
-  const issueDate = (form.get("issueDate") || null);
-  const expiryDate = (form.get("expiryDate") || null);
-  const uploadedBy = (form.get("uploadedBy") || null);
+  const documentNumber = ((form.get("documentNumber") as string) || null);
+  const issueDate = ((form.get("issueDate") as string) || null);
+  const expiryDate = ((form.get("expiryDate") as string) || null);
+  const uploadedBy = ((form.get("uploadedBy") as string) || null);
   if (!linacId || !docType) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
   const { rows: maxRows } = await sql`
