@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const linacId = Number(form.get("linacId"));
   const category = String(form.get("category") || "general").trim();
   const title = String(form.get("title") || "").trim();
-  const uploadedBy = form.get("uploadedBy") || null;
+  const uploadedBy = (form.get("uploadedBy") as string) || null;
   if (!linacId || !title || !(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
