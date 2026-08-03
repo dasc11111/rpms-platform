@@ -3,7 +3,7 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(Number(searchParams.get("limit") || 200), 500);
   const { rows } = await sql`
