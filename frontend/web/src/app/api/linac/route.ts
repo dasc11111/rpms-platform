@@ -29,6 +29,6 @@ export async function POST(request: Request) {
     )
     RETURNING id;
   `;
-  await logLinacAudit("create_linac_unit", actorEmail, { id: rows[0].id, brand: body.brand, model: body.model });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logLinacAudit("create_linac_unit", actorEmail, { id: rows[0]!.id, brand: body.brand, model: body.model });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
