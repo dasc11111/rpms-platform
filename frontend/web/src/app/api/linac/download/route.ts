@@ -11,11 +11,11 @@ const TABLES = {
   documents: "linac_documents",
 };
 
-export async function GET(request) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const table = searchParams.get("table");
   const id = Number(searchParams.get("id"));
-  if (!TABLES[table] || !id) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  if (!table || !(table in TABLES) || !id) return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
   let rows;
   if (table === "authorizations") rows = (await sql`SELECT file_name, blob_url, mime_type, size_bytes FROM linac_authorizations WHERE id = ${id}`).rows;
