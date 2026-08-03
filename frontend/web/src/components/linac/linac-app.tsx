@@ -344,7 +344,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
         <div>
           <label className={labelCls}>Estado operativo</label>
           <select className={inputCls} value={form.operationalStatus || "activo"} onChange={(e) => set("operationalStatus", e.target.value)}>
-            {OPERATIONAL_STATUSES.map((s: any) => (<option key={s} value={s}>{STATUS_LABELS[s]}</option>))}
+            {OPERATIONAL_STATUSES.map((s: any) => (<option key={s} value={s}>{STATUS_LABELS[s as keyof typeof STATUS_LABELS]}</option>))}
           </select>
         </div>
         <div className="flex items-center gap-2 pt-5">
