@@ -246,7 +246,7 @@ export const LINAC_AUDIT_TYPES = [
   { value: "iaea", label: "IAEA" },
 ];
 
-export function daysUntil(dateValue) {
+export function daysUntil(dateValue: any) {
   if (!dateValue) return null;
   const target = new Date(dateValue);
   if (Number.isNaN(target.getTime())) return null;
@@ -255,7 +255,7 @@ export function daysUntil(dateValue) {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export function computeVigencyLevel(expiryDate) {
+export function computeVigencyLevel(expiryDate: any) {
   const days = daysUntil(expiryDate);
   if (days === null) return "sin_vigencia";
   if (days <= 30) return "rojo";
@@ -264,7 +264,7 @@ export function computeVigencyLevel(expiryDate) {
   return "verde";
 }
 
-export async function logLinacAudit(action, actorEmail, details) {
+export async function logLinacAudit(action: string, actorEmail: string, details: any) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (
