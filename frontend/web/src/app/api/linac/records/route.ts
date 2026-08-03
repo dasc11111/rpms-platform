@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_TYPES = ["clinical", "radiation", "risk", "emergency", "audit"];
 
-export async function GET(request) {
+export async function GET(request: Request) {
   await ensureLinacTables();
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");
@@ -28,7 +28,7 @@ export async function GET(request) {
   return NextResponse.json({ ok: true, records: rows });
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   await ensureLinacTables();
   const body = await request.json();
   const type = body.type;
