@@ -57,5 +57,5 @@ export async function POST(request: Request) {
   `;
 
   await logLinacAudit("create_linac_maintenance", actorEmail, { linacId, maintenanceType, maintenanceDate });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
