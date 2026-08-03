@@ -264,7 +264,7 @@ export function computeVigencyLevel(expiryDate: any) {
   return "verde";
 }
 
-export async function logLinacAudit(action: string, actorEmail: string, details: any) {
+export async function logLinacAudit(action: string, actorEmail: string | null, details: any) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (
