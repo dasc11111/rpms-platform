@@ -52,5 +52,5 @@ export async function POST(request: Request) {
   `;
 
   await logLinacAudit("upload_linac_document", uploadedBy, { linacId, category, title, version: nextVersion });
-  return NextResponse.json({ ok: true, id: rows[0].id, version: nextVersion });
+  return NextResponse.json({ ok: true, id: rows[0]!.id, version: nextVersion });
 }
