@@ -215,7 +215,7 @@ function DashboardTab({ dashboard }: any) {
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={dashboard.treatmentTypes || []} dataKey="count" nameKey="treatment_type" outerRadius={80} label>
-                {(dashboard.treatmentTypes || []).map((_, i) => (
+                {(dashboard.treatmentTypes || []).map((_: any, i: number) => (
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                 ))}
               </Pie>
