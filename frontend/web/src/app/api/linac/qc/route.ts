@@ -28,13 +28,13 @@ export async function POST(request: Request) {
   const periodicity = String(form.get("periodicity") || "").trim();
   const testName = String(form.get("testName") || "").trim();
   const testDate = String(form.get("testDate") || "").trim();
-  const expectedValue = form.get("expectedValue") || null;
-  const obtainedValue = form.get("obtainedValue") || null;
-  const tolerance = form.get("tolerance") || null;
-  const unit = form.get("unit") || null;
-  const status = form.get("status") || "cumple";
-  const observations = form.get("observations") || null;
-  const responsible = form.get("responsible") || null;
+  const expectedValue = (form.get("expectedValue") as string) || null;
+  const obtainedValue = (form.get("obtainedValue") as string) || null;
+  const tolerance = (form.get("tolerance") as string) || null;
+  const unit = (form.get("unit") as string) || null;
+  const status = (form.get("status") as string) || "cumple";
+  const observations = (form.get("observations") as string) || null;
+  const responsible = (form.get("responsible") as string) || null;
   if (!linacId || !periodicity || !testName || !testDate) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
