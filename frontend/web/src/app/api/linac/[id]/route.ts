@@ -4,7 +4,7 @@ import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request, { params }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await ensureLinacTables();
   const { id: idParam } = await params;
   const id = Number(idParam);
@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
   return NextResponse.json({ ok: true, unit: rows[0] });
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await ensureLinacTables();
   const { id: idParam } = await params;
   const id = Number(idParam);
