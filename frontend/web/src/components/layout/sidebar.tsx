@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, Truck, UserCog, Users, Wrench } from "lucide-react";
+import { Tag, Activity, AlertTriangle, Atom, BarChart3, Biohazard, ClipboardList, FileText, Home, Radio, Settings, ShieldAlert, Syringe, Trash2, Truck, UserCog, Users, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/transport", label: "Transporte de Material Radiactivo", icon: Truck },
+  { href: "/linac", label: "Acelerador Lineal", icon: Atom },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/incidents", label: "Incidentes", icon: AlertTriangle },
   { href: "/compliance", label: "Cumplimiento", icon: ShieldAlert },
