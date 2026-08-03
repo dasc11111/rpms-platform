@@ -254,7 +254,7 @@ function DashboardTab({ dashboard }: any) {
               <tr key={a.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{a.doc_type}</td>
                 <td className="p-1 text-foreground">{a.expiry_date ? String(a.expiry_date).slice(0, 10) : "-"}</td>
-                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel] || "text-foreground")}>{a.vigencyLevel}</td>
+                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as any] || "text-foreground")}>{a.vigencyLevel}</td>
               </tr>
             ))}
           </tbody>
@@ -344,7 +344,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
         <div>
           <label className={labelCls}>Estado operativo</label>
           <select className={inputCls} value={form.operationalStatus || "activo"} onChange={(e) => set("operationalStatus", e.target.value)}>
-            {OPERATIONAL_STATUSES.map((s) => (<option key={s} value={s}>{STATUS_LABELS[s]}</option>))}
+            {OPERATIONAL_STATUSES.map((s) => (<option key={s} value={s}>{STATUS_LABELS[s as any]}</option>))}
           </select>
         </div>
         <div className="flex items-center gap-2 pt-5">
@@ -443,7 +443,7 @@ function AuthTab({ unitId, actorEmail }: any) {
                 <td className="p-1 text-foreground">{a.document_number || "-"}</td>
                 <td className="p-1 text-foreground">{a.issue_date ? String(a.issue_date).slice(0, 10) : "-"}</td>
                 <td className="p-1 text-foreground">{a.expiry_date ? String(a.expiry_date).slice(0, 10) : "-"}</td>
-                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel] || "text-foreground")}>{a.vigencyLevel}</td>
+                <td className={"p-1 font-medium " + (VIGENCY_COLORS[a.vigencyLevel as any] || "text-foreground")}>{a.vigencyLevel}</td>
                 <td className="p-1 text-foreground">v{a.version}</td>
                 <td className="p-1">
                   {a.blob_url && (
