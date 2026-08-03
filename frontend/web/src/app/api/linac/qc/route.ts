@@ -62,5 +62,5 @@ export async function POST(request: Request) {
   `;
 
   await logLinacAudit("create_linac_qc_test", responsible, { linacId, periodicity, testName, status });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
