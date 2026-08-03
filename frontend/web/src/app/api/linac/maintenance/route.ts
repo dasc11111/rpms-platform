@@ -5,7 +5,7 @@ import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: Request) {
   await ensureLinacTables();
   const { searchParams } = new URL(request.url);
   const linacId = searchParams.get("linacId");
@@ -18,7 +18,7 @@ export async function GET(request) {
   return NextResponse.json({ ok: true, records: rows });
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   await ensureLinacTables();
   const form = await request.formData();
   const file = form.get("file");
