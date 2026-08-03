@@ -285,7 +285,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
   }, [unit]);
 
   function set(key: string, value: any) {
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f: any) => ({ ...f, [key]: value }));
   }
 
   async function handleSave() {
@@ -477,7 +477,7 @@ function QcTab({ unitId, actorEmail }: any) {
 
   useEffect(() => { load(); }, [load]);
 
-  function set(key: string, value: any) { setForm((f) => ({ ...f, [key]: value })); }
+  function set(key: string, value: any) { setForm((f: any) => ({ ...f, [key]: value })); }
 
   async function handleSave() {
     if (!form.testName || !form.testDate) return;
@@ -585,7 +585,7 @@ function ClinicalTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.opDate) return;
     setSaving(true);
@@ -654,7 +654,7 @@ function RadiationTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.measurementDate) return;
     setSaving(true);
@@ -726,7 +726,7 @@ function MaintenanceTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.maintenanceType || !form.maintenanceDate) return;
     setSaving(true);
@@ -804,7 +804,7 @@ function IncidentsTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.incidents);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.event || !form.incidentDate) return;
     setSaving(true);
@@ -899,7 +899,7 @@ function RisksTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.risk) return;
     setSaving(true);
@@ -963,7 +963,7 @@ function EmergenciesTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.eventDate) return;
     setSaving(true);
@@ -1027,7 +1027,7 @@ function AuditsTab({ unitId, actorEmail }: any) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.auditDate) return;
     setSaving(true);
