@@ -11,9 +11,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get("type");
   const linacId = searchParams.get("linacId");
-  if (!VALID_TYPES.includes(type)) return NextResponse.json({ error: "invalid_type" }, { status: 400 });
+  if (!type || !VALID_TYPES.includes(type)) return NextResponse.json({ error: "invalid_type" }, { status: 400 });
 
-  let rows = [];
+  let rows: any[] = [];
   if (type === "clinical") {
     rows = (await sql`SELECT * FROM linac_clinical_operations WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY op_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "radiation") {
