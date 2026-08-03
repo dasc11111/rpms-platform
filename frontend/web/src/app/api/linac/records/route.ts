@@ -43,14 +43,14 @@ export async function POST(request: Request) {
       VALUES (${linacId}, ${body.opDate}, ${body.patientsTreated || 0}, ${body.operatingHours || 0}, ${body.downtimeHours || 0}, ${body.interruptions || 0}, ${body.treatmentType || null}, ${body.notes || null})
       RETURNING id;
     `;
-    id = rows[0].id;
+    id = rows[0]!.id;
   } else if (type === "radiation") {
     const { rows } = await sql`
       INSERT INTO linac_radiation_protection (linac_id, measurement_date, measurement_time, measurement_type, location, value, unit, instrument_ref, responsible, notes)
       VALUES (${linacId}, ${body.measurementDate}, ${body.measurementTime || null}, ${body.measurementType || null}, ${body.location || null}, ${body.value || null}, ${body.unit || null}, ${body.instrumentRef || null}, ${body.responsible || null}, ${body.notes || null})
       RETURNING id;
     `;
-    id = rows[0].id;
+    id = rows[0]!.id;
   } else if (type === "risk") {
     const freq = Number(body.frequency || 0);
     const cons = Number(body.consequence || 0);
@@ -60,21 +60,21 @@ export async function POST(request: Request) {
       VALUES (${linacId}, ${body.risk}, ${freq}, ${cons}, ${level}, ${body.responsible || null}, ${body.mitigation || null})
       RETURNING id;
     `;
-    id = rows[0].id;
+    id = rows[0]!.id;
   } else if (type === "emergency") {
     const { rows } = await sql`
       INSERT INTO linac_emergencies (linac_id, emergency_type, event_date, description, checklist, roles, responsible)
       VALUES (${linacId}, ${body.emergencyType || null}, ${body.eventDate}, ${body.description || null}, ${JSON.stringify(body.checklist || [])}::jsonb, ${JSON.stringify(body.roles || [])}::jsonb, ${body.responsible || null})
       RETURNING id;
     `;
-    id = rows[0].id;
+    id = rows[0]!.id;
   } else if (type === "audit") {
     const { rows } = await sql`
       INSERT INTO linac_audits (linac_id, audit_type, audit_date, findings, nonconformities, actions, follow_up, status)
       VALUES (${linacId}, ${body.auditType || null}, ${body.auditDate}, ${body.findings || null}, ${body.nonconformities || null}, ${body.actions || null}, ${body.followUp || null}, ${body.status || "abierta"})
       RETURNING id;
     `;
-    id = rows[0].id;
+    id = rows[0]!.id;
   }
 
   await logLinacAudit("create_linac_" + type, actorEmail, { linacId, id });
