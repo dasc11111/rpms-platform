@@ -87,7 +87,7 @@ export function LinacApp() {
     loadDashboard();
   }, [loadUnits, loadDashboard]);
 
-  const selectedUnit = units.find((u: any) => u.id === unitId) || null;
+  const selectedUnit = units.find((u) => u.id === unitId) || null;
 
   return (
     <div className="space-y-4">
@@ -104,7 +104,7 @@ export function LinacApp() {
           className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
         >
           {units.length === 0 && <option value="">Sin equipos registrados</option>}
-          {units.map((u: any) => (
+          {units.map((u) => (
             <option key={u.id} value={u.id}>
               {(u.brand || "Equipo") + " " + (u.model || "") + " - " + (u.room || "Sala s/n")}
             </option>
@@ -113,7 +113,7 @@ export function LinacApp() {
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-border pb-2">
-        {TABS.map((t: any) => {
+        {TABS.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
           return (
@@ -344,7 +344,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
         <div>
           <label className={labelCls}>Estado operativo</label>
           <select className={inputCls} value={form.operationalStatus || "activo"} onChange={(e) => set("operationalStatus", e.target.value)}>
-            {OPERATIONAL_STATUSES.map((s: any) => (<option key={s} value={s}>{STATUS_LABELS[s]}</option>))}
+            {OPERATIONAL_STATUSES.map((s) => (<option key={s} value={s}>{STATUS_LABELS[s]}</option>))}
           </select>
         </div>
         <div className="flex items-center gap-2 pt-5">
@@ -412,7 +412,7 @@ function AuthTab({ unitId, actorEmail }: any) {
         <p className="mb-2 text-sm font-semibold text-foreground">Cargar autorizacion / resolucion / licencia</p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <select className={inputCls} value={docType} onChange={(e) => setDocType(e.target.value)}>
-            {AUTH_TYPES.map((t: any) => (<option key={t.value} value={t.value}>{t.label}</option>))}
+            {AUTH_TYPES.map((t) => (<option key={t.value} value={t.value}>{t.label}</option>))}
           </select>
           <input className={inputCls} placeholder="N documento" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} />
           <input type="date" className={inputCls} value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
@@ -437,7 +437,7 @@ function AuthTab({ unitId, actorEmail }: any) {
             </tr>
           </thead>
           <tbody>
-            {list.map((a: any) => (
+            {list.map((a) => (
               <tr key={a.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{a.doc_type}</td>
                 <td className="p-1 text-foreground">{a.document_number || "-"}</td>
@@ -466,7 +466,7 @@ function QcTab({ unitId, actorEmail }: any) {
   const [periodicity, setPeriodicity] = useState("diario");
   const [list, setList] = useState<any[]>([]);
   const [form, setForm] = useState<any>({ status: "cumple" });
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -486,7 +486,7 @@ function QcTab({ unitId, actorEmail }: any) {
       const fd = new FormData();
       fd.set("linacId", String(unitId));
       fd.set("periodicity", periodicity);
-      Object.entries(form).forEach(([k, v]: [string, any]) => fd.set(k, v ?? ""));
+      Object.entries(form).forEach(([k, v]) => fd.set(k, v ?? ""));
       if (file) fd.set("file", file);
       await fetch("/api/linac/qc", { method: "POST", body: fd });
       setForm({ status: "cumple" }); setFile(null);
@@ -501,7 +501,7 @@ function QcTab({ unitId, actorEmail }: any) {
   return (
     <div className="space-y-4">
       <div className="flex gap-1">
-        {QC_PERIODICITIES.map((p: any) => (
+        {QC_PERIODICITIES.map((p) => (
           <button
             key={p}
             onClick={() => setPeriodicity(p)}
@@ -547,7 +547,7 @@ function QcTab({ unitId, actorEmail }: any) {
             </tr>
           </thead>
           <tbody>
-            {list.map((q: any) => (
+            {list.map((q) => (
               <tr key={q.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(q.test_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{q.test_name}</td>
@@ -611,7 +611,7 @@ function ClinicalTab({ unitId, actorEmail }: any) {
           <input type="number" className={inputCls} placeholder="Interrupciones" value={form.interruptions || ""} onChange={(e) => set("interruptions", e.target.value)} />
           <select className={inputCls} value={form.treatmentType || ""} onChange={(e) => set("treatmentType", e.target.value)}>
             <option value="">Tipo tratamiento</option>
-            {TREATMENT_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
+            {TREATMENT_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
           </select>
         </div>
         <input className={inputCls + " mt-2"} placeholder="Notas" value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} />
@@ -626,7 +626,7 @@ function ClinicalTab({ unitId, actorEmail }: any) {
             <th className="p-1">Horas det.</th><th className="p-1">Interrup.</th><th className="p-1">Tipo</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.op_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.patients_treated}</td>
@@ -677,7 +677,7 @@ function RadiationTab({ unitId, actorEmail }: any) {
           <input type="time" className={inputCls} value={form.measurementTime || ""} onChange={(e) => set("measurementTime", e.target.value)} />
           <select className={inputCls} value={form.measurementType || ""} onChange={(e) => set("measurementType", e.target.value)}>
             <option value="">Tipo de medicion</option>
-            {RADIATION_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
+            {RADIATION_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
           </select>
           <input className={inputCls} placeholder="Ubicacion" value={form.location || ""} onChange={(e) => set("location", e.target.value)} />
           <input className={inputCls} placeholder="Valor" value={form.value || ""} onChange={(e) => set("value", e.target.value)} />
@@ -697,7 +697,7 @@ function RadiationTab({ unitId, actorEmail }: any) {
             <th className="p-1">Valor</th><th className="p-1">Instrumento</th><th className="p-1">Responsable</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.measurement_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.measurement_type || "-"}</td>
@@ -717,7 +717,7 @@ function RadiationTab({ unitId, actorEmail }: any) {
 function MaintenanceTab({ unitId, actorEmail }: any) {
   const [list, setList] = useState<any[]>([]);
   const [form, setForm] = useState<any>({});
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -734,7 +734,7 @@ function MaintenanceTab({ unitId, actorEmail }: any) {
       const fd = new FormData();
       fd.set("linacId", String(unitId));
       fd.set("actorEmail", actorEmail || "");
-      Object.entries(form).forEach(([k, v]: [string, any]) => fd.set(k, v ?? ""));
+      Object.entries(form).forEach(([k, v]) => fd.set(k, v ?? ""));
       if (file) fd.set("file", file);
       await fetch("/api/linac/maintenance", { method: "POST", body: fd });
       setForm({}); setFile(null);
@@ -748,7 +748,7 @@ function MaintenanceTab({ unitId, actorEmail }: any) {
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <select className={inputCls} value={form.maintenanceType || ""} onChange={(e) => set("maintenanceType", e.target.value)}>
             <option value="">Tipo</option>
-            {MAINTENANCE_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
+            {MAINTENANCE_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
           </select>
           <input type="date" className={inputCls} value={form.maintenanceDate || ""} onChange={(e) => set("maintenanceDate", e.target.value)} />
           <input className={inputCls} placeholder="Empresa" value={form.company || ""} onChange={(e) => set("company", e.target.value)} />
@@ -768,7 +768,7 @@ function MaintenanceTab({ unitId, actorEmail }: any) {
             <th className="p-1">Horas</th><th className="p-1">Costo</th><th className="p-1">Archivo</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.maintenance_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.maintenance_type}</td>
@@ -795,7 +795,7 @@ function MaintenanceTab({ unitId, actorEmail }: any) {
 function IncidentsTab({ unitId, actorEmail }: any) {
   const [list, setList] = useState<any[]>([]);
   const [form, setForm] = useState<any>({});
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -812,7 +812,7 @@ function IncidentsTab({ unitId, actorEmail }: any) {
       const fd = new FormData();
       fd.set("linacId", String(unitId));
       fd.set("actorEmail", actorEmail || "");
-      Object.entries(form).forEach(([k, v]: [string, any]) => fd.set(k, v ?? ""));
+      Object.entries(form).forEach(([k, v]) => fd.set(k, v ?? ""));
       if (file) fd.set("file", file);
       await fetch("/api/linac/incidents", { method: "POST", body: fd });
       setForm({}); setFile(null);
@@ -857,7 +857,7 @@ function IncidentsTab({ unitId, actorEmail }: any) {
             <th className="p-1">Estado</th><th className="p-1">Archivo</th><th className="p-1">Accion</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.incident_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.event}</td>
@@ -935,7 +935,7 @@ function RisksTab({ unitId, actorEmail }: any) {
             <th className="p-1">Nivel</th><th className="p-1">Responsable</th><th className="p-1">Mitigacion</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{r.risk}</td>
                 <td className="p-1 text-foreground">{r.frequency}</td>
@@ -1001,7 +1001,7 @@ function EmergenciesTab({ unitId, actorEmail }: any) {
             <th className="p-1">Fecha</th><th className="p-1">Tipo</th><th className="p-1">Descripcion</th><th className="p-1">Responsable</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.event_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.emergency_type || "-"}</td>
@@ -1048,7 +1048,7 @@ function AuditsTab({ unitId, actorEmail }: any) {
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <select className={inputCls} value={form.auditType || ""} onChange={(e) => set("auditType", e.target.value)}>
             <option value="">Tipo</option>
-            {AUDIT_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
+            {AUDIT_TYPES.map((t) => (<option key={t} value={t}>{t}</option>))}
           </select>
           <input type="date" className={inputCls} value={form.auditDate || ""} onChange={(e) => set("auditDate", e.target.value)} />
           <input className={inputCls} placeholder="Hallazgos" value={form.findings || ""} onChange={(e) => set("findings", e.target.value)} />
@@ -1067,7 +1067,7 @@ function AuditsTab({ unitId, actorEmail }: any) {
             <th className="p-1">No conformidades</th><th className="p-1">Estado</th>
           </tr></thead>
           <tbody>
-            {list.map((r: any) => (
+            {list.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.audit_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.audit_type || "-"}</td>
@@ -1088,7 +1088,7 @@ function DocumentsTab({ unitId, actorEmail }: any) {
   const [q, setQ] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("general");
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -1133,7 +1133,7 @@ function DocumentsTab({ unitId, actorEmail }: any) {
             <th className="p-1">Fecha</th><th className="p-1">Archivo</th>
           </tr></thead>
           <tbody>
-            {list.map((d: any) => (
+            {list.map((d) => (
               <tr key={d.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{d.title}</td>
                 <td className="p-1 text-foreground">{d.category}</td>
@@ -1169,7 +1169,7 @@ function HistoryTab() {
           <th className="p-1">Fecha</th><th className="p-1">Usuario</th><th className="p-1">Accion</th><th className="p-1">Detalle</th>
         </tr></thead>
         <tbody>
-          {history.map((h: any) => (
+          {history.map((h) => (
             <tr key={h.id} className="border-t border-border">
               <td className="p-1 text-foreground">{new Date(h.created_at).toLocaleString()}</td>
               <td className="p-1 text-foreground">{h.actor_email || "-"}</td>
