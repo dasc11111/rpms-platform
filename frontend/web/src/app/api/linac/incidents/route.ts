@@ -25,15 +25,15 @@ export async function POST(request: Request) {
   const linacId = Number(form.get("linacId"));
   const event = String(form.get("event") || "").trim();
   const incidentDate = String(form.get("incidentDate") || "").trim();
-  const incidentTime = form.get("incidentTime") || null;
-  const description = form.get("description") || null;
-  const cause = form.get("cause") || null;
-  const consequence = form.get("consequence") || null;
-  const dose = form.get("dose") || null;
-  const inesLevel = form.get("inesLevel") || null;
-  const investigation = form.get("investigation") || null;
-  const correctiveActions = form.get("correctiveActions") || null;
-  const actorEmail = form.get("actorEmail") || null;
+  const incidentTime = (form.get("incidentTime") as string) || null;
+  const description = (form.get("description") as string) || null;
+  const cause = (form.get("cause") as string) || null;
+  const consequence = (form.get("consequence") as string) || null;
+  const dose = (form.get("dose") as string) || null;
+  const inesLevel = (form.get("inesLevel") as string) || null;
+  const investigation = (form.get("investigation") as string) || null;
+  const correctiveActions = (form.get("correctiveActions") as string) || null;
+  const actorEmail = (form.get("actorEmail") as string) || null;
   if (!linacId || !event || !incidentDate) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
