@@ -62,9 +62,9 @@ export function LinacApp() {
   const { user } = useAuth();
   const actorEmail = user?.email || null;
   const [tab, setTab] = useState("dashboard");
-  const [units, setUnits] = useState([]);
-  const [unitId, setUnitId] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
+  const [units, setUnits] = useState<any[]>([]);
+  const [unitId, setUnitId] = useState<number | null>(null);
+  const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
   const loadUnits = useCallback(async () => {
@@ -156,7 +156,7 @@ export function LinacApp() {
   );
 }
 
-function KpiBox({ label, value, icon }) {
+function KpiBox({ label, value, icon }: any) {
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -168,7 +168,7 @@ function KpiBox({ label, value, icon }) {
   );
 }
 
-function DashboardTab({ dashboard }) {
+function DashboardTab({ dashboard }: any) {
   if (!dashboard) return <p className="text-sm text-muted-foreground">Cargando dashboard...</p>;
   const k = dashboard.kpis || {};
   return (
@@ -264,8 +264,8 @@ function DashboardTab({ dashboard }) {
   );
 }
 
-function InfoTab({ unit, actorEmail, onSaved, onCreated }) {
-  const [form, setForm] = useState({});
+function InfoTab({ unit, actorEmail, onSaved, onCreated }: any) {
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [isNew, setIsNew] = useState(!unit);
 
@@ -284,7 +284,7 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }) {
     }
   }, [unit]);
 
-  function set(key, value) {
+  function set(key: string, value: any) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -367,13 +367,13 @@ function InfoTab({ unit, actorEmail, onSaved, onCreated }) {
   );
 }
 
-function AuthTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
+function AuthTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
   const [docType, setDocType] = useState(AUTH_TYPES[0].value);
   const [documentNumber, setDocumentNumber] = useState("");
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const load = useCallback(async () => {
@@ -462,10 +462,10 @@ function AuthTab({ unitId, actorEmail }) {
   );
 }
 
-function QcTab({ unitId, actorEmail }) {
+function QcTab({ unitId, actorEmail }: any) {
   const [periodicity, setPeriodicity] = useState("diario");
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({ status: "cumple" });
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ status: "cumple" });
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -477,7 +477,7 @@ function QcTab({ unitId, actorEmail }) {
 
   useEffect(() => { load(); }, [load]);
 
-  function set(key, value) { setForm((f) => ({ ...f, [key]: value })); }
+  function set(key: string, value: any) { setForm((f) => ({ ...f, [key]: value })); }
 
   async function handleSave() {
     if (!form.testName || !form.testDate) return;
@@ -573,9 +573,9 @@ function QcTab({ unitId, actorEmail }) {
   );
 }
 
-function ClinicalTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function ClinicalTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -585,7 +585,7 @@ function ClinicalTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.opDate) return;
     setSaving(true);
@@ -643,9 +643,9 @@ function ClinicalTab({ unitId, actorEmail }) {
   );
 }
 
-function RadiationTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function RadiationTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -654,7 +654,7 @@ function RadiationTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.measurementDate) return;
     setSaving(true);
@@ -714,9 +714,9 @@ function RadiationTab({ unitId, actorEmail }) {
   );
 }
 
-function MaintenanceTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function MaintenanceTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
@@ -726,7 +726,7 @@ function MaintenanceTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.maintenanceType || !form.maintenanceDate) return;
     setSaving(true);
@@ -792,9 +792,9 @@ function MaintenanceTab({ unitId, actorEmail }) {
   );
 }
 
-function IncidentsTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function IncidentsTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
@@ -804,7 +804,7 @@ function IncidentsTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.incidents);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.event || !form.incidentDate) return;
     setSaving(true);
@@ -819,7 +819,7 @@ function IncidentsTab({ unitId, actorEmail }) {
       load();
     } finally { setSaving(false); }
   }
-  async function toggleStatus(id, status) {
+  async function toggleStatus(id: number, status: string) {
     await fetch("/api/linac/incidents", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -888,9 +888,9 @@ function IncidentsTab({ unitId, actorEmail }) {
   );
 }
 
-function RisksTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function RisksTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -899,7 +899,7 @@ function RisksTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.risk) return;
     setSaving(true);
@@ -952,9 +952,9 @@ function RisksTab({ unitId, actorEmail }) {
   );
 }
 
-function EmergenciesTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({});
+function EmergenciesTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -963,7 +963,7 @@ function EmergenciesTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.eventDate) return;
     setSaving(true);
@@ -1016,9 +1016,9 @@ function EmergenciesTab({ unitId, actorEmail }) {
   );
 }
 
-function AuditsTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({ status: "abierta" });
+function AuditsTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ status: "abierta" });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const load = useCallback(async () => {
@@ -1027,7 +1027,7 @@ function AuditsTab({ unitId, actorEmail }) {
     if (data.ok) setList(data.records);
   }, [unitId]);
   useEffect(() => { load(); }, [load]);
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f) => ({ ...f, [k]: v })); }
   async function handleSave() {
     if (!form.auditDate) return;
     setSaving(true);
@@ -1083,8 +1083,8 @@ function AuditsTab({ unitId, actorEmail }) {
   );
 }
 
-function DocumentsTab({ unitId, actorEmail }) {
-  const [list, setList] = useState([]);
+function DocumentsTab({ unitId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("general");
@@ -1155,7 +1155,7 @@ function DocumentsTab({ unitId, actorEmail }) {
 }
 
 function HistoryTab() {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<any[]>([]);
   useEffect(() => {
     fetch("/api/linac/history").then((r) => r.json()).then((data) => {
       if (data.ok) setHistory(data.history);
