@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   `;
 
   await logLinacAudit("create_linac_incident", actorEmail, { linacId, event, incidentDate });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
 
 export async function PATCH(request: Request) {
