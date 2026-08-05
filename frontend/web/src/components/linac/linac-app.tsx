@@ -48,7 +48,7 @@ const TREATMENT_TYPES = ["IMRT", "VMAT", "3DCRT", "SRS", "SBRT", "TBI"];
 const MAINTENANCE_TYPES = ["preventivo", "correctivo", "predictivo"];
 const RADIATION_TYPES = ["fuga", "blindaje", "monitor_area", "interlock", "puerta", "boton_emergencia"];
 const AUDIT_TYPES = ["interna", "externa", "seremi", "cchen", "iaea"];
-const VIGENCY_COLORS = {
+const VIGENCY_COLORS: Record<string, string> = {
   verde: "text-success",
   amarillo: "text-warning",
   naranjo: "text-orange-500",
