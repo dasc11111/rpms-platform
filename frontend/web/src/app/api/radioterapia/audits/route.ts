@@ -21,6 +21,6 @@ export async function POST(request: Request) {
     VALUES (${body.facilityId}, ${body.auditType || null}, ${body.auditDate || null}, ${body.findings || null}, ${body.nonconformities || null}, ${body.actions || null}, ${body.status || "abierta"})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_audit", actorEmail, { id: rows[0].id, facilityId: body.facilityId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_audit", actorEmail, { id: rows[0]!.id, facilityId: body.facilityId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
