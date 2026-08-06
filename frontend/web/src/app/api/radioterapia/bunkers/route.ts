@@ -27,14 +27,14 @@ export async function POST(request: Request) {
       VALUES (${body.bunkerId}, ${body.element || null}, ${body.material || null}, ${body.thicknessCm || null}, ${body.calculationReference || null}, ${body.verificationDate || null}, ${body.status || "conforme"})
       RETURNING id;
     `;
-    await logRadioterapiaAudit("create_rt_shielding", actorEmail, { id: rows[0].id, bunkerId: body.bunkerId });
-    return NextResponse.json({ ok: true, id: rows[0].id });
+    await logRadioterapiaAudit("create_rt_shielding", actorEmail, { id: rows[0]!.id, bunkerId: body.bunkerId });
+    return NextResponse.json({ ok: true, id: rows[0]!.id });
   }
   const { rows } = await sql`
     INSERT INTO rt_bunkers (facility_id, linac_id, name, design_reference)
     VALUES (${body.facilityId}, ${body.linacId || null}, ${body.name || null}, ${body.designReference || null})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_bunker", actorEmail, { id: rows[0].id, facilityId: body.facilityId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_bunker", actorEmail, { id: rows[0]!.id, facilityId: body.facilityId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
