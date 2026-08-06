@@ -10,7 +10,7 @@ export async function GET() {
   return NextResponse.json({ ok: true, facilities: rows });
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   await ensureRadioterapiaTables();
   const body = await request.json();
   const actorEmail = body.actorEmail || null;
