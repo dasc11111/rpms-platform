@@ -4,7 +4,7 @@ import { ensureRadioterapiaTables } from "@/lib/radioterapia";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: Request) {
   await ensureRadioterapiaTables();
   const { searchParams } = new URL(request.url);
   const facilityId = searchParams.get("facilityId");
