@@ -27,14 +27,14 @@ export async function POST(request: Request) {
       VALUES (${body.facilityId}, ${body.workerRut || null}, ${body.workerName}, ${body.competency}, ${body.evaluationDate || null}, ${body.result || "competente"}, ${body.evaluator || null})
       RETURNING id;
     `;
-    await logRadioterapiaAudit("create_rt_competency", actorEmail, { id: rows[0].id, facilityId: body.facilityId });
-    return NextResponse.json({ ok: true, id: rows[0].id });
+    await logRadioterapiaAudit("create_rt_competency", actorEmail, { id: rows[0]!.id, facilityId: body.facilityId });
+    return NextResponse.json({ ok: true, id: rows[0]!.id });
   }
   const { rows } = await sql`
     INSERT INTO rt_trainings (facility_id, worker_rut, worker_name, training_name, training_date, expiry_date, institution, status)
     VALUES (${body.facilityId}, ${body.workerRut || null}, ${body.workerName}, ${body.trainingName}, ${body.trainingDate || null}, ${body.expiryDate || null}, ${body.institution || null}, ${body.status || "vigente"})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_training", actorEmail, { id: rows[0].id, facilityId: body.facilityId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_training", actorEmail, { id: rows[0]!.id, facilityId: body.facilityId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
