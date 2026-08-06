@@ -31,15 +31,15 @@ const DEVICE_TYPES = [
 ];
 const AUDIT_TYPES = ["interna", "externa", "seremi", "cchen", "iaea"];
 const INCIDENT_SEVERITIES = ["menor", "moderado", "grave"];
-const SEVERITY_COLORS = { menor: "text-success", moderado: "text-warning", grave: "text-danger" };
+const SEVERITY_COLORS: Record<string, string> = { menor: "text-success", moderado: "text-warning", grave: "text-danger" };
 
 export function RadioterapiaApp() {
   const { user } = useAuth();
   const actorEmail = user?.email || null;
   const [tab, setTab] = useState("dashboard");
-  const [facilities, setFacilities] = useState([]);
-  const [facilityId, setFacilityId] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
+  const [facilities, setFacilities] = useState<any[]>([]);
+  const [facilityId, setFacilityId] = useState<number | null>(null);
+  const [dashboard, setDashboard] = useState<any>(null);
 
   const loadFacilities = useCallback(async () => {
     const res = await fetch("/api/radioterapia");
@@ -60,7 +60,7 @@ export function RadioterapiaApp() {
   useEffect(() => { loadFacilities(); }, [loadFacilities]);
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
-  const selectedFacility = facilities.find((f) => f.id === facilityId) || null;
+  const selectedFacility = facilities.find((f: any) => f.id === facilityId) || null;
 
   return (
     <div className="space-y-4">
@@ -77,14 +77,14 @@ export function RadioterapiaApp() {
           className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
         >
           {facilities.length === 0 && <option value="">Sin instalaciones registradas</option>}
-          {facilities.map((f) => (
+          {facilities.map((f: any) => (
             <option key={f.id} value={f.id}>{f.name}</option>
           ))}
         </select>
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-border pb-2">
-        {TABS.map((t) => {
+        {TABS.map((t: any) => {
           const Icon = t.icon;
           const active = tab === t.id;
           return (
@@ -123,7 +123,7 @@ export function RadioterapiaApp() {
   );
 }
 
-function KpiBox({ label, value }) {
+function KpiBox({ label, value }: any) {
   return (
     <div className="rounded-lg border border-border bg-surface p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -132,7 +132,7 @@ function KpiBox({ label, value }) {
   );
 }
 
-function DashboardTab({ dashboard }) {
+function DashboardTab({ dashboard }: any) {
   if (!dashboard) return <p className="text-sm text-muted-foreground">Cargando dashboard...</p>;
   const k = dashboard.kpis || {};
   return (
@@ -178,13 +178,13 @@ function DashboardTab({ dashboard }) {
   );
 }
 
-function InfoTab({ facility, actorEmail, onCreated }) {
-  const [form, setForm] = useState({ name: "", address: "", responsibleQa: "", description: "" });
+function InfoTab({ facility, actorEmail, onCreated }: any) {
+  const [form, setForm] = useState<any>({ name: "", address: "", responsibleQa: "", description: "" });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const labelCls = "text-xs text-muted-foreground";
 
-  function set(key, value) { setForm((f) => ({ ...f, [key]: value })); }
+  function set(key: string, value: any) { setForm((f: any) => ({ ...f, [key]: value })); }
 
   async function handleSave() {
     if (!form.name) return;
@@ -232,12 +232,12 @@ function InfoTab({ facility, actorEmail, onCreated }) {
     </div>
   );
 }
-function BunkersTab({ facilityId, actorEmail }) {
-  const [bunkers, setBunkers] = useState([]);
-  const [bunkerId, setBunkerId] = useState(null);
-  const [shielding, setShielding] = useState([]);
-  const [form, setForm] = useState({});
-  const [shieldForm, setShieldForm] = useState({});
+function BunkersTab({ facilityId, actorEmail }: any) {
+  const [bunkers, setBunkers] = useState<any[]>([]);
+  const [bunkerId, setBunkerId] = useState<number | null>(null);
+  const [shielding, setShielding] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
+  const [shieldForm, setShieldForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -260,8 +260,8 @@ function BunkersTab({ facilityId, actorEmail }) {
   useEffect(() => { loadBunkers(); }, [loadBunkers]);
   useEffect(() => { loadShielding(); }, [loadShielding]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
-  function setShield(k, v) { setShieldForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
+  function setShield(k: string, v: any) { setShieldForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSaveBunker() {
     if (!form.name) return;
@@ -311,7 +311,7 @@ function BunkersTab({ facilityId, actorEmail }) {
             <th className="p-1">Nombre</th><th className="p-1">Referencia</th><th className="p-1">Estado</th><th className="p-1">Seleccionar</th>
           </tr></thead>
           <tbody>
-            {bunkers.map((b) => (
+            {bunkers.map((b: any) => (
               <tr key={b.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{b.name}</td>
                 <td className="p-1 text-foreground">{b.design_reference || "-"}</td>
@@ -348,7 +348,7 @@ function BunkersTab({ facilityId, actorEmail }) {
               <th className="p-1">Elemento</th><th className="p-1">Material</th><th className="p-1">Espesor</th><th className="p-1">Verificacion</th><th className="p-1">Estado</th>
             </tr></thead>
             <tbody>
-              {shielding.map((s) => (
+              {shielding.map((s: any) => (
                 <tr key={s.id} className="border-t border-border">
                   <td className="p-1 text-foreground">{s.element}</td>
                   <td className="p-1 text-foreground">{s.material || "-"}</td>
@@ -365,14 +365,14 @@ function BunkersTab({ facilityId, actorEmail }) {
   );
 }
 
-function SafetyTab({ facilityId, actorEmail }) {
-  const [bunkers, setBunkers] = useState([]);
-  const [bunkerId, setBunkerId] = useState(null);
-  const [devices, setDevices] = useState([]);
-  const [deviceId, setDeviceId] = useState(null);
-  const [checks, setChecks] = useState([]);
-  const [form, setForm] = useState({});
-  const [checkForm, setCheckForm] = useState({ result: "conforme" });
+function SafetyTab({ facilityId, actorEmail }: any) {
+  const [bunkers, setBunkers] = useState<any[]>([]);
+  const [bunkerId, setBunkerId] = useState<number | null>(null);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [deviceId, setDeviceId] = useState<number | null>(null);
+  const [checks, setChecks] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
+  const [checkForm, setCheckForm] = useState<any>({ result: "conforme" });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -406,8 +406,8 @@ function SafetyTab({ facilityId, actorEmail }) {
   useEffect(() => { loadDevices(); }, [loadDevices]);
   useEffect(() => { loadChecks(); }, [loadChecks]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
-  function setCheck(k, v) { setCheckForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
+  function setCheck(k: string, v: any) { setCheckForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSaveDevice() {
     if (!bunkerId || !form.deviceType) return;
@@ -441,7 +441,7 @@ function SafetyTab({ facilityId, actorEmail }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1">
-        {bunkers.map((b) => (
+        {bunkers.map((b: any) => (
           <button
             key={b.id}
             onClick={() => { setBunkerId(b.id); setDeviceId(null); }}
@@ -476,7 +476,7 @@ function SafetyTab({ facilityId, actorEmail }) {
             <th className="p-1">Tipo</th><th className="p-1">Nombre</th><th className="p-1">Ubicacion</th><th className="p-1">Estado</th><th className="p-1">Seleccionar</th>
           </tr></thead>
           <tbody>
-            {devices.map((d) => (
+            {devices.map((d: any) => (
               <tr key={d.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{d.device_type}</td>
                 <td className="p-1 text-foreground">{d.name || "-"}</td>
@@ -516,7 +516,7 @@ function SafetyTab({ facilityId, actorEmail }) {
               <th className="p-1">Fecha</th><th className="p-1">Resultado</th><th className="p-1">Responsable</th><th className="p-1">Observaciones</th>
             </tr></thead>
             <tbody>
-              {checks.map((c) => (
+              {checks.map((c: any) => (
                 <tr key={c.id} className="border-t border-border">
                   <td className="p-1 text-foreground">{String(c.check_date).slice(0, 10)}</td>
                   <td className={"p-1 font-medium " + (c.result === "conforme" ? "text-success" : "text-danger")}>{c.result}</td>
@@ -531,11 +531,11 @@ function SafetyTab({ facilityId, actorEmail }) {
     </div>
   );
 }
-function SurveysTab({ facilityId, actorEmail }) {
-  const [bunkers, setBunkers] = useState([]);
-  const [bunkerId, setBunkerId] = useState(null);
-  const [surveys, setSurveys] = useState([]);
-  const [form, setForm] = useState({});
+function SurveysTab({ facilityId, actorEmail }: any) {
+  const [bunkers, setBunkers] = useState<any[]>([]);
+  const [bunkerId, setBunkerId] = useState<number | null>(null);
+  const [surveys, setSurveys] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -558,7 +558,7 @@ function SurveysTab({ facilityId, actorEmail }) {
   useEffect(() => { loadBunkers(); }, [loadBunkers]);
   useEffect(() => { loadSurveys(); }, [loadSurveys]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSave() {
     if (!bunkerId || !form.surveyDate) return;
@@ -577,7 +577,7 @@ function SurveysTab({ facilityId, actorEmail }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1">
-        {bunkers.map((b) => (
+        {bunkers.map((b: any) => (
           <button
             key={b.id}
             onClick={() => setBunkerId(b.id)}
@@ -610,7 +610,7 @@ function SurveysTab({ facilityId, actorEmail }) {
             <th className="p-1">Fecha</th><th className="p-1">Ubicacion</th><th className="p-1">Valor</th><th className="p-1">Instrumento</th><th className="p-1">Responsable</th>
           </tr></thead>
           <tbody>
-            {surveys.map((s) => (
+            {surveys.map((s: any) => (
               <tr key={s.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(s.survey_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{s.location || "-"}</td>
@@ -626,9 +626,9 @@ function SurveysTab({ facilityId, actorEmail }) {
   );
 }
 
-function IncidentsTab({ facilityId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({ severity: "menor", isNearMiss: false });
+function IncidentsTab({ facilityId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ severity: "menor", isNearMiss: false });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -640,7 +640,7 @@ function IncidentsTab({ facilityId, actorEmail }) {
 
   useEffect(() => { load(); }, [load]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSave() {
     if (!form.event || !form.incidentDate) return;
@@ -656,7 +656,7 @@ function IncidentsTab({ facilityId, actorEmail }) {
     } finally { setSaving(false); }
   }
 
-  async function toggleStatus(id, status) {
+  async function toggleStatus(id: number, status: string) {
     await fetch("/api/radioterapia/incidents", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -696,7 +696,7 @@ function IncidentsTab({ facilityId, actorEmail }) {
             <th className="p-1">Fecha</th><th className="p-1">Evento</th><th className="p-1">Severidad</th><th className="p-1">Quasi</th><th className="p-1">Estado</th><th className="p-1">Accion</th>
           </tr></thead>
           <tbody>
-            {list.map((r) => (
+            {list.map((r: any) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.incident_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.event}</td>
@@ -720,9 +720,9 @@ function IncidentsTab({ facilityId, actorEmail }) {
   );
 }
 
-function AuditsTab({ facilityId, actorEmail }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({ status: "abierta" });
+function AuditsTab({ facilityId, actorEmail }: any) {
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState<any>({ status: "abierta" });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -734,7 +734,7 @@ function AuditsTab({ facilityId, actorEmail }) {
 
   useEffect(() => { load(); }, [load]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSave() {
     if (!form.auditDate) return;
@@ -775,7 +775,7 @@ function AuditsTab({ facilityId, actorEmail }) {
             <th className="p-1">Fecha</th><th className="p-1">Tipo</th><th className="p-1">Hallazgos</th><th className="p-1">No conformidades</th><th className="p-1">Estado</th>
           </tr></thead>
           <tbody>
-            {list.map((r) => (
+            {list.map((r: any) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{String(r.audit_date).slice(0, 10)}</td>
                 <td className="p-1 text-foreground">{r.audit_type || "-"}</td>
@@ -790,11 +790,11 @@ function AuditsTab({ facilityId, actorEmail }) {
     </div>
   );
 }
-function TrainingTab({ facilityId, actorEmail }) {
-  const [trainings, setTrainings] = useState([]);
-  const [competencies, setCompetencies] = useState([]);
-  const [trainingForm, setTrainingForm] = useState({ status: "vigente" });
-  const [competencyForm, setCompetencyForm] = useState({ result: "competente" });
+function TrainingTab({ facilityId, actorEmail }: any) {
+  const [trainings, setTrainings] = useState<any[]>([]);
+  const [competencies, setCompetencies] = useState<any[]>([]);
+  const [trainingForm, setTrainingForm] = useState<any>({ status: "vigente" });
+  const [competencyForm, setCompetencyForm] = useState<any>({ result: "competente" });
   const [saving, setSaving] = useState(false);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
@@ -813,8 +813,8 @@ function TrainingTab({ facilityId, actorEmail }) {
   useEffect(() => { loadTrainings(); }, [loadTrainings]);
   useEffect(() => { loadCompetencies(); }, [loadCompetencies]);
 
-  function setT(k, v) { setTrainingForm((f) => ({ ...f, [k]: v })); }
-  function setC(k, v) { setCompetencyForm((f) => ({ ...f, [k]: v })); }
+  function setT(k: string, v: any) { setTrainingForm((f: any) => ({ ...f, [k]: v })); }
+  function setC(k: string, v: any) { setCompetencyForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleSaveTraining() {
     if (!trainingForm.workerName || !trainingForm.trainingName) return;
@@ -868,7 +868,7 @@ function TrainingTab({ facilityId, actorEmail }) {
             <th className="p-1">Trabajador</th><th className="p-1">Capacitacion</th><th className="p-1">Fecha</th><th className="p-1">Vencimiento</th><th className="p-1">Estado</th>
           </tr></thead>
           <tbody>
-            {trainings.map((t) => (
+            {trainings.map((t: any) => (
               <tr key={t.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{t.worker_name}</td>
                 <td className="p-1 text-foreground">{t.training_name}</td>
@@ -906,7 +906,7 @@ function TrainingTab({ facilityId, actorEmail }) {
             <th className="p-1">Trabajador</th><th className="p-1">Competencia</th><th className="p-1">Fecha</th><th className="p-1">Resultado</th><th className="p-1">Evaluador</th>
           </tr></thead>
           <tbody>
-            {competencies.map((c) => (
+            {competencies.map((c: any) => (
               <tr key={c.id} className="border-t border-border">
                 <td className="p-1 text-foreground">{c.worker_name}</td>
                 <td className="p-1 text-foreground">{c.competency}</td>
@@ -923,7 +923,7 @@ function TrainingTab({ facilityId, actorEmail }) {
 }
 
 function HistoryTab() {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<any[]>([]);
   useEffect(() => {
     fetch("/api/radioterapia/history").then((r) => r.json()).then((data) => {
       if (data.ok) setHistory(data.history);
@@ -937,7 +937,7 @@ function HistoryTab() {
           <th className="p-1">Fecha</th><th className="p-1">Usuario</th><th className="p-1">Accion</th><th className="p-1">Detalle</th>
         </tr></thead>
         <tbody>
-          {history.map((h) => (
+          {history.map((h: any) => (
             <tr key={h.id} className="border-t border-border">
               <td className="p-1 text-foreground">{new Date(h.created_at).toLocaleString()}</td>
               <td className="p-1 text-foreground">{h.actor_email || "-"}</td>
