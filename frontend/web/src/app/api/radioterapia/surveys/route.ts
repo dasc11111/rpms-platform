@@ -21,6 +21,6 @@ export async function POST(request: Request) {
     VALUES (${body.bunkerId}, ${body.surveyDate || null}, ${body.location || null}, ${body.measuredValue || null}, ${body.unit || "uSv/h"}, ${body.instrumentRef || null}, ${body.responsible || actorEmail}, ${body.observations || null})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_survey", actorEmail, { id: rows[0].id, bunkerId: body.bunkerId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_survey", actorEmail, { id: rows[0]!.id, bunkerId: body.bunkerId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
