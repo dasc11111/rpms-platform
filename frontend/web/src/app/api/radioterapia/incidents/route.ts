@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     VALUES (${body.facilityId}, ${body.linacId || null}, ${!!body.isNearMiss}, ${body.event || null}, ${body.incidentDate || null}, ${body.description || null}, ${body.severity || "menor"}, ${body.cause || null}, ${body.correctiveActions || null}, ${body.status || "abierto"})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_incident", actorEmail, { id: rows[0].id, facilityId: body.facilityId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_incident", actorEmail, { id: rows[0]!.id, facilityId: body.facilityId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
 
 export async function PATCH(request: Request) {
