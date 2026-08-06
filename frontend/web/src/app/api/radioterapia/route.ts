@@ -19,6 +19,6 @@ export async function POST(request: Request) {
     VALUES (${body.name || null}, ${body.address || null}, ${body.responsibleQa || null}, ${body.description || null})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_facility", actorEmail, { id: rows[0].id, name: body.name });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_facility", actorEmail, { id: rows[0]!.id, name: body.name });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
