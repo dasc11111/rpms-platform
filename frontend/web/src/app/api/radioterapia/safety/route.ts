@@ -28,14 +28,14 @@ export async function POST(request: Request) {
       RETURNING id;
     `;
     await sql`UPDATE rt_safety_devices SET status = ${body.result || "conforme"}, updated_at = now() WHERE id = ${body.deviceId}`;
-    await logRadioterapiaAudit("create_rt_safety_check", actorEmail, { id: rows[0].id, deviceId: body.deviceId });
-    return NextResponse.json({ ok: true, id: rows[0].id });
+    await logRadioterapiaAudit("create_rt_safety_check", actorEmail, { id: rows[0]!.id, deviceId: body.deviceId });
+    return NextResponse.json({ ok: true, id: rows[0]!.id });
   }
   const { rows } = await sql`
     INSERT INTO rt_safety_devices (bunker_id, device_type, name, location)
     VALUES (${body.bunkerId}, ${body.deviceType || null}, ${body.name || null}, ${body.location || null})
     RETURNING id;
   `;
-  await logRadioterapiaAudit("create_rt_safety_device", actorEmail, { id: rows[0].id, bunkerId: body.bunkerId });
-  return NextResponse.json({ ok: true, id: rows[0].id });
+  await logRadioterapiaAudit("create_rt_safety_device", actorEmail, { id: rows[0]!.id, bunkerId: body.bunkerId });
+  return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
