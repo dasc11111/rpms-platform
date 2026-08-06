@@ -4,7 +4,7 @@ import { ensureRadioterapiaTables, logRadioterapiaAudit } from "@/lib/radioterap
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request) {
+export async function GET(request: Request) {
   await ensureRadioterapiaTables();
   const { searchParams } = new URL(request.url);
   const facilityId = searchParams.get("facilityId");
@@ -12,7 +12,7 @@ export async function GET(request) {
   return NextResponse.json({ ok: true, audits: rows });
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   await ensureRadioterapiaTables();
   const body = await request.json();
   const actorEmail = body.actorEmail || null;
