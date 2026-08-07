@@ -180,7 +180,7 @@ export const RT_INCIDENT_SEVERITIES = [
   { value: "grave", label: "Grave" },
 ];
 
-export async function logRadioterapiaAudit(action, actorEmail, details) {
+export async function logRadioterapiaAudit(action: string, actorEmail: string | null, details: any) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (
