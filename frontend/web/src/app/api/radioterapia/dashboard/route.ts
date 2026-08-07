@@ -78,9 +78,8 @@ export async function GET(request: Request) {
 
   const bunkersRes = await sql`SELECT * FROM rt_bunkers WHERE facility_id = ${facilityId}`;
     const bunkers = bunkersRes.rows;
-    const bunkerIds = bunkers.map((b: any) => b.id);
-    const linacIds = Array.from(new Set(bunkers.map((b: any) => b.linac_id).filter((v: any) => v !== null && v !== undefined))) as number[];
-
+    const bunkerIds: any = bunkers.map((b: any) => b.id);
+    const linacIds: any = Array.from(new Set(bunkers.map((b: any) => b.linac_id).filter((v: any) => v !== null && v !== undefined)));
 const devicesRes = bunkerIds.length
       ? await sql`SELECT * FROM rt_safety_devices WHERE bunker_id = ANY(${bunkerIds}::int[])`
       : { rows: [] as any[] };
