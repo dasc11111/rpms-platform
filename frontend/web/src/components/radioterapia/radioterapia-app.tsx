@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { useAuth } from "@/components/auth/auth-provider";
+import { CentroOperaciones } from "./centro-operaciones";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -103,7 +104,7 @@ export function RadioterapiaApp() {
         })}
       </div>
 
-      {tab === "dashboard" && <DashboardTab dashboard={dashboard} />}
+      {tab === "dashboard" && <CentroOperaciones dashboard={dashboard} facilityName={selectedFacility?.name} />}    
       {tab === "info" && (
         <InfoTab facility={selectedFacility} actorEmail={actorEmail} onCreated={loadFacilities} />
       )}
