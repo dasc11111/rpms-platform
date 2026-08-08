@@ -11,11 +11,13 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { useAuth } from "@/components/auth/auth-provider";
+import { AcceptanceTestingTab } from "./acceptance-testing";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
   { id: "info", label: "Informacion General", icon: ClipboardList },
   { id: "auth", label: "Autorizaciones", icon: ShieldCheck },
+  { id: "acceptance", label: "Acceptance Testing", icon: ClipboardList },
   { id: "qc", label: "Control de Calidad", icon: Activity },
   { id: "clinical", label: "Operacion Clinica", icon: FileText },
   { id: "radiation", label: "Proteccion Radiologica", icon: Radiation },
@@ -137,6 +139,7 @@ export function LinacApp() {
         <InfoTab unit={selectedUnit} actorEmail={actorEmail} onSaved={loadUnits} onCreated={loadUnits} />
       )}
       {tab === "auth" && unitId && <AuthTab unitId={unitId} actorEmail={actorEmail} />}
+        {tab === "acceptance" && unitId && <AcceptanceTestingTab unitId={unitId} unit={selectedUnit} actorEmail={actorEmail} />}
       {tab === "qc" && unitId && <QcTab unitId={unitId} actorEmail={actorEmail} />}
       {tab === "clinical" && unitId && <ClinicalTab unitId={unitId} actorEmail={actorEmail} />}
       {tab === "radiation" && unitId && <RadiationTab unitId={unitId} actorEmail={actorEmail} />}
