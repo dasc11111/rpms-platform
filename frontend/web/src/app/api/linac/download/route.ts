@@ -9,6 +9,7 @@ const TABLES = {
   maintenance: "linac_maintenance",
   incidents: "linac_incidents",
   documents: "linac_documents",
+  acceptance_documents: "linac_acceptance_documents",
 };
 
 export async function GET(request: Request) {
@@ -23,6 +24,7 @@ export async function GET(request: Request) {
   else if (table === "maintenance") rows = (await sql`SELECT file_name, blob_url, mime_type FROM linac_maintenance WHERE id = ${id}`).rows;
   else if (table === "incidents") rows = (await sql`SELECT file_name, blob_url, mime_type FROM linac_incidents WHERE id = ${id}`).rows;
   else if (table === "documents") rows = (await sql`SELECT file_name, blob_url, mime_type, size_bytes FROM linac_documents WHERE id = ${id}`).rows;
+  else if (table === "acceptance_documents") rows = (await sql`SELECT file_name, blob_url, mime_type, size_bytes FROM linac_acceptance_documents WHERE id = ${id}`).rows;
 
   const doc = rows && rows[0];
   if (!doc || !doc.blob_url) return NextResponse.json({ error: "not_found" }, { status: 404 });
