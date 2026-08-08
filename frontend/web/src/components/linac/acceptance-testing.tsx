@@ -206,7 +206,7 @@ function NewTestPanel({ unitId, protocols, actorEmail, onSaved }: any) {
 }
 
 function TestDetail({ test, documents, actorEmail, onClose, onUploaded }: any) {
-  const [category, setCategory] = useState(DOC_CATEGORIES[0].value);
+  const [category, setCategory] = useState(DOC_CATEGORIES[0]!.value);
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
