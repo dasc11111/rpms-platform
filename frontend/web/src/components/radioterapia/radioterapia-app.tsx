@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard, ClipboardList, Warehouse, ShieldCheck, Radiation,
-  AlertTriangle, CalendarClock, GraduationCap, History, Plus,
+  AlertTriangle, CalendarClock, GraduationCap, History, Plus, Atom,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -11,10 +11,12 @@ import {
 } from "recharts";
 import { useAuth } from "@/components/auth/auth-provider";
 import { CentroOperaciones } from "./centro-operaciones";
+import { LinacApp } from "@/components/linac/linac-app";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
   { id: "info", label: "Informacion General", icon: ClipboardList },
+  { id: "linac", label: "Acelerador Lineal", icon: Atom },
   { id: "bunkers", label: "Bunkers y Blindaje", icon: Warehouse },
   { id: "safety", label: "Dispositivos de Seguridad", icon: ShieldCheck },
   { id: "surveys", label: "Levantamientos Radiometricos", icon: Radiation },
@@ -108,6 +110,7 @@ export function RadioterapiaApp() {
       {tab === "info" && (
         <InfoTab facility={selectedFacility} actorEmail={actorEmail} onCreated={loadFacilities} />
       )}
+      {tab === "linac" && <LinacApp />}
       {tab === "bunkers" && facilityId && <BunkersTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "safety" && facilityId && <SafetyTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "surveys" && facilityId && <SurveysTab facilityId={facilityId} actorEmail={actorEmail} />}
