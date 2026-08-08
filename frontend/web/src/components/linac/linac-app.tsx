@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
 Plus, Upload, Download, Eye, FileText, AlertTriangle, ShieldCheck, Activity,
 Wrench, Siren, ClipboardList, FolderOpen, History, LayoutDashboard, Radiation,
-ShieldAlert, CalendarClock, Settings2, Lock,
+ShieldAlert, CalendarClock, Settings2, Lock, Database,
 } from "lucide-react";
 import {
 BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip,
@@ -14,6 +14,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { AcceptanceTestingTab } from "./acceptance-testing";
 import { CommissioningTab } from "./commissioning";
 import { BaselineTab } from "./baseline";
+import { BeamDataTab } from "./beamdata";
 
 const TABS = [
 { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const TABS = [
 { id: "acceptance", label: "Acceptance Testing", icon: ClipboardList },
 { id: "commissioning", label: "Commissioning", icon: Settings2 },
 { id: "baseline", label: "Baseline Oficial", icon: Lock },
+{ id: "beamdata", label: "Beam Data", icon: Database },
 { id: "qc", label: "Control de Calidad", icon: Activity },
 { id: "clinical", label: "Operacion Clinica", icon: FileText },
 { id: "radiation", label: "Proteccion Radiologica", icon: Radiation },
@@ -146,6 +148,7 @@ className={
 {tab === "acceptance" && unitId && <AcceptanceTestingTab unitId={unitId} unit={selectedUnit} actorEmail={actorEmail} />}
 {tab === "commissioning" && unitId && <CommissioningTab unitId={unitId} unit={selectedUnit} actorEmail={actorEmail} />}
 {tab === "baseline" && unitId && <BaselineTab unitId={unitId} />}
+{tab === "beamdata" && unitId && <BeamDataTab unitId={unitId} unit={selectedUnit} actorEmail={actorEmail} />}
 {tab === "qc" && unitId && <QcTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "clinical" && unitId && <ClinicalTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "radiation" && unitId && <RadiationTab unitId={unitId} actorEmail={actorEmail} />}
