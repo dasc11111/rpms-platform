@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureCommissioningTables, logCommissioningAudit } from "@/lib/linac-commissioning";
+import { promoteDatasetToBaseline } from "@/lib/linac-baseline";
 
 export const dynamic = "force-dynamic";
 
@@ -67,9 +68,18 @@ export async function PATCH(request: Request) {
   }
 
   if (body.action === "mark_baseline") {
+    const { rows: dsRows } = await sql`SELECT * FROM linac_commissioning_datasets WHERE id = ${id}`;
+    const ds = dsRows[0];
+    if (!ds) return NextResponse.json({ error: "dataset_not_found" }, { status: 404 });
+
     await sql`UPDATE linac_commissioning_datasets SET is_baseline = true, updated_at = now() WHERE id = ${id}`;
-    await logCommissioningAudit("mark_baseline_commissioning_dataset", actorEmail, { id });
-    return NextResponse.json({ ok: true });
+
+    const result = await promoteDatasetToBaseline(
+      ds.linac_id, ds.category, ds.measurement_type, ds.modality, ds.energy, id, actorEmail, body.notes || null
+    );
+
+    await logCommissioningAudit("mark_baseline_commissioning_dataset", actorEmail, { id, baselineId: result.id, version: result.version });
+    return NextResponse.json({ ok: true, baselineId: result.id, version: result.version });
   }
 
   return NextResponse.json({ error: "invalid_action" }, { status: 400 });
