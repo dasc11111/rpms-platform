@@ -35,10 +35,17 @@ export async function GET(request: Request) {
     params.push(categoryId);
     clauses.push(`category_id = ${params.length}`);
   } else if (categoryRootId) {
-    const { rows: subtreeRows } = await sql`SELECT id FROM document_categories WHERE id = ${categoryRootId} OR parent_id = ${categoryRootId}`;
+    const { rows: subtreeRows } = await sql`
+      WITH RECURSIVE subtree AS (
+        SELECT id FROM document_categories WHERE id = ${categoryRootId}
+        UNION ALL
+        SELECT c.id FROM document_categories c JOIN subtree s ON c.parent_id = s.id
+      )
+      SELECT id FROM subtree
+    `;
     const ids = subtreeRows.map((r: any) => r.id);
     params.push(ids.length > 0 ? ids : [-1]);
-    clauses.push(`category_id = ANY(${params.length}::int[])`);
+    clauses.push(`category_id = ANY($${params.length}::int[])`);
   }
   if (docStatus) {
     params.push(docStatus);
