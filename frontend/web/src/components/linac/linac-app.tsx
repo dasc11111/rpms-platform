@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
 Plus, Upload, Download, Eye, FileText, AlertTriangle, ShieldCheck, Activity,
 Wrench, Siren, ClipboardList, FolderOpen, History, LayoutDashboard, Radiation,
-ShieldAlert, CalendarClock, Settings2, Lock, Database,
+ShieldAlert, CalendarClock, Settings2, Lock, Database, FlaskConical,
 } from "lucide-react";
 import {
 BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip,
@@ -18,6 +18,7 @@ import { BeamDataTab } from "./beamdata";
 import { QcTab } from "./qc";
 import { RadiationTab } from "./radiation";
 import { MaintenanceTab } from "./maintenance";
+import { ScienceTab } from "./science";
 
 const TABS = [
 { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -31,6 +32,7 @@ const TABS = [
 { id: "clinical", label: "Operacion Clinica", icon: FileText },
 { id: "radiation", label: "Proteccion Radiologica", icon: Radiation },
 { id: "maintenance", label: "Mantenimiento", icon: Wrench },
+{ id: "science", label: "Motor Cientifico", icon: FlaskConical },
 { id: "incidents", label: "Incidentes", icon: AlertTriangle },
 { id: "risks", label: "Gestion de Riesgos", icon: ShieldAlert },
 { id: "emergencies", label: "Emergencias", icon: Siren },
@@ -158,6 +160,7 @@ className={
 {tab === "clinical" && unitId && <ClinicalTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "radiation" && unitId && <RadiationTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "maintenance" && unitId && <MaintenanceTab unitId={unitId} actorEmail={actorEmail} />}
+{tab === "science" && unitId && <ScienceTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "incidents" && unitId && <IncidentsTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "risks" && unitId && <RisksTab unitId={unitId} actorEmail={actorEmail} />}
 {tab === "emergencies" && unitId && <EmergenciesTab unitId={unitId} actorEmail={actorEmail} />}
