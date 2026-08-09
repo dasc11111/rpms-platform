@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell } from "lucide-react";
+import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
   { value: 1, label: "1 - Normativa Chile" },
@@ -643,6 +644,8 @@ export function ScienceTab({ unitId, actorEmail }: any) {
           </div>
         )}
       </div>
+
+      <ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
 
     </div>
   );
