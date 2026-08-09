@@ -16,19 +16,19 @@ export async function GET(request: Request) {
   const clauses: string[] = [];
   if (module_) {
     params.push(module_);
-    clauses.push(`c.module = ${params.length}`);
+    clauses.push(`c.module = $${params.length}`);
   }
   if (linacId) {
     params.push(linacId);
-    clauses.push(`c.linac_id = ${params.length}`);
+    clauses.push(`c.linac_id = $${params.length}`);
   }
   if (status) {
     params.push(status);
-    clauses.push(`c.status = ${params.length}`);
+    clauses.push(`c.status = $${params.length}`);
   }
   if (search) {
     params.push(`%${search}%`);
-    clauses.push(`(c.parameter_name ILIKE ${params.length} OR c.source_name ILIKE ${params.length} OR c.fragment_text ILIKE ${params.length})`);
+    clauses.push(`(c.parameter_name ILIKE $${params.length} OR c.source_name ILIKE $${params.length} OR c.fragment_text ILIKE $${params.length})`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
