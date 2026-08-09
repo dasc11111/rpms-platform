@@ -80,24 +80,24 @@ export const QC_TEST_TEMPLATES = [
 { periodicity: "anual", testName: "Auditoria dosimetrica externa", procedure: "Auditoria dosimetrica independiente de la unidad de tratamiento.", regulation: "IAEA TRS-430", defaultTolerance: "3", unit: "%" },
 ];
 
-export function computeDeviationPct(expected, obtained) {
+export function computeDeviationPct(expected: any, obtained: any): number | null {
 const e = parseFloat(expected);
 const o = parseFloat(obtained);
 if (!Number.isFinite(e) || !Number.isFinite(o) || e === 0) return null;
 return Math.round(((o - e) / e) * 1000) / 10;
 }
 
-export function computeSemaphore(status, deviationPct, tolerancePct) {
+export function computeSemaphore(status: any, deviationPct: any, tolerancePct: any): string {
 if (status === "no_cumple") return "rojo";
 const tol = parseFloat(tolerancePct);
-if (deviationPct === null || !Number.isFinite(tol) || tol <= 0) return "verde";
+if (deviationPct === null || deviationPct === undefined || !Number.isFinite(tol) || tol <= 0) return "verde";
 const dev = Math.abs(deviationPct);
 if (dev <= tol) return "verde";
 if (dev <= tol * 1.5) return "amarillo";
 return "rojo";
 }
 
-function extractReferenceValue(data) {
+function extractReferenceValue(data: any): number | null {
 if (!data) return null;
 if (typeof data.value === "number") return data.value;
 if (typeof data.referenceValue === "number") return data.referenceValue;
@@ -109,7 +109,7 @@ if (p && typeof p.y === "string" && Number.isFinite(parseFloat(p.y))) return par
 return null;
 }
 
-export async function findCurrentBaseline(linacId, measurementType, modality, energy) {
+export async function findCurrentBaseline(linacId: any, measurementType: any, modality: any, energy: any): Promise<any> {
 if (!measurementType) return null;
 const { rows } = await sql`
 SELECT b.id, b.version, b.approved_at, b.dataset_id, d.data
@@ -133,7 +133,7 @@ referenceValue,
 };
 }
 
-export async function generateQcAlert(linacId, qcTestId, periodicity, testName, semaphore, message) {
+export async function generateQcAlert(linacId: any, qcTestId: any, periodicity: any, testName: any, semaphore: any, message: any) {
 if (semaphore === "verde") return;
 await sql`
 INSERT INTO linac_qc_alerts (linac_id, qc_test_id, periodicity, test_name, semaphore, message)
@@ -141,7 +141,7 @@ VALUES (${linacId}, ${qcTestId}, ${periodicity}, ${testName}, ${semaphore}, ${me
 `;
 }
 
-export async function logQcAudit(action, actorEmail, details) {
+export async function logQcAudit(action: string, actorEmail: string | null, details: any) {
 try {
 await sql`
 CREATE TABLE IF NOT EXISTS audit_logs (
