@@ -51,6 +51,24 @@ const EMPTY_UPLOAD: any = {
   observations: "",
 };
 
+function getDescendantIds(categories: any[], rootId: number): number[] {
+  const byParent: Record<string, any[]> = {};
+  categories.forEach((c) => {
+    const key = String(c.parent_id || 0);
+    if (!byParent[key]) byParent[key] = [];
+    byParent[key].push(c);
+  });
+  const result: number[] = [rootId];
+  function walk(id: number) {
+    (byParent[String(id)] || []).forEach((c: any) => {
+      result.push(c.id);
+      walk(c.id);
+    });
+  }
+  walk(rootId);
+  return result;
+}
+
 function flattenCategories(categories: any[]) {
   const byParent: Record<string, any[]> = {};
   categories.forEach((c) => {
@@ -107,7 +125,7 @@ export function ScienceDocuments({ unitId, actorEmail }: any) {
       const data = await res.json();
       const cats = data.categories || [];
       setCategories(cats);
-      const mn = cats.find((c: any) => c.name === "Medicina Nuclear" && !c.parent_id);
+      const mn = cats.find((c: any) => c.name.trim().toUpperCase() === "MEDICINA NUCLEAR" && !c.parent_id);
       if (mn) {
         setMedicinaNuclearId(mn.id);
         setUploadCategoryId(String(mn.id));
@@ -237,8 +255,9 @@ export function ScienceDocuments({ unitId, actorEmail }: any) {
 
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const labelCls = "text-xs text-muted-foreground";
+  const descendantIds = medicinaNuclearId ? getDescendantIds(categories, medicinaNuclearId) : [];
   const flatCategories = flattenCategories(
-    categories.filter((c: any) => c.id === medicinaNuclearId || c.parent_id === medicinaNuclearId)
+    categories.filter((c: any) => descendantIds.includes(c.id))
   );
 
   return (
