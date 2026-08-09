@@ -15,15 +15,15 @@ export async function GET(request: Request) {
   const clauses: string[] = [];
   if (sourceModule) {
     params.push(sourceModule);
-    clauses.push(`source_module = ${params.length}`);
+    clauses.push(`source_module = $${params.length}`);
   }
   if (sourceRecordId) {
     params.push(sourceRecordId);
-    clauses.push(`source_record_id = ${params.length}`);
+    clauses.push(`source_record_id = $${params.length}`);
   }
   if (linacId) {
     params.push(linacId);
-    clauses.push(`linac_id = ${params.length}`);
+    clauses.push(`linac_id = $${params.length}`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
