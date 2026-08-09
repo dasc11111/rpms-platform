@@ -136,11 +136,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       )
       RETURNING *
     `;
+    const created: any = rows[0];
+    if (!created) {
+      return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+    }
     await sql`
       INSERT INTO linac_criteria_audit (criteria_id, action, actor, previous_data, new_data, reason)
-      VALUES (${rows[0].id}, 'nueva_version', ${actor}, ${JSON.stringify(existing)}::jsonb, ${JSON.stringify(rows[0])}::jsonb, ${reason})
+      VALUES (${created.id}, 'nueva_version', ${actor}, ${JSON.stringify(existing)}::jsonb, ${JSON.stringify(created)}::jsonb, ${reason})
     `;
-    return NextResponse.json({ criteria: rows[0] });
+    return NextResponse.json({ criteria: created });
   }
 
   return NextResponse.json({ error: "invalid_action" }, { status: 400 });
