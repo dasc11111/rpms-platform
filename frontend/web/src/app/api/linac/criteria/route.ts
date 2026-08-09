@@ -75,7 +75,10 @@ export async function POST(request: Request) {
     RETURNING *
   `;
 
-  const criteria = rows[0];
+  const criteria: any = rows[0];
+  if (!criteria) {
+    return NextResponse.json({ error: "insert_failed" }, { status: 500 });
+  }
 
   await sql`
     INSERT INTO linac_criteria_audit (criteria_id, action, actor, new_data, reason)
