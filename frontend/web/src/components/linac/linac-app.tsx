@@ -17,6 +17,7 @@ import { BaselineTab } from "./baseline";
 import { BeamDataTab } from "./beamdata";
 import { QcTab } from "./qc";
 import { RadiationTab } from "./radiation";
+import { MaintenanceTab } from "./maintenance";
 
 const TABS = [
 { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -537,84 +538,6 @@ return (
 <td className="p-1 text-foreground">{r.downtime_hours}</td>
 <td className="p-1 text-foreground">{r.interruptions}</td>
 <td className="p-1 text-foreground">{r.treatment_type || "-"}</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-</div>
-);
-}
-
-function MaintenanceTab({ unitId, actorEmail }: any) {
-const [list, setList] = useState<any[]>([]);
-const [form, setForm] = useState<any>({});
-const [file, setFile] = useState<File | null>(null);
-const [saving, setSaving] = useState(false);
-const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
-const load = useCallback(async () => {
-const res = await fetch("/api/linac/maintenance?linacId=" + unitId);
-const data = await res.json();
-if (data.ok) setList(data.records);
-}, [unitId]);
-useEffect(() => { load(); }, [load]);
-function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
-async function handleSave() {
-if (!form.maintenanceType || !form.maintenanceDate) return;
-setSaving(true);
-try {
-const fd = new FormData();
-fd.set("linacId", String(unitId));
-fd.set("actorEmail", actorEmail || "");
-Object.entries(form).forEach(([k, v]: [string, any]) => fd.set(k, v ?? ""));
-if (file) fd.set("file", file);
-await fetch("/api/linac/maintenance", { method: "POST", body: fd });
-setForm({}); setFile(null);
-load();
-} finally { setSaving(false); }
-}
-return (
-<div className="space-y-4">
-<div className="rounded-lg border border-border bg-surface p-3">
-<p className="mb-2 text-sm font-semibold text-foreground">Registrar mantenimiento</p>
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-<select className={inputCls} value={form.maintenanceType || ""} onChange={(e) => set("maintenanceType", e.target.value)}>
-<option value="">Tipo</option>
-{MAINTENANCE_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
-</select>
-<input type="date" className={inputCls} value={form.maintenanceDate || ""} onChange={(e) => set("maintenanceDate", e.target.value)} />
-<input className={inputCls} placeholder="Empresa" value={form.company || ""} onChange={(e) => set("company", e.target.value)} />
-<input type="number" className={inputCls} placeholder="Horas" value={form.hours || ""} onChange={(e) => set("hours", e.target.value)} />
-<input type="number" className={inputCls} placeholder="Costo" value={form.cost || ""} onChange={(e) => set("cost", e.target.value)} />
-<input type="file" className="text-xs text-foreground" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-</div>
-<input className={inputCls + " mt-2"} placeholder="Observaciones" value={form.observations || ""} onChange={(e) => set("observations", e.target.value)} />
-<button onClick={handleSave} disabled={saving} className="mt-2 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-50">
-{saving ? "Guardando..." : "Registrar"}
-</button>
-</div>
-<div className="rounded-lg border border-border bg-surface p-3">
-<table className="w-full text-xs">
-<thead><tr className="text-left text-muted-foreground">
-<th className="p-1">Fecha</th><th className="p-1">Tipo</th><th className="p-1">Empresa</th>
-<th className="p-1">Horas</th><th className="p-1">Costo</th><th className="p-1">Archivo</th>
-</tr></thead>
-<tbody>
-{list.map((r: any) => (
-<tr key={r.id} className="border-t border-border">
-<td className="p-1 text-foreground">{String(r.maintenance_date).slice(0, 10)}</td>
-<td className="p-1 text-foreground">{r.maintenance_type}</td>
-<td className="p-1 text-foreground">{r.company || "-"}</td>
-<td className="p-1 text-foreground">{r.hours || "-"}</td>
-<td className="p-1 text-foreground">{r.cost || "-"}</td>
-<td className="p-1">
-{r.blob_url && (
-<div className="flex gap-1">
-<a href={"/api/linac/download?table=maintenance&id=" + r.id} target="_blank" rel="noreferrer" className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background"><Eye className="h-3 w-3" /></a>
-<a href={"/api/linac/download?table=maintenance&id=" + r.id + "&dl=1"} className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background"><Download className="h-3 w-3" /></a>
-</div>
-)}
-</td>
 </tr>
 ))}
 </tbody>
