@@ -15,6 +15,7 @@ import { AcceptanceTestingTab } from "./acceptance-testing";
 import { CommissioningTab } from "./commissioning";
 import { BaselineTab } from "./baseline";
 import { BeamDataTab } from "./beamdata";
+import { QcTab } from "./qc";
 
 const TABS = [
 { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -462,117 +463,6 @@ className="mt-2 flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs fo
 <div className="flex gap-1">
 <a href={"/api/linac/download?table=authorizations&id=" + a.id} target="_blank" rel="noreferrer" className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background" title="Vista previa"><Eye className="h-3 w-3" /></a>
 <a href={"/api/linac/download?table=authorizations&id=" + a.id + "&dl=1"} className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background" title="Descargar"><Download className="h-3 w-3" /></a>
-</div>
-)}
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-</div>
-);
-}
-
-function QcTab({ unitId, actorEmail }: any) {
-const [periodicity, setPeriodicity] = useState("diario");
-const [list, setList] = useState<any[]>([]);
-const [form, setForm] = useState<any>({ status: "cumple" });
-const [file, setFile] = useState<File | null>(null);
-const [saving, setSaving] = useState(false);
-
-const load = useCallback(async () => {
-const res = await fetch("/api/linac/qc?linacId=" + unitId + "&periodicity=" + periodicity);
-const data = await res.json();
-if (data.ok) setList(data.tests);
-}, [unitId, periodicity]);
-
-useEffect(() => { load(); }, [load]);
-
-function set(key: string, value: any) { setForm((f: any) => ({ ...f, [key]: value })); }
-
-async function handleSave() {
-if (!form.testName || !form.testDate) return;
-setSaving(true);
-try {
-const fd = new FormData();
-fd.set("linacId", String(unitId));
-fd.set("periodicity", periodicity);
-Object.entries(form).forEach(([k, v]: [string, any]) => fd.set(k, v ?? ""));
-if (file) fd.set("file", file);
-await fetch("/api/linac/qc", { method: "POST", body: fd });
-setForm({ status: "cumple" }); setFile(null);
-load();
-} finally {
-setSaving(false);
-}
-}
-
-const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
-
-return (
-<div className="space-y-4">
-<div className="flex gap-1">
-{QC_PERIODICITIES.map((p: any) => (
-<button
-key={p}
-onClick={() => setPeriodicity(p)}
-className={
-"rounded px-2 py-1 text-xs capitalize " +
-(periodicity === p ? "bg-accent-subtle text-foreground" : "text-muted-foreground hover:bg-muted")
-}
->
-{p}
-</button>
-))}
-</div>
-
-<div className="rounded-lg border border-border bg-surface p-3">
-<p className="mb-2 text-sm font-semibold text-foreground">Registrar prueba QC {periodicity}</p>
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-<input className={inputCls} placeholder="Nombre de la prueba" value={form.testName || ""} onChange={(e) => set("testName", e.target.value)} />
-<input type="date" className={inputCls} value={form.testDate || ""} onChange={(e) => set("testDate", e.target.value)} />
-<input className={inputCls} placeholder="Valor esperado" value={form.expectedValue || ""} onChange={(e) => set("expectedValue", e.target.value)} />
-<input className={inputCls} placeholder="Valor obtenido" value={form.obtainedValue || ""} onChange={(e) => set("obtainedValue", e.target.value)} />
-<input className={inputCls} placeholder="Tolerancia" value={form.tolerance || ""} onChange={(e) => set("tolerance", e.target.value)} />
-<input className={inputCls} placeholder="Unidad" value={form.unit || ""} onChange={(e) => set("unit", e.target.value)} />
-<select className={inputCls} value={form.status || "cumple"} onChange={(e) => set("status", e.target.value)}>
-<option value="cumple">Cumple</option>
-<option value="no_cumple">No cumple</option>
-</select>
-<input className={inputCls} placeholder="Responsable" value={form.responsible || ""} onChange={(e) => set("responsible", e.target.value)} />
-<input className={inputCls} placeholder="Observaciones" value={form.observations || ""} onChange={(e) => set("observations", e.target.value)} />
-<input type="file" className="text-xs text-foreground" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-</div>
-<button onClick={handleSave} disabled={saving} className="mt-2 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-50">
-{saving ? "Guardando..." : "Registrar prueba"}
-</button>
-</div>
-
-<div className="rounded-lg border border-border bg-surface p-3">
-<table className="w-full text-xs">
-<thead>
-<tr className="text-left text-muted-foreground">
-<th className="p-1">Fecha</th><th className="p-1">Prueba</th><th className="p-1">Esperado</th>
-<th className="p-1">Obtenido</th><th className="p-1">Tolerancia</th><th className="p-1">Estado</th>
-<th className="p-1">Responsable</th><th className="p-1">Archivo</th>
-</tr>
-</thead>
-<tbody>
-{list.map((q: any) => (
-<tr key={q.id} className="border-t border-border">
-<td className="p-1 text-foreground">{String(q.test_date).slice(0, 10)}</td>
-<td className="p-1 text-foreground">{q.test_name}</td>
-<td className="p-1 text-foreground">{q.expected_value || "-"}</td>
-<td className="p-1 text-foreground">{q.obtained_value || "-"}</td>
-<td className="p-1 text-foreground">{q.tolerance || "-"}</td>
-<td className={"p-1 font-medium " + (q.status === "cumple" ? "text-success" : "text-danger")}>{q.status}</td>
-<td className="p-1 text-foreground">{q.responsible || "-"}</td>
-<td className="p-1">
-{q.blob_url && (
-<div className="flex gap-1">
-<a href={"/api/linac/download?table=qc&id=" + q.id} target="_blank" rel="noreferrer" className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background"><Eye className="h-3 w-3" /></a>
-<a href={"/api/linac/download?table=qc&id=" + q.id + "&dl=1"} className="rounded border border-border px-1.5 py-0.5 text-foreground hover:bg-background"><Download className="h-3 w-3" /></a>
 </div>
 )}
 </td>
