@@ -200,12 +200,12 @@ export function computeStats(values: number[]): StatsResult | null {
   if (n === 0) return null;
   const mean = nums.reduce((a: number, b: number) => a + b, 0) / n;
   const sorted = [...nums].sort((a: number, b: number) => a - b);
-  const median = n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[(n - 1) / 2];
+  const median = n % 2 === 0 ? (sorted[n / 2 - 1]! + sorted[n / 2]!) / 2 : sorted[(n - 1) / 2]!;
   const variance = n > 1 ? nums.reduce((a: number, b: number) => a + (b - mean) ** 2, 0) / (n - 1) : 0;
   const stdDev = Math.sqrt(variance);
   const cv = mean !== 0 ? (stdDev / Math.abs(mean)) * 100 : null;
-  const min = sorted[0];
-  const max = sorted[n - 1];
+  const min = sorted[0]!;
+  const max = sorted[n - 1]!;
   return { n, mean, median, stdDev, cv, min, max, range: max - min, ucl: mean + 2 * stdDev, lcl: mean - 2 * stdDev };
 }
 
