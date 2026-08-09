@@ -56,7 +56,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       SET status = 'historico', updated_at = now()
       WHERE status = 'activo' AND module = ${existing.module}
         AND parameter_name = ${existing.parameter_name}
-        AND (linac_id = ${existing.linac_id} OR (linac_id IS NULL AND ${existing.linac_id} IS NULL))
+        AND (linac_id = ${existing.linac_id}::integer OR (linac_id IS NULL AND ${existing.linac_id}::integer IS NULL))
         AND id != ${id}
     `;
 
