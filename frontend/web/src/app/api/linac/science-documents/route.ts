@@ -9,6 +9,7 @@ export async function GET(request: Request) {
   await ensureScienceTables();
   const { searchParams } = new URL(request.url);
   const categoryId = Number(searchParams.get("categoryId") || 0);
+  const categoryRootId = Number(searchParams.get("categoryRootId") || 0);
   const checkName = (searchParams.get("checkName") || "").trim();
   const docStatus = (searchParams.get("docStatus") || "").trim();
   const docType = (searchParams.get("docType") || "").trim();
@@ -32,7 +33,12 @@ export async function GET(request: Request) {
   const clauses: string[] = [];
   if (categoryId) {
     params.push(categoryId);
-    clauses.push(`category_id = $${params.length}`);
+    clauses.push(`category_id = ${params.length}`);
+  } else if (categoryRootId) {
+    const { rows: subtreeRows } = await sql`SELECT id FROM document_categories WHERE id = ${categoryRootId} OR parent_id = ${categoryRootId}`;
+    const ids = subtreeRows.map((r: any) => r.id);
+    params.push(ids.length > 0 ? ids : [-1]);
+    clauses.push(`category_id = ANY(${params.length}::int[])`);
   }
   if (docStatus) {
     params.push(docStatus);
