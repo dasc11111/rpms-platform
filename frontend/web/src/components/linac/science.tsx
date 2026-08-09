@@ -1,0 +1,429 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink } from "lucide-react";
+
+const SOURCE_LEVELS: { value: number; label: string }[] = [
+  { value: 1, label: "1 - Normativa Chile" },
+  { value: 2, label: "2 - ARPANSA" },
+  { value: 3, label: "3 - IAEA/OIEA" },
+  { value: 4, label: "4 - IEC" },
+  { value: 5, label: "5 - AAPM" },
+  { value: 6, label: "6 - ICRU" },
+  { value: 7, label: "7 - Documentacion del fabricante" },
+  { value: 8, label: "8 - Protocolo institucional" },
+  { value: 9, label: "9 - Otro documento cientifico validado" },
+];
+
+const MODULE_OPTIONS: { value: string; label: string }[] = [
+  { value: "general", label: "General" },
+  { value: "acceptance_testing", label: "Acceptance Testing" },
+  { value: "commissioning", label: "Commissioning" },
+  { value: "baseline", label: "Baseline Clinico" },
+  { value: "beam_data", label: "Beam Data" },
+  { value: "qc", label: "Control de Calidad" },
+  { value: "radiation", label: "Proteccion Radiologica" },
+  { value: "maintenance", label: "Mantenimiento" },
+];
+
+const STATUS_INFO: Record<string, { label: string; cls: string; dot: string }> = {
+  propuesto: { label: "Pendiente de validacion", cls: "text-warning", dot: "bg-warning" },
+  activo: { label: "Criterio activo", cls: "text-success", dot: "bg-success" },
+  rechazado: { label: "Rechazado", cls: "text-danger", dot: "bg-danger" },
+  historico: { label: "Historico", cls: "text-muted-foreground", dot: "bg-muted-foreground" },
+};
+
+const EMPTY_FORM: any = {
+  parameterName: "",
+  module: "general",
+  value: "",
+  unit: "",
+  tolerance: "",
+  actionLimit: "",
+  investigationLimit: "",
+  criticalLimit: "",
+  sourceLevel: 2,
+  sourceName: "ARPANSA",
+  documentId: "",
+  documentVersion: "",
+  page: "",
+  chapter: "",
+  section: "",
+  tableRef: "",
+  fragmentText: "",
+};
+
+export function ScienceTab({ unitId, actorEmail }: any) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  const [moduleFilter, setModuleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [criteria, setCriteria] = useState<any[]>([]);
+  const [loadingCriteria, setLoadingCriteria] = useState(false);
+
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<any>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [docPick, setDocPick] = useState<any[]>([]);
+  const [docQuery, setDocQuery] = useState("");
+
+  const actor = actorEmail || "Usuario RPMS";
+
+  const loadCriteria = useCallback(async () => {
+    setLoadingCriteria(true);
+    try {
+      const params = new URLSearchParams();
+      if (moduleFilter) params.set("module", moduleFilter);
+      if (statusFilter) params.set("status", statusFilter);
+      if (unitId) params.set("linacId", String(unitId));
+      const res = await fetch("/api/linac/criteria?" + params.toString());
+      const data = await res.json();
+      setCriteria(data.criteria || []);
+    } finally {
+      setLoadingCriteria(false);
+    }
+  }, [moduleFilter, statusFilter, unitId]);
+
+  useEffect(() => { loadCriteria(); }, [loadCriteria]);
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setResults([]); return; }
+    const t = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch("/api/linac/technical-search?q=" + encodeURIComponent(q));
+        const data = await res.json();
+        setResults(data.results || []);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  useEffect(() => {
+    const q = docQuery.trim();
+    if (q.length < 2) { setDocPick([]); return; }
+    const t = setTimeout(async () => {
+      const res = await fetch("/api/linac/technical-search?q=" + encodeURIComponent(q));
+      const data = await res.json();
+      setDocPick((data.results || []).filter((r: any) => r.type === "documento"));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [docQuery]);
+
+  function setF(key: string, value: any) {
+    setForm((f: any) => ({ ...f, [key]: value }));
+  }
+
+  async function submitProposal() {
+    if (!form.parameterName.trim()) return;
+    setSaving(true);
+    try {
+      await fetch("/api/linac/criteria", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, linacId: unitId, proposedBy: actor }),
+      });
+      setForm(EMPTY_FORM);
+      setDocQuery("");
+      setShowForm(false);
+      loadCriteria();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function actOn(id: number, action: string, extra?: any) {
+    await fetch("/api/linac/criteria/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, actor, ...(extra || {}) }),
+    });
+    loadCriteria();
+  }
+
+  const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
+  const labelCls = "text-xs text-muted-foreground";
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Search className="h-4 w-4" /> Buscador Tecnico
+        </p>
+        <input
+          className={inputCls}
+          placeholder="Buscar: ARPANSA, RPS 14.3, tolerancia, interlock, blindaje, commissioning..."
+          value={query}
+          onChange={(e: any) => setQuery(e.target.value)}
+        />
+        {searching && <p className="mt-2 text-xs text-muted-foreground">Buscando...</p>}
+        {results.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {results.map((r: any) => (
+              <div key={r.type + "-" + r.id} className="rounded border border-border p-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-foreground">
+                    {r.type === "documento" ? "Documento: " : "Criterio: "}{r.title}
+                  </span>
+                  {r.documentUrl && (
+                    <a href={r.documentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary">
+                      <ExternalLink className="h-3 w-3" /> Ver fuente
+                    </a>
+                  )}
+                </div>
+                {r.subtitle && <p className="text-muted-foreground">{r.subtitle}</p>}
+                {(r.page || r.chapter || r.section || r.tableRef) && (
+                  <p className="text-muted-foreground">
+                    {[r.page ? "Pag. " + r.page : null, r.chapter, r.section, r.tableRef ? "Tabla " + r.tableRef : null]
+                      .filter(Boolean).join(" / ")}
+                  </p>
+                )}
+                {r.fragment && <p className="mt-1 italic text-foreground">"{r.fragment}"</p>}
+              </div>
+            ))}
+          </div>
+        )}
+        {query.trim().length >= 2 && !searching && results.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">Sin resultados. Puede que se trate de CRITERIO PENDIENTE DE PARAMETRIZACION.</p>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <FileText className="h-4 w-4" /> Criterios Tecnicos
+          </p>
+          <div className="flex items-center gap-2">
+            <select className={inputCls} value={moduleFilter} onChange={(e: any) => setModuleFilter(e.target.value)}>
+              <option value="">Todos los modulos</option>
+              {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <select className={inputCls} value={statusFilter} onChange={(e: any) => setStatusFilter(e.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="propuesto">Pendiente de validacion</option>
+              <option value="activo">Criterio activo</option>
+              <option value="rechazado">Rechazado</option>
+              <option value="historico">Historico</option>
+            </select>
+            <button onClick={loadCriteria} className="rounded border border-border p-1.5" title="Actualizar">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => setShowForm((s) => !s)}
+              className="flex items-center gap-1 rounded bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground"
+            >
+              <PlusCircle className="h-3.5 w-3.5" /> Proponer criterio
+            </button>
+          </div>
+        </div>
+
+        {showForm && (
+          <div className="mb-4 rounded border border-border p-3">
+            <p className="mb-2 text-xs font-semibold text-foreground">CRITERIO TECNICO PROPUESTO</p>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              <div>
+                <label className={labelCls}>Parametro</label>
+                <input className={inputCls} value={form.parameterName} onChange={(e: any) => setF("parameterName", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Modulo</label>
+                <select className={inputCls} value={form.module} onChange={(e: any) => setF("module", e.target.value)}>
+                  {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Valor encontrado</label>
+                <input className={inputCls} value={form.value} onChange={(e: any) => setF("value", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Unidad</label>
+                <input className={inputCls} value={form.unit} onChange={(e: any) => setF("unit", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Tolerancia (%)</label>
+                <input className={inputCls} value={form.tolerance} onChange={(e: any) => setF("tolerance", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Limite de accion (%)</label>
+                <input className={inputCls} value={form.actionLimit} onChange={(e: any) => setF("actionLimit", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Limite de investigacion (%)</label>
+                <input className={inputCls} value={form.investigationLimit} onChange={(e: any) => setF("investigationLimit", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Limite critico (%)</label>
+                <input className={inputCls} value={form.criticalLimit} onChange={(e: any) => setF("criticalLimit", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Jerarquia de fuente</label>
+                <select
+                  className={inputCls}
+                  value={form.sourceLevel}
+                  onChange={(e: any) => setF("sourceLevel", Number(e.target.value))}
+                >
+                  {SOURCE_LEVELS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Nombre de la fuente</label>
+                <input className={inputCls} value={form.sourceName} onChange={(e: any) => setF("sourceName", e.target.value)} />
+              </div>
+              <div className="col-span-2">
+                <label className={labelCls}>Documento (Documentos - Medicina Nuclear)</label>
+                <input
+                  className={inputCls}
+                  placeholder="Buscar documento por nombre o codigo..."
+                  value={docQuery}
+                  onChange={(e: any) => setDocQuery(e.target.value)}
+                />
+                {docPick.length > 0 && (
+                  <div className="mt-1 max-h-32 overflow-auto rounded border border-border">
+                    {docPick.map((d: any) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        className="block w-full px-2 py-1 text-left text-xs hover:bg-muted"
+                        onClick={() => { setF("documentId", d.id); setDocQuery(d.title); setDocPick([]); }}
+                      >
+                        {d.title} {d.subtitle ? "(" + d.subtitle + ")" : ""}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {form.documentId && <p className="mt-1 text-xs text-success">Documento seleccionado (ID {form.documentId})</p>}
+              </div>
+              <div>
+                <label className={labelCls}>Version del documento</label>
+                <input className={inputCls} value={form.documentVersion} onChange={(e: any) => setF("documentVersion", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Pagina</label>
+                <input className={inputCls} value={form.page} onChange={(e: any) => setF("page", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Capitulo</label>
+                <input className={inputCls} value={form.chapter} onChange={(e: any) => setF("chapter", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Seccion</label>
+                <input className={inputCls} value={form.section} onChange={(e: any) => setF("section", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Tabla</label>
+                <input className={inputCls} value={form.tableRef} onChange={(e: any) => setF("tableRef", e.target.value)} />
+              </div>
+              <div className="col-span-2 md:col-span-4">
+                <label className={labelCls}>Fragmento utilizado</label>
+                <textarea
+                  className={inputCls}
+                  rows={2}
+                  value={form.fragmentText}
+                  onChange={(e: any) => setF("fragmentText", e.target.value)}
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Este criterio quedara marcado 🟡 PENDIENTE DE VALIDACION. No se activara automaticamente.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                disabled={saving}
+                onClick={submitProposal}
+                className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+              >
+                {saving ? "Guardando..." : "Guardar propuesta"}
+              </button>
+              <button onClick={() => setShowForm(false)} className="rounded border border-border px-3 py-1.5 text-xs">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {loadingCriteria ? (
+          <p className="text-xs text-muted-foreground">Cargando criterios...</p>
+        ) : criteria.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Sin criterios registrados para este filtro.</p>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="pb-1">Parametro</th>
+                  <th className="pb-1">Modulo</th>
+                  <th className="pb-1">Valor</th>
+                  <th className="pb-1">Fuente</th>
+                  <th className="pb-1">Documento</th>
+                  <th className="pb-1">Estado</th>
+                  <th className="pb-1">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {criteria.map((c: any) => {
+                  const info = STATUS_INFO[c.status] || { label: c.status, cls: "text-muted-foreground", dot: "bg-muted-foreground" };
+                  return (
+                    <tr key={c.id} className="border-t border-border">
+                      <td className="py-1.5 font-medium text-foreground">{c.parameter_name}</td>
+                      <td className="py-1.5">{c.module}</td>
+                      <td className="py-1.5">{c.value || "-"} {c.unit || ""}</td>
+                      <td className="py-1.5">{c.source_name || "-"}</td>
+                      <td className="py-1.5">
+                        {c.document_url ? (
+                          <a href={c.document_url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-primary">
+                            <ExternalLink className="h-3 w-3" /> Ver fuente
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td className="py-1.5">
+                        <span className={"flex items-center gap-1 " + info.cls}>
+                          <span className={"h-1.5 w-1.5 rounded-full " + info.dot} /> {info.label}
+                        </span>
+                      </td>
+                      <td className="py-1.5">
+                        {c.status === "propuesto" && (
+                          <div className="flex gap-1">
+                            <button
+                              title="Aprobar criterio"
+                              onClick={() => actOn(c.id, "aprobar")}
+                              className="rounded border border-success/40 p-1 text-success"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              title="Rechazar criterio"
+                              onClick={() => actOn(c.id, "rechazar")}
+                              className="rounded border border-danger/40 p-1 text-danger"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        {c.status === "activo" && (
+                          <button
+                            title="Crear nueva version"
+                            onClick={() => actOn(c.id, "nueva_version")}
+                            className="rounded border border-border px-2 py-0.5 text-xs"
+                          >
+                            Nueva version
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
