@@ -123,6 +123,8 @@ className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-for
 </select>
 </div>
 
+<GlobalSearchBar onNavigate={(t: string, id: number | null) => { setTab(t); if (id) setUnitId(id); }} />
+
 <div className="flex flex-wrap gap-1 border-b border-border pb-2">
 {TABS.map((t: any) => {
 const Icon = t.icon;
@@ -183,19 +185,113 @@ return (
 );
 }
 
+function GlobalSearchBar({ onNavigate }: any) {
+const [q, setQ] = useState("");
+const [results, setResults] = useState<any[]>([]);
+const [open, setOpen] = useState(false);
+const [searching, setSearching] = useState(false);
+
+useEffect(() => {
+if (!q || q.trim().length < 2) { setResults([]); setOpen(false); return; }
+const handle = setTimeout(() => {
+setSearching(true);
+fetch("/api/linac/search?q=" + encodeURIComponent(q.trim()))
+.then((res) => res.json())
+.then((data) => { if (data.ok) { setResults(data.results || []); setOpen(true); } })
+.finally(() => setSearching(false));
+}, 350);
+return () => clearTimeout(handle);
+}, [q]);
+
+function pick(r: any) {
+setOpen(false);
+setQ("");
+onNavigate && onNavigate(r.tab, r.linacId);
+}
+
+return (
+<div className="relative w-full max-w-md">
+<input
+className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
+placeholder="Buscar equipo, documento, procedimiento, instrumento, responsable..."
+value={q}
+onChange={(e) => setQ(e.target.value)}
+onFocus={() => { if (results.length > 0) setOpen(true); }}
+onBlur={() => setTimeout(() => setOpen(false), 150)}
+/>
+{open && (
+<div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-surface shadow-lg max-h-80 overflow-y-auto">
+{searching && <p className="p-2 text-xs text-muted-foreground">Buscando...</p>}
+{!searching && results.length === 0 && <p className="p-2 text-xs text-muted-foreground">Sin resultados</p>}
+{results.map((r: any, i: number) => (
+<button
+key={i}
+onMouseDown={() => pick(r)}
+className="flex w-full flex-col items-start gap-0.5 border-b border-border px-2 py-1.5 text-left text-xs last:border-0 hover:bg-background"
+>
+<span className="flex items-center gap-1.5">
+<span className="rounded bg-accent-subtle px-1 py-0.5 text-[10px] font-medium text-foreground">{r.type}</span>
+<span className="font-medium text-foreground">{r.label}</span>
+</span>
+{r.subtitle && <span className="text-muted-foreground">{r.subtitle}</span>}
+</button>
+))}
+</div>
+)}
+</div>
+);
+}
+
 function DashboardTab({ dashboard }: any) {
 if (!dashboard) return <p className="text-sm text-muted-foreground">Cargando dashboard...</p>;
 const k = dashboard.kpis || {};
+const alerts = [
+...(dashboard.qcAlerts || []).map((a: any) => ({ ...a, alertType: "QC" })),
+...(dashboard.radiationAlerts || []).map((a: any) => ({ ...a, alertType: "Radiologica" })),
+...(dashboard.maintenanceAlerts || []).map((a: any) => ({ ...a, alertType: "Mantenimiento" })),
+].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+const alertColors: Record<string, string> = {
+QC: "bg-purple-500/20 text-purple-300",
+Radiologica: "bg-orange-500/20 text-orange-300",
+Mantenimiento: "bg-blue-500/20 text-blue-300",
+};
 return (
 <div className="space-y-4">
 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
 <KpiBox label="Disponibilidad" value={k.availability + "%"} />
 <KpiBox label="Cumplimiento QC" value={k.qcCompliance + "%"} />
-<KpiBox label="Incidentes abiertos" value={k.incidentsOpen} />
-<KpiBox label="Documentos" value={k.documentsTotal} />
+<KpiBox label="MTBF (horas)" value={k.mtbf ?? "-"} />
+<KpiBox label="MTTR (horas)" value={k.mttr ?? "-"} />
 <KpiBox label="Pacientes tratados" value={k.totalPatients} />
 <KpiBox label="Horas de funcionamiento" value={k.totalOperatingHours} />
 </div>
+
+<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+<KpiBox label="Documentos" value={k.documentsTotal} />
+<KpiBox label="Incidentes abiertos" value={k.incidentsOpen} />
+<KpiBox label="Alertas QC" value={k.qcAlertsOpen} />
+<KpiBox label="Alertas Radiologicas" value={k.radiationAlertsOpen} />
+<KpiBox label="Alertas Mantenimiento" value={k.maintenanceAlertsOpen} />
+<KpiBox label="Disponibilidad Mantto." value={k.maintenanceAvailability !== null && k.maintenanceAvailability !== undefined ? k.maintenanceAvailability + "%" : "-"} />
+</div>
+
+{alerts.length > 0 && (
+<div className="rounded-lg border border-danger/40 bg-danger/5 p-3">
+<p className="mb-2 text-xs font-medium text-foreground">Alertas activas ({alerts.length})</p>
+<div className="max-h-56 space-y-1 overflow-y-auto">
+{alerts.slice(0, 30).map((a: any, i: number) => (
+<div key={(a.alertType || "") + "-" + a.id + "-" + i} className="flex items-center justify-between gap-2 rounded border border-border bg-surface px-2 py-1 text-xs">
+<div className="flex flex-wrap items-center gap-2">
+<span className={"rounded px-1.5 py-0.5 text-[10px] font-medium " + (alertColors[a.alertType] || "bg-muted text-muted-foreground")}>{a.alertType}</span>
+<span className={"font-medium " + (VIGENCY_COLORS[a.semaphore as keyof typeof VIGENCY_COLORS] || "text-foreground")}>{a.semaphore}</span>
+<span className="text-foreground">{a.message}</span>
+</div>
+<span className="text-muted-foreground">{a.created_at ? String(a.created_at).slice(0, 10) : "-"}</span>
+</div>
+))}
+</div>
+</div>
+)}
 
 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 <div className="rounded-lg border border-border bg-surface p-3">
@@ -252,8 +348,37 @@ return (
 </BarChart>
 </ResponsiveContainer>
 </div>
+
+<div className="rounded-lg border border-border bg-surface p-3">
+<p className="mb-2 text-xs font-medium text-muted-foreground">Proteccion radiologica por categoria</p>
+<ResponsiveContainer width="100%" height={220}>
+<BarChart data={dashboard.radiationByCategory || []}>
+<CartesianGrid strokeDasharray="3 3" stroke="#333" />
+<XAxis dataKey="category" tick={{ fontSize: 9 }} />
+<YAxis tick={{ fontSize: 10 }} />
+<Tooltip />
+<Bar dataKey="total" fill="#06b6d4" name="Total" />
+<Bar dataKey="ok_count" fill="#22c55e" name="Conforme" />
+</BarChart>
+</ResponsiveContainer>
 </div>
 
+<div className="rounded-lg border border-border bg-surface p-3">
+<p className="mb-2 text-xs font-medium text-muted-foreground">Mantenimiento por tipo</p>
+<ResponsiveContainer width="100%" height={220}>
+<BarChart data={dashboard.maintenanceStats || []}>
+<CartesianGrid strokeDasharray="3 3" stroke="#333" />
+<XAxis dataKey="maintenance_type" tick={{ fontSize: 10 }} />
+<YAxis tick={{ fontSize: 10 }} />
+<Tooltip />
+<Bar dataKey="count" fill="#f59e0b" name="Intervenciones" />
+<Bar dataKey="total_downtime_hours" fill="#ef4444" name="Horas fuera de servicio" />
+</BarChart>
+</ResponsiveContainer>
+</div>
+</div>
+
+<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 <div className="rounded-lg border border-border bg-surface p-3">
 <p className="mb-2 text-xs font-medium text-muted-foreground">Autorizaciones vigentes</p>
 <table className="w-full text-xs">
@@ -274,6 +399,29 @@ return (
 ))}
 </tbody>
 </table>
+</div>
+
+<div className="rounded-lg border border-border bg-surface p-3">
+<p className="mb-2 text-xs font-medium text-muted-foreground">Top riesgos</p>
+<table className="w-full text-xs">
+<thead>
+<tr className="text-left text-muted-foreground">
+<th className="p-1">Riesgo</th>
+<th className="p-1">Nivel</th>
+<th className="p-1">Responsable</th>
+</tr>
+</thead>
+<tbody>
+{(dashboard.topRisks || []).map((r: any, i: number) => (
+<tr key={i} className="border-t border-border">
+<td className="p-1 text-foreground">{r.risk}</td>
+<td className={"p-1 font-medium " + (r.risk_level >= 15 ? "text-danger" : r.risk_level >= 8 ? "text-warning" : "text-success")}>{r.risk_level ?? "-"}</td>
+<td className="p-1 text-foreground">{r.responsible || "-"}</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
 </div>
 </div>
 );
