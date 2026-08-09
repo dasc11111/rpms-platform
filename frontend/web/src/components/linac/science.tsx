@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell } from "lucide-react";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
   { value: 1, label: "1 - Normativa Chile" },
@@ -70,6 +70,13 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [docQuery, setDocQuery] = useState("");
 
   const actor = actorEmail || "Usuario RPMS";
+
+  const [measurementType, setMeasurementType] = useState("");
+  const [trendResult, setTrendResult] = useState<any>(null);
+  const [loadingTrend, setLoadingTrend] = useState(false);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alertStatusFilter, setAlertStatusFilter] = useState("abierta");
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -144,6 +151,48 @@ export function ScienceTab({ unitId, actorEmail }: any) {
       body: JSON.stringify({ action, actor, ...(extra || {}) }),
     });
     loadCriteria();
+  }
+
+  const loadAlerts = useCallback(async () => {
+    setLoadingAlerts(true);
+    try {
+      const params = new URLSearchParams();
+      if (unitId) params.set("linacId", String(unitId));
+      if (alertStatusFilter) params.set("status", alertStatusFilter);
+      const res = await fetch("/api/linac/alerts?" + params.toString());
+      const data = await res.json();
+      setAlerts(data.alerts || []);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  }, [unitId, alertStatusFilter]);
+
+  useEffect(() => { loadAlerts(); }, [loadAlerts]);
+
+  async function runTrend(generate: boolean) {
+    if (!measurementType.trim() || !unitId) return;
+    setLoadingTrend(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("linacId", String(unitId));
+      params.set("measurementType", measurementType.trim());
+      if (generate) params.set("generateAlert", "true");
+      const res = await fetch("/api/linac/trends?" + params.toString());
+      const data = await res.json();
+      setTrendResult(data);
+      if (generate) loadAlerts();
+    } finally {
+      setLoadingTrend(false);
+    }
+  }
+
+  async function alertAction(id: number, action: string) {
+    await fetch("/api/linac/alerts/" + id, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, actor }),
+    });
+    loadAlerts();
   }
 
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
@@ -424,6 +473,177 @@ export function ScienceTab({ unitId, actorEmail }: any) {
           </div>
         )}
       </div>
+    
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <TrendingUp className="h-4 w-4" /> Motor de Tendencias
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className={labelCls}>Tipo de medicion (QC)</label>
+            <input
+              className={inputCls}
+              placeholder="Ej: tasa_dosis_fuga, output_diario..."
+              value={measurementType}
+              onChange={(e: any) => setMeasurementType(e.target.value)}
+            />
+          </div>
+          <button disabled={loadingTrend} onClick={() => runTrend(false)} className="rounded border border-border px-3 py-1.5 text-xs">
+            {loadingTrend ? "Analizando..." : "Analizar"}
+          </button>
+          <button disabled={loadingTrend} onClick={() => runTrend(true)} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+            Analizar y generar alerta si corresponde
+          </button>
+        </div>
+        {trendResult && (
+          <div className="mt-3 space-y-2 text-xs">
+            {trendResult.n === 0 ? (
+              <p className="text-muted-foreground">Sin mediciones registradas para este tipo en este equipo.</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">N</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats ? trendResult.stats.n : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">Media</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats ? trendResult.stats.mean.toFixed(3) : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">Desv. estandar</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats ? trendResult.stats.stdDev.toFixed(3) : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">CV%</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats && trendResult.stats.cv !== null ? trendResult.stats.cv.toFixed(2) : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">Min / Max</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats ? trendResult.stats.min.toFixed(3) + " / " + trendResult.stats.max.toFixed(3) : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">UCL / LCL (2 sigma)</p>
+                    <p className="font-semibold text-foreground">{trendResult.stats ? trendResult.stats.ucl.toFixed(3) + " / " + trendResult.stats.lcl.toFixed(3) : "-"}</p>
+                  </div>
+                  <div className="rounded border border-border p-2">
+                    <p className="text-muted-foreground">Tendencia</p>
+                    <p className="font-semibold text-foreground">{trendResult.trend ? trendResult.trend.direction : "Sin datos suficientes"}</p>
+                  </div>
+                </div>
+                <div className="rounded border border-border p-2">
+                  <p className="mb-1 font-semibold text-foreground">Evaluacion contra criterio activo</p>
+                  {(!trendResult.evaluation || !trendResult.evaluation.evaluated) ? (
+                    <p className="text-muted-foreground">
+                      {trendResult.evaluation && trendResult.evaluation.reason === "CRITERIO PENDIENTE DE PARAMETRIZACION"
+                        ? "CRITERIO PENDIENTE DE PARAMETRIZACION"
+                        : trendResult.evaluation && trendResult.evaluation.reason === "INFORMACION INSUFICIENTE PARA ESTABLECER CRITERIO"
+                        ? "INFORMACION INSUFICIENTE PARA ESTABLECER CRITERIO"
+                        : "Sin evaluacion disponible."}
+                    </p>
+                  ) : (
+                    <p>
+                      Ultimo valor medido: <span className="font-semibold text-foreground">{trendResult.evaluation.measured}</span>{" "}
+                      vs referencia activa <span className="font-semibold text-foreground">{trendResult.evaluation.refValue}</span>. Desviacion{" "}
+                      <span className="font-semibold text-foreground">
+                        {trendResult.evaluation.deviationPct !== null ? trendResult.evaluation.deviationPct.toFixed(2) + "%" : "N/A"}
+                      </span>{" "}
+                      -{" "}
+                      <span
+                        className={
+                          trendResult.evaluation.classification && trendResult.evaluation.classification.color === "red"
+                            ? "text-danger"
+                            : trendResult.evaluation.classification && (trendResult.evaluation.classification.color === "orange" || trendResult.evaluation.classification.color === "yellow")
+                            ? "text-warning"
+                            : trendResult.evaluation.classification && trendResult.evaluation.classification.color === "green"
+                            ? "text-success"
+                            : "text-muted-foreground"
+                        }
+                      >
+                        {trendResult.evaluation.classification ? trendResult.evaluation.classification.label : ""}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <Bell className="h-4 w-4" /> Alertas Cientificas
+          </p>
+          <div className="flex items-center gap-2">
+            <select className={inputCls} value={alertStatusFilter} onChange={(e: any) => setAlertStatusFilter(e.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="abierta">Abierta</option>
+              <option value="en_revision">En revision</option>
+              <option value="cerrada">Cerrada</option>
+            </select>
+            <button onClick={loadAlerts} className="rounded border border-border p-1.5" title="Actualizar">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+        {loadingAlerts ? (
+          <p className="text-xs text-muted-foreground">Cargando alertas...</p>
+        ) : alerts.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Sin alertas para este filtro.</p>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="pb-1">Parametro</th>
+                  <th className="pb-1">Modulo</th>
+                  <th className="pb-1">Medido</th>
+                  <th className="pb-1">Referencia</th>
+                  <th className="pb-1">Desviacion</th>
+                  <th className="pb-1">Nivel</th>
+                  <th className="pb-1">Estado</th>
+                  <th className="pb-1">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alerts.map((a: any) => (
+                  <tr key={a.id} className="border-t border-border">
+                    <td className="py-1.5 font-medium text-foreground">{a.parameter_name}</td>
+                    <td className="py-1.5">{a.module}</td>
+                    <td className="py-1.5">{a.measured_value}</td>
+                    <td className="py-1.5">{a.reference_value}</td>
+                    <td className="py-1.5">{a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"}</td>
+                    <td className="py-1.5">{a.level}</td>
+                    <td className="py-1.5">{a.status}</td>
+                    <td className="py-1.5">
+                      <div className="flex gap-1">
+                        {a.status === "abierta" && (
+                          <button onClick={() => alertAction(a.id, "reconocer")} className="rounded border border-border px-2 py-0.5 text-xs">
+                            Reconocer
+                          </button>
+                        )}
+                        {a.status !== "cerrada" && (
+                          <button onClick={() => alertAction(a.id, "cerrar")} className="rounded border border-success/40 px-2 py-0.5 text-xs text-success">
+                            Cerrar
+                          </button>
+                        )}
+                        {a.status === "cerrada" && (
+                          <button onClick={() => alertAction(a.id, "reabrir")} className="rounded border border-border px-2 py-0.5 text-xs">
+                            Reabrir
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
