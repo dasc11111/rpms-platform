@@ -16,6 +16,7 @@ import { CommissioningTab } from "./commissioning";
 import { BaselineTab } from "./baseline";
 import { BeamDataTab } from "./beamdata";
 import { QcTab } from "./qc";
+import { RadiationTab } from "./radiation";
 
 const TABS = [
 { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -536,77 +537,6 @@ return (
 <td className="p-1 text-foreground">{r.downtime_hours}</td>
 <td className="p-1 text-foreground">{r.interruptions}</td>
 <td className="p-1 text-foreground">{r.treatment_type || "-"}</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-</div>
-);
-}
-
-function RadiationTab({ unitId, actorEmail }: any) {
-const [list, setList] = useState<any[]>([]);
-const [form, setForm] = useState<any>({});
-const [saving, setSaving] = useState(false);
-const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
-const load = useCallback(async () => {
-const res = await fetch("/api/linac/records?type=radiation&linacId=" + unitId);
-const data = await res.json();
-if (data.ok) setList(data.records);
-}, [unitId]);
-useEffect(() => { load(); }, [load]);
-function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
-async function handleSave() {
-if (!form.measurementDate) return;
-setSaving(true);
-try {
-await fetch("/api/linac/records", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ type: "radiation", linacId: unitId, actorEmail, ...form }),
-});
-setForm({});
-load();
-} finally { setSaving(false); }
-}
-return (
-<div className="space-y-4">
-<div className="rounded-lg border border-border bg-surface p-3">
-<p className="mb-2 text-sm font-semibold text-foreground">Levantamiento radiometrico / interlocks</p>
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-<input type="date" className={inputCls} value={form.measurementDate || ""} onChange={(e) => set("measurementDate", e.target.value)} />
-<input type="time" className={inputCls} value={form.measurementTime || ""} onChange={(e) => set("measurementTime", e.target.value)} />
-<select className={inputCls} value={form.measurementType || ""} onChange={(e) => set("measurementType", e.target.value)}>
-<option value="">Tipo de medicion</option>
-{RADIATION_TYPES.map((t: any) => (<option key={t} value={t}>{t}</option>))}
-</select>
-<input className={inputCls} placeholder="Ubicacion" value={form.location || ""} onChange={(e) => set("location", e.target.value)} />
-<input className={inputCls} placeholder="Valor" value={form.value || ""} onChange={(e) => set("value", e.target.value)} />
-<input className={inputCls} placeholder="Unidad" value={form.unit || ""} onChange={(e) => set("unit", e.target.value)} />
-<input className={inputCls} placeholder="Instrumento utilizado" value={form.instrumentRef || ""} onChange={(e) => set("instrumentRef", e.target.value)} />
-<input className={inputCls} placeholder="Responsable" value={form.responsible || ""} onChange={(e) => set("responsible", e.target.value)} />
-</div>
-<input className={inputCls + " mt-2"} placeholder="Notas" value={form.notes || ""} onChange={(e) => set("notes", e.target.value)} />
-<button onClick={handleSave} disabled={saving} className="mt-2 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-50">
-{saving ? "Guardando..." : "Registrar medicion"}
-</button>
-</div>
-<div className="rounded-lg border border-border bg-surface p-3">
-<table className="w-full text-xs">
-<thead><tr className="text-left text-muted-foreground">
-<th className="p-1">Fecha</th><th className="p-1">Tipo</th><th className="p-1">Ubicacion</th>
-<th className="p-1">Valor</th><th className="p-1">Instrumento</th><th className="p-1">Responsable</th>
-</tr></thead>
-<tbody>
-{list.map((r: any) => (
-<tr key={r.id} className="border-t border-border">
-<td className="p-1 text-foreground">{String(r.measurement_date).slice(0, 10)}</td>
-<td className="p-1 text-foreground">{r.measurement_type || "-"}</td>
-<td className="p-1 text-foreground">{r.location || "-"}</td>
-<td className="p-1 text-foreground">{r.value} {r.unit}</td>
-<td className="p-1 text-foreground">{r.instrument_ref || "-"}</td>
-<td className="p-1 text-foreground">{r.responsible || "-"}</td>
 </tr>
 ))}
 </tbody>
