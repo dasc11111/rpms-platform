@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
@@ -82,6 +82,22 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [docQuery, setDocQuery] = useState("");
 
   const actor = actorEmail || "Usuario RPMS";
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
+
+  const loadDashboard = useCallback(async () => {
+    if (!unitId) return;
+    setLoadingDashboard(true);
+    try {
+      const res = await fetch("/api/linac/intelligence-dashboard?linacId=" + unitId);
+      const data = await res.json();
+      setDashboardData(data);
+    } finally {
+      setLoadingDashboard(false);
+    }
+  }, [unitId]);
+
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
   const [measurementType, setMeasurementType] = useState("");
   const [trendResult, setTrendResult] = useState<any>(null);
@@ -278,6 +294,73 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
 
   return (
     <div className="space-y-6">
+  <div className="rounded-lg border border-border bg-card p-4">
+    <div className="mb-3 flex items-center justify-between">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <LayoutDashboard className="h-4 w-4" /> Inteligencia Tecnica
+      </p>
+      <button onClick={loadDashboard} className="rounded border border-border p-1.5" title="Actualizar">
+        <RefreshCw className="h-3.5 w-3.5" />
+      </button>
+    </div>
+    {loadingDashboard ? (
+      <p className="text-xs text-muted-foreground">Cargando...</p>
+    ) : !dashboardData ? (
+      <p className="text-xs text-muted-foreground">Sin datos disponibles.</p>
+    ) : (
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Criterios activos</p>
+          <p className="text-lg font-semibold text-success">{dashboardData.criterios.activo}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Criterios pendientes</p>
+          <p className="text-lg font-semibold text-warning">{dashboardData.criterios.propuesto}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Alertas abiertas</p>
+          <p className="text-lg font-semibold text-danger">{dashboardData.alertas.abiertas}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Alertas en revision</p>
+          <p className="text-lg font-semibold text-warning">{dashboardData.alertas.enRevision}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Decisiones (7 dias)</p>
+          <p className="text-lg font-semibold text-foreground">{dashboardData.decisiones.ultimos7dias}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">QC registrados (90 dias)</p>
+          <p className="text-lg font-semibold text-foreground">{dashboardData.qc.ultimos90dias}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Documentos vigentes</p>
+          <p className="text-lg font-semibold text-success">{dashboardData.documentos.vigente || 0}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Proxima revision</p>
+          <p className="text-lg font-semibold text-warning">{dashboardData.documentos.proxima_revision || 0}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Requieren actualizacion</p>
+          <p className="text-lg font-semibold text-danger">{dashboardData.documentos.requiere_revision || 0}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Documentos obsoletos</p>
+          <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.obsoleto || 0}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Historicos</p>
+          <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.historico || 0}</p>
+        </div>
+        <div className="rounded border border-border p-2 text-xs">
+          <p className="text-muted-foreground">Analisis documental pendiente</p>
+          <p className="text-lg font-semibold text-warning">{dashboardData.documentosPendientesAnalisis}</p>
+        </div>
+      </div>
+    )}
+  </div>
+
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Search className="h-4 w-4" /> Buscador Tecnico
