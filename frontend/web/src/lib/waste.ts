@@ -76,6 +76,10 @@ export type WasteLabel = {
   actividad_estimada_residual: number | null;
   unidad_actividad: string;
   waste_type: string | null;
+  waste_type_other: string | null;
+  punto_medicion_key: string | null;
+  actividad_superficial_inicial_bq_cm2: number | null;
+  fecha_medicion_superficial: string | null;
   waste_classification: string | null;
   container: string | null;
   storage_location: string | null;
