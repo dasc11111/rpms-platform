@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
@@ -34,6 +34,17 @@ const STATUS_INFO: Record<string, { label: string; cls: string; dot: string }> =
   historico: { label: "Historico", cls: "text-muted-foreground", dot: "bg-muted-foreground" },
 };
 
+const DECISION_OPTIONS: { value: string; label: string }[] = [
+  { value: "revisar", label: "Revisar" },
+  { value: "investigar", label: "Investigar" },
+  { value: "repetir_medicion", label: "Repetir medicion" },
+  { value: "registrar_mantenimiento", label: "Registrar mantenimiento" },
+  { value: "registrar_correctiva", label: "Registrar accion correctiva" },
+  { value: "justificar", label: "Justificar desviacion" },
+  { value: "escalar_fisico_medico", label: "Escalar a Fisico Medico" },
+  { value: "escalar_opr", label: "Escalar a OPR" },
+  { value: "suspender_operacion", label: "Suspender operacion" },
+];
 const EMPTY_FORM: any = {
   parameterName: "",
   module: "general",
@@ -78,6 +89,11 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertStatusFilter, setAlertStatusFilter] = useState("abierta");
   const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [decisionOpenId, setDecisionOpenId] = useState<number | null>(null);
+  const [decisionsByAlert, setDecisionsByAlert] = useState<Record<number, any[]>>({});
+  const [decisionChoice, setDecisionChoice] = useState("revisar");
+  const [decisionJustification, setDecisionJustification] = useState("");
+  const [savingDecision, setSavingDecision] = useState(false);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -196,7 +212,49 @@ export function ScienceTab({ unitId, actorEmail }: any) {
     loadAlerts();
   }
 
-  const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
+  async function toggleDecisionPanel(a: any) {
+  if (decisionOpenId === a.id) {
+    setDecisionOpenId(null);
+    return;
+  }
+  setDecisionOpenId(a.id);
+  setDecisionChoice("revisar");
+  setDecisionJustification("");
+  const res = await fetch("/api/linac/decisions?alertId=" + a.id);
+  const data = await res.json();
+  setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
+}
+
+async function submitDecision(a: any) {
+  setSavingDecision(true);
+  try {
+    await fetch("/api/linac/decisions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        alertId: a.id,
+        linacId: unitId,
+        sourceModule: a.module,
+        sourceRecordId: a.source_record_id,
+        parameterName: a.parameter_name,
+        measuredValue: a.measured_value,
+        referenceValue: a.reference_value,
+        deviation: a.deviation_pct,
+        criteriaId: a.criteria_id,
+        decision: decisionChoice,
+        justification: decisionJustification,
+        decidedBy: actor,
+      }),
+    });
+    setDecisionJustification("");
+    const res = await fetch("/api/linac/decisions?alertId=" + a.id);
+    const data = await res.json();
+    setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
+  } finally {
+    setSavingDecision(false);
+  }
+}
+const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const labelCls = "text-xs text-muted-foreground";
 
   return (
@@ -610,36 +668,84 @@ export function ScienceTab({ unitId, actorEmail }: any) {
               </thead>
               <tbody>
                 {alerts.map((a: any) => (
-                  <tr key={a.id} className="border-t border-border">
-                    <td className="py-1.5 font-medium text-foreground">{a.parameter_name}</td>
-                    <td className="py-1.5">{a.module}</td>
-                    <td className="py-1.5">{a.measured_value}</td>
-                    <td className="py-1.5">{a.reference_value}</td>
-                    <td className="py-1.5">{a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"}</td>
-                    <td className="py-1.5">{a.level}</td>
-                    <td className="py-1.5">{a.status}</td>
-                    <td className="py-1.5">
-                      <div className="flex gap-1">
-                        {a.status === "abierta" && (
-                          <button onClick={() => alertAction(a.id, "reconocer")} className="rounded border border-border px-2 py-0.5 text-xs">
-                            Reconocer
-                          </button>
-                        )}
-                        {a.status !== "cerrada" && (
-                          <button onClick={() => alertAction(a.id, "cerrar")} className="rounded border border-success/40 px-2 py-0.5 text-xs text-success">
-                            Cerrar
-                          </button>
-                        )}
-                        {a.status === "cerrada" && (
-                          <button onClick={() => alertAction(a.id, "reabrir")} className="rounded border border-border px-2 py-0.5 text-xs">
-                            Reabrir
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+  <Fragment key={a.id}>
+  <tr className="border-t border-border">
+    <td className="py-1.5 font-medium text-foreground">{a.parameter_name}</td>
+    <td className="py-1.5">{a.module}</td>
+    <td className="py-1.5">{a.measured_value}</td>
+    <td className="py-1.5">{a.reference_value}</td>
+    <td className="py-1.5">{a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"}</td>
+    <td className="py-1.5">{a.level}</td>
+    <td className="py-1.5">{a.status}</td>
+    <td className="py-1.5">
+      <div className="flex gap-1">
+        {a.status === "abierta" && (
+          <button onClick={() => alertAction(a.id, "reconocer")} className="rounded border border-border px-2 py-0.5 text-xs">
+            Reconocer
+          </button>
+        )}
+        {a.status !== "cerrada" && (
+          <button onClick={() => alertAction(a.id, "cerrar")} className="rounded border border-success/40 px-2 py-0.5 text-xs text-success">
+            Cerrar
+          </button>
+        )}
+        {a.status === "cerrada" && (
+          <button onClick={() => alertAction(a.id, "reabrir")} className="rounded border border-border px-2 py-0.5 text-xs">
+            Reabrir
+          </button>
+        )}
+        <button onClick={() => toggleDecisionPanel(a)} className="rounded border border-border px-2 py-0.5 text-xs">
+          {decisionOpenId === a.id ? "Ocultar decision" : "Decision"}
+        </button>
+      </div>
+    </td>
+  </tr>
+  {decisionOpenId === a.id && (
+    <tr className="border-t border-border bg-muted/30">
+      <td colSpan={8} className="py-2">
+        <div className="rounded border border-border p-3">
+          <p className="mb-1 text-xs font-semibold text-foreground">SE DETECTO UNA DESVIACION</p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Parametro: {a.parameter_name} / Valor: {a.measured_value} / Referencia: {a.reference_value} / Desviacion:{" "}
+            {a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"} / Fuente: {a.criteria_source || "-"}
+          </p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <label className={labelCls}>Accion</label>
+              <select className={inputCls} value={decisionChoice} onChange={(e: any) => setDecisionChoice(e.target.value)}>
+                {DECISION_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className={labelCls}>Justificacion / observaciones</label>
+              <input className={inputCls} value={decisionJustification} onChange={(e: any) => setDecisionJustification(e.target.value)} />
+            </div>
+            <button disabled={savingDecision} onClick={() => submitDecision(a)} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+              {savingDecision ? "Guardando..." : "Registrar decision"}
+            </button>
+          </div>
+          <div className="mt-2">
+            <p className="mb-1 text-xs font-semibold text-foreground">Historial de decisiones</p>
+            {(decisionsByAlert[a.id] || []).length === 0 ? (
+              <p className="text-xs text-muted-foreground">Sin decisiones registradas para esta alerta.</p>
+            ) : (
+              <ul className="space-y-1 text-xs">
+                {(decisionsByAlert[a.id] || []).map((d: any) => (
+                  <li key={d.id} className="rounded border border-border p-1.5">
+                    <span className="font-medium text-foreground">{d.decision}</span> - {d.justification || "sin observaciones"}{" "}
+                    <span className="text-muted-foreground">({d.decided_by || "-"}, {new Date(d.decided_at).toLocaleString()})</span>
+                  </li>
                 ))}
-              </tbody>
+              </ul>
+            )}
+          </div>
+        </div>
+      </td>
+    </tr>
+  )}
+  </Fragment>
+))}
+</tbody>
             </table>
           </div>
         )}
