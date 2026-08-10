@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { formatWasteLabelNumber, estimateResidualActivity, daysBetween } from "@/lib/waste";
+import {
+  formatWasteLabelNumber,
+  ensureWasteReleaseLimitsTable,
+  ensureWasteLabelDispensaColumns,
+  ensureWasteStorageInitialLocations,
+} from "@/lib/waste";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +57,7 @@ function buildFilters(searchParams: URLSearchParams) {
 }
 
 export async function GET(req: NextRequest) {
+  await ensureWasteLabelDispensaColumns();
   const { searchParams } = new URL(req.url);
   const { where, params } = buildFilters(searchParams);
 
@@ -84,7 +90,18 @@ export async function GET(req: NextRequest) {
 // informacion se reutiliza desde ese registro: no se vuelve a solicitar nada
 // ya ingresado. El numero correlativo (GRR-AAAA-NNNNNN) se reserva de forma
 // atomica y nunca se reutiliza, incluso si el rotulo se elimina despues.
+//
+// Correccion: ya NO se calcula aqui una "actividad estimada residual" en
+// base a la actividad total del paciente (mCi) - esa estimacion no era
+// confiable para un residuo puntual. La actividad superficial (Bq/cm2) y el
+// estado de dispensa se calculan en /api/waste-labels/[id] a partir de la
+// medicion real del punto correspondiente en el Acta, una vez que se elige
+// el Tipo de residuo.
 export async function POST(req: NextRequest) {
+  await ensureWasteLabelDispensaColumns();
+  await ensureWasteReleaseLimitsTable();
+  await ensureWasteStorageInitialLocations();
+
   const body = await req.json();
   const room_release_id = Number(body.room_release_id);
   if (!room_release_id) {
@@ -99,19 +116,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se encontró el Acta de Liberación de Sala indicada" }, { status: 404 });
   }
 
-  const { rows: radioRows } = await sql`
-    SELECT * FROM radionuclides WHERE code = ${release.radionuclide_code}
-  `;
-  const radionuclide = radioRows[0];
-  const halfLifeDays = radionuclide ? Number(radionuclide.half_life_days) : 0;
-
   const today = new Date().toISOString().slice(0, 10);
   const labelYear = new Date().getFullYear();
-
-  const baseActivity = release.actividad_medida_liberacion ?? release.actividad_administrada ?? null;
-  const elapsedDays = daysBetween(release.release_date, today);
-  const actividadEstimada =
-    baseActivity !== null ? estimateResidualActivity(Number(baseActivity), halfLifeDays, elapsedDays) : null;
 
   // Reserva atomica del correlativo del anio en curso (nunca se reutiliza).
   const { rows: seqRows } = await sql`
@@ -131,15 +137,14 @@ export async function POST(req: NextRequest) {
     INSERT INTO radioactive_waste_labels (
       label_number, label_year, correlative, room_release_id, generation_date, service, sala,
       room_number, paciente_nombre, radionuclide_code, actividad_estimada_residual, unidad_actividad,
-      waste_type, waste_classification, container, storage_location, entry_date, responsible,
+      waste_type, waste_type_other, container, storage_location, entry_date, responsible,
       observations, status, created_by
     ) VALUES (
       ${label_number}, ${labelYear}, ${correlative}, ${room_release_id}, ${today}, ${release.service}, ${release.sala},
-      ${release.room_number}, ${release.paciente_nombre}, ${release.radionuclide_code}, ${actividadEstimada}, ${release.unidad_actividad ?? "mCi"},
-      ${body.waste_type ?? null}, ${body.waste_classification ?? null}, ${body.container ?? null}, ${body.storage_location ?? null}, ${today}, ${release.responsable_opr ?? "Oficial de Protección Radiológica"},
+      ${release.room_number}, ${release.paciente_nombre}, ${release.radionuclide_code}, null, ${release.unidad_actividad ?? "mCi"},
+      ${body.waste_type ?? null}, ${body.waste_type_other ?? null}, ${body.container ?? null}, ${body.storage_location ?? null}, ${today}, ${release.responsable_opr ?? "Oficial de Protección Radiológica"},
       ${body.observations ?? null}, 'pendiente', ${body.created_by ?? null}
-    )
-    RETURNING *
+    ) RETURNING *
   `;
   const label = rows[0];
   if (!label) {
