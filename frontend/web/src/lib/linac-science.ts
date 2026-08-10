@@ -227,3 +227,71 @@ export function linearTrend(points: { x: number; y: number }[]): { slope: number
   else if (slope < -0.001) direction = "decreciente";
   return { slope, intercept, direction };
 }
+
+export type ControlPoint = { index: number; value: number; date?: string; id?: number };
+export type AnomalousSequence = {
+  type: string;
+  label: string;
+  startIndex: number;
+  endIndex: number;
+  length: number;
+};
+export type ControlAnalysis = {
+  outOfControlPoints: ControlPoint[];
+  anomalousSequences: AnomalousSequence[];
+};
+
+function findRuns(signs: number[], minLen: number, cb: (sign: number, start: number, end: number, len: number) => void) {
+  let i = 0;
+  while (i < signs.length) {
+    if (signs[i] === 0) { i++; continue; }
+    let j = i;
+    while (j < signs.length && signs[j] === signs[i]) j++;
+    const len = j - i;
+    if (len >= minLen) cb(signs[i]!, i, j - 1, len);
+    i = j;
+  }
+}
+
+// Deteccion de puntos fuera de control estadistico y de rachas anomalas
+// (version simplificada de las reglas de Nelson/Western Electric).
+// Esto es DISTINTO de "FUERA DE TOLERANCIA" (que compara contra el criterio tecnico activo):
+// aqui se evalua el comportamiento estadistico de la serie de mediciones en si misma.
+export function detectControlViolations(values: number[], stats: StatsResult): ControlAnalysis {
+  const outOfControlPoints: ControlPoint[] = [];
+  values.forEach((v, i) => {
+    if (v > stats.ucl || v < stats.lcl) outOfControlPoints.push({ index: i, value: v });
+  });
+
+  const anomalousSequences: AnomalousSequence[] = [];
+  const MIN_SIDE_RUN = 7;
+  const MIN_TREND_RUN = 6;
+
+  const sideSigns = values.map((v) => (v > stats.mean ? 1 : v < stats.mean ? -1 : 0));
+  findRuns(sideSigns, MIN_SIDE_RUN, (sign, start, end, len) => {
+    anomalousSequences.push({
+      type: sign > 0 ? "desplazamiento_superior" : "desplazamiento_inferior",
+      label: `${len} valores consecutivos ${sign > 0 ? "por encima" : "por debajo"} de la media`,
+      startIndex: start,
+      endIndex: end,
+      length: len,
+    });
+  });
+
+  const diffSigns: number[] = [];
+  for (let i = 1; i < values.length; i++) {
+    diffSigns.push(values[i] === values[i - 1] ? 0 : values[i]! > values[i - 1]! ? 1 : -1);
+  }
+  findRuns(diffSigns, MIN_TREND_RUN, (sign, start, end, len) => {
+    anomalousSequences.push({
+      type: sign > 0 ? "tendencia_creciente" : "tendencia_decreciente",
+      label: `${len + 1} valores consecutivos en ${sign > 0 ? "aumento" : "descenso"}`,
+      startIndex: start,
+      endIndex: end + 1,
+      length: len + 1,
+    });
+  });
+
+  return { outOfControlPoints, anomalousSequences };
+}
+
