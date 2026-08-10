@@ -39,7 +39,7 @@ export function ContaminationApp() {
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg font-semibold">Registro de Contaminación</h1>
+          <h1 className="text-lg font-semibold">Contaminación</h1>
           <p className="text-xs text-muted-foreground">
             Monitoreo de contaminación superficial en Medicina Nuclear: registro, cálculo automático, clasificación
             por semáforo y estadísticas.
