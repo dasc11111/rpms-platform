@@ -84,6 +84,8 @@ export async function ensureScienceTables() {
     );
   `;
 
+  await sql`ALTER TABLE linac_deviation_decisions ADD COLUMN IF NOT EXISTS alert_id INTEGER`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS document_relations (
       id SERIAL PRIMARY KEY,
