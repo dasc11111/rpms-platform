@@ -11,7 +11,7 @@ const NAV = [
 { href: "/dosimetry", label: "Dosimetría", icon: Activity },
 { href: "/dosimeters", label: "Dosímetros", icon: Tag },
 { href: "/i131", label: "Administración I-131", icon: Syringe },
-{ href: "/contamination", label: "Reg. Contaminación", icon: Biohazard },
+{ href: "/contamination", label: "Contaminación", icon: Biohazard },
 { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
 { href: "/equipment", label: "Equipos", icon: Radio },
 { href: "/transport", label: "Transporte de Material Radiactivo", icon: Truck },
