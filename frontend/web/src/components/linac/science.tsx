@@ -726,6 +726,31 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
                     </p>
                   )}
                 </div>
+              <div className="rounded border border-border p-2">
+                <p className="mb-1 font-semibold text-foreground">Control Estadistico</p>
+                {!trendResult.controlAnalysis ? (
+                  <p className="text-muted-foreground">Sin datos suficientes para control estadistico.</p>
+                ) : (
+                  <>
+                    <p className={trendResult.controlAnalysis.outOfControlPoints.length > 0 ? "text-danger" : "text-success"}>
+                      {trendResult.controlAnalysis.outOfControlPoints.length > 0
+                        ? trendResult.controlAnalysis.outOfControlPoints.length + " punto(s) fuera de control (fuera de UCL/LCL)"
+                        : "Sin puntos fuera de control estadistico"}
+                    </p>
+                    {trendResult.controlAnalysis.anomalousSequences.length > 0 ? (
+                      <ul className="mt-1 space-y-1">
+                        {trendResult.controlAnalysis.anomalousSequences.map((s: any, idx: number) => (
+                          <li key={idx} className="text-warning">
+                            TENDENCIA ANOMALA: {s.label} ({String(s.startDate).slice(0, 10)} a {String(s.endDate).slice(0, 10)})
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 text-muted-foreground">Sin rachas anomalas detectadas.</p>
+                    )}
+                  </>
+                )}
+              </div>
               </>
             )}
           </div>
