@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import { ensureScienceTables, computeDeviation, classifyDeviation } from "@/lib/linac-science";
+import { CALIBRATION_ALERT_LABELS } from "@/lib/instruments";
 
 let alertsEnsured = false;
 
@@ -116,4 +117,62 @@ export async function evaluateAndMaybeAlert(opts: EvaluateOpts): Promise<any> {
   }
 
   return { evaluated: true, measured, refValue, deviationPct, classification, criteria, alertId };
+}
+
+
+// Mapa de nivel de calibracion (modulo Instrumentos existente) a nivel de alerta
+// cientifica. Seccion 36-37 (Fase 6.9): "falta de calibracion" como disparador
+// de alerta. No se duplica la logica de vigencia: se reutiliza el nivel ya
+// calculado por getCalibrationAlertLevel() en lib/instruments.ts (seccion 51).
+const CALIBRATION_TO_ALERT_LEVEL: Record<string, string> = {
+  vencida: "critica",
+  sin_calibracion: "investigacion",
+  rojo: "atencion",
+  amarillo: "atencion",
+  verde: "normal",
+};
+
+export type CalibrationAlertInput = {
+  linacId?: number | null;
+  module?: string;
+  instrumentId: number;
+  instrumentCode: string;
+  instrumentName: string;
+  calibrationLevel: string;
+  daysRemaining: number | null;
+};
+
+// Genera (o reutiliza si ya existe abierta) una alerta cientifica de "falta de
+// calibracion" para un instrumento consultado desde el Motor de Incertidumbre.
+export async function createCalibrationAlertIfNeeded(input: CalibrationAlertInput): Promise<number | null> {
+  await ensureAlertsTables();
+  const level = CALIBRATION_TO_ALERT_LEVEL[input.calibrationLevel] || "normal";
+  if (level === "normal") return null;
+
+  const moduleName = input.module || "instrumentos";
+  const { rows: existing } = await sql`
+    SELECT id FROM linac_scientific_alerts
+    WHERE module = ${moduleName}
+    AND parameter_name = ${input.instrumentCode}
+    AND status = 'abierta'
+    AND source_record_id = ${input.instrumentId}::integer
+    LIMIT 1;
+  `;
+  if (existing[0]) return existing[0].id;
+
+  const etiqueta = (CALIBRATION_ALERT_LABELS as any)[input.calibrationLevel] || input.calibrationLevel;
+  const dias = input.daysRemaining !== null && input.daysRemaining !== undefined ? " (" + input.daysRemaining + " dias)" : "";
+  const message = "Instrumento \"" + input.instrumentName + "\" (" + input.instrumentCode + "): " + etiqueta + dias + ".";
+
+  const { rows: inserted } = await sql`
+    INSERT INTO linac_scientific_alerts (
+      linac_id, module, parameter_name, measured_value, reference_value,
+      level, message, status, source_record_id
+    ) VALUES (
+      ${input.linacId ?? null}, ${moduleName}, ${input.instrumentCode},
+      ${input.daysRemaining !== null && input.daysRemaining !== undefined ? String(input.daysRemaining) : null}, null,
+      ${level}, ${message}, 'abierta', ${input.instrumentId}
+    ) RETURNING id;
+  `;
+  return inserted[0] ? inserted[0].id : null;
 }
