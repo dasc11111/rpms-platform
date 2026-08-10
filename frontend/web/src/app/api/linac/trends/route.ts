@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureLinacTables } from "@/lib/linac";
-import { computeStats, linearTrend } from "@/lib/linac-science";
+import { computeStats, linearTrend, detectControlViolations } from "@/lib/linac-science";
 import { evaluateAndMaybeAlert } from "@/lib/linac-alerts";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +39,23 @@ export async function GET(request: Request) {
   const stats = computeStats(series.map((p) => p.value));
   const trend = linearTrend(series.map((p) => ({ x: p.idx, y: p.value })));
 
+let controlAnalysis: any = null;
+if (stats) {
+  const raw = detectControlViolations(series.map((p) => p.value), stats);
+  controlAnalysis = {
+    outOfControlPoints: raw.outOfControlPoints.map((p) => ({
+      ...p,
+      date: series[p.index] ? series[p.index]!.date : null,
+      id: series[p.index] ? series[p.index]!.id : null,
+    })),
+    anomalousSequences: raw.anomalousSequences.map((s) => ({
+      ...s,
+      startDate: series[s.startIndex] ? series[s.startIndex]!.date : null,
+      endDate: series[s.endIndex] ? series[s.endIndex]!.date : null,
+    })),
+  };
+}
+
   let evaluation: any = null;
   const latest = series[series.length - 1];
   if (latest) {
@@ -53,5 +70,5 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.json({ series, stats, trend, evaluation, n: series.length });
+  return NextResponse.json({ series, stats, trend, controlAnalysis, evaluation, n: series.length });
 }
