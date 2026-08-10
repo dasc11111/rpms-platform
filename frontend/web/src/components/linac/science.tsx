@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
@@ -94,6 +94,10 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [decisionChoice, setDecisionChoice] = useState("revisar");
   const [decisionJustification, setDecisionJustification] = useState("");
   const [savingDecision, setSavingDecision] = useState(false);
+  const [assistantParam, setAssistantParam] = useState("");
+  const [assistantModule, setAssistantModule] = useState("general");
+  const [assistantResult, setAssistantResult] = useState<any>(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -252,6 +256,21 @@ async function submitDecision(a: any) {
     setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
   } finally {
     setSavingDecision(false);
+  }
+}
+async function askAssistant() {
+  if (!assistantParam.trim() || !unitId) return;
+  setAssistantLoading(true);
+  try {
+    const params = new URLSearchParams();
+    params.set("linacId", String(unitId));
+    params.set("parameterName", assistantParam.trim());
+    params.set("module", assistantModule);
+    const res = await fetch("/api/linac/technical-assistant?" + params.toString());
+    const data = await res.json();
+    setAssistantResult(data);
+  } finally {
+    setAssistantLoading(false);
   }
 }
 const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
@@ -751,7 +770,113 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
         )}
       </div>
 
-      <ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
+      <div className="rounded-lg border border-border bg-card p-4">
+  <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+    <HelpCircle className="h-4 w-4" /> Asistente Tecnico
+  </p>
+  <p className="mb-2 text-xs text-muted-foreground">
+    Responde unicamente con datos ya validados en el sistema (criterio activo, mediciones, baseline, alertas y documentos). Si no existe informacion registrada, lo indicara explicitamente.
+  </p>
+  <div className="flex flex-wrap items-end gap-2">
+    <div>
+      <label className={labelCls}>Parametro</label>
+      <input
+        className={inputCls}
+        placeholder="Ej: Tasa de dosis de fuga en cabezal"
+        value={assistantParam}
+        onChange={(e: any) => setAssistantParam(e.target.value)}
+      />
+    </div>
+    <div>
+      <label className={labelCls}>Modulo</label>
+      <select className={inputCls} value={assistantModule} onChange={(e: any) => setAssistantModule(e.target.value)}>
+        {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+      </select>
+    </div>
+    <button disabled={assistantLoading} onClick={askAssistant} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+      {assistantLoading ? "Consultando..." : "Consultar"}
+    </button>
+  </div>
+  {assistantResult && assistantResult.respuestas && (
+    <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Cual es el criterio utilizado?</p>
+        {typeof assistantResult.respuestas.criterioUtilizado === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.criterioUtilizado}</p>
+        ) : (
+          <p className="text-foreground">
+            {assistantResult.respuestas.criterioUtilizado.valor} {assistantResult.respuestas.criterioUtilizado.unidad} (fuente: {assistantResult.respuestas.criterioUtilizado.fuente || "-"}, estado: {assistantResult.respuestas.criterioUtilizado.estado})
+          </p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Cual es la ultima medicion?</p>
+        {typeof assistantResult.respuestas.ultimaMedicion === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.ultimaMedicion}</p>
+        ) : (
+          <p className="text-foreground">
+            {assistantResult.respuestas.ultimaMedicion.valor} {assistantResult.respuestas.ultimaMedicion.unidad} el {String(assistantResult.respuestas.ultimaMedicion.fecha).slice(0, 10)} (resp: {assistantResult.respuestas.ultimaMedicion.responsable || "-"})
+          </p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Cual es la baseline?</p>
+        {typeof assistantResult.respuestas.baseline === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.baseline}</p>
+        ) : (
+          <p className="text-foreground">
+            Version {assistantResult.respuestas.baseline.version} - valor referencia {assistantResult.respuestas.baseline.valorReferencia ?? "-"} (aprobada: {String(assistantResult.respuestas.baseline.aprobadaEl).slice(0, 10)})
+          </p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Cuando comenzo la desviacion?</p>
+        {typeof assistantResult.respuestas.inicioDesviacion === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.inicioDesviacion}</p>
+        ) : (
+          <p className="text-foreground">
+            {String(assistantResult.respuestas.inicioDesviacion.fecha).slice(0, 10)} - nivel {assistantResult.respuestas.inicioDesviacion.nivel} ({assistantResult.respuestas.inicioDesviacion.estado})
+          </p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Que instrumento se utilizo?</p>
+        {typeof assistantResult.respuestas.instrumentoUtilizado === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
+        ) : (
+          <p className="text-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs">
+        <p className="mb-1 font-semibold text-foreground">Cual es la referencia?</p>
+        {typeof assistantResult.respuestas.referencia === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.referencia}</p>
+        ) : (
+          <p className="text-foreground">
+            {assistantResult.respuestas.referencia.valor} {assistantResult.respuestas.referencia.unidad} - {assistantResult.respuestas.referencia.fuente || "-"} (nivel {assistantResult.respuestas.referencia.nivelFuente ?? "-"})
+          </p>
+        )}
+      </div>
+      <div className="rounded border border-border p-2 text-xs md:col-span-2">
+        <p className="mb-1 font-semibold text-foreground">Que documento respalda este criterio?</p>
+        {typeof assistantResult.respuestas.documentoQueRespalda === "string" ? (
+          <p className="text-muted-foreground">{assistantResult.respuestas.documentoQueRespalda}</p>
+        ) : (
+          <p className="text-foreground">
+            {assistantResult.respuestas.documentoQueRespalda.nombre} (v{assistantResult.respuestas.documentoQueRespalda.version}){" "}
+            {assistantResult.respuestas.documentoQueRespalda.url && (
+              <a href={assistantResult.respuestas.documentoQueRespalda.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">
+                <ExternalLink className="h-3 w-3" /> Ver fuente
+              </a>
+            )}
+          </p>
+        )}
+      </div>
+    </div>
+  )}
+</div>
+
+<ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
 
     </div>
   );
