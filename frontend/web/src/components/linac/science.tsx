@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard, Gauge } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
@@ -114,6 +114,9 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [assistantModule, setAssistantModule] = useState("general");
   const [assistantResult, setAssistantResult] = useState<any>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
+const [instrumentQuery, setInstrumentQuery] = useState("");
+const [instrumentResult, setInstrumentResult] = useState<any>(null);
+const [instrumentLoading, setInstrumentLoading] = useState(false);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -288,6 +291,17 @@ async function askAssistant() {
   } finally {
     setAssistantLoading(false);
   }
+}
+async function validateInstrumentQuery() {
+if (!instrumentQuery.trim()) return;
+setInstrumentLoading(true);
+try {
+const res = await fetch("/api/linac/instrument-validation?q=" + encodeURIComponent(instrumentQuery.trim()));
+const data = await res.json();
+setInstrumentResult(data);
+} finally {
+setInstrumentLoading(false);
+}
 }
 const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const labelCls = "text-xs text-muted-foreground";
@@ -982,6 +996,82 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
       </div>
     </div>
   )}
+</div>
+
+<div className="rounded-lg border border-border bg-card p-4">
+<p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+<Gauge className="h-4 w-4" /> Motor de Incertidumbre / Validacion de Instrumento
+</p>
+<p className="mb-2 text-xs text-muted-foreground">
+Verifica si el instrumento existe en el modulo de Instrumentos y si su calibracion esta vigente. Si no hay informacion suficiente, se indicara explicitamente (nunca se estima un valor).
+</p>
+<div className="flex flex-wrap items-end gap-2">
+<div className="flex-1">
+<label className={labelCls}>Codigo, nombre o numero de serie del instrumento</label>
+<input
+className={inputCls}
+placeholder="Ej: CI-001, camara de ionizacion, numero de serie..."
+value={instrumentQuery}
+onChange={(e: any) => setInstrumentQuery(e.target.value)}
+/>
+</div>
+<button disabled={instrumentLoading} onClick={validateInstrumentQuery} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+{instrumentLoading ? "Validando..." : "Validar"}
+</button>
+</div>
+{instrumentResult && (
+<div className="mt-3 text-xs">
+{!instrumentResult.found ? (
+<p className="text-muted-foreground">{instrumentResult.message}</p>
+) : (
+<div className="space-y-2">
+<div className="rounded border border-border p-2">
+<p className="font-semibold text-foreground">
+{instrumentResult.instrumento.name} ({instrumentResult.instrumento.code})
+</p>
+<p className="text-muted-foreground">
+{instrumentResult.instrumento.brand || "-"} {instrumentResult.instrumento.model || ""} - N/S: {instrumentResult.instrumento.serialNumber || "-"} - Estado: {instrumentResult.instrumento.status}
+</p>
+</div>
+<div className="rounded border border-border p-2">
+<p className="mb-1 font-semibold text-foreground">Estado de calibracion</p>
+<p
+className={
+instrumentResult.estadoCalibracion.nivel === "verde"
+? "text-success"
+: instrumentResult.estadoCalibracion.nivel === "amarillo"
+? "text-warning"
+: instrumentResult.estadoCalibracion.nivel === "rojo" || instrumentResult.estadoCalibracion.nivel === "vencida"
+? "text-danger"
+: "text-muted-foreground"
+}
+>
+{instrumentResult.estadoCalibracion.etiqueta}
+{instrumentResult.estadoCalibracion.diasRestantes !== null ? " (" + instrumentResult.estadoCalibracion.diasRestantes + " dias)" : ""}
+</p>
+</div>
+<div className="rounded border border-border p-2">
+<p className="mb-1 font-semibold text-foreground">Datos de calibracion</p>
+{typeof instrumentResult.calibracion === "string" ? (
+<p className="text-muted-foreground">{instrumentResult.calibracion}</p>
+) : (
+<p className="text-foreground">
+Fecha: {String(instrumentResult.calibracion.fecha).slice(0, 10)} / Vencimiento:{" "}
+{instrumentResult.calibracion.vencimiento ? String(instrumentResult.calibracion.vencimiento).slice(0, 10) : "-"} / Certificado:{" "}
+{instrumentResult.calibracion.certificado || "-"} / Empresa: {instrumentResult.calibracion.empresa || "-"} / Factor:{" "}
+{instrumentResult.calibracion.factor ?? "-"} {instrumentResult.calibracion.unidades || ""} / Metodo:{" "}
+{instrumentResult.calibracion.metodo || "-"} / Patron utilizado: {instrumentResult.calibracion.patronUtilizado || "-"}
+</p>
+)}
+</div>
+<div className="rounded border border-border p-2">
+<p className="mb-1 font-semibold text-foreground">Trazabilidad</p>
+<p className="text-muted-foreground">{instrumentResult.trazabilidad}</p>
+</div>
+</div>
+)}
+</div>
+)}
 </div>
 
 <ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
