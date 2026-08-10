@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   const sourceModule = searchParams.get("module") || "";
   const sourceRecordId = Number(searchParams.get("recordId") || 0);
   const linacId = Number(searchParams.get("linacId") || 0);
+  const alertId = Number(searchParams.get("alertId") || 0);
 
   const params: unknown[] = [];
   const clauses: string[] = [];
@@ -24,6 +25,10 @@ export async function GET(request: Request) {
   if (linacId) {
     params.push(linacId);
     clauses.push(`linac_id = $${params.length}`);
+  }
+  if (alertId) {
+    params.push(alertId);
+    clauses.push(`alert_id = $${params.length}`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
@@ -46,16 +51,17 @@ export async function POST(request: Request) {
   const linacId = body.linacId ? Number(body.linacId) : null;
   const sourceRecordId = body.sourceRecordId ? Number(body.sourceRecordId) : null;
   const criteriaId = body.criteriaId ? Number(body.criteriaId) : null;
+  const alertId = body.alertId ? Number(body.alertId) : null;
 
   const { rows } = await sql`
     INSERT INTO linac_deviation_decisions (
       linac_id, source_module, source_record_id, parameter_name, measured_value,
-      reference_value, baseline_value, deviation, criteria_id, decision, justification, decided_by
+      reference_value, baseline_value, deviation, criteria_id, decision, justification, decided_by, alert_id
     ) VALUES (
       ${linacId}, ${sourceModule}, ${sourceRecordId}, ${body.parameterName || null},
       ${body.measuredValue || null}, ${body.referenceValue || null}, ${body.baselineValue || null},
       ${body.deviation || null}, ${criteriaId}, ${decision}, ${body.justification || null},
-      ${body.decidedBy || "Usuario RPMS"}
+      ${body.decidedBy || "Usuario RPMS"}, ${alertId}
     )
     RETURNING *
   `;
