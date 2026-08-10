@@ -190,7 +190,7 @@ function LocationsPanel({ version }: { version: number }) {
   const [saving, setSaving] = useState(false);
 
   function load() {
-    fetch("/api/waste-storage/locations")
+    fetch("/api/waste-storage/locations?all=1")
       .then((r) => (r.ok ? r.json() : { rows: [] }))
       .then((d) => setLocations(d.rows ?? []));
   }
