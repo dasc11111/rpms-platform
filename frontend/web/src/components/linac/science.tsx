@@ -313,9 +313,13 @@ async function validateInstrumentQuery() {
 if (!instrumentQuery.trim()) return;
 setInstrumentLoading(true);
 try {
-const res = await fetch("/api/linac/instrument-validation?q=" + encodeURIComponent(instrumentQuery.trim()));
+const ivParams = new URLSearchParams();
+ivParams.set("q", instrumentQuery.trim());
+if (unitId) ivParams.set("linacId", String(unitId));
+const res = await fetch("/api/linac/instrument-validation?" + ivParams.toString());
 const data = await res.json();
 setInstrumentResult(data);
+if (data.alertId) loadAlerts();
 } finally {
 setInstrumentLoading(false);
 }
@@ -1066,6 +1070,9 @@ instrumentResult.estadoCalibracion.nivel === "verde"
 {instrumentResult.estadoCalibracion.etiqueta}
 {instrumentResult.estadoCalibracion.diasRestantes !== null ? " (" + instrumentResult.estadoCalibracion.diasRestantes + " dias)" : ""}
 </p>
+{instrumentResult.alertId && (
+<p className="mt-1 text-warning">Alerta cientifica generada (ID {instrumentResult.alertId}) por falta de calibracion vigente.</p>
+)}
 </div>
 <div className="rounded border border-border p-2">
 <p className="mb-1 font-semibold text-foreground">Datos de calibracion</p>
