@@ -176,6 +176,41 @@ export async function POST(req: NextRequest) {
     `;
   }
 
+  // Unificacion con el Registro de Contaminacion (correccion): cada punto
+  // medido en Liberacion de Sala tambien queda visible como registro oficial
+  // en contamination_records (pestana "Registros"), reutilizando los valores
+  // ya calculados (no se recalculan) y evitando un segundo registro paralelo
+  // e invisible. dedupe_key estable evita duplicar si se reintenta la misma
+  // solicitud.
+  const [evalYear, evalMonth, evalDay] = eval_date.split("-").map((n: string) => Number(n));
+  for (const p of allPoints) {
+    const areaLabel = p.area_tipo === "laboratorio" ? "LABORATORIO" : "SALA DE PACIENTES";
+    const dedupeKey = `liberacion_sala|${evaluation.id}|${p.area_tipo}|${p.punto}`;
+    await sql`
+      INSERT INTO contamination_records (
+        monitor_year, monitor_month, monitor_day, monitor_date, area, punto_medicion,
+        radionuclido, instrumento, factor_eficiencia, area_monitoreada_cm2,
+        fondo_cps, conteo_bruto_cps, conteo_neto_cps, actividad_bq_cm2, actividad_bq_m2,
+        tasa_dosis_usv_h, limite_bq_m2_aplicado, pct_limite, clasificacion, semaforo,
+        estado, motivo, responsable, observaciones, dedupe_key
+      ) VALUES (
+        ${evalYear}, ${evalMonth}, ${evalDay}, ${eval_date}, ${areaLabel}, ${p.punto},
+        ${radionuclido}, ${instrumento_utilizado}, 0.15, 15,
+        ${p.cps_fondo}, ${p.cps_medida}, ${p.cps_neto}, ${p.bq_cm2}, ${p.bq_m2},
+        ${p.tasa_dosis_usv_h}, ${limite ? limite.limite_bq_m2 : null}, ${p.pct_limite}, ${p.clasificacion}, ${p.semaforo},
+        ${p.clasificacion === "sobre_limite" ? "ABIERTO" : "CERRADO"}, 'Liberacion de Sala', ${responsable}, ${observaciones_generales}, ${dedupeKey}
+      )
+      ON CONFLICT (dedupe_key) DO UPDATE SET
+        actividad_bq_cm2 = EXCLUDED.actividad_bq_cm2,
+        actividad_bq_m2 = EXCLUDED.actividad_bq_m2,
+        conteo_neto_cps = EXCLUDED.conteo_neto_cps,
+        pct_limite = EXCLUDED.pct_limite,
+        clasificacion = EXCLUDED.clasificacion,
+        semaforo = EXCLUDED.semaforo,
+        updated_at = now()
+    `;
+  }
+
   for (const [field, value] of [
     ["responsable", responsable],
     ["instrumento", instrumento_utilizado],
