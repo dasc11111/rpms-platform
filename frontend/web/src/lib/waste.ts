@@ -9,6 +9,8 @@
 // criterios de liberacion viven en la tabla parametrizable "radionuclides"
 // (ver src/app/api/init/route.ts), nunca como valores fijos en el codigo.
 
+import { sql } from "@/lib/db";
+
 export const WASTE_LABEL_PREFIX = "GRR";
 
 export function formatWasteLabelNumber(year: number, correlative: number): string {
@@ -290,8 +292,8 @@ export const ACTA_PUNTOS_INTERES: ActaPuntoDefinicion[] = [
   { key: "interior_contorno_wc", label: "Interior contorno WC", categoria: "controlada" },
   { key: "bolsa_ropa_cama", label: "Bolsa Ropa de Cama", categoria: "publica_ropa_basura" },
   { key: "bolsas_basura_comun_sala", label: "Bolsas de basura común sala", categoria: "publica_ropa_basura" },
-  { key: "bolsa_basura_bano", label: "Bolsa basura baño", categoria: "controlada" },
-  { key: "almohada_cama", label: "Almohada de cama", categoria: "controlada" },
+  { key: "bolsa_basura_bano", label: "Bolsa basura baño", categoria: "publica_ropa_basura" },
+  { key: "almohada_cama", label: "Almohada de cama", categoria: "publica_ropa_basura" },
 ];
 
 export const ACTA_LIMITE_AREA_CONTROLADA_BQ_CM2 = 30;
@@ -344,3 +346,219 @@ export const ACTA_FIRMA_LICENCIAS = ["AE 1670-118-132 CCHEN", "AE-2369-2025-3826
 export const ACTA_REFERENCIA_NORMATIVA =
   "6 ICRP Publication 57, 1990. Radiological protection of the worker in medicine and dentistry.";
 export const ACTA_FIRMA_IMAGEN_PATH = "/assets/firma-diego-solis.png";
+
+
+// --- Correccion: Dispensa por decaimiento (Bq/cm2) para residuos de Liberacion
+// de Sala Hospitalizado -------------------------------------------------------
+//
+// Diferencia explicita entre actividad total (Bq/mCi, del paciente/Acta) y
+// actividad SUPERFICIAL (Bq/cm2, del residuo puntual). El criterio de
+// "APTO PARA DISPENSA" siempre se evalua en Bq/cm2, nunca comparando
+// directamente una actividad total contra un limite de Bq/cm2.
+//
+// "Tipo de residuo" (dropdown + Otro): mapea cada residuo al punto de medicion
+// del Acta (ACTA_PUNTOS_INTERES) ya registrado, de forma que la actividad
+// superficial inicial se obtiene de una medicion ya realizada y nunca se le
+// pide al usuario que la estime manualmente.
+export const WASTE_TYPE_DISPENSA_OPTIONS: { value: string; label: string }[] = [
+  { value: "ropa_cama", label: "Ropa de cama" },
+  { value: "basura_comun", label: "Basura común" },
+  { value: "basura_bano", label: "Basura de baño" },
+  { value: "otro", label: "Otro" },
+];
+
+export const WASTE_TYPE_TO_ACTA_POINT: Record<string, string> = {
+  ropa_cama: "bolsa_ropa_cama",
+  basura_comun: "bolsas_basura_comun_sala",
+  basura_bano: "bolsa_basura_bano",
+};
+
+export function wasteTypeDisplayLabel(wasteType: string | null | undefined, wasteTypeOther: string | null | undefined): string {
+  if (!wasteType) return "—";
+  if (wasteType === "otro") {
+    return wasteTypeOther && wasteTypeOther.trim() ? wasteTypeOther.trim() : "Otro";
+  }
+  const found = WASTE_TYPE_DISPENSA_OPTIONS.find((o) => o.value === wasteType);
+  return found ? found.label : wasteType;
+}
+
+// Resuelve a que punto ya medido en el Acta (ACTA_PUNTOS_INTERES) corresponde
+// el tipo de residuo seleccionado. Si es "Otro", intenta emparejar por texto
+// (ej: "Almohada" -> "almohada_cama") en vez de pedir una nueva medicion.
+export function resolveActaPointKeyForWasteType(
+  wasteType: string | null | undefined,
+  wasteTypeOther: string | null | undefined
+): string | null {
+  if (!wasteType) return null;
+  if (wasteType in WASTE_TYPE_TO_ACTA_POINT) return WASTE_TYPE_TO_ACTA_POINT[wasteType] ?? null;
+  if (wasteType === "otro" && wasteTypeOther && wasteTypeOther.trim()) {
+    const norm = wasteTypeOther.trim().toLowerCase();
+    const match = ACTA_PUNTOS_INTERES.find(
+      (p) => norm.includes(p.label.toLowerCase()) || p.label.toLowerCase().includes(norm)
+    );
+    return match ? match.key : null;
+  }
+  return null;
+}
+
+// --- Catalogo parametrizable de limites de dispensa por radionuclido -------
+// No fijos en el codigo: viven en la tabla waste_release_limits, editables
+// desde un panel de administracion (mismo patron que contamination_limits).
+export type ReleaseLimit = {
+  id: number;
+  radionuclide_code: string;
+  label: string;
+  half_life_days: number;
+  limit_bq_cm2: number;
+  notes: string | null;
+  active: boolean;
+  sort_order: number;
+};
+
+// Alias: el mismo radionuclido fisico (Tc-99m) puede provenir de un estudio
+// de paciente o de un generador Mo-99/Tc-99m; ambos comparten fisica de
+// decaimiento pero el generador tiene un criterio de dispensa mas estricto.
+export const RELEASE_LIMIT_ALIAS: Record<string, string> = {
+  "TC-99M": "MO99-TC99M",
+};
+
+let wasteReleaseLimitsEnsured = false;
+export async function ensureWasteReleaseLimitsTable(): Promise<void> {
+  if (wasteReleaseLimitsEnsured) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS waste_release_limits (
+      id SERIAL PRIMARY KEY,
+      radionuclide_code TEXT UNIQUE NOT NULL,
+      label TEXT NOT NULL,
+      half_life_days NUMERIC NOT NULL,
+      limit_bq_cm2 NUMERIC NOT NULL,
+      notes TEXT,
+      active BOOLEAN NOT NULL DEFAULT true,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+  const { rows } = await sql`SELECT COUNT(*)::int AS count FROM waste_release_limits`;
+  if ((rows[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO waste_release_limits (radionuclide_code, label, half_life_days, limit_bq_cm2, notes, sort_order) VALUES
+      ('I-131', 'I-131 (residuos solidos: ropa de cama, basura comun, basura de bano)', 8.02, 4, 'Criterio de dispensa final por decaimiento para residuos solidos contaminados con I-131. Valor parametrizable: debe ser validado por el Oficial de Proteccion Radiologica segun normativa vigente.', 1),
+      ('MO99-TC99M', 'Mo-99/Tc-99m (residuos de generador)', 0.2508, 0.4, 'Criterio de dispensa para residuos de generadores de Mo-99/Tc-99m. Semivida corresponde a Tc-99m (6.02 horas). Valor parametrizable: debe ser validado por el Oficial de Proteccion Radiologica segun normativa vigente.', 2)
+      ON CONFLICT (radionuclide_code) DO NOTHING;
+    `;
+  }
+  wasteReleaseLimitsEnsured = true;
+}
+
+export async function getReleaseLimitForRadionuclide(radionuclideCode: string | null | undefined): Promise<ReleaseLimit | null> {
+  if (!radionuclideCode) return null;
+  await ensureWasteReleaseLimitsTable();
+  const code = RELEASE_LIMIT_ALIAS[radionuclideCode] ?? radionuclideCode;
+  const { rows } = await sql`SELECT * FROM waste_release_limits WHERE radionuclide_code = ${code} AND active = true`;
+  return (rows[0] as unknown as ReleaseLimit) ?? null;
+}
+
+let wasteDispensaColumnsEnsured = false;
+export async function ensureWasteLabelDispensaColumns(): Promise<void> {
+  if (wasteDispensaColumnsEnsured) return;
+  await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS waste_type_other TEXT`;
+  await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS punto_medicion_key TEXT`;
+  await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS actividad_superficial_inicial_bq_cm2 NUMERIC`;
+  await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS fecha_medicion_superficial DATE`;
+  wasteDispensaColumnsEnsured = true;
+}
+
+// Deja exactamente las dos ubicaciones de almacenamiento inicialmente
+// solicitadas como opciones activas, SIN eliminar ubicaciones previas (se
+// desactivan, preservando el historial de residuos ya asignados a ellas). El
+// catalogo queda preparado para agregar mas ubicaciones despues sin tocar
+// logica (ver /api/waste-storage/locations).
+let wasteStorageSeedV2Ensured = false;
+export async function ensureWasteStorageInitialLocations(): Promise<void> {
+  if (wasteStorageSeedV2Ensured) return;
+  await sql`
+    INSERT INTO waste_storage_locations (name, description, sort_order, active) VALUES
+    ('Contenedor de basura', 'Contenedor para basura comun y basura de bano contaminada, en decaimiento', 1, true),
+    ('Contenedor de ropa de cama', 'Contenedor para ropa de cama y almohadas contaminadas, en decaimiento', 2, true)
+    ON CONFLICT (name) DO UPDATE SET active = true, sort_order = EXCLUDED.sort_order
+  `;
+  await sql`
+    UPDATE waste_storage_locations SET active = false, updated_at = now()
+    WHERE name IN ('Sala de Decaimiento - Estante A', 'Sala de Decaimiento - Estante B', 'Bodega de Residuos - Contenedor 1', 'Bodega de Residuos - Contenedor 2')
+  `;
+  wasteStorageSeedV2Ensured = true;
+}
+
+export const INSUFFICIENT_DISPENSA_INFO = "INFORMACION INSUFICIENTE PARA CALCULO DE DECAIMIENTO Y DISPENSA.";
+
+export type DispensaResult =
+  | { aplica: false; mensaje: string }
+  | {
+      aplica: true;
+      radionuclideCode: string;
+      halfLifeDays: number;
+      limiteBqCm2: number;
+      actividadInicialBqCm2: number;
+      fechaMedicionInicial: string;
+      elapsedDays: number;
+      actividadResidualBqCm2: number;
+      diasRestantesEstimados: number;
+      fechaEstimadaLiberacion: string | null;
+      estado: "APTO PARA DISPENSA" | "NO APTO PARA DISPENSA";
+    };
+
+// Calcula el estado de dispensa de un residuo por decaimiento radiactivo,
+// usando A(t) = A0 * (1/2)^(t/T1/2) y, cuando corresponde, el tiempo
+// necesario para alcanzar el limite: t = T1/2 * log2(A0/Alimite).
+// Nunca estima A0: siempre proviene de una medicion ya registrada (Bq/cm2).
+export function computeDispensa(params: {
+  radionuclideCode: string | null | undefined;
+  halfLifeDays: number | null | undefined;
+  limiteBqCm2: number | null | undefined;
+  actividadInicialBqCm2: number | null | undefined;
+  fechaMedicionInicial: string | null | undefined;
+  now?: Date;
+}): DispensaResult {
+  const { radionuclideCode, halfLifeDays, limiteBqCm2, actividadInicialBqCm2, fechaMedicionInicial } = params;
+  if (
+    !radionuclideCode ||
+    !halfLifeDays ||
+    !limiteBqCm2 ||
+    actividadInicialBqCm2 === null ||
+    actividadInicialBqCm2 === undefined ||
+    !fechaMedicionInicial
+  ) {
+    return { aplica: false, mensaje: INSUFFICIENT_DISPENSA_INFO };
+  }
+
+  const now = params.now ?? new Date();
+  const today = now.toISOString().slice(0, 10);
+  const elapsedDays = daysBetween(fechaMedicionInicial, today);
+  const actividadResidualBqCm2 = estimateResidualActivity(actividadInicialBqCm2, halfLifeDays, elapsedDays) ?? 0;
+  const estado: "APTO PARA DISPENSA" | "NO APTO PARA DISPENSA" =
+    actividadResidualBqCm2 <= limiteBqCm2 ? "APTO PARA DISPENSA" : "NO APTO PARA DISPENSA";
+
+  let fechaEstimadaLiberacion: string | null = null;
+  let diasRestantesEstimados = 0;
+  if (actividadInicialBqCm2 > limiteBqCm2) {
+    const tTotalDays = halfLifeDays * (Math.log(actividadInicialBqCm2 / limiteBqCm2) / Math.log(2));
+    const fecha = new Date(new Date(fechaMedicionInicial + "T00:00:00Z").getTime() + tTotalDays * 86400000);
+    fechaEstimadaLiberacion = fecha.toISOString().slice(0, 10);
+    diasRestantesEstimados = Math.max(0, Math.round(tTotalDays - elapsedDays));
+  }
+
+  return {
+    aplica: true,
+    radionuclideCode,
+    halfLifeDays,
+    limiteBqCm2,
+    actividadInicialBqCm2,
+    fechaMedicionInicial,
+    elapsedDays: Math.round(elapsedDays),
+    actividadResidualBqCm2,
+    diasRestantesEstimados,
+    fechaEstimadaLiberacion,
+    estado,
+  };
+}
