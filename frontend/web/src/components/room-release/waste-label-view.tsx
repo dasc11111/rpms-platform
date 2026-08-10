@@ -5,16 +5,21 @@ import {
   WasteLabel,
   WasteLabelHistoryEntry,
   RoomReleaseRecord,
+  WasteStorageLocation,
   WASTE_LABEL_STATUS,
   WASTE_LABEL_STATUS_LABELS,
   WasteLabelStatus,
+  WASTE_TYPE_DISPENSA_OPTIONS,
+  wasteTypeDisplayLabel,
   formatActividad,
+  type DispensaResult,
 } from "@/lib/waste";
 
 type ApiResponse = {
   row: WasteLabel;
   history: WasteLabelHistoryEntry[];
   roomRelease: RoomReleaseRecord | null;
+  dispensa: DispensaResult;
 };
 
 type TabKey = "rotulo" | "acta" | "resultados" | "fotografias" | "historial" | "estado";
@@ -37,6 +42,14 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
   const [savingStatus, setSavingStatus] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
+  const [locations, setLocations] = useState<WasteStorageLocation[]>([]);
+  const [editWasteType, setEditWasteType] = useState("");
+  const [editWasteTypeOther, setEditWasteTypeOther] = useState("");
+  const [editStorageLocationId, setEditStorageLocationId] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -48,6 +61,9 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
         setData(null);
       } else {
         setData(json);
+        setEditWasteType(json.row.waste_type ?? "");
+        setEditWasteTypeOther(json.row.waste_type_other ?? "");
+        setEditStorageLocationId(json.row.storage_location_id ? String(json.row.storage_location_id) : "");
       }
     } catch {
       setError("Error de red al cargar el rótulo");
@@ -59,6 +75,13 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    fetch("/api/waste-storage/locations")
+      .then((res) => (res.ok ? res.json() : { rows: [] }))
+      .then((d) => setLocations(d.rows ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!data?.row) return;
@@ -86,6 +109,38 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
     }
     window.print();
     load();
+  }
+
+  async function handleSaveEdit() {
+    setEditError(null);
+    setEditSuccess(null);
+    if (editWasteType === "otro" && !editWasteTypeOther.trim()) {
+      setEditError('Debe especificar el tipo de residuo cuando selecciona "Otro"');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/waste-labels/${labelId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          waste_type: editWasteType || null,
+          waste_type_other: editWasteType === "otro" ? editWasteTypeOther.trim() : null,
+          storage_location_id: editStorageLocationId ? Number(editStorageLocationId) : null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEditError(json.error ?? "No se pudo guardar el rótulo");
+        return;
+      }
+      setEditSuccess("Rótulo actualizado correctamente.");
+      await load();
+    } catch {
+      setEditError("Error de red al guardar el rótulo");
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   async function handleDownloadPdf() {
@@ -132,9 +187,7 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
         ["Sala", row.sala],
         ["N° de habitación", row.room_number ?? "—"],
         ["Paciente", row.paciente_nombre ?? "—"],
-        ["Actividad estimada residual", formatActividad(row.actividad_estimada_residual, row.unidad_actividad)],
-        ["Tipo de residuo", row.waste_type ?? "—"],
-        ["Clasificación", row.waste_classification ?? "—"],
+        ["Tipo de residuo", wasteTypeDisplayLabel(row.waste_type, row.waste_type_other)],
         ["Contenedor", row.container ?? "—"],
         ["Ubicación de almacenamiento", row.storage_location ?? "—"],
         ["Fecha de ingreso", row.entry_date],
@@ -151,6 +204,22 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
         doc.text(String(value), marginX, y);
         y += 5.5;
       }
+
+      const dispensa = data.dispensa;
+      doc.setTextColor(120);
+      doc.text("Estado de dispensa por decaimiento", marginX, y);
+      y += 4;
+      doc.setTextColor(10);
+      if (dispensa.aplica) {
+        doc.text(
+          `${dispensa.estado} (residual ${dispensa.actividadResidualBqCm2.toFixed(2)} Bq/cm2, limite ${dispensa.limiteBqCm2} Bq/cm2)`,
+          marginX,
+          y
+        );
+      } else {
+        doc.text(dispensa.mensaje, marginX, y);
+      }
+      y += 5.5;
 
       if (row.observations) {
         doc.setTextColor(120);
@@ -197,7 +266,7 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
     return <div className="p-8 text-sm text-red-600">{error ?? "Rótulo no encontrado"}</div>;
   }
 
-  const { row, history, roomRelease } = data;
+  const { row, history, roomRelease, dispensa } = data;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -257,57 +326,110 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
 
       <div className="mx-auto max-w-3xl p-6">
         {tab === "rotulo" && (
-          <div className="print-label mx-auto flex flex-col gap-3 rounded-lg border-2 border-gray-800 bg-white p-5 shadow-lg">
-            <div className="flex items-start justify-between border-b border-gray-300 pb-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">RPMS · Medicina Nuclear</p>
-                <h2 className="text-base font-bold text-gray-900">Rótulo de Residuo Radiactivo</h2>
+          <>
+            <div className="print-label mx-auto flex flex-col gap-3 rounded-lg border-2 border-gray-800 bg-white p-5 shadow-lg">
+              <div className="flex items-start justify-between border-b border-gray-300 pb-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">RPMS · Medicina Nuclear</p>
+                  <h2 className="text-base font-bold text-gray-900">Rótulo de Residuo Radiactivo</h2>
+                </div>
+                <RadiationSymbol />
               </div>
-              <RadiationSymbol />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] uppercase text-gray-500">N° de rótulo</p>
-                <p className="text-xl font-bold tracking-wider text-gray-900">{row.label_number}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase text-gray-500">N° de rótulo</p>
+                  <p className="text-xl font-bold tracking-wider text-gray-900">{row.label_number}</p>
+                </div>
+                {qrDataUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={qrDataUrl} alt="Código QR" className="h-20 w-20" />
+                )}
               </div>
-              {qrDataUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qrDataUrl} alt="Código QR" className="h-20 w-20" />
+
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                <Field label="Fecha de generación" value={row.generation_date} />
+                <Field label="Radionúclido" value={row.radionuclide_code} />
+                <Field label="Servicio" value={row.service} />
+                <Field label="Sala" value={row.sala} />
+                <Field label="N° de habitación" value={row.room_number ?? "—"} />
+                <Field label="Paciente" value={row.paciente_nombre ?? "—"} />
+                <Field label="Tipo de residuo" value={wasteTypeDisplayLabel(row.waste_type, row.waste_type_other)} />
+                <Field label="Contenedor" value={row.container ?? "—"} />
+                <Field label="Ubicación de almacenamiento" value={row.storage_location ?? "—"} />
+                <Field label="Fecha de ingreso" value={row.entry_date} />
+                <Field label="Responsable" value={row.responsible} />
+                <Field label="Estado" value={WASTE_LABEL_STATUS_LABELS[row.status]} />
+              </dl>
+
+              {row.observations && (
+                <div className="border-t border-gray-300 pt-2 text-xs">
+                  <p className="font-semibold text-gray-500">Observaciones</p>
+                  <p className="text-gray-800">{row.observations}</p>
+                </div>
               )}
+
+              <p className="mt-auto text-center text-[10px] text-gray-400">
+                Impresiones: {row.print_count} · Escanee el QR para ver el registro completo
+              </p>
             </div>
 
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              <Field label="Fecha de generación" value={row.generation_date} />
-              <Field label="Radionúclido" value={row.radionuclide_code} />
-              <Field label="Servicio" value={row.service} />
-              <Field label="Sala" value={row.sala} />
-              <Field label="N° de habitación" value={row.room_number ?? "—"} />
-              <Field label="Paciente" value={row.paciente_nombre ?? "—"} />
-              <Field
-                label="Actividad estimada residual"
-                value={formatActividad(row.actividad_estimada_residual, row.unidad_actividad)}
-              />
-              <Field label="Tipo de residuo" value={row.waste_type ?? "—"} />
-              <Field label="Clasificación" value={row.waste_classification ?? "—"} />
-              <Field label="Contenedor" value={row.container ?? "—"} />
-              <Field label="Ubicación de almacenamiento" value={row.storage_location ?? "—"} />
-              <Field label="Fecha de ingreso" value={row.entry_date} />
-              <Field label="Responsable" value={row.responsible} />
-              <Field label="Estado" value={WASTE_LABEL_STATUS_LABELS[row.status]} />
-            </dl>
-
-            {row.observations && (
-              <div className="border-t border-gray-300 pt-2 text-xs">
-                <p className="font-semibold text-gray-500">Observaciones</p>
-                <p className="text-gray-800">{row.observations}</p>
+            <div className="no-print mx-auto mt-4 max-w-md rounded-lg border bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900">Editar rótulo</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">Tipo de residuo</label>
+                  <select
+                    value={editWasteType}
+                    onChange={(e) => setEditWasteType(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+                  >
+                    <option value="">Sin especificar</option>
+                    {WASTE_TYPE_DISPENSA_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {editWasteType === "otro" && (
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Especificar otro tipo de residuo</label>
+                    <input
+                      value={editWasteTypeOther}
+                      onChange={(e) => setEditWasteTypeOther(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+                      placeholder="Ej: Almohada"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">Ubicación de almacenamiento</label>
+                  <select
+                    value={editStorageLocationId}
+                    onChange={(e) => setEditStorageLocationId(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+                  >
+                    <option value="">Sin asignar</option>
+                    {locations.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {editError && <p className="text-xs text-red-600">{editError}</p>}
+                {editSuccess && <p className="text-xs text-green-600">{editSuccess}</p>}
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit}
+                  className="w-full rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {savingEdit ? "Guardando..." : "Guardar cambios"}
+                </button>
               </div>
-            )}
-
-            <p className="mt-auto text-center text-[10px] text-gray-400">
-              Impresiones: {row.print_count} · Escanee el QR para ver el registro completo
-            </p>
-          </div>
+            </div>
+          </>
         )}
 
         {tab === "acta" && (
@@ -338,24 +460,56 @@ export default function WasteLabelView({ labelId }: { labelId: string }) {
         )}
 
         {tab === "resultados" && (
-          <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-gray-900">Resultados de la liberación</h3>
-            {!roomRelease ? (
-              <p className="text-sm text-gray-500">No hay resultados disponibles.</p>
-            ) : (
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                <Field
-                  label="Actividad medida al momento de la liberación"
-                  value={formatActividad(roomRelease.actividad_medida_liberacion, roomRelease.unidad_actividad)}
-                />
-                <Field label="Tasa de dosis medida" value={roomRelease.tasa_dosis_medida ?? "—"} />
-                <Field label="Criterio de liberación aplicado" value={roomRelease.criterio_liberacion ?? "—"} />
-                <Field
-                  label="Actividad estimada residual del residuo"
-                  value={formatActividad(row.actividad_estimada_residual, row.unidad_actividad)}
-                />
-              </dl>
-            )}
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900">Resultados de la liberación (Acta)</h3>
+              {!roomRelease ? (
+                <p className="text-sm text-gray-500">No hay resultados disponibles.</p>
+              ) : (
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                  <Field
+                    label="Actividad medida al momento de la liberación"
+                    value={formatActividad(roomRelease.actividad_medida_liberacion, roomRelease.unidad_actividad)}
+                  />
+                  <Field label="Tasa de dosis medida" value={roomRelease.tasa_dosis_medida ?? "—"} />
+                  <Field label="Criterio de liberación aplicado" value={roomRelease.criterio_liberacion ?? "—"} />
+                </dl>
+              )}
+            </div>
+
+            <div className="rounded-lg border bg-white p-5 shadow-sm">
+              <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                Dispensa por decaimiento radiactivo (Bq/cm²)
+              </h3>
+              {!dispensa.aplica ? (
+                <p className="text-sm text-gray-500">{dispensa.mensaje}</p>
+              ) : (
+                <div>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                    <Field label="Actividad superficial inicial" value={`${dispensa.actividadInicialBqCm2.toFixed(2)} Bq/cm²`} />
+                    <Field label="Fecha de medición" value={dispensa.fechaMedicionInicial} />
+                    <Field label="Radionúclido" value={dispensa.radionuclideCode} />
+                    <Field label="Vida media" value={`${dispensa.halfLifeDays} días`} />
+                    <Field label="Límite de liberación" value={`${dispensa.limiteBqCm2} Bq/cm²`} />
+                    <Field label="Días transcurridos" value={String(dispensa.elapsedDays)} />
+                    <Field label="Actividad residual actual" value={`${dispensa.actividadResidualBqCm2.toFixed(2)} Bq/cm²`} />
+                    <Field
+                      label="Fecha estimada de liberación"
+                      value={dispensa.fechaEstimadaLiberacion ?? "Ya alcanzado"}
+                    />
+                  </dl>
+                  <div
+                    className={`mt-3 rounded-md px-3 py-2 text-center text-sm font-semibold ${
+                      dispensa.estado === "APTO PARA DISPENSA"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {dispensa.estado}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
