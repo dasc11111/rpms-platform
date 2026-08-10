@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard, Gauge } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard, Gauge, History } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
@@ -117,6 +117,23 @@ export function ScienceTab({ unitId, actorEmail }: any) {
 const [instrumentQuery, setInstrumentQuery] = useState("");
 const [instrumentResult, setInstrumentResult] = useState<any>(null);
 const [instrumentLoading, setInstrumentLoading] = useState(false);
+const [auditEntries, setAuditEntries] = useState<any[]>([]);
+const [loadingAudit, setLoadingAudit] = useState(false);
+
+const loadAuditTrail = useCallback(async () => {
+setLoadingAudit(true);
+try {
+const params = new URLSearchParams();
+if (unitId) params.set("linacId", String(unitId));
+const res = await fetch("/api/linac/audit-trail?" + params.toString());
+const data = await res.json();
+setAuditEntries(data.entries || []);
+} finally {
+setLoadingAudit(false);
+}
+}, [unitId]);
+
+useEffect(() => { loadAuditTrail(); }, [loadAuditTrail]);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -1075,6 +1092,52 @@ Fecha: {String(instrumentResult.calibracion.fecha).slice(0, 10)} / Vencimiento:{
 </div>
 
 <ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
+
+<div className="rounded-lg border border-border bg-card p-4">
+<div className="mb-3 flex items-center justify-between">
+<p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+<History className="h-4 w-4" /> Historial y Auditoria
+</p>
+<button onClick={loadAuditTrail} className="rounded border border-border p-1.5" title="Actualizar">
+<RefreshCw className="h-3.5 w-3.5" />
+</button>
+</div>
+<p className="mb-2 text-xs text-muted-foreground">
+Registro unificado de quien hizo que, cuando y por que: cambios de criterios tecnicos, decisiones sobre desviaciones y revisiones de nuevas versiones documentales.
+</p>
+{loadingAudit ? (
+<p className="text-xs text-muted-foreground">Cargando historial...</p>
+) : auditEntries.length === 0 ? (
+<p className="text-xs text-muted-foreground">Sin eventos registrados.</p>
+) : (
+<div className="max-h-96 overflow-auto">
+<table className="w-full text-xs">
+<thead>
+<tr className="text-left text-muted-foreground">
+<th className="pb-1">Fecha</th>
+<th className="pb-1">Tipo</th>
+<th className="pb-1">Actor</th>
+<th className="pb-1">Accion</th>
+<th className="pb-1">Detalle</th>
+<th className="pb-1">Motivo</th>
+</tr>
+</thead>
+<tbody>
+{auditEntries.map((e: any) => (
+<tr key={e.id} className="border-t border-border align-top">
+<td className="py-1.5 whitespace-nowrap">{e.fecha ? new Date(e.fecha).toLocaleString() : "-"}</td>
+<td className="py-1.5 capitalize">{e.tipo}</td>
+<td className="py-1.5">{e.actor || "-"}</td>
+<td className="py-1.5">{e.accion || "-"}</td>
+<td className="py-1.5">{e.detalle}</td>
+<td className="py-1.5">{e.motivo || "-"}</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
+)}
+</div>
 
     </div>
   );
