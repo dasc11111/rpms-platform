@@ -280,5 +280,5 @@ export async function POST(req: NextRequest) {
           VALUES (${label.id}, ${label.label_number}, 'created', ${body.created_by ?? null}, ${JSON.stringify(label)})
             `;
 
-  return NextResponse.json({ row: { ...label, dispensa_estado: dispensaEstado }, measurement: measRows[0], proyeccion }, { status: 201 });
+    return NextResponse.json({ row: { ...label, dispensa_estado: dispensaEstado, fecha_estimada_liberacion: proyeccion.aplica ? proyeccion.fechaEstimadaLiberacion : null }, measurement: measRows[0], proyeccion }, { status: 201 });
 }
