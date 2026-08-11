@@ -796,3 +796,22 @@ export async function getHalfLifeDaysForRadionuclide(code: string | null | undef
     const v = rows[0]?.half_life_days;
     return v === null || v === undefined ? null : Number(v);
 }
+
+
+// Convierte una fecha proveniente de una columna DATE de Postgres (que el
+// driver puede entregar como objeto Date o como string) a un string
+// "YYYY-MM-DD" seguro para usar en calculos de decaimiento. Nunca usar
+// String(valor) directamente sobre un objeto Date: su formato por defecto
+// (ej. "Sat Aug 01 2026 00:00:00 GMT+0000...") no es un ISO valido y produce
+// fechas invalidas en los calculos posteriores.
+export function toISODateString(v: unknown): string | null {
+    if (v === null || v === undefined) return null;
+    if (v instanceof Date) {
+          if (Number.isNaN(v.getTime())) return null;
+          return v.toISOString().slice(0, 10);
+    }
+    const s = String(v);
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
