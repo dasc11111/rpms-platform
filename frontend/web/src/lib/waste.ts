@@ -566,3 +566,204 @@ export function computeDispensa(params: {
     estado,
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Revision 10/08/2026 - Criterio universal de dispensa (Bq/cm2 + tasa de
+// dosis), tipos de residuo ampliados, N de lote y proyeccion SIEMPRE desde
+// la ultima medicion real (no desde la actividad inicial de generacion).
+// Ver PROMPT MAESTRO - Sistema de Contaminacion, Liberacion de Sala y
+// Gestion de Desechos Radiactivos.
+// ---------------------------------------------------------------------------
+
+export type WasteMeasurementTipo = "seguimiento" | "verificacion_final" | "dispensa";
+
+export const WASTE_MEASUREMENT_TIPO_LABELS: Record<WasteMeasurementTipo, string> = {
+    seguimiento: "Seguimiento (decaimiento)",
+    verificacion_final: "Verificacion final",
+    dispensa: "Dispensa",
+};
+
+// Criterio universal: se aplica a TODOS los tipos de residuo de este modulo.
+// Bq/cm2 <= 4 Y tasa de dosis < 2.5 uSv/h (estrictamente menor). Ambos
+// parametros son independientes: la tasa de dosis nunca se deriva de la
+// actividad superficial calculada.
+export const CRITERIO_UNIVERSAL_BQ_CM2 = 4;
+export const CRITERIO_UNIVERSAL_TASA_DOSIS_USVH = 2.5;
+
+export function evaluaCriterioUniversal(
+    bqCm2: number | null | undefined,
+    tasaDosisUsvH: number | null | undefined
+  ): { cumpleContaminacion: boolean; cumpleTasaDosis: boolean; apto: boolean } {
+    const cumpleContaminacion = bqCm2 !== null && bqCm2 !== undefined && bqCm2 <= CRITERIO_UNIVERSAL_BQ_CM2;
+    const cumpleTasaDosis =
+          tasaDosisUsvH !== null && tasaDosisUsvH !== undefined && tasaDosisUsvH < CRITERIO_UNIVERSAL_TASA_DOSIS_USVH;
+    return { cumpleContaminacion, cumpleTasaDosis, apto: cumpleContaminacion && cumpleTasaDosis };
+}
+
+// Tipos de residuo ampliados: capacho I-131, generador Mo-99/Tc-99m y
+// cortopunzante Tc-99m se generan de forma independiente (no requieren un
+// Acta de Liberacion de Sala); ropa de cama / basura comun / basura de bano
+// siguen proviniendo del Acta de un paciente hospitalizado.
+export const WASTE_TYPE_OPTIONS_V2: { value: string; label: string; radionuclide_code: string | null }[] = [
+  { value: "capacho_i131", label: "Capacho I-131", radionuclide_code: "I-131" },
+  { value: "generador_mo99_tc99m", label: "Generador Mo-99/Tc-99m", radionuclide_code: "MO99-TC99M" },
+  { value: "cortopunzante_tc99m", label: "Cortopunzante Tc-99m", radionuclide_code: "TC-99M" },
+  { value: "ropa_cama", label: "Ropa de cama", radionuclide_code: null },
+  { value: "basura_comun", label: "Basura comun", radionuclide_code: null },
+  { value: "basura_bano", label: "Basura de bano", radionuclide_code: null },
+  { value: "otro", label: "Otro", radionuclide_code: null },
+  ];
+
+export function isStandaloneWasteType(wasteType: string | null | undefined): boolean {
+    return wasteType === "capacho_i131" || wasteType === "generador_mo99_tc99m" || wasteType === "cortopunzante_tc99m";
+}
+
+export function formatWasteLotNumber(radionuclideCode: string | null | undefined, date: Date = new Date()): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    const codeShort = (radionuclideCode || "RN").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    return `L-${codeShort}-${y}-${m}${d}`;
+}
+
+let wasteMeasurementsTableEnsured = false;
+export async function ensureWasteMeasurementsTable(): Promise<void> {
+    if (wasteMeasurementsTableEnsured) return;
+    await sql`
+        CREATE TABLE IF NOT EXISTS waste_measurements (
+              id SERIAL PRIMARY KEY,
+                    label_id INTEGER NOT NULL REFERENCES radioactive_waste_labels(id) ON DELETE CASCADE,
+                          tipo TEXT NOT NULL DEFAULT 'seguimiento',
+                                fecha DATE NOT NULL,
+                                      hora TIME,
+                                            cps NUMERIC,
+                                                  cps_fondo NUMERIC,
+                                                        cps_neto NUMERIC,
+                                                              bq_cm2 NUMERIC,
+                                                                    tasa_dosis_usv_h NUMERIC,
+                                                                          instrumento TEXT,
+                                                                                usuario TEXT,
+                                                                                      cumple_contaminacion BOOLEAN,
+                                                                                            cumple_tasa_dosis BOOLEAN,
+                                                                                                  resultado TEXT,
+                                                                                                        observaciones TEXT,
+                                                                                                              created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                                                                                                                  );
+                                                                                                                    `;
+    await sql`CREATE INDEX IF NOT EXISTS waste_measurements_label_id_idx ON waste_measurements(label_id)`;
+    wasteMeasurementsTableEnsured = true;
+}
+
+let wasteLabelDispensaV2ColumnsEnsured = false;
+export async function ensureWasteLabelDispensaV2Columns(): Promise<void> {
+    if (wasteLabelDispensaV2ColumnsEnsured) return;
+    await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS lot_number TEXT`;
+    await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS dispensa_estado TEXT NOT NULL DEFAULT 'en_decaimiento'`;
+    await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS fecha_estimada_liberacion DATE`;
+    await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS fecha_dispensa DATE`;
+    await sql`ALTER TABLE radioactive_waste_labels ADD COLUMN IF NOT EXISTS dispensado_por TEXT`;
+    wasteLabelDispensaV2ColumnsEnsured = true;
+}
+
+export const WASTE_DISPENSA_ESTADO_LABELS: Record<string, string> = {
+    en_decaimiento: "En decaimiento",
+    pendiente_verificacion_final: "Pendiente de verificacion final",
+    no_apto: "No apto - continua en decaimiento",
+    apto_para_dispensa: "Apto para dispensa",
+    dispensado: "Dispensado",
+};
+
+let wasteRadionuclidesV2Ensured = false;
+export async function ensureWasteRadionuclidesV2(): Promise<void> {
+    if (wasteRadionuclidesV2Ensured) return;
+    await sql`
+        INSERT INTO radionuclides (code, name, half_life_days, unit, release_criteria_dose_rate_usvh, active, sort_order, notes)
+            VALUES
+                  ('I-131', 'Yodo-131', 8.02, 'mCi', 2.5, true, 1, 'Vida media fisica. Criterio de dispensa universal Bq/cm2<=4 y usv/h<2.5.'),
+                        ('MO-99', 'Molibdeno-99 (generador)', 2.75, 'mCi', 2.5, true, 2, 'Vida media fisica del Mo-99 (padre). Gobierna el decaimiento de largo plazo de un generador Mo-99/Tc-99m por equilibrio transitorio con el Tc-99m.'),
+                              ('TC-99M', 'Tecnecio-99m', 0.2506, 'mCi', 2.5, true, 3, 'Vida media fisica (6.01 horas).')
+                                  ON CONFLICT (code) DO UPDATE SET
+                                        half_life_days = EXCLUDED.half_life_days,
+                                              release_criteria_dose_rate_usvh = EXCLUDED.release_criteria_dose_rate_usvh,
+                                                    active = true,
+                                                          notes = EXCLUDED.notes
+                                                            `;
+    wasteRadionuclidesV2Ensured = true;
+}
+
+let wasteReleaseLimitsUniversalV2Ensured = false;
+export async function ensureWasteReleaseLimitsUniversalV2(): Promise<void> {
+    if (wasteReleaseLimitsUniversalV2Ensured) return;
+    await ensureWasteReleaseLimitsTable();
+    await sql`ALTER TABLE waste_release_limits ADD COLUMN IF NOT EXISTS tasa_dosis_limite_usvh NUMERIC NOT NULL DEFAULT 2.5`;
+    await sql`
+        UPDATE waste_release_limits SET
+              limit_bq_cm2 = 4,
+                    tasa_dosis_limite_usvh = 2.5,
+                          half_life_days = CASE WHEN radionuclide_code = 'MO99-TC99M' THEN 2.75 ELSE half_life_days END,
+                                notes = CASE WHEN radionuclide_code = 'MO99-TC99M' THEN 'Actualizado 10/08/2026: criterio universal Bq/cm2<=4 y usv/h<2.5. Vida media usada para el decaimiento del generador: Mo-99 (2.75 dias), por equilibrio transitorio con Tc-99m. Valor parametrizable, debe ser validado por el Oficial de Proteccion Radiologica.' ELSE 'Actualizado 10/08/2026: criterio universal Bq/cm2<=4 y usv/h<2.5 aplicado a todos los tipos de residuo del modulo.' END,
+                                      updated_at = now()
+                                        `;
+    wasteReleaseLimitsUniversalV2Ensured = true;
+}
+
+export async function ensureWasteEngineV2(): Promise<void> {
+    await ensureWasteLabelDispensaColumns();
+    await ensureWasteLabelDispensaV2Columns();
+    await ensureWasteReleaseLimitsTable();
+    await ensureWasteReleaseLimitsUniversalV2();
+    await ensureWasteRadionuclidesV2();
+    await ensureWasteMeasurementsTable();
+    await ensureWasteStorageInitialLocations();
+}
+
+// Proyeccion de la fecha estimada de eliminacion: SIEMPRE a partir de la
+// ULTIMA medicion real de actividad superficial (Bq/cm2), nunca desde la
+// actividad inicial de generacion. Si la ultima medicion ya esta en o bajo
+// el limite universal, no hay tiempo adicional de decaimiento pendiente
+// respecto del criterio de contaminacion y el residuo pasa a
+// "pendiente_verificacion_final".
+export function computeProyeccionDesdeUltimaMedicion(params: {
+    ultimaBqCm2: number | null | undefined;
+    fechaUltimaMedicion: string | null | undefined;
+    halfLifeDays: number | null | undefined;
+    limiteBqCm2?: number;
+    now?: Date;
+}): {
+    aplica: boolean;
+    mensaje?: string;
+    fechaEstimadaLiberacion: string | null;
+    diasRestantesEstimados: number;
+    estado: "en_decaimiento" | "pendiente_verificacion_final";
+} {
+    const limite = params.limiteBqCm2 ?? CRITERIO_UNIVERSAL_BQ_CM2;
+    const { ultimaBqCm2, fechaUltimaMedicion, halfLifeDays } = params;
+    if (ultimaBqCm2 === null || ultimaBqCm2 === undefined || !fechaUltimaMedicion || !halfLifeDays) {
+          return {
+                  aplica: false,
+                  mensaje: INSUFFICIENT_DISPENSA_INFO,
+                  fechaEstimadaLiberacion: null,
+                  diasRestantesEstimados: 0,
+                  estado: "en_decaimiento",
+          };
+    }
+    if (ultimaBqCm2 <= limite) {
+          return {
+                  aplica: true,
+                  fechaEstimadaLiberacion: null,
+                  diasRestantesEstimados: 0,
+                  estado: "pendiente_verificacion_final",
+          };
+    }
+    const tTotalDays = halfLifeDays * (Math.log(ultimaBqCm2 / limite) / Math.log(2));
+    const fecha = new Date(new Date(fechaUltimaMedicion + "T00:00:00Z").getTime() + tTotalDays * 86400000);
+    const hoy = params.now ?? new Date();
+    const elapsedDays = daysBetween(fechaUltimaMedicion, hoy.toISOString().slice(0, 10));
+    return {
+          aplica: true,
+          fechaEstimadaLiberacion: fecha.toISOString().slice(0, 10),
+          diasRestantesEstimados: Math.max(0, Math.round(tTotalDays - elapsedDays)),
+          estado: "en_decaimiento",
+    };
+}
