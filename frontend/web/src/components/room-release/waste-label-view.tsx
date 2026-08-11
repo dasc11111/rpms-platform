@@ -840,4 +840,3 @@ function RadiationSymbol() {
     </svg>
     );
 }
-</></div>
