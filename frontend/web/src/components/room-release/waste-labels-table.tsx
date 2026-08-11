@@ -186,4 +186,3 @@ export function WasteLabelsTable({ version, onChanged }: { version: number; onCh
     </div>
     );
 }
-</span>
