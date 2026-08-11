@@ -815,3 +815,49 @@ export function toISODateString(v: unknown): string | null {
     const d = new Date(s);
     return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
+
+// --- Tipos de UI: historial de mediciones y proyeccion de dispensa --------
+// Reflejan la forma exacta de la respuesta de /api/waste-labels/[id] y
+// /api/waste-labels/[id]/measurements (Prompt Maestro: pantallas de
+// creacion standalone, registro de mediciones y confirmacion de dispensa).
+
+export type WasteMeasurement = {
+  id: number;
+  label_id: number;
+  tipo: WasteMeasurementTipo;
+  fecha: string;
+  hora: string | null;
+  cps: number | null;
+  cps_fondo: number | null;
+  cps_neto: number | null;
+  bq_cm2: number | null;
+  tasa_dosis_usv_h: number | null;
+  instrumento: string | null;
+  usuario: string | null;
+  cumple_contaminacion: boolean | null;
+  cumple_tasa_dosis: boolean | null;
+  resultado: string | null;
+  observaciones: string | null;
+  created_at: string;
+};
+
+export type ProyeccionDispensa = {
+  aplica: boolean;
+  mensaje?: string;
+  fechaEstimadaLiberacion: string | null;
+  diasRestantesEstimados: number;
+  estado: "en_decaimiento" | "pendiente_verificacion_final";
+};
+
+export type WasteDispensaEstado =
+  | "en_decaimiento"
+| "pendiente_verificacion_final"
+| "no_apto"
+| "apto_para_dispensa"
+| "dispensado";
+
+// Subconjunto de WASTE_TYPE_OPTIONS_V2 que corresponde a tipos de residuo
+// generables de forma independiente (sin Acta de Liberacion de Sala).
+export const WASTE_STANDALONE_TYPE_OPTIONS = WASTE_TYPE_OPTIONS_V2.filter((o) =>
+  isStandaloneWasteType(o.value)
+                                                                          );
