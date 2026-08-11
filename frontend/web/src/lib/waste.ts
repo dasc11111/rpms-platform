@@ -767,3 +767,32 @@ export function computeProyeccionDesdeUltimaMedicion(params: {
           estado: "en_decaimiento",
     };
 }
+
+// Correccion: mapa robusto (independiente de WASTE_TYPE_OPTIONS_V2) del
+// radionuclido FISICO a registrar en radioactive_waste_labels.radionuclide_code
+// para tipos de residuo generados de forma independiente. Debe existir en la
+// tabla "radionuclides" (restriccion de llave foranea). Para el generador se
+// usa Mo-99 (el radionuclido padre, de vida media mas larga, que gobierna el
+// decaimiento de largo plazo por equilibrio transitorio con el Tc-99m); para
+// el cortopunzante se usa Tc-99m puro.
+export const STANDALONE_WASTE_TYPE_RADIONUCLIDE: Record<string, string> = {
+    capacho_i131: "I-131",
+    generador_mo99_tc99m: "MO-99",
+    cortopunzante_tc99m: "TC-99M",
+};
+
+let wasteRoomReleaseIdNullableEnsured = false;
+export async function ensureWasteRoomReleaseIdNullable(): Promise<void> {
+    if (wasteRoomReleaseIdNullableEnsured) return;
+    await sql`ALTER TABLE radioactive_waste_labels ALTER COLUMN room_release_id DROP NOT NULL`;
+    wasteRoomReleaseIdNullableEnsured = true;
+}
+
+// Vida media fisica del radionuclido: unica fuente de verdad para todos los
+// calculos de decaimiento del modulo (tabla parametrizable "radionuclides").
+export async function getHalfLifeDaysForRadionuclide(code: string | null | undefined): Promise<number | null> {
+    if (!code) return null;
+    const { rows } = await sql`SELECT half_life_days FROM radionuclides WHERE code = ${code}`;
+    const v = rows[0]?.half_life_days;
+    return v === null || v === undefined ? null : Number(v);
+}
