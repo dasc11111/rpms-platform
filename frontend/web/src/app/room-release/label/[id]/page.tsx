@@ -1,10 +1,12 @@
-import WasteLabelView from "@/components/room-release/waste-label-view";
+import { redirect } from "next/navigation";
 
-export default async function WasteLabelPage({
+// Ruta anterior: el modulo de Gestion de Residuos ahora vive en /waste-management.
+// Se mantiene este redirect para no romper enlaces o marcadores existentes.
+export default async function LegacyWasteLabelPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <WasteLabelView labelId={id} />;
+  redirect(`/waste-management/label/${id}`);
 }
