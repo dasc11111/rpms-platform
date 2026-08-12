@@ -93,7 +93,7 @@ export function WasteLabelConfirmModal({
             </div>
             <div className="flex justify-end gap-2">
               <a
-                href={`/room-release/label/${created.id}`}
+                href={`/waste-management/label/${created.id}`}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded-md bg-accent px-3 py-1.5 text-sm text-accent-foreground hover:opacity-90"
