@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, Home, Radiation, Radio, Settings, ShieldAlert, Syringe, Trash2, Truck, UserCog, Users, Wrench } from "lucide-react";
+import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, Home, Radiation, Radio, Settings, ShieldAlert, Syringe, Trash2, Truck, UserCog, Users, Wrench, Recycle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -13,6 +13,7 @@ const NAV = [
 { href: "/i131", label: "Administración I-131", icon: Syringe },
 { href: "/contamination", label: "Contaminación", icon: Biohazard },
 { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
+  { href: "/waste-management", label: "Gestión de Residuos", icon: Recycle },
 { href: "/equipment", label: "Equipos", icon: Radio },
 { href: "/transport", label: "Transporte de Material Radiactivo", icon: Truck },
 { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
