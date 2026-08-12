@@ -146,7 +146,7 @@ export function WasteLabelsTable({ version, onChanged }: { version: number; onCh
       <td className="px-3 py-2">{r.print_count}</td>
       <td className="px-3 py-2">
       <a
-        href={`/room-release/label/${r.id}`}
+        href={`/waste-management/label/${r.id}`}
         target="_blank"
         rel="noreferrer"
         className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
