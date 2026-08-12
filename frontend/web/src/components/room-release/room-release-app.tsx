@@ -80,5 +80,3 @@ return (
   </div>
   );
 }
-
-  </div>
