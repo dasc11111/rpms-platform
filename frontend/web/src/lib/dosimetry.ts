@@ -387,3 +387,73 @@ export async function learnQuarterlyColumnMapping(fieldKey: string, headerText: 
   `;
   return true;
 }
+
+
+// ---------------------------------------------------------------------------
+// Alerta automatica de dosis (>5 mSv). Capa adicional de deteccion que NO
+// reemplaza la clasificacion existente (levelFor/Registro-Investigacion-
+// Intervencion). El umbral es estrictamente mayor a 5 mSv: 5,00 mSv no
+// genera alerta, 5,01 mSv si la genera.
+export function isDoseAlert(dose: number): boolean {
+    return dose > 5;
+}
+
+export type QuarterlyDoseAlertWorker = {
+    worker_rut: string;
+    worker_name: string;
+    dose_body: number;
+};
+
+export type QuarterlyDoseAlertSummary = {
+    year: number;
+    quarter: number;
+    period_label: string;
+    totalEvaluated: number;
+    maxDose: number;
+    workersOverThreshold: QuarterlyDoseAlertWorker[];
+};
+
+export type DoseAlertInputRow = {
+    worker_rut: string;
+    worker_name: string;
+    year: number;
+    quarter: number;
+    period_label: string;
+    dose_body: number;
+};
+
+export function buildQuarterlyDoseAlertSummaries(inputRows: DoseAlertInputRow[]): QuarterlyDoseAlertSummary[] {
+    const byPeriod = new Map<string, DoseAlertInputRow[]>();
+    for (const r of inputRows) {
+          const key = r.period_label || `T${r.quarter}-${r.year}`;
+          const list = byPeriod.get(key) ?? [];
+          list.push(r);
+          byPeriod.set(key, list);
+    }
+
+  const summaries: QuarterlyDoseAlertSummary[] = [];
+    for (const [label, list] of byPeriod.entries()) {
+          const byWorker = new Map<string, DoseAlertInputRow>();
+          for (const r of list) {
+                  const existing = byWorker.get(r.worker_rut);
+                  if (!existing || r.dose_body > existing.dose_body) byWorker.set(r.worker_rut, r);
+          }
+          const workers = Array.from(byWorker.values());
+          const totalEvaluated = workers.length;
+          const maxDose = workers.reduce((m, w) => Math.max(m, w.dose_body), 0);
+          const workersOverThreshold = workers
+            .filter((w) => isDoseAlert(w.dose_body))
+            .sort((a, b) => b.dose_body - a.dose_body)
+            .map((w) => ({ worker_rut: w.worker_rut, worker_name: w.worker_name, dose_body: w.dose_body }));
+          const first = list[0];
+          summaries.push({
+                  year: first.year,
+                  quarter: first.quarter,
+                  period_label: label,
+                  totalEvaluated,
+                  maxDose,
+                  workersOverThreshold,
+          });
+    }
+    return summaries;
+}
