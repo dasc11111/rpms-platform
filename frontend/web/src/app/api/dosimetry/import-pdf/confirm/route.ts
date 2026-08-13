@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { buildQuarterlyDoseAlertSummaries } from "@/lib/dosimetry";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +127,7 @@ let created = 0;
   let updated = 0;
   let duplicated = 0;
   let skipped = 0;
+  const alertInputRows: { worker_rut: string; worker_name: string; year: number; quarter: number; period_label: string; dose_body: number }[] = [];
 
 for (const r of rows) {
   if (!r.worker_rut || !r.year || !r.quarter || r.resolution === "cancelar") {
@@ -138,6 +140,7 @@ for (const r of rows) {
   const doseSkin = toNum(r.hp007) ?? 0;
   const level = levelFor(doseBody);
   const workerName = r.worker_name_system || r.worker_name_report || "";
+  alertInputRows.push({ worker_rut: r.worker_rut, worker_name: workerName, year: r.year, quarter: r.quarter, period_label: periodLabel, dose_body: doseBody });
 
   if (r.resolution === "duplicar") {
     await sql`
@@ -218,13 +221,17 @@ for (const r of rows) {
   }
 }
 
+  const alerts = buildQuarterlyDoseAlertSummaries(alertInputRows);
+
 return NextResponse.json({
   ok: true,
+
   documentId,
   blobUrl: blob.url,
   created,
   updated,
   duplicated,
   skipped,
+  alerts,
 });
 }
