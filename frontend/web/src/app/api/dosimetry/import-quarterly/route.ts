@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { rutMatchKey } from '@/lib/rut';
 import { syncAnnualDoseForWorkers } from '@/lib/dosimetry-sync';
-import { ensureDosimetryTables, toNum, qualCode, levelFor, parsePeriodo } from '@/lib/dosimetry';
+import { ensureDosimetryTables, toNum, qualCode, levelFor, parsePeriodo, buildQuarterlyDoseAlertSummaries } from '@/lib/dosimetry';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,8 +181,19 @@ export async function POST(request: Request) {
  currentYear
  );
 
- return NextResponse.json(
- { ok: true, totalRows: rows.length, matchedGroups: agg.size, inserted, unmatched, unmatchedSamples, synced },
- { headers: corsHeaders() }
- );
+const alerts = buildQuarterlyDoseAlertSummaries(
+     Array.from(agg.values()).map((a) => ({
+            worker_rut: a.worker_rut,
+            worker_name: a.worker_name,
+            year: a.year,
+            quarter: a.quarter,
+            period_label: a.label,
+            dose_body: a.dose_body,
+     }))
+   );
+
+   return NextResponse.json(
+    { ok: true, totalRows: rows.length, matchedGroups: agg.size, inserted, unmatched, unmatchedSamples, synced, alerts },
+    { headers: corsHeaders() }
+      );
 }
