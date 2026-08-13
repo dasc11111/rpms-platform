@@ -2,6 +2,7 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardPlus, X, Loader2, Upload, CheckCircle2, AlertCircle, FileText, ScanLine } from "lucide-react";
+import { DoseAlertBanner, type QuarterlyDoseAlertSummary } from "./dose-alert-banner";
 
 type Worker = { rut: string; name: string; status?: string };
 
@@ -223,6 +224,7 @@ export function DoseReportModal() {
  const [returnMsg, setReturnMsg] = useState("");
  const [returnStatuses, setReturnStatuses] = useState<string[]>(["Usado", "No usado", "Dañado", "Irradiado el dosímetro, no la persona"]);
  const [recentReturns, setRecentReturns] = useState<any[]>([]);
+ const [doseAlerts, setDoseAlerts] = useState<QuarterlyDoseAlertSummary[] | null>(null);
 
  useEffect(() => {
  if (open && workers.length === 0) {
@@ -264,6 +266,7 @@ export function DoseReportModal() {
  setPdfRows([]);
  setPdfUsedOcr(false);
  setPdfHash("");
+  setDoseAlerts(null);
  }
 
  function close() {
@@ -274,6 +277,7 @@ export function DoseReportModal() {
  setCsvState("idle");
  setCsvMsg("");
  setFileName("");
+  setDoseAlerts(null);
  resetPdfTab();
  setReturnForm(emptyReturn);
  setReturnLookup(null);
@@ -290,6 +294,7 @@ export function DoseReportModal() {
  }
  setManualState("loading");
  setManualMsg("");
+  setDoseAlerts(null);
  try {
  const res = await fetch("/api/dosimetry/manual", {
  method: "POST",
@@ -304,6 +309,7 @@ export function DoseReportModal() {
  }
  setManualState("ok");
  setManualMsg("Guardado: " + data.worker_name + " · " + data.period_label + " · Nivel: " + data.level);
+  setDoseAlerts(data.alerts || null);
  router.refresh();
  } catch {
  setManualState("error");
@@ -316,6 +322,7 @@ export function DoseReportModal() {
     setFileName(file.name);
     setCsvState("loading");
     setCsvMsg("Leyendo archivo...");
+  setDoseAlerts(null);
     try {
       const text = await file.text();
       const table = parseCSV(text).filter((r) => r.length > 1 && r.some((c) => c.trim() !== ""));
@@ -427,6 +434,7 @@ export function DoseReportModal() {
           " registros de trabajadores actualizados - " + data.unmatched +
           " filas sin coincidencia (nombres no encontrados en el listado de trabajadores)."
       );
+     setDoseAlerts(data.alerts || null);
       router.refresh();
     } catch (err) {
       setCsvState("error");
@@ -528,6 +536,7 @@ export function DoseReportModal() {
  if (!pdfFile) return;
  setPdfState("saving");
  setPdfMsg("Guardando importacion...");
+  setDoseAlerts(null);
  try {
  const fd = new FormData();
  fd.append("file", pdfFile);
@@ -547,6 +556,7 @@ export function DoseReportModal() {
  "Importacion completada: " + data.created + " nuevo(s) - " + data.updated + " actualizado(s) - " +
  data.duplicated + " duplicado(s) - " + data.skipped + " omitido(s)."
  );
+  setDoseAlerts(data.alerts || null);
  setPdfPreview(null);
  setPdfRows([]);
  router.refresh();
@@ -793,6 +803,7 @@ export function DoseReportModal() {
  {manualMsg}
  </p>
  )}
+  <DoseAlertBanner alerts={doseAlerts || []} />
  <div className="mt-4 flex justify-end gap-2">
  <button type="button" onClick={close} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
  Cerrar
@@ -828,6 +839,7 @@ export function DoseReportModal() {
  <span>{csvMsg}</span>
  </p>
  )}
+  <DoseAlertBanner alerts={doseAlerts || []} />
  <div className="mt-4 flex justify-end gap-2">
  <button type="button" onClick={close} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
  Cerrar
@@ -885,6 +897,7 @@ export function DoseReportModal() {
  <CheckCircle2 className="h-3.5 w-3.5" />
  {pdfMsg}
  </p>
+  <DoseAlertBanner alerts={doseAlerts || []} />
  <div className="mt-3 flex justify-end gap-2">
  <button type="button" onClick={resetPdfTab} className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:border-accent">
  Importar otro documento
