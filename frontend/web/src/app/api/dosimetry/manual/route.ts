@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { syncAnnualDoseForWorker } from '@/lib/dosimetry-sync';
-import { ensureDosimetryTables, toNum, levelFor } from '@/lib/dosimetry';
+import { ensureDosimetryTables, toNum, levelFor, buildQuarterlyDoseAlertSummaries } from '@/lib/dosimetry';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,5 +72,9 @@ export async function POST(request: Request) {
  const currentYear = new Date().getFullYear();
  const synced = year === currentYear ? await syncAnnualDoseForWorker(worker.rut, year) : false;
 
- return NextResponse.json({ ok: true, worker_name: worker.name, period_label, level, synced });
+ const alerts = buildQuarterlyDoseAlertSummaries([
+  { worker_rut: worker.rut, worker_name: worker.name, year, quarter, period_label, dose_body },
+  ]);
+
+return NextResponse.json({ ok: true, worker_name: worker.name, period_label, level, synced, alerts });
 }
