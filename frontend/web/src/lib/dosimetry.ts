@@ -445,7 +445,7 @@ export function buildQuarterlyDoseAlertSummaries(inputRows: DoseAlertInputRow[])
             .filter((w) => isDoseAlert(w.dose_body))
             .sort((a, b) => b.dose_body - a.dose_body)
             .map((w) => ({ worker_rut: w.worker_rut, worker_name: w.worker_name, dose_body: w.dose_body }));
-          const first = list[0];
+          const first = list[0];    if (!first) continue;
           summaries.push({
                   year: first.year,
                   quarter: first.quarter,
