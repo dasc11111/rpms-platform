@@ -139,7 +139,7 @@ export async function POST(request: Request) {
     RETURNING *;
   `;
 
-  const record = rows[0];
+  const record = rows[0]!;
 
   await logLinacAudit("create_linac_maintenance_from_alert", actorEmail, { alertId, linacId: alert.linac_id, parameterName: alert.parameter_name, repetitionCount: count });
   await logMaintenanceAudit("create_linac_maintenance_from_alert", actorEmail, { alertId, recordId: record.id, repetitionCount: count });
