@@ -1,4 +1,5 @@
 import { sql } from "@/lib/db";
+import { ensureAlertsTables } from "@/lib/linac-alerts";
 
 let ensured = false;
 
@@ -21,6 +22,24 @@ await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS document_file_n
 await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS document_blob_url TEXT`;
 await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS document_mime_type TEXT`;
 await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now()`;
+
+// Fase 6.10 (Tarea 43): Integracion con Mantenimiento. Estas columnas permiten
+// que una orden de mantenimiento herede automaticamente el contexto de una
+// desviacion repetitiva detectada por el Motor Cientifico (alerta, parametro,
+// medicion, referencia, desviacion, criterio y su documento de respaldo) sin
+// volver a pedir esos datos al usuario. Nunca se sobrescribe informacion
+// historica: son columnas nuevas, opcionales, agregadas de forma aditiva.
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS source_alert_id INTEGER`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS source_decision_id INTEGER`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS parameter_name TEXT`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS source_module TEXT`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS criteria_id INTEGER`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS reference_value TEXT`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS deviation_pct NUMERIC`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS repetition_count INTEGER`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS history_snapshot JSONB`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS requested_by TEXT`;
+await sql`ALTER TABLE linac_maintenance ADD COLUMN IF NOT EXISTS origin TEXT NOT NULL DEFAULT 'manual'`;
 
 await sql`
 CREATE TABLE IF NOT EXISTS linac_maintenance_alerts (
@@ -139,4 +158,83 @@ VALUES (${actorEmail}, ${action}, 'linac_maintenance', ${JSON.stringify(details 
 } catch (err) {
 console.error("logMaintenanceAudit failed", err);
 }
+}
+
+// ---------------------------------------------------------------------------
+// Fase 6.10 (Tarea 43): INTEGRACION CON MANTENIMIENTO
+// ---------------------------------------------------------------------------
+// Cuenta cuantas veces se ha detectado una alerta cientifica para el mismo
+// equipo + modulo + parametro (independiente del estado de cada alerta) y
+// devuelve el historial completo (mediciones, referencias, desviaciones y
+// fechas) para poder heredarlo sin volver a pedirlo. Esto NO reemplaza el
+// Motor de Tendencias: es una cuenta simple de repeticiones, tal como exige
+// la tarea ("cuando exista una desviacion repetitiva").
+export async function getRepeatedDeviationInfo(linacId: number | null, moduleName: string, parameterName: string) {
+await ensureAlertsTables();
+const { rows } = await sql`
+SELECT id, measured_value, reference_value, deviation_pct, level, status, created_at
+FROM linac_scientific_alerts
+WHERE module = ${moduleName}
+AND lower(parameter_name) = lower(${parameterName})
+AND (${linacId}::int IS NULL OR linac_id = ${linacId}::int)
+ORDER BY created_at ASC
+LIMIT 200
+`;
+return { count: rows.length, history: rows };
+}
+
+// Evita crear ordenes duplicadas si ya existe una generada desde la misma alerta.
+export async function findMaintenanceOrderByAlert(alertId: number) {
+const { rows } = await sql`
+SELECT * FROM linac_maintenance WHERE source_alert_id = ${alertId} ORDER BY id DESC LIMIT 1
+`;
+return rows[0] || null;
+}
+
+// Construye el texto de observaciones heredando automaticamente equipo,
+// parametro, mediciones, baseline/referencia, criterio/fuente, documento y
+// responsable. Nunca inventa valores: solo transcribe lo ya registrado.
+export function buildInheritedObservations(ctx: {
+parameterName: string;
+moduleName: string;
+measuredValue: any;
+referenceValue: any;
+deviationPct: any;
+criteriaSourceName?: string | null;
+documentName?: string | null;
+documentVersion?: string | null;
+page?: string | null;
+section?: string | null;
+repetitionCount: number;
+requestedBy?: string | null;
+alertId: number;
+decisionJustification?: string | null;
+}): string {
+const lines: string[] = [];
+lines.push("ORDEN GENERADA AUTOMATICAMENTE DESDE EL MOTOR CIENTIFICO (desviacion repetitiva detectada).");
+lines.push("Modulo/Equipo: " + ctx.moduleName);
+lines.push("Parametro: " + ctx.parameterName);
+lines.push(
+"Valor medido: " + (ctx.measuredValue ?? "-") + " / Valor de referencia (baseline/criterio): " + (ctx.referenceValue ?? "-")
+);
+lines.push(
+"Desviacion: " +
+(ctx.deviationPct !== null && ctx.deviationPct !== undefined ? Number(ctx.deviationPct).toFixed(2) + "%" : "-")
+);
+lines.push("Criterio / Fuente: " + (ctx.criteriaSourceName || "CRITERIO PENDIENTE DE PARAMETRIZACION"));
+if (ctx.documentName) {
+lines.push(
+"Documento de respaldo: " +
+ctx.documentName +
+(ctx.documentVersion ? " (v" + ctx.documentVersion + ")" : "") +
+(ctx.page ? " - Pag. " + ctx.page : "") +
+(ctx.section ? " - " + ctx.section : "")
+);
+}
+lines.push("Repeticiones detectadas para este parametro: " + ctx.repetitionCount);
+lines.push("Alerta cientifica de origen: #" + ctx.alertId);
+if (ctx.requestedBy) lines.push("Solicitado por: " + ctx.requestedBy);
+if (ctx.decisionJustification) lines.push("Justificacion registrada en la decision: " + ctx.decisionJustification);
+lines.push("Datos heredados automaticamente. No se solicito reingresar informacion ya existente en el sistema.");
+return lines.join("\n");
 }
