@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard, Gauge, History } from "lucide-react";
+import { Search, CheckCircle2, XCircle, FileText, RefreshCw, PlusCircle, ExternalLink, TrendingUp, Bell, HelpCircle, LayoutDashboard, Gauge, History, Wrench } from "lucide-react";
 import { ScienceDocuments } from "@/components/linac/science-documents";
 
 const SOURCE_LEVELS: { value: number; label: string }[] = [
@@ -64,7 +64,6 @@ const EMPTY_FORM: any = {
   tableRef: "",
   fragmentText: "",
 };
-
 export function ScienceTab({ unitId, actorEmail }: any) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -114,26 +113,31 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [assistantModule, setAssistantModule] = useState("general");
   const [assistantResult, setAssistantResult] = useState<any>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
-const [instrumentQuery, setInstrumentQuery] = useState("");
-const [instrumentResult, setInstrumentResult] = useState<any>(null);
-const [instrumentLoading, setInstrumentLoading] = useState(false);
-const [auditEntries, setAuditEntries] = useState<any[]>([]);
-const [loadingAudit, setLoadingAudit] = useState(false);
+  const [instrumentQuery, setInstrumentQuery] = useState("");
+  const [instrumentResult, setInstrumentResult] = useState<any>(null);
+  const [instrumentLoading, setInstrumentLoading] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<any[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+  // Fase 6.10 (Tarea 43): Integracion con Mantenimiento. Guarda, por alerta,
+  // la informacion de repeticion (cuantas veces se detecto el mismo parametro)
+  // y si ya existe una orden de mantenimiento generada desde esa alerta.
+  const [maintenanceInfoByAlert, setMaintenanceInfoByAlert] = useState<Record<number, any>>({});
+  const [creatingOrderId, setCreatingOrderId] = useState<number | null>(null);
 
-const loadAuditTrail = useCallback(async () => {
-setLoadingAudit(true);
-try {
-const params = new URLSearchParams();
-if (unitId) params.set("linacId", String(unitId));
-const res = await fetch("/api/linac/audit-trail?" + params.toString());
-const data = await res.json();
-setAuditEntries(data.entries || []);
-} finally {
-setLoadingAudit(false);
-}
-}, [unitId]);
+  const loadAuditTrail = useCallback(async () => {
+    setLoadingAudit(true);
+    try {
+      const params = new URLSearchParams();
+      if (unitId) params.set("linacId", String(unitId));
+      const res = await fetch("/api/linac/audit-trail?" + params.toString());
+      const data = await res.json();
+      setAuditEntries(data.entries || []);
+    } finally {
+      setLoadingAudit(false);
+    }
+  }, [unitId]);
 
-useEffect(() => { loadAuditTrail(); }, [loadAuditTrail]);
+  useEffect(() => { loadAuditTrail(); }, [loadAuditTrail]);
 
   const loadCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -252,149 +256,177 @@ useEffect(() => { loadAuditTrail(); }, [loadAuditTrail]);
     loadAlerts();
   }
 
-  async function toggleDecisionPanel(a: any) {
-  if (decisionOpenId === a.id) {
-    setDecisionOpenId(null);
-    return;
+  async function loadMaintenanceInfo(alertId: number) {
+    try {
+      const res = await fetch("/api/linac/maintenance/from-alert?alertId=" + alertId);
+      const data = await res.json();
+      setMaintenanceInfoByAlert((prev) => ({ ...prev, [alertId]: data }));
+    } catch {
+      setMaintenanceInfoByAlert((prev) => ({ ...prev, [alertId]: null }));
+    }
   }
-  setDecisionOpenId(a.id);
-  setDecisionChoice("revisar");
-  setDecisionJustification("");
-  const res = await fetch("/api/linac/decisions?alertId=" + a.id);
-  const data = await res.json();
-  setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
-}
 
-async function submitDecision(a: any) {
-  setSavingDecision(true);
-  try {
-    await fetch("/api/linac/decisions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        alertId: a.id,
-        linacId: unitId,
-        sourceModule: a.module,
-        sourceRecordId: a.source_record_id,
-        parameterName: a.parameter_name,
-        measuredValue: a.measured_value,
-        referenceValue: a.reference_value,
-        deviation: a.deviation_pct,
-        criteriaId: a.criteria_id,
-        decision: decisionChoice,
-        justification: decisionJustification,
-        decidedBy: actor,
-      }),
-    });
+  async function createMaintenanceOrder(a: any) {
+    setCreatingOrderId(a.id);
+    try {
+      const res = await fetch("/api/linac/maintenance/from-alert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alertId: a.id, actorEmail: actor, justification: decisionJustification }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await loadMaintenanceInfo(a.id);
+      }
+    } finally {
+      setCreatingOrderId(null);
+    }
+  }
+
+  async function toggleDecisionPanel(a: any) {
+    if (decisionOpenId === a.id) {
+      setDecisionOpenId(null);
+      return;
+    }
+    setDecisionOpenId(a.id);
+    setDecisionChoice("revisar");
     setDecisionJustification("");
     const res = await fetch("/api/linac/decisions?alertId=" + a.id);
     const data = await res.json();
     setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
-  } finally {
-    setSavingDecision(false);
+    loadMaintenanceInfo(a.id);
   }
-}
-async function askAssistant() {
-  if (!assistantParam.trim() || !unitId) return;
-  setAssistantLoading(true);
-  try {
-    const params = new URLSearchParams();
-    params.set("linacId", String(unitId));
-    params.set("parameterName", assistantParam.trim());
-    params.set("module", assistantModule);
-    const res = await fetch("/api/linac/technical-assistant?" + params.toString());
-    const data = await res.json();
-    setAssistantResult(data);
-  } finally {
-    setAssistantLoading(false);
+
+  async function submitDecision(a: any) {
+    setSavingDecision(true);
+    try {
+      await fetch("/api/linac/decisions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          alertId: a.id,
+          linacId: unitId,
+          sourceModule: a.module,
+          sourceRecordId: a.source_record_id,
+          parameterName: a.parameter_name,
+          measuredValue: a.measured_value,
+          referenceValue: a.reference_value,
+          deviation: a.deviation_pct,
+          criteriaId: a.criteria_id,
+          decision: decisionChoice,
+          justification: decisionJustification,
+          decidedBy: actor,
+        }),
+      });
+      setDecisionJustification("");
+      const res = await fetch("/api/linac/decisions?alertId=" + a.id);
+      const data = await res.json();
+      setDecisionsByAlert((prev) => ({ ...prev, [a.id]: data.decisions || [] }));
+    } finally {
+      setSavingDecision(false);
+    }
   }
-}
-async function validateInstrumentQuery() {
-if (!instrumentQuery.trim()) return;
-setInstrumentLoading(true);
-try {
-const ivParams = new URLSearchParams();
-ivParams.set("q", instrumentQuery.trim());
-if (unitId) ivParams.set("linacId", String(unitId));
-const res = await fetch("/api/linac/instrument-validation?" + ivParams.toString());
-const data = await res.json();
-setInstrumentResult(data);
-if (data.alertId) loadAlerts();
-} finally {
-setInstrumentLoading(false);
-}
-}
-const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
+  async function askAssistant() {
+    if (!assistantParam.trim() || !unitId) return;
+    setAssistantLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("linacId", String(unitId));
+      params.set("parameterName", assistantParam.trim());
+      params.set("module", assistantModule);
+      const res = await fetch("/api/linac/technical-assistant?" + params.toString());
+      const data = await res.json();
+      setAssistantResult(data);
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+  async function validateInstrumentQuery() {
+    if (!instrumentQuery.trim()) return;
+    setInstrumentLoading(true);
+    try {
+      const ivParams = new URLSearchParams();
+      ivParams.set("q", instrumentQuery.trim());
+      if (unitId) ivParams.set("linacId", String(unitId));
+      const res = await fetch("/api/linac/instrument-validation?" + ivParams.toString());
+      const data = await res.json();
+      setInstrumentResult(data);
+      if (data.alertId) loadAlerts();
+    } finally {
+      setInstrumentLoading(false);
+    }
+  }
+  const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
   const labelCls = "text-xs text-muted-foreground";
 
   return (
     <div className="space-y-6">
-  <div className="rounded-lg border border-border bg-card p-4">
-    <div className="mb-3 flex items-center justify-between">
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <LayoutDashboard className="h-4 w-4" /> Inteligencia Tecnica
-      </p>
-      <button onClick={loadDashboard} className="rounded border border-border p-1.5" title="Actualizar">
-        <RefreshCw className="h-3.5 w-3.5" />
-      </button>
-    </div>
-    {loadingDashboard ? (
-      <p className="text-xs text-muted-foreground">Cargando...</p>
-    ) : !dashboardData ? (
-      <p className="text-xs text-muted-foreground">Sin datos disponibles.</p>
-    ) : (
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Criterios activos</p>
-          <p className="text-lg font-semibold text-success">{dashboardData.criterios.activo}</p>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <LayoutDashboard className="h-4 w-4" /> Inteligencia Tecnica
+          </p>
+          <button onClick={loadDashboard} className="rounded border border-border p-1.5" title="Actualizar">
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Criterios pendientes</p>
-          <p className="text-lg font-semibold text-warning">{dashboardData.criterios.propuesto}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Alertas abiertas</p>
-          <p className="text-lg font-semibold text-danger">{dashboardData.alertas.abiertas}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Alertas en revision</p>
-          <p className="text-lg font-semibold text-warning">{dashboardData.alertas.enRevision}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Decisiones (7 dias)</p>
-          <p className="text-lg font-semibold text-foreground">{dashboardData.decisiones.ultimos7dias}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">QC registrados (90 dias)</p>
-          <p className="text-lg font-semibold text-foreground">{dashboardData.qc.ultimos90dias}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Documentos vigentes</p>
-          <p className="text-lg font-semibold text-success">{dashboardData.documentos.vigente || 0}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Proxima revision</p>
-          <p className="text-lg font-semibold text-warning">{dashboardData.documentos.proxima_revision || 0}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Requieren actualizacion</p>
-          <p className="text-lg font-semibold text-danger">{dashboardData.documentos.requiere_revision || 0}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Documentos obsoletos</p>
-          <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.obsoleto || 0}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Historicos</p>
-          <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.historico || 0}</p>
-        </div>
-        <div className="rounded border border-border p-2 text-xs">
-          <p className="text-muted-foreground">Analisis documental pendiente</p>
-          <p className="text-lg font-semibold text-warning">{dashboardData.documentosPendientesAnalisis}</p>
-        </div>
+        {loadingDashboard ? (
+          <p className="text-xs text-muted-foreground">Cargando...</p>
+        ) : !dashboardData ? (
+          <p className="text-xs text-muted-foreground">Sin datos disponibles.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-6">
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Criterios activos</p>
+              <p className="text-lg font-semibold text-success">{dashboardData.criterios.activo}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Criterios pendientes</p>
+              <p className="text-lg font-semibold text-warning">{dashboardData.criterios.propuesto}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Alertas abiertas</p>
+              <p className="text-lg font-semibold text-danger">{dashboardData.alertas.abiertas}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Alertas en revision</p>
+              <p className="text-lg font-semibold text-warning">{dashboardData.alertas.enRevision}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Decisiones (7 dias)</p>
+              <p className="text-lg font-semibold text-foreground">{dashboardData.decisiones.ultimos7dias}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">QC registrados (90 dias)</p>
+              <p className="text-lg font-semibold text-foreground">{dashboardData.qc.ultimos90dias}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Documentos vigentes</p>
+              <p className="text-lg font-semibold text-success">{dashboardData.documentos.vigente || 0}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Proxima revision</p>
+              <p className="text-lg font-semibold text-warning">{dashboardData.documentos.proxima_revision || 0}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Requieren actualizacion</p>
+              <p className="text-lg font-semibold text-danger">{dashboardData.documentos.requiere_revision || 0}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Documentos obsoletos</p>
+              <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.obsoleto || 0}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Historicos</p>
+              <p className="text-lg font-semibold text-muted-foreground">{dashboardData.documentos.historico || 0}</p>
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Analisis documental pendiente</p>
+              <p className="text-lg font-semibold text-warning">{dashboardData.documentosPendientesAnalisis}</p>
+            </div>
+          </div>
+        )}
       </div>
-    )}
-  </div>
 
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
@@ -669,7 +701,7 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
           </div>
         )}
       </div>
-    
+
       <div className="rounded-lg border border-border bg-card p-4">
         <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <TrendingUp className="h-4 w-4" /> Motor de Tendencias
@@ -761,31 +793,31 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
                     </p>
                   )}
                 </div>
-              <div className="rounded border border-border p-2">
-                <p className="mb-1 font-semibold text-foreground">Control Estadistico</p>
-                {!trendResult.controlAnalysis ? (
-                  <p className="text-muted-foreground">Sin datos suficientes para control estadistico.</p>
-                ) : (
-                  <>
-                    <p className={trendResult.controlAnalysis.outOfControlPoints.length > 0 ? "text-danger" : "text-success"}>
-                      {trendResult.controlAnalysis.outOfControlPoints.length > 0
-                        ? trendResult.controlAnalysis.outOfControlPoints.length + " punto(s) fuera de control (fuera de UCL/LCL)"
-                        : "Sin puntos fuera de control estadistico"}
-                    </p>
-                    {trendResult.controlAnalysis.anomalousSequences.length > 0 ? (
-                      <ul className="mt-1 space-y-1">
-                        {trendResult.controlAnalysis.anomalousSequences.map((s: any, idx: number) => (
-                          <li key={idx} className="text-warning">
-                            TENDENCIA ANOMALA: {s.label} ({String(s.startDate).slice(0, 10)} a {String(s.endDate).slice(0, 10)})
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-1 text-muted-foreground">Sin rachas anomalas detectadas.</p>
-                    )}
-                  </>
-                )}
-              </div>
+                <div className="rounded border border-border p-2">
+                  <p className="mb-1 font-semibold text-foreground">Control Estadistico</p>
+                  {!trendResult.controlAnalysis ? (
+                    <p className="text-muted-foreground">Sin datos suficientes para control estadistico.</p>
+                  ) : (
+                    <>
+                      <p className={trendResult.controlAnalysis.outOfControlPoints.length > 0 ? "text-danger" : "text-success"}>
+                        {trendResult.controlAnalysis.outOfControlPoints.length > 0
+                          ? trendResult.controlAnalysis.outOfControlPoints.length + " punto(s) fuera de control (fuera de UCL/LCL)"
+                          : "Sin puntos fuera de control estadistico"}
+                      </p>
+                      {trendResult.controlAnalysis.anomalousSequences.length > 0 ? (
+                        <ul className="mt-1 space-y-1">
+                          {trendResult.controlAnalysis.anomalousSequences.map((s: any, idx: number) => (
+                            <li key={idx} className="text-warning">
+                              TENDENCIA ANOMALA: {s.label} ({String(s.startDate).slice(0, 10)} a {String(s.endDate).slice(0, 10)})
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-1 text-muted-foreground">Sin rachas anomalas detectadas.</p>
+                      )}
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -830,322 +862,368 @@ const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 
               </thead>
               <tbody>
                 {alerts.map((a: any) => (
-  <Fragment key={a.id}>
-  <tr className="border-t border-border">
-    <td className="py-1.5 font-medium text-foreground">{a.parameter_name}</td>
-    <td className="py-1.5">{a.module}</td>
-    <td className="py-1.5">{a.measured_value}</td>
-    <td className="py-1.5">{a.reference_value}</td>
-    <td className="py-1.5">{a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"}</td>
-    <td className="py-1.5">{a.level}</td>
-    <td className="py-1.5">{a.status}</td>
-    <td className="py-1.5">
-      <div className="flex gap-1">
-        {a.status === "abierta" && (
-          <button onClick={() => alertAction(a.id, "reconocer")} className="rounded border border-border px-2 py-0.5 text-xs">
-            Reconocer
-          </button>
-        )}
-        {a.status !== "cerrada" && (
-          <button onClick={() => alertAction(a.id, "cerrar")} className="rounded border border-success/40 px-2 py-0.5 text-xs text-success">
-            Cerrar
-          </button>
-        )}
-        {a.status === "cerrada" && (
-          <button onClick={() => alertAction(a.id, "reabrir")} className="rounded border border-border px-2 py-0.5 text-xs">
-            Reabrir
-          </button>
-        )}
-        <button onClick={() => toggleDecisionPanel(a)} className="rounded border border-border px-2 py-0.5 text-xs">
-          {decisionOpenId === a.id ? "Ocultar decision" : "Decision"}
-        </button>
-      </div>
-    </td>
-  </tr>
-  {decisionOpenId === a.id && (
-    <tr className="border-t border-border bg-muted/30">
-      <td colSpan={8} className="py-2">
-        <div className="rounded border border-border p-3">
-          <p className="mb-1 text-xs font-semibold text-foreground">SE DETECTO UNA DESVIACION</p>
-          <p className="mb-2 text-xs text-muted-foreground">
-            Parametro: {a.parameter_name} / Valor: {a.measured_value} / Referencia: {a.reference_value} / Desviacion:{" "}
-            {a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"} / Fuente: {a.criteria_source || "-"}
-          </p>
-          <div className="flex flex-wrap items-end gap-2">
-            <div>
-              <label className={labelCls}>Accion</label>
-              <select className={inputCls} value={decisionChoice} onChange={(e: any) => setDecisionChoice(e.target.value)}>
-                {DECISION_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className={labelCls}>Justificacion / observaciones</label>
-              <input className={inputCls} value={decisionJustification} onChange={(e: any) => setDecisionJustification(e.target.value)} />
-            </div>
-            <button disabled={savingDecision} onClick={() => submitDecision(a)} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
-              {savingDecision ? "Guardando..." : "Registrar decision"}
-            </button>
-          </div>
-          <div className="mt-2">
-            <p className="mb-1 text-xs font-semibold text-foreground">Historial de decisiones</p>
-            {(decisionsByAlert[a.id] || []).length === 0 ? (
-              <p className="text-xs text-muted-foreground">Sin decisiones registradas para esta alerta.</p>
-            ) : (
-              <ul className="space-y-1 text-xs">
-                {(decisionsByAlert[a.id] || []).map((d: any) => (
-                  <li key={d.id} className="rounded border border-border p-1.5">
-                    <span className="font-medium text-foreground">{d.decision}</span> - {d.justification || "sin observaciones"}{" "}
-                    <span className="text-muted-foreground">({d.decided_by || "-"}, {new Date(d.decided_at).toLocaleString()})</span>
-                  </li>
+                  <Fragment key={a.id}>
+                    <tr className="border-t border-border">
+                      <td className="py-1.5 font-medium text-foreground">{a.parameter_name}</td>
+                      <td className="py-1.5">{a.module}</td>
+                      <td className="py-1.5">{a.measured_value}</td>
+                      <td className="py-1.5">{a.reference_value}</td>
+                      <td className="py-1.5">{a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"}</td>
+                      <td className="py-1.5">{a.level}</td>
+                      <td className="py-1.5">{a.status}</td>
+                      <td className="py-1.5">
+                        <div className="flex gap-1">
+                          {a.status === "abierta" && (
+                            <button onClick={() => alertAction(a.id, "reconocer")} className="rounded border border-border px-2 py-0.5 text-xs">
+                              Reconocer
+                            </button>
+                          )}
+                          {a.status !== "cerrada" && (
+                            <button onClick={() => alertAction(a.id, "cerrar")} className="rounded border border-success/40 px-2 py-0.5 text-xs text-success">
+                              Cerrar
+                            </button>
+                          )}
+                          {a.status === "cerrada" && (
+                            <button onClick={() => alertAction(a.id, "reabrir")} className="rounded border border-border px-2 py-0.5 text-xs">
+                              Reabrir
+                            </button>
+                          )}
+                          <button onClick={() => toggleDecisionPanel(a)} className="rounded border border-border px-2 py-0.5 text-xs">
+                            {decisionOpenId === a.id ? "Ocultar decision" : "Decision"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {decisionOpenId === a.id && (
+                      <tr className="border-t border-border bg-muted/30">
+                        <td colSpan={8} className="py-2">
+                          <div className="rounded border border-border p-3">
+                            <p className="mb-1 text-xs font-semibold text-foreground">SE DETECTO UNA DESVIACION</p>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              Parametro: {a.parameter_name} / Valor: {a.measured_value} / Referencia: {a.reference_value} / Desviacion:{" "}
+                              {a.deviation_pct !== null ? Number(a.deviation_pct).toFixed(2) + "%" : "-"} / Fuente: {a.criteria_source || "-"}
+                            </p>
+                            <div className="flex flex-wrap items-end gap-2">
+                              <div>
+                                <label className={labelCls}>Accion</label>
+                                <select className={inputCls} value={decisionChoice} onChange={(e: any) => setDecisionChoice(e.target.value)}>
+                                  {DECISION_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+                                </select>
+                              </div>
+                              <div className="flex-1">
+                                <label className={labelCls}>Justificacion / observaciones</label>
+                                <input className={inputCls} value={decisionJustification} onChange={(e: any) => setDecisionJustification(e.target.value)} />
+                              </div>
+                              <button disabled={savingDecision} onClick={() => submitDecision(a)} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+                                {savingDecision ? "Guardando..." : "Registrar decision"}
+                              </button>
+                            </div>
+                            <div className="mt-2">
+                              <p className="mb-1 text-xs font-semibold text-foreground">Historial de decisiones</p>
+                              {(decisionsByAlert[a.id] || []).length === 0 ? (
+                                <p className="text-xs text-muted-foreground">Sin decisiones registradas para esta alerta.</p>
+                              ) : (
+                                <ul className="space-y-1 text-xs">
+                                  {(decisionsByAlert[a.id] || []).map((d: any) => (
+                                    <li key={d.id} className="rounded border border-border p-1.5">
+                                      <span className="font-medium text-foreground">{d.decision}</span> - {d.justification || "sin observaciones"}{" "}
+                                      <span className="text-muted-foreground">({d.decided_by || "-"}, {new Date(d.decided_at).toLocaleString()})</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                            {/* Fase 6.10 (Tarea 43): INTEGRACION CON MANTENIMIENTO.
+                                Si el mismo parametro/modulo/equipo ya presento esta desviacion
+                                2 o mas veces (desviacion repetitiva), se ofrece crear una orden
+                                de mantenimiento heredando automaticamente todo el contexto ya
+                                registrado (equipo, parametro, mediciones, historial, baseline/
+                                referencia, criterio, fuente/documento y responsable), sin
+                                volver a pedir esos datos. */}
+                            <div className="mt-3 border-t border-border pt-2">
+                              <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                                <Wrench className="h-3.5 w-3.5" /> Integracion con Mantenimiento
+                              </p>
+                              {!maintenanceInfoByAlert[a.id] ? (
+                                <p className="text-xs text-muted-foreground">Cargando historial de repeticiones...</p>
+                              ) : maintenanceInfoByAlert[a.id].error ? (
+                                <p className="text-xs text-muted-foreground">No fue posible evaluar la repeticion de esta alerta.</p>
+                              ) : maintenanceInfoByAlert[a.id].existingOrder ? (
+                                <p className="text-xs text-success">
+                                  Orden de mantenimiento ya generada desde esta alerta (ID {maintenanceInfoByAlert[a.id].existingOrder.id}, estado{" "}
+                                  {maintenanceInfoByAlert[a.id].existingOrder.status}). Ver detalle en la pestaña Mantenimiento.
+                                </p>
+                              ) : maintenanceInfoByAlert[a.id].isRepetitive ? (
+                                <div className="rounded border border-warning/40 bg-warning/5 p-2">
+                                  <p className="mb-2 text-xs text-warning">
+                                    DESVIACION REPETITIVA: este parametro se ha detectado {maintenanceInfoByAlert[a.id].repetitionCount} veces.
+                                  </p>
+                                  <button
+                                    disabled={creatingOrderId === a.id}
+                                    onClick={() => createMaintenanceOrder(a)}
+                                    className="flex items-center gap-1 rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                                  >
+                                    <Wrench className="h-3.5 w-3.5" />
+                                    {creatingOrderId === a.id ? "Creando orden..." : "CREAR ORDEN DE MANTENIMIENTO"}
+                                  </button>
+                                  <p className="mt-1 text-xs text-muted-foreground">
+                                    Se heredara automaticamente el equipo, parametro, mediciones, historial, baseline/referencia, criterio,
+                                    documento de respaldo y responsable. No se solicitara reingresar datos ya existentes.
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">
+                                  No se ha detectado una desviacion repetitiva para este parametro (
+                                  {maintenanceInfoByAlert[a.id].repetitionCount} deteccion(es) hasta ahora). La creacion de orden de
+                                  mantenimiento automatica solo se habilita ante repeticion.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </td>
-    </tr>
-  )}
-  </Fragment>
-))}
-</tbody>
+              </tbody>
             </table>
           </div>
         )}
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4">
-  <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-    <HelpCircle className="h-4 w-4" /> Asistente Tecnico
-  </p>
-  <p className="mb-2 text-xs text-muted-foreground">
-    Responde unicamente con datos ya validados en el sistema (criterio activo, mediciones, baseline, alertas y documentos). Si no existe informacion registrada, lo indicara explicitamente.
-  </p>
-  <div className="flex flex-wrap items-end gap-2">
-    <div>
-      <label className={labelCls}>Parametro</label>
-      <input
-        className={inputCls}
-        placeholder="Ej: Tasa de dosis de fuga en cabezal"
-        value={assistantParam}
-        onChange={(e: any) => setAssistantParam(e.target.value)}
-      />
-    </div>
-    <div>
-      <label className={labelCls}>Modulo</label>
-      <select className={inputCls} value={assistantModule} onChange={(e: any) => setAssistantModule(e.target.value)}>
-        {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-      </select>
-    </div>
-    <button disabled={assistantLoading} onClick={askAssistant} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
-      {assistantLoading ? "Consultando..." : "Consultar"}
-    </button>
-  </div>
-  {assistantResult && assistantResult.respuestas && (
-    <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Cual es el criterio utilizado?</p>
-        {typeof assistantResult.respuestas.criterioUtilizado === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.criterioUtilizado}</p>
-        ) : (
-          <p className="text-foreground">
-            {assistantResult.respuestas.criterioUtilizado.valor} {assistantResult.respuestas.criterioUtilizado.unidad} (fuente: {assistantResult.respuestas.criterioUtilizado.fuente || "-"}, estado: {assistantResult.respuestas.criterioUtilizado.estado})
-          </p>
+        <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <HelpCircle className="h-4 w-4" /> Asistente Tecnico
+        </p>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Responde unicamente con datos ya validados en el sistema (criterio activo, mediciones, baseline, alertas y documentos). Si no existe informacion registrada, lo indicara explicitamente.
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <label className={labelCls}>Parametro</label>
+            <input
+              className={inputCls}
+              placeholder="Ej: Tasa de dosis de fuga en cabezal"
+              value={assistantParam}
+              onChange={(e: any) => setAssistantParam(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Modulo</label>
+            <select className={inputCls} value={assistantModule} onChange={(e: any) => setAssistantModule(e.target.value)}>
+              {MODULE_OPTIONS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+          <button disabled={assistantLoading} onClick={askAssistant} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+            {assistantLoading ? "Consultando..." : "Consultar"}
+          </button>
+        </div>
+        {assistantResult && assistantResult.respuestas && (
+          <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Cual es el criterio utilizado?</p>
+              {typeof assistantResult.respuestas.criterioUtilizado === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.criterioUtilizado}</p>
+              ) : (
+                <p className="text-foreground">
+                  {assistantResult.respuestas.criterioUtilizado.valor} {assistantResult.respuestas.criterioUtilizado.unidad} (fuente: {assistantResult.respuestas.criterioUtilizado.fuente || "-"}, estado: {assistantResult.respuestas.criterioUtilizado.estado})
+                </p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Cual es la ultima medicion?</p>
+              {typeof assistantResult.respuestas.ultimaMedicion === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.ultimaMedicion}</p>
+              ) : (
+                <p className="text-foreground">
+                  {assistantResult.respuestas.ultimaMedicion.valor} {assistantResult.respuestas.ultimaMedicion.unidad} el {String(assistantResult.respuestas.ultimaMedicion.fecha).slice(0, 10)} (resp: {assistantResult.respuestas.ultimaMedicion.responsable || "-"})
+                </p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Cual es la baseline?</p>
+              {typeof assistantResult.respuestas.baseline === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.baseline}</p>
+              ) : (
+                <p className="text-foreground">
+                  Version {assistantResult.respuestas.baseline.version} - valor referencia {assistantResult.respuestas.baseline.valorReferencia ?? "-"} (aprobada: {String(assistantResult.respuestas.baseline.aprobadaEl).slice(0, 10)})
+                </p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Cuando comenzo la desviacion?</p>
+              {typeof assistantResult.respuestas.inicioDesviacion === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.inicioDesviacion}</p>
+              ) : (
+                <p className="text-foreground">
+                  {String(assistantResult.respuestas.inicioDesviacion.fecha).slice(0, 10)} - nivel {assistantResult.respuestas.inicioDesviacion.nivel} ({assistantResult.respuestas.inicioDesviacion.estado})
+                </p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Que instrumento se utilizo?</p>
+              {typeof assistantResult.respuestas.instrumentoUtilizado === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
+              ) : (
+                <p className="text-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs">
+              <p className="mb-1 font-semibold text-foreground">Cual es la referencia?</p>
+              {typeof assistantResult.respuestas.referencia === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.referencia}</p>
+              ) : (
+                <p className="text-foreground">
+                  {assistantResult.respuestas.referencia.valor} {assistantResult.respuestas.referencia.unidad} - {assistantResult.respuestas.referencia.fuente || "-"} (nivel {assistantResult.respuestas.referencia.nivelFuente ?? "-"})
+                </p>
+              )}
+            </div>
+            <div className="rounded border border-border p-2 text-xs md:col-span-2">
+              <p className="mb-1 font-semibold text-foreground">Que documento respalda este criterio?</p>
+              {typeof assistantResult.respuestas.documentoQueRespalda === "string" ? (
+                <p className="text-muted-foreground">{assistantResult.respuestas.documentoQueRespalda}</p>
+              ) : (
+                <p className="text-foreground">
+                  {assistantResult.respuestas.documentoQueRespalda.nombre} (v{assistantResult.respuestas.documentoQueRespalda.version}){" "}
+                  {assistantResult.respuestas.documentoQueRespalda.url && (
+                    <a href={assistantResult.respuestas.documentoQueRespalda.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">
+                      <ExternalLink className="h-3 w-3" /> Ver fuente
+                    </a>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
         )}
       </div>
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Cual es la ultima medicion?</p>
-        {typeof assistantResult.respuestas.ultimaMedicion === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.ultimaMedicion}</p>
-        ) : (
-          <p className="text-foreground">
-            {assistantResult.respuestas.ultimaMedicion.valor} {assistantResult.respuestas.ultimaMedicion.unidad} el {String(assistantResult.respuestas.ultimaMedicion.fecha).slice(0, 10)} (resp: {assistantResult.respuestas.ultimaMedicion.responsable || "-"})
-          </p>
-        )}
-      </div>
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Cual es la baseline?</p>
-        {typeof assistantResult.respuestas.baseline === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.baseline}</p>
-        ) : (
-          <p className="text-foreground">
-            Version {assistantResult.respuestas.baseline.version} - valor referencia {assistantResult.respuestas.baseline.valorReferencia ?? "-"} (aprobada: {String(assistantResult.respuestas.baseline.aprobadaEl).slice(0, 10)})
-          </p>
-        )}
-      </div>
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Cuando comenzo la desviacion?</p>
-        {typeof assistantResult.respuestas.inicioDesviacion === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.inicioDesviacion}</p>
-        ) : (
-          <p className="text-foreground">
-            {String(assistantResult.respuestas.inicioDesviacion.fecha).slice(0, 10)} - nivel {assistantResult.respuestas.inicioDesviacion.nivel} ({assistantResult.respuestas.inicioDesviacion.estado})
-          </p>
-        )}
-      </div>
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Que instrumento se utilizo?</p>
-        {typeof assistantResult.respuestas.instrumentoUtilizado === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
-        ) : (
-          <p className="text-foreground">{assistantResult.respuestas.instrumentoUtilizado}</p>
-        )}
-      </div>
-      <div className="rounded border border-border p-2 text-xs">
-        <p className="mb-1 font-semibold text-foreground">Cual es la referencia?</p>
-        {typeof assistantResult.respuestas.referencia === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.referencia}</p>
-        ) : (
-          <p className="text-foreground">
-            {assistantResult.respuestas.referencia.valor} {assistantResult.respuestas.referencia.unidad} - {assistantResult.respuestas.referencia.fuente || "-"} (nivel {assistantResult.respuestas.referencia.nivelFuente ?? "-"})
-          </p>
-        )}
-      </div>
-      <div className="rounded border border-border p-2 text-xs md:col-span-2">
-        <p className="mb-1 font-semibold text-foreground">Que documento respalda este criterio?</p>
-        {typeof assistantResult.respuestas.documentoQueRespalda === "string" ? (
-          <p className="text-muted-foreground">{assistantResult.respuestas.documentoQueRespalda}</p>
-        ) : (
-          <p className="text-foreground">
-            {assistantResult.respuestas.documentoQueRespalda.nombre} (v{assistantResult.respuestas.documentoQueRespalda.version}){" "}
-            {assistantResult.respuestas.documentoQueRespalda.url && (
-              <a href={assistantResult.respuestas.documentoQueRespalda.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary">
-                <ExternalLink className="h-3 w-3" /> Ver fuente
-              </a>
+
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+          <Gauge className="h-4 w-4" /> Motor de Incertidumbre / Validacion de Instrumento
+        </p>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Verifica si el instrumento existe en el modulo de Instrumentos y si su calibracion esta vigente. Si no hay informacion suficiente, se indicara explicitamente (nunca se estima un valor).
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex-1">
+            <label className={labelCls}>Codigo, nombre o numero de serie del instrumento</label>
+            <input
+              className={inputCls}
+              placeholder="Ej: CI-001, camara de ionizacion, numero de serie..."
+              value={instrumentQuery}
+              onChange={(e: any) => setInstrumentQuery(e.target.value)}
+            />
+          </div>
+          <button disabled={instrumentLoading} onClick={validateInstrumentQuery} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+            {instrumentLoading ? "Validando..." : "Validar"}
+          </button>
+        </div>
+        {instrumentResult && (
+          <div className="mt-3 text-xs">
+            {!instrumentResult.found ? (
+              <p className="text-muted-foreground">{instrumentResult.message}</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="rounded border border-border p-2">
+                  <p className="font-semibold text-foreground">
+                    {instrumentResult.instrumento.name} ({instrumentResult.instrumento.code})
+                  </p>
+                  <p className="text-muted-foreground">
+                    {instrumentResult.instrumento.brand || "-"} {instrumentResult.instrumento.model || ""} - N/S: {instrumentResult.instrumento.serialNumber || "-"} - Estado: {instrumentResult.instrumento.status}
+                  </p>
+                </div>
+                <div className="rounded border border-border p-2">
+                  <p className="mb-1 font-semibold text-foreground">Estado de calibracion</p>
+                  <p
+                    className={
+                      instrumentResult.estadoCalibracion.nivel === "verde"
+                        ? "text-success"
+                        : instrumentResult.estadoCalibracion.nivel === "amarillo"
+                        ? "text-warning"
+                        : instrumentResult.estadoCalibracion.nivel === "rojo" || instrumentResult.estadoCalibracion.nivel === "vencida"
+                        ? "text-danger"
+                        : "text-muted-foreground"
+                    }
+                  >
+                    {instrumentResult.estadoCalibracion.etiqueta}
+                    {instrumentResult.estadoCalibracion.diasRestantes !== null ? " (" + instrumentResult.estadoCalibracion.diasRestantes + " dias)" : ""}
+                  </p>
+                  {instrumentResult.alertId && (
+                    <p className="mt-1 text-warning">Alerta cientifica generada (ID {instrumentResult.alertId}) por falta de calibracion vigente.</p>
+                  )}
+                </div>
+                <div className="rounded border border-border p-2">
+                  <p className="mb-1 font-semibold text-foreground">Datos de calibracion</p>
+                  {typeof instrumentResult.calibracion === "string" ? (
+                    <p className="text-muted-foreground">{instrumentResult.calibracion}</p>
+                  ) : (
+                    <p className="text-foreground">
+                      Fecha: {String(instrumentResult.calibracion.fecha).slice(0, 10)} / Vencimiento:{" "}
+                      {instrumentResult.calibracion.vencimiento ? String(instrumentResult.calibracion.vencimiento).slice(0, 10) : "-"} / Certificado:{" "}
+                      {instrumentResult.calibracion.certificado || "-"} / Empresa: {instrumentResult.calibracion.empresa || "-"} / Factor:{" "}
+                      {instrumentResult.calibracion.factor ?? "-"} {instrumentResult.calibracion.unidades || ""} / Metodo:{" "}
+                      {instrumentResult.calibracion.metodo || "-"} / Patron utilizado: {instrumentResult.calibracion.patronUtilizado || "-"}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded border border-border p-2">
+                  <p className="mb-1 font-semibold text-foreground">Trazabilidad</p>
+                  <p className="text-muted-foreground">{instrumentResult.trazabilidad}</p>
+                </div>
+              </div>
             )}
-          </p>
+          </div>
         )}
       </div>
-    </div>
-  )}
-</div>
 
-<div className="rounded-lg border border-border bg-card p-4">
-<p className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-<Gauge className="h-4 w-4" /> Motor de Incertidumbre / Validacion de Instrumento
-</p>
-<p className="mb-2 text-xs text-muted-foreground">
-Verifica si el instrumento existe en el modulo de Instrumentos y si su calibracion esta vigente. Si no hay informacion suficiente, se indicara explicitamente (nunca se estima un valor).
-</p>
-<div className="flex flex-wrap items-end gap-2">
-<div className="flex-1">
-<label className={labelCls}>Codigo, nombre o numero de serie del instrumento</label>
-<input
-className={inputCls}
-placeholder="Ej: CI-001, camara de ionizacion, numero de serie..."
-value={instrumentQuery}
-onChange={(e: any) => setInstrumentQuery(e.target.value)}
-/>
-</div>
-<button disabled={instrumentLoading} onClick={validateInstrumentQuery} className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
-{instrumentLoading ? "Validando..." : "Validar"}
-</button>
-</div>
-{instrumentResult && (
-<div className="mt-3 text-xs">
-{!instrumentResult.found ? (
-<p className="text-muted-foreground">{instrumentResult.message}</p>
-) : (
-<div className="space-y-2">
-<div className="rounded border border-border p-2">
-<p className="font-semibold text-foreground">
-{instrumentResult.instrumento.name} ({instrumentResult.instrumento.code})
-</p>
-<p className="text-muted-foreground">
-{instrumentResult.instrumento.brand || "-"} {instrumentResult.instrumento.model || ""} - N/S: {instrumentResult.instrumento.serialNumber || "-"} - Estado: {instrumentResult.instrumento.status}
-</p>
-</div>
-<div className="rounded border border-border p-2">
-<p className="mb-1 font-semibold text-foreground">Estado de calibracion</p>
-<p
-className={
-instrumentResult.estadoCalibracion.nivel === "verde"
-? "text-success"
-: instrumentResult.estadoCalibracion.nivel === "amarillo"
-? "text-warning"
-: instrumentResult.estadoCalibracion.nivel === "rojo" || instrumentResult.estadoCalibracion.nivel === "vencida"
-? "text-danger"
-: "text-muted-foreground"
-}
->
-{instrumentResult.estadoCalibracion.etiqueta}
-{instrumentResult.estadoCalibracion.diasRestantes !== null ? " (" + instrumentResult.estadoCalibracion.diasRestantes + " dias)" : ""}
-</p>
-{instrumentResult.alertId && (
-<p className="mt-1 text-warning">Alerta cientifica generada (ID {instrumentResult.alertId}) por falta de calibracion vigente.</p>
-)}
-</div>
-<div className="rounded border border-border p-2">
-<p className="mb-1 font-semibold text-foreground">Datos de calibracion</p>
-{typeof instrumentResult.calibracion === "string" ? (
-<p className="text-muted-foreground">{instrumentResult.calibracion}</p>
-) : (
-<p className="text-foreground">
-Fecha: {String(instrumentResult.calibracion.fecha).slice(0, 10)} / Vencimiento:{" "}
-{instrumentResult.calibracion.vencimiento ? String(instrumentResult.calibracion.vencimiento).slice(0, 10) : "-"} / Certificado:{" "}
-{instrumentResult.calibracion.certificado || "-"} / Empresa: {instrumentResult.calibracion.empresa || "-"} / Factor:{" "}
-{instrumentResult.calibracion.factor ?? "-"} {instrumentResult.calibracion.unidades || ""} / Metodo:{" "}
-{instrumentResult.calibracion.metodo || "-"} / Patron utilizado: {instrumentResult.calibracion.patronUtilizado || "-"}
-</p>
-)}
-</div>
-<div className="rounded border border-border p-2">
-<p className="mb-1 font-semibold text-foreground">Trazabilidad</p>
-<p className="text-muted-foreground">{instrumentResult.trazabilidad}</p>
-</div>
-</div>
-)}
-</div>
-)}
-</div>
+      <ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
 
-<ScienceDocuments unitId={unitId} actorEmail={actorEmail} />
-
-<div className="rounded-lg border border-border bg-card p-4">
-<div className="mb-3 flex items-center justify-between">
-<p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-<History className="h-4 w-4" /> Historial y Auditoria
-</p>
-<button onClick={loadAuditTrail} className="rounded border border-border p-1.5" title="Actualizar">
-<RefreshCw className="h-3.5 w-3.5" />
-</button>
-</div>
-<p className="mb-2 text-xs text-muted-foreground">
-Registro unificado de quien hizo que, cuando y por que: cambios de criterios tecnicos, decisiones sobre desviaciones y revisiones de nuevas versiones documentales.
-</p>
-{loadingAudit ? (
-<p className="text-xs text-muted-foreground">Cargando historial...</p>
-) : auditEntries.length === 0 ? (
-<p className="text-xs text-muted-foreground">Sin eventos registrados.</p>
-) : (
-<div className="max-h-96 overflow-auto">
-<table className="w-full text-xs">
-<thead>
-<tr className="text-left text-muted-foreground">
-<th className="pb-1">Fecha</th>
-<th className="pb-1">Tipo</th>
-<th className="pb-1">Actor</th>
-<th className="pb-1">Accion</th>
-<th className="pb-1">Detalle</th>
-<th className="pb-1">Motivo</th>
-</tr>
-</thead>
-<tbody>
-{auditEntries.map((e: any) => (
-<tr key={e.id} className="border-t border-border align-top">
-<td className="py-1.5 whitespace-nowrap">{e.fecha ? new Date(e.fecha).toLocaleString() : "-"}</td>
-<td className="py-1.5 capitalize">{e.tipo}</td>
-<td className="py-1.5">{e.actor || "-"}</td>
-<td className="py-1.5">{e.accion || "-"}</td>
-<td className="py-1.5">{e.detalle}</td>
-<td className="py-1.5">{e.motivo || "-"}</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-)}
-</div>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <History className="h-4 w-4" /> Historial y Auditoria
+          </p>
+          <button onClick={loadAuditTrail} className="rounded border border-border p-1.5" title="Actualizar">
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Registro unificado de quien hizo que, cuando y por que: cambios de criterios tecnicos, decisiones sobre desviaciones y revisiones de nuevas versiones documentales.
+        </p>
+        {loadingAudit ? (
+          <p className="text-xs text-muted-foreground">Cargando historial...</p>
+        ) : auditEntries.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Sin eventos registrados.</p>
+        ) : (
+          <div className="max-h-96 overflow-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="pb-1">Fecha</th>
+                  <th className="pb-1">Tipo</th>
+                  <th className="pb-1">Actor</th>
+                  <th className="pb-1">Accion</th>
+                  <th className="pb-1">Detalle</th>
+                  <th className="pb-1">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditEntries.map((e: any) => (
+                  <tr key={e.id} className="border-t border-border align-top">
+                    <td className="py-1.5 whitespace-nowrap">{e.fecha ? new Date(e.fecha).toLocaleString() : "-"}</td>
+                    <td className="py-1.5 capitalize">{e.tipo}</td>
+                    <td className="py-1.5">{e.actor || "-"}</td>
+                    <td className="py-1.5">{e.accion || "-"}</td>
+                    <td className="py-1.5">{e.detalle}</td>
+                    <td className="py-1.5">{e.motivo || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
     </div>
   );
-}
+        }
