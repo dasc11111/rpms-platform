@@ -1,6 +1,7 @@
 import { Users, ShieldCheck, AlertTriangle, ShieldAlert, FileText, FileSpreadsheet, ClipboardCheck, Package, Search } from "lucide-react";
 import Link from "next/link";
 import { KPICard } from "@/components/dashboard/kpi-card";
+import { LevelKpiCard } from "@/components/dosimetry/level-kpi-card";
 import { DoseReportModal } from "@/components/dosimetry/dose-report-modal";
 import { NotReturnedTable } from "@/components/dosimetry/not-returned-table";
 import { QuarterlyTable } from "@/components/dosimetry/quarterly-table";
@@ -20,6 +21,7 @@ import {
 export const dynamic = "force-dynamic";
 
 type Row = {
+  id: number;
   worker_rut: string;
   worker_name: string;
   departamento: string | null;
@@ -60,7 +62,7 @@ async function getData(): Promise<Row[]> {
   try {
     await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS source_document_id INT`;
     const { rows } = await sql`
-      SELECT q.worker_rut, q.worker_name, q.departamento, q.year, q.quarter, q.period_label,
+      SELECT q.id, q.worker_rut, q.worker_name, q.departamento, q.year, q.quarter, q.period_label,
              q.dose_body, q.dose_lens, q.dose_skin, q.accum_60m_body, q.level,
              q.source_document_id, d.blob_url
       FROM dosimetry_quarterly q
@@ -208,9 +210,9 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
         <>
           <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
             <KPICard label="Trabajadores monitoreados" value={totalWorkers} href="/dosimetry" icon={Users} />
-            <KPICard label="Nivel de registro" value={countByLevel("registro")} href="/dosimetry" icon={ShieldCheck} tone="warning" />
-            <KPICard label="Nivel de investigacion" value={countByLevel("investigacion")} href="/dosimetry" icon={AlertTriangle} tone="warning" />
-            <KPICard label="Nivel de intervencion" value={countByLevel("intervencion")} href="/dosimetry" icon={ShieldAlert} tone="danger" />
+            <LevelKpiCard label="Nivel de registro" level="registro" rows={all} icon={ShieldCheck} tone="warning" />
+            <LevelKpiCard label="Nivel de investigacion" level="investigacion" rows={all} icon={AlertTriangle} tone="warning" />
+            <LevelKpiCard label="Nivel de intervencion" level="intervencion" rows={all} icon={ShieldAlert} tone="danger" />
           </div>
 
           <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
