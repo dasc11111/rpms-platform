@@ -457,3 +457,14 @@ export function buildQuarterlyDoseAlertSummaries(inputRows: DoseAlertInputRow[])
     }
     return summaries;
 }
+
+
+// ---------------------------------------------------------------------------
+// Eliminacion de un registro trimestral individual. Se usa desde la tabla
+// "Reportes por trimestre" para permitir borrar registros de prueba o mal
+// cargados sin afectar el resto del historico. No altera ninguna otra logica.
+export async function deleteQuarterlyRecord(id: number): Promise<boolean> {
+    await ensureDosimetryTables();
+    const { rowCount } = await sql`DELETE FROM dosimetry_quarterly WHERE id = ${id}`;
+    return (rowCount ?? 0) > 0;
+}
