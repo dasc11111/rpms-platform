@@ -210,9 +210,9 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
         <>
           <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
             <KPICard label="Trabajadores monitoreados" value={totalWorkers} href="/dosimetry" icon={Users} />
-            <LevelKpiCard label="Nivel de registro" level="registro" rows={all} icon={ShieldCheck} tone="warning" />
-            <LevelKpiCard label="Nivel de investigacion" level="investigacion" rows={all} icon={AlertTriangle} tone="warning" />
-            <LevelKpiCard label="Nivel de intervencion" level="intervencion" rows={all} icon={ShieldAlert} tone="danger" />
+            <LevelKpiCard label="Nivel de registro" level="registro" rows={all} icon={<ShieldCheck className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
+            <LevelKpiCard label="Nivel de investigacion" level="investigacion" rows={all} icon={<AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
+            <LevelKpiCard label="Nivel de intervencion" level="intervencion" rows={all} icon={<ShieldAlert className="h-3.5 w-3.5 text-danger" strokeWidth={2} />} tone="danger" />
           </div>
 
           <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -290,4 +290,4 @@ export default async function DosimetryPage({ searchParams }: { searchParams: Pr
       {tab === "fuera-plazo" && <LateReturnsTable rows={lateRows} />}
     </div>
   );
-}
+  }
