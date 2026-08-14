@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { downloadCsv } from "@/lib/csv";
 
 type Row = {
+  id: number;
   worker_rut: string;
   worker_name: string;
   departamento: string | null;
@@ -24,7 +26,9 @@ const LEVEL_LABEL: Record<string, { label: string; className: string }> = {
 };
 
 export function QuarterlyTable({ rows }: { rows: Row[] }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,6 +52,26 @@ export function QuarterlyTable({ rows }: { rows: Row[] }) {
       { key: "accum_60m_body", label: "Acumulado 5 anos (mSv)" },
       { key: "level", label: "Nivel" },
     ]);
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm("Eliminar este registro de forma permanente? Esta accion no se puede deshacer.")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch("/api/dosimetry/quarterly/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        alert(data?.error || "No se pudo eliminar el registro.");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -81,6 +105,7 @@ export function QuarterlyTable({ rows }: { rows: Row[] }) {
               <th className="px-3 py-2 text-right">Acumulado 5 anos (mSv)</th>
               <th className="px-3 py-2">Nivel</th>
               <th className="px-3 py-2">Fuente</th>
+              <th className="px-3 py-2">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-sm">
@@ -105,12 +130,22 @@ export function QuarterlyTable({ rows }: { rows: Row[] }) {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </td>
+                  <td className="px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(r.id)}
+                      disabled={deletingId === r.id}
+                      className="rounded-md border border-border px-2 py-1 text-xs text-danger hover:bg-danger/10 disabled:opacity-50"
+                    >
+                      {deletingId === r.id ? "Eliminando..." : "Eliminar"}
+                    </button>
+                  </td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                <td colSpan={10} className="px-3 py-6 text-center text-muted-foreground">
                   No hay lecturas dosimetricas cargadas todavia.
                 </td>
               </tr>
