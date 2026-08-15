@@ -979,6 +979,27 @@ export function ScienceTab({ unitId, actorEmail }: any) {
                                 </p>
                               )}
                             </div>
+                            {/* Fase 6.11 (Tarea 44): GENERACION DE INFORMES. Genera un informe PDF
+                            para esta alerta reutilizando todos los datos ya existentes (identificacion,
+                            equipo, medicion, referencia/criterio, desviacion, fuente/documento,
+                            historial/tendencia, accion registrada y conclusion). Disponible para toda
+                            alerta relevante, no solo las repetitivas. */}
+                            <div className="mt-3 border-t border-border pt-2">
+                            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                            <FileText className="h-3.5 w-3.5" /> Generacion de Informes
+                            </p>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                            Genera un informe PDF con identificacion, equipo, medicion, valor de referencia/criterio,
+                            desviacion, fuente y documento de respaldo, historial y tendencia, accion/decision
+                            registrada y conclusion.
+                            </p>
+                            <button
+                              onClick={() => window.open("/api/linac/alerts/" + a.id + "/report?actor=" + encodeURIComponent(actor), "_blank")}
+                              className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs font-medium text-foreground"
+                              >
+                            <FileText className="h-3.5 w-3.5" /> GENERAR INFORME (PDF)
+                            </button>
+                            </div>
                           </div>
                         </td>
                       </tr>
