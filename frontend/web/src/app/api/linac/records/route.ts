@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
+import { ensureLinacTables, logLinacAudit } from "@/lib/linac"; import { ensureRiskExtendedTables, classifyRiskLevel } from "@/lib/linac-risk";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   } else if (type === "radiation") {
     rows = (await sql`SELECT * FROM linac_radiation_protection WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY measurement_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "risk") {
-    rows = (await sql`SELECT * FROM linac_risks WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY risk_level DESC NULLS LAST, id DESC LIMIT 1000`).rows;
+    await ensureRiskExtendedTables(); const riskRows = (await sql`SELECT * FROM linac_risks WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY risk_level DESC NULLS LAST, id DESC LIMIT 1000`).rows; rows = riskRows.map((r: any) => ({ ...r, classification: classifyRiskLevel(r.risk_level).label }));
   } else if (type === "emergency") {
     rows = (await sql`SELECT * FROM linac_emergencies WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY event_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "audit") {
@@ -52,12 +52,12 @@ export async function POST(request: Request) {
     `;
     id = rows[0]!.id;
   } else if (type === "risk") {
-    const freq = Number(body.frequency || 0);
+    await ensureRiskExtendedTables(); const freq = Number(body.frequency || 0);
     const cons = Number(body.consequence || 0);
     const level = freq * cons;
     const { rows } = await sql`
-      INSERT INTO linac_risks (linac_id, risk, frequency, consequence, risk_level, responsible, mitigation)
-      VALUES (${linacId}, ${body.risk}, ${freq}, ${cons}, ${level}, ${body.responsible || null}, ${body.mitigation || null})
+      INSERT INTO linac_risks (linac_id, risk, frequency, consequence, risk_level, responsible, mitigation, evidence, controls)
+      VALUES (${linacId}, ${body.risk}, ${freq}, ${cons}, ${level}, ${body.responsible || null}, ${body.mitigation || null}, ${body.evidence || null}, ${body.controls || null})
       RETURNING id;
     `;
     id = rows[0]!.id;
