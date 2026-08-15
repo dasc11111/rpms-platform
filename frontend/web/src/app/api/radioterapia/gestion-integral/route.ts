@@ -109,14 +109,14 @@ export async function GET(request: Request) {
   ? await sql`SELECT * FROM rt_facilities WHERE id = ${facilityId}`
   : await sql`SELECT * FROM rt_facilities ORDER BY id ASC`;
   const facilities = facilitiesRes.rows;
-  const facilityIds: number[] = facilityId ? [Number(facilityId)] : facilities.map((f: any) => f.id);
+  const facilityIds: any = facilityId ? [Number(facilityId)] : facilities.map((f: any) => f.id);
 
   const bunkersRes = facilityIds.length
   ? await sql`SELECT * FROM rt_bunkers WHERE facility_id = ANY(${facilityIds}::int[])`
   : { rows: [] as any[] };
   const bunkers = bunkersRes.rows;
-  const bunkerIds: number[] = bunkers.map((b: any) => b.id);
-  const linacIds: number[] = Array.from(
+  const bunkerIds: any = bunkers.map((b: any) => b.id);
+  const linacIds: any = Array.from(
     new Set(bunkers.map((b: any) => b.linac_id).filter((v: any) => v !== null && v !== undefined))
     );
 
