@@ -1224,7 +1224,7 @@ export function ScienceTab({ unitId, actorEmail }: any) {
                   <th className="pb-1">Tipo</th>
                   <th className="pb-1">Actor</th>
                   <th className="pb-1">Accion</th>
-                  <th className="pb-1">Detalle</th>
+                  <th className="pb-1">Detalle</th><th className="pb-1">Valor anterior</th><th className="pb-1">Valor nuevo</th>
                   <th className="pb-1">Motivo</th>
                 </tr>
               </thead>
@@ -1235,7 +1235,7 @@ export function ScienceTab({ unitId, actorEmail }: any) {
                     <td className="py-1.5 capitalize">{e.tipo}</td>
                     <td className="py-1.5">{e.actor || "-"}</td>
                     <td className="py-1.5">{e.accion || "-"}</td>
-                    <td className="py-1.5">{e.detalle}</td>
+                    <td className="py-1.5">{e.detalle}</td><td className="py-1.5 max-w-[220px] truncate" title={String(e.valorAnterior ?? "-")}>{typeof e.valorAnterior === "object" && e.valorAnterior !== null ? JSON.stringify(e.valorAnterior) : String(e.valorAnterior ?? "-")}</td><td className="py-1.5 max-w-[220px] truncate" title={String(e.valorNuevo ?? "-")}>{typeof e.valorNuevo === "object" && e.valorNuevo !== null ? JSON.stringify(e.valorNuevo) : String(e.valorNuevo ?? "-")}</td>
                     <td className="py-1.5">{e.motivo || "-"}</td>
                   </tr>
                 ))}
