@@ -823,22 +823,25 @@ return (
 <div className="space-y-4">
 <div className="rounded-lg border border-border bg-surface p-3">
 <p className="mb-2 text-sm font-semibold text-foreground">Matriz de riesgos</p>
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
-<input className={inputCls} placeholder="Riesgo" value={form.risk || ""} onChange={(e) => set("risk", e.target.value)} />
-<input type="number" min="1" max="5" className={inputCls} placeholder="Frecuencia (1-5)" value={form.frequency || ""} onChange={(e) => set("frequency", e.target.value)} />
-<input type="number" min="1" max="5" className={inputCls} placeholder="Consecuencia (1-5)" value={form.consequence || ""} onChange={(e) => set("consequence", e.target.value)} />
+<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"></div>
+<input className={inputCls} placeholder="Riesgo / Evento" value={form.risk || ""} onChange={(e) => set("risk", e.target.value)} />
+<input type="number" min="1" max="5" className={inputCls} placeholder="Probabilidad (1-5)" value={form.frequency || ""} onChange={(e) => set("frequency", e.target.value)} />
+<input type="number" min="1" max="5" className={inputCls} placeholder="Impacto (1-5)" value={form.consequence || ""} onChange={(e) => set("consequence", e.target.value)} />
 <input className={inputCls} placeholder="Responsable" value={form.responsible || ""} onChange={(e) => set("responsible", e.target.value)} />
-<input className={inputCls} placeholder="Medidas de mitigacion" value={form.mitigation || ""} onChange={(e) => set("mitigation", e.target.value)} />
+  <input className={inputCls} placeholder="Evidencia" value={form.evidence || ""} onChange={(e) => set("evidence", e.target.value)} />
+  <input className={inputCls} placeholder="Controles existentes" value={form.controls || ""} onChange={(e) => set("controls", e.target.value)} />
+<input className={inputCls + " sm:col-span-2 lg:col-span-2"} placeholder="Acciones correctivas" value={form.mitigation || ""} onChange={(e) => set("mitigation", e.target.value)} />
 </div>
 <button onClick={handleSave} disabled={saving} className="mt-2 rounded bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground disabled:opacity-50">
 {saving ? "Guardando..." : "Agregar riesgo"}
 </button>
 </div>
+  <RiskMatrixGrid list={list} />
 <div className="rounded-lg border border-border bg-surface p-3">
 <table className="w-full text-xs">
 <thead><tr className="text-left text-muted-foreground">
-<th className="p-1">Riesgo</th><th className="p-1">Frecuencia</th><th className="p-1">Consecuencia</th>
-<th className="p-1">Nivel</th><th className="p-1">Responsable</th><th className="p-1">Mitigacion</th>
+<th className="p-1">Riesgo</th><th className="p-1">Probabilidad</th><th className="p-1">Impacto</th>
+<th className="p-1">Nivel</th><th className="p-1">Clasificacion</th><th className="p-1">Responsable</th><th className="p-1">Evidencia</th><th className="p-1">Controles</th><th className="p-1">Acciones correctivas</th>
 </tr></thead>
 <tbody>
 {list.map((r: any) => (
@@ -846,8 +849,9 @@ return (
 <td className="p-1 text-foreground">{r.risk}</td>
 <td className="p-1 text-foreground">{r.frequency}</td>
 <td className="p-1 text-foreground">{r.consequence}</td>
-<td className={"p-1 font-medium " + (r.risk_level >= 15 ? "text-danger" : r.risk_level >= 8 ? "text-warning" : "text-success")}>{r.risk_level}</td>
+<td className={"p-1 font-medium " + (r.risk_level > 15 ? "text-danger" : r.risk_level > 9 ? "text-orange-500" : r.risk_level > 4 ? "text-warning" : "text-success")}>{r.risk_level ?? "-"}</td><td className={"p-1 font-medium " + (r.risk_level > 15 ? "text-danger" : r.risk_level > 9 ? "text-orange-500" : r.risk_level > 4 ? "text-warning" : "text-success")}>{r.classification || "-"}</td>
 <td className="p-1 text-foreground">{r.responsible || "-"}</td>
+  <td className="p-1 text-foreground">{r.evidence || "-"}</td><td className="p-1 text-foreground">{r.controls || "-"}</td>
 <td className="p-1 text-foreground">{r.mitigation || "-"}</td>
 </tr>
 ))}
@@ -858,7 +862,8 @@ return (
 );
 }
 
-function EmergenciesTab({ unitId, actorEmail }: any) {
+function RiskMatrixGrid({ list }: any) {const PROBS = [5,4,3,2,1];const IMPACTS = [1,2,3,4,5];function cellCls(level: number) {if (level <= 4) return "bg-success/70";if (level <= 9) return "bg-warning/70";if (level <= 15) return "bg-orange-500/70";return "bg-danger/70";}return (<div className="rounded-lg border border-border bg-surface p-3"><p className="mb-2 text-sm font-semibold text-foreground">Mapa de riesgo (Probabilidad x Impacto)</p><table className="w-full text-xs"><thead><tr><th className="p-1 text-muted-foreground">P / I</th>{IMPACTS.map((i) => (<th key={i} className="p-1 text-center text-muted-foreground">{i}</th>))}</tr></thead><tbody>{PROBS.map((p) => (<tr key={p}><td className="p-1 font-medium text-muted-foreground">{p}</td>{IMPACTS.map((i) => {const level = p * i;const count = (list || []).filter((r: any) => Number(r.frequency) === p && Number(r.consequence) === i).length;return (<td key={p + "-" + i} className={"p-2 text-center text-white " + cellCls(level)}>{count > 0 ? count : ""}</td>);})}</tr>))}</tbody></table><div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-success/70" /> Bajo (1-4)</span><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-warning/70" /> Moderado (5-9)</span><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-orange-500/70" /> Alto (10-15)</span><span className="flex items-center gap-1"><span className="h-3 w-3 rounded bg-danger/70" /> Muy alto (16-25)</span></div></div>);}
+  function EmergenciesTab({ unitId, actorEmail }: any) {
 const [list, setList] = useState<any[]>([]);
 const [form, setForm] = useState<any>({});
 const [saving, setSaving] = useState(false);
