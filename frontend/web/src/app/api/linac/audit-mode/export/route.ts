@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 // proteccion radiologica, mantenimiento, documentos, historial de criterios
 // y referencias), exportable en PDF, Excel (XLSX) o CSV. Reutiliza unicamente
 // datos ya existentes en tablas ya validadas (nunca inventa ni calcula
-// nuevos criterios). Los modulos de Incidentes y Autorizaciones aun no
-// existen como tablas integradas a este motor: se declaran explicitamente
-// como informacion no disponible en lugar de inventar datos.
+// nuevos criterios, incidentes y autorizaciones (linac_incidents,
+// linac_authorizations, Fase 6 Tarea 42). Nunca inventa datos cuando
+// campos como incidentes o autorizaciones no existen en las tablas.
 
-const NOT_AVAILABLE = "INFORMACION NO DISPONIBLE EN ESTE MODULO";
+
 
 async function gatherAuditData(linacId: number) {
   await ensureScienceTables();
@@ -76,7 +76,7 @@ GROUP BY maintenance_type, status
 ORDER BY maintenance_type, status;
 `;
 
-const { rows: rootRows } = await sql`
+const { rows: incidentesPorEstado } = await sql`SELECT status, count(*)::int AS n FROM linac_incidents WHERE (${linacId} = 0 OR linac_id = ${linacId}) GROUP BY status;`; const { rows: incidentesAbiertos } = await sql`SELECT id, event, incident_date, ines_level, dose, status FROM linac_incidents WHERE (${linacId} = 0 OR linac_id = ${linacId}) AND status = 'abierto' ORDER BY incident_date DESC LIMIT 100;`; const { rows: autorizaciones } = await sql`SELECT doc_type, document_number, expiry_date, is_current FROM linac_authorizations WHERE (${linacId} = 0 OR linac_id = ${linacId}) AND is_current = true ORDER BY doc_type;`; const { rows: rootRows } = await sql`
 SELECT id FROM document_categories
 WHERE upper(trim(name)) = 'MEDICINA NUCLEAR' AND parent_id IS NULL
 LIMIT 1;
@@ -124,8 +124,8 @@ return {
   documentos,
   historialCriterios,
   referencias,
-  incidentes: NOT_AVAILABLE,
-  autorizaciones: NOT_AVAILABLE,
+  incidentes: { porEstado: incidentesPorEstado, abiertos: incidentesAbiertos },
+  autorizaciones,
 };
 }
 
@@ -175,8 +175,8 @@ function buildCsv(data: any): string {
   lines.push("Fuente;Nivel de jerarquia;Version de documento");
   data.referencias.forEach((r: any) => lines.push([r.source_name, r.source_level, r.document_version].map(csvEscape).join(";")));
   lines.push("");
-  lines.push("INCIDENTES;" + csvEscape(data.incidentes));
-  lines.push("AUTORIZACIONES;" + csvEscape(data.autorizaciones));
+  lines.push("INCIDENTES (linac_incidents, por estado)"); lines.push("Estado;Cantidad"); data.incidentes.porEstado.forEach((r: any) => lines.push(csvEscape(r.status) + ";" + csvEscape(r.n))); lines.push(""); lines.push("Incidentes abiertos"); lines.push("Fecha;Evento;Nivel INES;Dosis;Estado"); data.incidentes.abiertos.forEach((r: any) => lines.push([r.incident_date, r.event, r.ines_level, r.dose, r.status].map(csvEscape).join(";")));
+  lines.push(""); lines.push("AUTORIZACIONES (linac_authorizations, version vigente)"); lines.push("Tipo de documento;N documento;Vencimiento"); data.autorizaciones.forEach((r: any) => lines.push([r.doc_type, r.document_number, r.expiry_date].map(csvEscape).join(";")));
   return "\uFEFF" + lines.join("\n");
 }
 
@@ -250,8 +250,8 @@ XLSX.utils.book_append_sheet(
 
 XLSX.utils.book_append_sheet(
   wb,
-  XLSX.utils.aoa_to_sheet([["Incidentes", data.incidentes], ["Autorizaciones", data.autorizaciones]]),
-  "Notas"
+  XLSX.utils.json_to_sheet(data.incidentes.porEstado.map((r: any) => ({ Estado: r.status, Cantidad: r.n }))),
+  "Incidentes"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.incidentes.abiertos.map((r: any) => ({ Fecha: r.incident_date, Evento: r.event, NivelINES: r.ines_level, Dosis: r.dose, Estado: r.status }))), "Incidentes Abiertos"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.autorizaciones.map((r: any) => ({ Tipo: r.doc_type, Numero: r.document_number, Vencimiento: r.expiry_date }))), "Autorizaciones"
   );
 
 return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
@@ -392,7 +392,7 @@ title("8. REFERENCIAS (fuentes de criterios activos)");
 title("9. INCIDENTES Y AUTORIZACIONES");
   doc.autoTable({
     head: [["Modulo", "Estado"]],
-    body: [["Incidentes", data.incidentes], ["Autorizaciones", data.autorizaciones]],
+    body: [].concat(data.incidentes.porEstado.map((r: any) => ["Incidente: " + r.status, String(r.n)])).concat(data.autorizaciones.map((r: any) => ["Autorizacion: " + (r.doc_type || "-"), (r.expiry_date ? "Vence " + String(r.expiry_date).slice(0,10) : "-")])),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
