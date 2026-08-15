@@ -823,7 +823,7 @@ return (
 <div className="space-y-4">
 <div className="rounded-lg border border-border bg-surface p-3">
 <p className="mb-2 text-sm font-semibold text-foreground">Matriz de riesgos</p>
-<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4"></div>
+<div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
 <input className={inputCls} placeholder="Riesgo / Evento" value={form.risk || ""} onChange={(e) => set("risk", e.target.value)} />
 <input type="number" min="1" max="5" className={inputCls} placeholder="Probabilidad (1-5)" value={form.frequency || ""} onChange={(e) => set("frequency", e.target.value)} />
 <input type="number" min="1" max="5" className={inputCls} placeholder="Impacto (1-5)" value={form.consequence || ""} onChange={(e) => set("consequence", e.target.value)} />
