@@ -73,6 +73,9 @@ export function ScienceTab({ unitId, actorEmail }: any) {
   const [statusFilter, setStatusFilter] = useState("");
   const [criteria, setCriteria] = useState<any[]>([]);
   const [loadingCriteria, setLoadingCriteria] = useState(false);
+  const [criteriaDetailOpenId, setCriteriaDetailOpenId] = useState(null as number | null);
+  const [criteriaDetailData, setCriteriaDetailData] = useState({} as Record<number, any>);
+  const [loadingCriteriaDetail, setLoadingCriteriaDetail] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<any>(EMPTY_FORM);
@@ -214,6 +217,20 @@ export function ScienceTab({ unitId, actorEmail }: any) {
     loadCriteria();
   }
 
+    async function toggleCriteriaDetail(c: any) {
+      if (criteriaDetailOpenId === c.id) { setCriteriaDetailOpenId(null); return; }
+      setCriteriaDetailOpenId(c.id);
+      if (criteriaDetailData[c.id]) return;
+      setLoadingCriteriaDetail(true);
+      try {
+        const res = await fetch("/api/linac/criteria/" + c.id);
+        const data = await res.json();
+        setCriteriaDetailData((prev: any) => Object.assign({}, prev, { [c.id]: data }));
+      } finally {
+        setLoadingCriteriaDetail(false);
+      }
+    }
+  
   const loadAlerts = useCallback(async () => {
     setLoadingAlerts(true);
     try {
@@ -692,6 +709,7 @@ export function ScienceTab({ unitId, actorEmail }: any) {
                             Nueva version
                           </button>
                         )}
+                        <button title="Ver detalle completo" onClick={() => toggleCriteriaDetail(c)} className="rounded border border-border px-2 py-0.5 text-xs">{criteriaDetailOpenId === c.id ? "Ocultar detalle" : "Ver detalle"}</button>
                       </td>
                     </tr>
                   );
@@ -700,6 +718,7 @@ export function ScienceTab({ unitId, actorEmail }: any) {
             </table>
           </div>
         )}
+        {criteriaDetailOpenId && (<div className="mt-3 rounded border border-border p-3 text-xs">{loadingCriteriaDetail ? (<p className="text-muted-foreground">Cargando detalle...</p>) : !criteriaDetailData[criteriaDetailOpenId] ? (<p className="text-muted-foreground">Sin datos.</p>) : (<div><p className="mb-2 font-semibold text-foreground">DETALLE DEL CRITERIO (Seccion 56)</p><div className="grid grid-cols-2 gap-2 md:grid-cols-4"><div><p className="text-muted-foreground">ID</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.id}</p></div><div><p className="text-muted-foreground">Tolerancia</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.tolerance || "-"}</p></div><div><p className="text-muted-foreground">Limite de accion</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.action_limit || "-"}</p></div><div><p className="text-muted-foreground">Limite de investigacion</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.investigation_limit || "-"}</p></div><div><p className="text-muted-foreground">Limite critico</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.critical_limit || "-"}</p></div><div><p className="text-muted-foreground">Version documento</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.document_version || "-"}</p></div><div><p className="text-muted-foreground">Pagina/Capitulo/Seccion</p><p className="text-foreground">{[criteriaDetailData[criteriaDetailOpenId].criteria.page, criteriaDetailData[criteriaDetailOpenId].criteria.chapter, criteriaDetailData[criteriaDetailOpenId].criteria.section].filter(Boolean).join(" / ") || "-"}</p></div><div><p className="text-muted-foreground">Responsable (propuso)</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.proposed_by || "-"}</p></div><div><p className="text-muted-foreground">Validado por</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.validated_by || "-"}</p></div><div><p className="text-muted-foreground">Fecha de aprobacion</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.validated_at ? new Date(criteriaDetailData[criteriaDetailOpenId].criteria.validated_at).toLocaleString() : "-"}</p></div><div><p className="text-muted-foreground">Ultima revision</p><p className="text-foreground">{criteriaDetailData[criteriaDetailOpenId].criteria.updated_at ? new Date(criteriaDetailData[criteriaDetailOpenId].criteria.updated_at).toLocaleString() : "-"}</p></div></div><p className="mt-3 mb-1 font-semibold text-foreground">Criterios relacionados (versiones)</p><p className="text-muted-foreground">{(criteriaDetailData[criteriaDetailOpenId].versions || []).length === 0 ? "Sin versiones relacionadas. Los resultados historicos permanecen asociados a la version original." : criteriaDetailData[criteriaDetailOpenId].versions.map((v: any) => "ID " + v.id + " - " + v.status).join(" | ")}</p><p className="mt-3 mb-1 font-semibold text-foreground">Auditoria de este criterio (control de cambios - Seccion 57)</p><p className="text-muted-foreground">{(criteriaDetailData[criteriaDetailOpenId].audit || []).length === 0 ? "Sin eventos de auditoria." : criteriaDetailData[criteriaDetailOpenId].audit.map((a: any) => a.action + " por " + (a.actor || "-") + " el " + new Date(a.created_at).toLocaleString()).join(" | ")}</p></div>)}</div>)}
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4">
