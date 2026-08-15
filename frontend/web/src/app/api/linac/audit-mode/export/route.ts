@@ -423,7 +423,7 @@ if (format === "csv") {
 
 if (format === "xlsx" || format === "excel") {
   const buffer = await buildXlsx(data);
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": 'attachment; filename="' + filenameBase + '.xlsx"',
@@ -433,7 +433,7 @@ if (format === "xlsx" || format === "excel") {
 
 if (format === "pdf") {
   const buffer = await buildPdf(data);
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": 'attachment; filename="' + filenameBase + '.pdf"',
