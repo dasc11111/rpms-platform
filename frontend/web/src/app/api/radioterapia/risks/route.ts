@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     cerrados: risks.filter((r: any) => r.status === "cerrado").length,
     };
 
-  const matrix: Record<string, Record<string, number>> = {};
+const matrix: any = {};
   for (let p = 1; p <= 5; p++) {
     matrix[p] = {};
     for (let s = 1; s <= 5; s++) {
