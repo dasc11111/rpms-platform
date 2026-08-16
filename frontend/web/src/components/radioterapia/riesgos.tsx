@@ -225,7 +225,7 @@ const [risks, setRisks] = useState<any[]>([]);
                 <td className="p-1 text-foreground">{r.action || "-"}</td>
                 <td className="p-1 text-foreground">{r.responsible || "-"}</td>
                 <td className="p-1 text-foreground">{r.due_date ? String(r.due_date).slice(0, 10) : "-"}</td>
-                <td className="p-1 text-foreground">{STATUS_MAP[r.status] ? STATUS_MAP[r.status].dot : ""} {STATUS_MAP[r.status] ? STATUS_MAP[r.status].label : r.status}</td>
+                <td className="p-1 text-foreground">{STATUS_MAP[r.status]?.dot} {STATUS_MAP[r.status]?.label || r.status}</td>
                 <td className="p-1">
                   <select
                     className={inputCls}
