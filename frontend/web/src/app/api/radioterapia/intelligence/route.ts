@@ -153,7 +153,8 @@ export async function GET(request: Request) {
     if (existing.rows.length === 0) {
       await sql`INSERT INTO rt_kpi_snapshots (facility_id, period_label, kpi_data) VALUES (${facilityId}, ${todayLabel}, ${payload}::jsonb)`;
     } else {
-      await sql`UPDATE rt_kpi_snapshots SET kpi_data = ${payload}::jsonb WHERE id = ${existing.rows[0].id}`;
+      const existingId = existing.rows[0]?.id;
+      await sql`UPDATE rt_kpi_snapshots SET kpi_data = ${payload}::jsonb WHERE id = ${existingId}`;
     }
   }
   const baseline = await sql`
