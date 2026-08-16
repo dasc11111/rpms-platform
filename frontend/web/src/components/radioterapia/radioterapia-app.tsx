@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { GestionIntegralTab } from "./gestion-integral";
 import { AccionesTab } from "./acciones";
 import { RiesgosTab } from "./riesgos";
 import { IncidentesTab } from "./incidentes";
+import { AuditoriasTab } from "./auditorias";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -125,7 +127,7 @@ export function RadioterapiaApp() {
       {tab === "incidents" && facilityId && <IncidentesTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "actions" && facilityId && <AccionesTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "risks" && facilityId && <RiesgosTab facilityId={facilityId} actorEmail={actorEmail} />}
-      {tab === "audits" && facilityId && <AuditsTab facilityId={facilityId} actorEmail={actorEmail} />}
+      {tab === "audits" && facilityId && <AuditoriasTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "training" && facilityId && <TrainingTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "history" && <HistoryTab />}
       {!facilityId && tab !== "dashboard" && tab !== "info" && tab !== "history" && (
