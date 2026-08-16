@@ -85,7 +85,7 @@ const devicesRes = bunkerIds.length
       : { rows: [] as any[] };
     const devices = devicesRes.rows;
     const devicesTotal = devices.length;
-    const devicesOperational = devices.filter((d: any) => d.status === "operativo").length;
+    const devicesOperational = devices.filter((d: any) => d.status === "operativo" || d.status === "conforme").length;
 
   const incidentsRes = await sql`SELECT * FROM rt_incidents WHERE facility_id = ${facilityId} ORDER BY incident_date DESC`;
     const incidents = incidentsRes.rows;
@@ -199,7 +199,7 @@ const docsCurrent = linacDocs.filter((d: any) => d.is_current).length;
     const cumplimientoAutorizaciones = pct(authsValid, linacAuths.length);
 
 const alerts: any[] = [];
-    devices.filter((d: any) => d.status !== "operativo").forEach((d: any) =>
+    devices.filter((d: any) => d.status !== "operativo" && d.status !== "conforme").forEach((d: any) =>
           alerts.push({ module: "safety", level: "critical", message: `Dispositivo "${d.name || d.device_type}" fuera de servicio` }));
     linacAuths.forEach((a: any) => {
           const days = daysUntil(a.expiry_date);
