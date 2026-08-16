@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   LayoutDashboard, ClipboardList, Warehouse, ShieldCheck, Radiation,
-  AlertTriangle, CalendarClock, GraduationCap, History, Plus, Atom, Gauge,
+  AlertTriangle, CalendarClock, GraduationCap, History, Plus, Atom, Gauge, ListChecks,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
@@ -13,10 +13,12 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { CentroOperaciones } from "./centro-operaciones";
 import { LinacApp } from "@/components/linac/linac-app";
 import { GestionIntegralTab } from "./gestion-integral";
+import { AccionesTab } from "./acciones";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
   { id: "gestion-integral", label: "Gestion Integral", icon: Gauge },
+  { id: "actions", label: "Acciones Correctivas/Preventivas", icon: ListChecks },
   { id: "info", label: "Informacion General", icon: ClipboardList },
   { id: "linac", label: "Acelerador Lineal", icon: Atom },
   { id: "bunkers", label: "Bunkers y Blindaje", icon: Warehouse },
@@ -118,6 +120,7 @@ export function RadioterapiaApp() {
       {tab === "safety" && facilityId && <SafetyTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "surveys" && facilityId && <SurveysTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "incidents" && facilityId && <IncidentsTab facilityId={facilityId} actorEmail={actorEmail} />}
+      {tab === "actions" && facilityId && <AccionesTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "audits" && facilityId && <AuditsTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "training" && facilityId && <TrainingTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "history" && <HistoryTab />}
