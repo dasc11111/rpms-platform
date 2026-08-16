@@ -174,7 +174,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const auditIds = audits.map((a: any) => a.id);
+    const auditIds: any = audits.map((a: any) => a.id);
     if (auditIds.length) {
       const { rows: findings } = await sql`
         SELECT f.*, a.title AS audit_title FROM rt_audit_findings f
