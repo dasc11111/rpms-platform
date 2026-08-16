@@ -375,7 +375,7 @@ export async function GET(request: Request) {
   {
     const qcDesv = qcTests.filter((q: any) => q.status && q.status !== "cumple").slice(0, 50);
     const shieldingDesv = shielding.filter((s: any) => s.status !== "conforme");
-    const devicesDesv = devices.filter((d: any) => d.status !== "operativo");
+    const devicesDesv = devices.filter((d: any) => d.status !== "operativo" && d.status !== "conforme");
     const total = qcDesv.length + shieldingDesv.length + devicesDesv.length;
     const sinDatos = qcTests.length === 0 && shielding.length === 0 && devices.length === 0;
     const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "requiere_revision" : "cumple";
