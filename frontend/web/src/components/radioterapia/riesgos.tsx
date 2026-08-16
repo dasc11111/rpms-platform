@@ -36,21 +36,21 @@ const LEVEL_DOT = {
   muy_alto: "🔴",
 };
 
-function cellClass(score) {
+function cellClass(score: any) {
   if (score <= 4) return "bg-green-950 text-green-300 border-green-800";
   if (score <= 9) return "bg-yellow-950 text-yellow-300 border-yellow-800";
   if (score <= 15) return "bg-orange-950 text-orange-300 border-orange-800";
   return "bg-red-950 text-red-300 border-red-800";
 }
 
-export function RiesgosTab({ facilityId, actorEmail }) {
-  const [risks, setRisks] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [matrix, setMatrix] = useState(null);
-  const [form, setForm] = useState({ probability: 1, severity: 1, status: "identificado" });
+export function RiesgosTab({ facilityId, actorEmail }: any) {
+const [risks, setRisks] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [matrix, setMatrix] = useState<any>(null);
+  const [form, setForm] = useState<any>({ probability: 1, severity: 1, status: "identificado" });
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState("");
-  const [selectedCell, setSelectedCell] = useState(null);
+  const [selectedCell, setSelectedCell] = useState<any>(null);
   const inputCls = "w-full rounded border border-border bg-background px-2 py-1.5 text-sm text-foreground";
 
   const load = useCallback(async () => {
@@ -66,7 +66,7 @@ export function RiesgosTab({ facilityId, actorEmail }) {
 
   useEffect(() => { load(); }, [load]);
 
-  function set(k, v) { setForm((f) => ({ ...f, [k]: v })); }
+  function set(k: string, v: any) { setForm((f: any) => ({ ...f, [k]: v })); }
 
   async function handleCreate() {
     if (!form.description || !form.action) return;
@@ -84,7 +84,7 @@ export function RiesgosTab({ facilityId, actorEmail }) {
     }
   }
 
-  async function updateStatus(id, status) {
+  async function updateStatus(id: number, status: string) {
     await fetch("/api/radioterapia/risks", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -247,7 +247,7 @@ export function RiesgosTab({ facilityId, actorEmail }) {
   );
 }
 
-function SummaryBox({ label, value, onClick, active }) {
+function SummaryBox({ label, value, onClick, active }: any) {
   return (
     <button
       onClick={onClick}
