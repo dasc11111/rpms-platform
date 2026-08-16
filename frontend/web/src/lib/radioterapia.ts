@@ -178,6 +178,30 @@ export async function ensureRadioterapiaTables() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `;
+    await sql`
+        CREATE TABLE IF NOT EXISTS rt_risks (
+              id SERIAL PRIMARY KEY,
+                    facility_id INTEGER REFERENCES rt_facilities(id) ON DELETE CASCADE,
+                          linac_id INTEGER REFERENCES linac_units(id) ON DELETE SET NULL,
+                                description TEXT NOT NULL,
+                                      area TEXT,
+                                            equipment TEXT,
+                                                  process TEXT,
+                                                        cause TEXT,
+                                                              consequence TEXT,
+                                                                    probability INTEGER NOT NULL DEFAULT 1,
+                                                                          severity INTEGER NOT NULL DEFAULT 1,
+                                                                                existing_control TEXT,
+                                                                                      action TEXT,
+                                                                                            responsible TEXT,
+                                                                                                  due_date DATE,
+                                                                                                        status TEXT NOT NULL DEFAULT 'identificado',
+                                                                                                              evidence_url TEXT,
+                                                                                                                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                                                                                                          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                                                                                                                              );
+                                                                                                                                `;
+  
 
   ensured = true;
 }
@@ -254,6 +278,37 @@ export function getActionAlertLevel(status: string, dueDate: any): { level: stri
   if (days <= 15) return { level: "naranjo", label: "Vence en 15 dias o menos", daysOverdue: null, daysRemaining: days };
   if (days <= 30) return { level: "amarillo", label: "Vence en 30 dias o menos", daysOverdue: null, daysRemaining: days };
   return { level: "verde", label: "En plazo", daysOverdue: null, daysRemaining: days };
+}
+
+export const RT_PROBABILITY_SCALE = [
+  { value: 1, label: "Muy baja" },
+  { value: 2, label: "Baja" },
+  { value: 3, label: "Media" },
+  { value: 4, label: "Alta" },
+  { value: 5, label: "Muy alta" },
+  ];
+
+export const RT_SEVERITY_SCALE = [
+  { value: 1, label: "Insignificante" },
+  { value: 2, label: "Menor" },
+  { value: 3, label: "Moderada" },
+  { value: 4, label: "Mayor" },
+  { value: 5, label: "Catastrofica" },
+  ];
+
+export const RT_RISK_STATUSES = [
+  { value: "identificado", label: "Identificado", color: "blanco" },
+  { value: "en_tratamiento", label: "En tratamiento", color: "amarillo" },
+  { value: "controlado", label: "Controlado", color: "verde" },
+  { value: "cerrado", label: "Cerrado", color: "negro" },
+  ];
+
+export function getRiskClassification(probability: any, severity: any): { score: number; level: string; label: string; color: string } {
+  const score = (Number(probability) || 0) * (Number(severity) || 0);
+  if (score <= 4) return { score, level: "bajo", label: "Bajo", color: "verde" };
+  if (score <= 9) return { score, level: "moderado", label: "Moderado", color: "amarillo" };
+  if (score <= 15) return { score, level: "alto", label: "Alto", color: "naranjo" };
+  return { score, level: "muy_alto", label: "Muy alto", color: "rojo" };
 }
 
 export async function logRadioterapiaAudit(action: string, actorEmail: string | null, details: any) {
