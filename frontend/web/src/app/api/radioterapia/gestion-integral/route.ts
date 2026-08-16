@@ -390,14 +390,16 @@ export async function GET(request: Request) {
   // 10. Incidentes
   {
     const abiertosLinac = linacIncidents.filter((i: any) => i.status === "abierto");
-    const abiertosRt = rtIncidents.filter((i: any) => i.status === "abierto");
-    const total = abiertosLinac.length + abiertosRt.length;
-    const sinDatos = linacIncidents.length === 0 && rtIncidents.length === 0;
-    const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "no_cumple" : "cumple";
-    requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
-                          "Incidentes/eventos abiertos del acelerador o de la instalacion", "linac_incidents / rt_incidents", estado,
-                          sinDatos ? "Sin incidentes registrados." : `${total} incidente(s) abierto(s) (${abiertosLinac.length} acelerador, ${abiertosRt.length} instalacion).`,
-                          null, null, null, null, total > 0 ? "Dar seguimiento y cierre a los incidentes abiertos." : null));
+const abiertosRt = rtIncidents.filter((i: any) => i.status === "abierto");
+const total = abiertosLinac.length + abiertosRt.length;
+const enInvestigacionRt = abiertosRt.filter((i: any) => i.investigation_stage && i.investigation_stage !== "registrado" && i.investigation_stage !== "cierre").length;
+const sinIniciarRt = abiertosRt.filter((i: any) => !i.investigation_stage || i.investigation_stage === "registrado").length;
+const sinDatos = linacIncidents.length === 0 && rtIncidents.length === 0;
+const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "no_cumple" : "cumple";
+requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
+ "Incidentes/eventos abiertos del acelerador o de la instalacion", "linac_incidents / rt_incidents", estado,
+ sinDatos ? "Sin incidentes registrados." : `${total} incidente(s) abierto(s) (${abiertosLinac.length} acelerador, ${abiertosRt.length} instalacion). De los de instalacion: ${enInvestigacionRt} en investigacion activa, ${sinIniciarRt} sin iniciar investigacion formal.`,
+ null, null, null, null, total > 0 ? "Dar seguimiento y cierre a los incidentes abiertos, avanzando la investigacion segun corresponda." : null));
     }
 
   // 11. Acciones correctivas pendientes
