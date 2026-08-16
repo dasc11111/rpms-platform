@@ -54,6 +54,7 @@ export function VencimientosTab({ facilityId, actorEmail }: any) {
   const [filterCategoria, setFilterCategoria] = useState("");
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [createdIds, setCreatedIds] = useState<Set<string>>(new Set());
+  const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -81,8 +82,13 @@ export function VencimientosTab({ facilityId, actorEmail }: any) {
 
   async function handleCreateAction(item: any) {
     setCreatingId(item.id);
+    setErrorIds((prev) => {
+      const next = new Set(prev);
+      next.delete(item.id);
+      return next;
+    });
     try {
-      await fetch("/api/radioterapia/actions", {
+      const res = await fetch("/api/radioterapia/actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -92,13 +98,20 @@ export function VencimientosTab({ facilityId, actorEmail }: any) {
           origin: "vencimiento",
           originRef: item.id,
           description: item.categoria + ": " + item.descripcion,
+          action: "Regularizar vencimiento: " + item.categoria + " - " + item.descripcion,
           responsible: item.responsable,
           priority: priorityForNivel(item.nivel),
           dueDate: item.vencimiento,
           status: "pendiente",
         }),
       });
-      setCreatedIds((prev) => new Set(prev).add(item.id));
+      if (res.ok) {
+        setCreatedIds((prev) => new Set(prev).add(item.id));
+      } else {
+        setErrorIds((prev) => new Set(prev).add(item.id));
+      }
+    } catch {
+      setErrorIds((prev) => new Set(prev).add(item.id));
     } finally {
       setCreatingId(null);
     }
@@ -162,11 +175,11 @@ export function VencimientosTab({ facilityId, actorEmail }: any) {
                       <span className="text-xs text-success">Accion creada</span>
                     ) : (
                       <button
-                        className="rounded border border-border px-2 py-1 text-xs text-foreground"
+                        className={"rounded border px-2 py-1 text-xs " + (errorIds.has(i.id) ? "border-danger text-danger" : "border-border text-foreground")}
                         onClick={() => handleCreateAction(i)}
                         disabled={creatingId === i.id}
                       >
-                        {creatingId === i.id ? "Creando..." : "Crear accion"}
+                        {creatingId === i.id ? "Creando..." : errorIds.has(i.id) ? "Error, reintentar" : "Crear accion"}
                       </button>
                     )}
                   </td>
