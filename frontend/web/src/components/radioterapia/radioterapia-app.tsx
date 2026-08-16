@@ -15,6 +15,7 @@ import { LinacApp } from "@/components/linac/linac-app";
 import { GestionIntegralTab } from "./gestion-integral";
 import { AccionesTab } from "./acciones";
 import { RiesgosTab } from "./riesgos";
+import { IncidentesTab } from "./incidentes";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard Ejecutivo", icon: LayoutDashboard },
@@ -121,7 +122,7 @@ export function RadioterapiaApp() {
       {tab === "bunkers" && facilityId && <BunkersTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "safety" && facilityId && <SafetyTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "surveys" && facilityId && <SurveysTab facilityId={facilityId} actorEmail={actorEmail} />}
-      {tab === "incidents" && facilityId && <IncidentsTab facilityId={facilityId} actorEmail={actorEmail} />}
+      {tab === "incidents" && facilityId && <IncidentesTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "actions" && facilityId && <AccionesTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "risks" && facilityId && <RiesgosTab facilityId={facilityId} actorEmail={actorEmail} />}
       {tab === "audits" && facilityId && <AuditsTab facilityId={facilityId} actorEmail={actorEmail} />}
