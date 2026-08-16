@@ -29,7 +29,7 @@ const STATUS_MAP = Object.fromEntries(
   STATUSES.map((s) => [s.value, { label: s.label, dot: s.dot }])
 );
 
-const LEVEL_DOT = {
+const LEVEL_DOT: Record<string, string> = {
   bajo: "🟢",
   moderado: "🟡",
   alto: "🟠",
