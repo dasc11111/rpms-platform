@@ -156,6 +156,29 @@ export async function ensureRadioterapiaTables() {
     );
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS rt_actions (
+      id SERIAL PRIMARY KEY,
+      facility_id INTEGER REFERENCES rt_facilities(id) ON DELETE CASCADE,
+      action_type TEXT NOT NULL DEFAULT 'correctiva',
+      origin TEXT NOT NULL DEFAULT 'manual',
+      origin_ref TEXT,
+      description TEXT NOT NULL,
+      cause TEXT,
+      action TEXT NOT NULL,
+      responsible TEXT,
+      priority TEXT NOT NULL DEFAULT 'media',
+      status TEXT NOT NULL DEFAULT 'pendiente',
+      created_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      due_date DATE,
+      closed_date DATE,
+      evidence_url TEXT,
+      effectiveness_verification TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
   ensured = true;
 }
 
@@ -179,6 +202,59 @@ export const RT_INCIDENT_SEVERITIES = [
   { value: "moderado", label: "Moderado" },
   { value: "grave", label: "Grave" },
 ];
+
+export const RT_ACTION_TYPES = [
+  { value: "correctiva", label: "Correctiva" },
+  { value: "preventiva", label: "Preventiva" },
+];
+
+export const RT_ACTION_ORIGINS = [
+  { value: "incidente", label: "Incidente" },
+  { value: "auditoria", label: "Auditoria" },
+  { value: "desviacion", label: "Desviacion (QC/blindaje/dispositivo)" },
+  { value: "vencimiento", label: "Vencimiento (autorizacion/calibracion/capacitacion)" },
+  { value: "riesgo", label: "Riesgo" },
+  { value: "tendencia", label: "Tendencia" },
+  { value: "alerta", label: "Alerta" },
+  { value: "manual", label: "Registro manual" },
+];
+
+export const RT_ACTION_PRIORITIES = [
+  { value: "baja", label: "Baja" },
+  { value: "media", label: "Media" },
+  { value: "alta", label: "Alta" },
+  { value: "critica", label: "Critica" },
+];
+
+export const RT_ACTION_STATUSES = [
+  { value: "pendiente", label: "Pendiente", color: "amarillo" },
+  { value: "en_proceso", label: "En proceso", color: "azul" },
+  { value: "atrasada", label: "Atrasada", color: "naranjo" },
+  { value: "completada", label: "Completada", color: "verde" },
+  { value: "no_resuelta", label: "No resuelta", color: "rojo" },
+  { value: "cancelada", label: "Cancelada", color: "negro" },
+];
+
+export function daysUntilDate(dateValue: any): number | null {
+  if (!dateValue) return null;
+  const target = new Date(dateValue);
+  if (Number.isNaN(target.getTime())) return null;
+  const now = new Date();
+  const diffMs = target.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0);
+  return Math.round(diffMs / (1000 * 60 * 60 * 24));
+}
+
+export function getActionAlertLevel(status: string, dueDate: any): { level: string; label: string; daysOverdue: number | null; daysRemaining: number | null } {
+  const days = daysUntilDate(dueDate);
+  const isOpenStatus = status === "pendiente" || status === "en_proceso" || status === "atrasada";
+  if (!isOpenStatus) return { level: "cerrada", label: "Cerrada", daysOverdue: null, daysRemaining: null };
+  if (days === null) return { level: "sin_fecha", label: "Sin fecha compromiso", daysOverdue: null, daysRemaining: null };
+  if (days < 0) return { level: "vencida", label: "Accion vencida", daysOverdue: Math.abs(days), daysRemaining: null };
+  if (days <= 7) return { level: "rojo", label: "Vence en 7 dias o menos", daysOverdue: null, daysRemaining: days };
+  if (days <= 15) return { level: "naranjo", label: "Vence en 15 dias o menos", daysOverdue: null, daysRemaining: days };
+  if (days <= 30) return { level: "amarillo", label: "Vence en 30 dias o menos", daysOverdue: null, daysRemaining: days };
+  return { level: "verde", label: "En plazo", daysOverdue: null, daysRemaining: days };
+}
 
 export async function logRadioterapiaAudit(action: string, actorEmail: string | null, details: any) {
   try {
