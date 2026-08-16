@@ -393,7 +393,7 @@ export const RT_ROOT_CAUSE_METHODS = [
 { value: "personalizado", label: "Analisis personalizado" },
 ];
 
-export function getIncidentStageIndex(stage) {
+export function getIncidentStageIndex(stage: any) {
 const idx = RT_INCIDENT_STAGES.findIndex((s) => s.value === stage);
 return idx === -1 ? 0 : idx;
 }
