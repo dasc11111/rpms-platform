@@ -203,7 +203,34 @@ export async function ensureRadioterapiaTables() {
                                                                                                                                 `;
   
 
-  ensured = true;
+await sql`
+ALTER TABLE rt_incidents
+ADD COLUMN IF NOT EXISTS incident_time TEXT,
+ADD COLUMN IF NOT EXISTS person_involved TEXT,
+ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'otro',
+ADD COLUMN IF NOT EXISTS estimated_dose TEXT,
+ADD COLUMN IF NOT EXISTS impact TEXT,
+ADD COLUMN IF NOT EXISTS immediate_actions TEXT,
+ADD COLUMN IF NOT EXISTS responsible TEXT,
+ADD COLUMN IF NOT EXISTS documents_url TEXT,
+ADD COLUMN IF NOT EXISTS investigation_stage TEXT NOT NULL DEFAULT 'registrado',
+ADD COLUMN IF NOT EXISTS root_cause_method TEXT,
+ADD COLUMN IF NOT EXISTS root_cause_data JSONB;
+`;
+
+await sql`
+CREATE TABLE IF NOT EXISTS rt_incident_stage_history (
+id SERIAL PRIMARY KEY,
+incident_id INTEGER REFERENCES rt_incidents(id) ON DELETE CASCADE,
+stage TEXT NOT NULL,
+notes TEXT,
+responsible TEXT,
+stage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+`;
+
+    ensured = true;
 }
 
 export const RT_DEVICE_TYPES = [
@@ -332,4 +359,41 @@ export async function logRadioterapiaAudit(action: string, actorEmail: string | 
   } catch (err) {
     console.error("logRadioterapiaAudit failed", err);
   }
+}
+
+
+export const RT_INCIDENT_CATEGORIES = [
+{ value: "radiologico", label: "Radiologico" },
+{ value: "operacional", label: "Operacional" },
+{ value: "tecnico", label: "Tecnico" },
+{ value: "dosimetrico", label: "Dosimetrico" },
+{ value: "instrumental", label: "Instrumental" },
+{ value: "mantenimiento", label: "Mantenimiento" },
+{ value: "documental", label: "Documental" },
+{ value: "seguridad", label: "Seguridad" },
+{ value: "emergencia", label: "Emergencia" },
+{ value: "otro", label: "Otro" },
+];
+
+export const RT_INCIDENT_STAGES = [
+{ value: "registrado", label: "Registrado" },
+{ value: "evaluacion_inicial", label: "Evaluacion inicial" },
+{ value: "investigacion", label: "Investigacion" },
+{ value: "causa", label: "Causa" },
+{ value: "accion_correctiva", label: "Accion correctiva" },
+{ value: "verificacion", label: "Verificacion" },
+{ value: "cierre", label: "Cierre" },
+];
+
+export const RT_ROOT_CAUSE_METHODS = [
+{ value: "ninguno", label: "Ninguno / no requiere" },
+{ value: "5_porques", label: "5 Por que (5 Whys)" },
+{ value: "ishikawa", label: "Ishikawa (causa-efecto)" },
+{ value: "simple", label: "Analisis simple" },
+{ value: "personalizado", label: "Analisis personalizado" },
+];
+
+export function getIncidentStageIndex(stage) {
+const idx = RT_INCIDENT_STAGES.findIndex((s) => s.value === stage);
+return idx === -1 ? 0 : idx;
 }
