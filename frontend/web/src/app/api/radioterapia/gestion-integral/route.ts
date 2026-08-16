@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { ensureRadioterapiaTables } from "@/lib/radioterapia";
+import { ensureRadioterapiaTables , getRiskClassification} from "@/lib/radioterapia";
 import { ensureLinacTables, LINAC_QC_PERIODICITIES } from "@/lib/linac";
 import { getCalibrationAlertLevel } from "@/lib/instruments";
 import { getAuthStatus, daysRemaining } from "@/lib/authorization";
@@ -180,6 +180,12 @@ export async function GET(request: Request) {
     ? await sql`SELECT * FROM rt_actions WHERE facility_id = ANY(${facilityIds}::int[])`
       : { rows: [] as any[] };
   const actions = actionsRes.rows;
+
+  const risksRes = facilityIds.length
+  ? await sql`SELECT * FROM rt_risks WHERE facility_id = ANY(${facilityIds}::int[])`
+    : { rows: [] as any[] };
+  const risks = risksRes.rows;
+  
 
   const workersRes = await sql`
   SELECT rut, name, status, service, category, authorization_expiry_date
@@ -445,16 +451,21 @@ export async function GET(request: Request) {
     const evaluables = requisitos.filter((r) => r.evaluable);
     const criticos = evaluables.filter((r) => r.estado === "no_cumple");
     const advertencias = evaluables.filter((r) => r.estado === "requiere_revision" || r.estado === "proximo_a_vencer");
-    const estado: Estado = evaluables.length === 0 ? "no_evaluado" : criticos.length ? "no_cumple" : advertencias.length ? "requiere_revision" : "cumple";
+    const openRisks = risks.filter((r: any) => r.status !== "cerrado");
+    const riskClassifications = openRisks.map((r: any) => getRiskClassification(r.probability, r.severity));
+    const riesgosMuyAltos = riskClassifications.filter((c) => c.level === "muy_alto").length;
+    const riesgosAltos = riskClassifications.filter((c) => c.level === "alto").length;
+    const estado: Estado = evaluables.length === 0 && risks.length === 0 ? "no_evaluado" : (criticos.length || riesgosMuyAltos) ? "no_cumple" : (advertencias.length || riesgosAltos) ? "requiere_revision" : "cumple";
+    const riesgosTexto = risks.length ? ` Riesgos abiertos: ${riesgosMuyAltos} muy alto(s), ${riesgosAltos} alto(s) (de ${openRisks.length} abierto(s) de ${risks.length} registrado(s)).` : " Sin riesgos registrados en la matriz de riesgos.";
     requisitos.push(mkReq("q14_elementos_incumplimiento", "Que elementos podrian generar un incumplimiento?",
-                          "Sintesis de los requisitos evaluados en rojo/naranjo/amarillo", "gestion-integral (sintesis)", estado,
-                          evaluables.length === 0 ? "Aun no hay suficiente informacion evaluable para esta sintesis." :
-                          (criticos.length || advertencias.length)
-                          ? `${criticos.length} elemento(s) critico(s): ${criticos.map((r) => r.pregunta).join("; ") || "ninguno"}. ${advertencias.length} elemento(s) en advertencia: ${advertencias.map((r) => r.pregunta).join("; ") || "ninguno"}.`
-                          : "No se detectan elementos que puedan generar incumplimiento con la informacion evaluable actual.",
+                          "Sintesis de los requisitos evaluados en rojo/naranjo/amarillo, mas riesgos altos/muy altos abiertos", "gestion-integral (sintesis) / rt_risks", estado,
+                          (evaluables.length === 0 && risks.length === 0) ? "Aun no hay suficiente informacion evaluable para esta sintesis." :
+                          ((criticos.length || advertencias.length || riesgosMuyAltos || riesgosAltos)
+                           ? `${criticos.length} elemento(s) critico(s): ${criticos.map((r) => r.pregunta).join("; ") || "ninguno"}. ${advertencias.length} elemento(s) en advertencia: ${advertencias.map((r) => r.pregunta).join("; ") || "ninguno"}.${riesgosTexto}`
+                           : `No se detectan elementos que puedan generar incumplimiento con la informacion evaluable actual.${riesgosTexto}`),
                           null, null, null, null,
-                          (criticos.length || advertencias.length) ? "Priorizar la revision de los elementos criticos y en advertencia listados." : null));
-    }
+                          (criticos.length || advertencias.length || riesgosMuyAltos || riesgosAltos) ? "Priorizar la revision de los elementos criticos, en advertencia y los riesgos altos/muy altos listados." : null));
+  }
 
   const scored = requisitos.filter((r) => r.evaluable && r.id !== "q14_elementos_incumplimiento");
   const scores = scored.map((r) => ESTADO_SCORE[r.estado]).filter((v): v is number => v !== null);
