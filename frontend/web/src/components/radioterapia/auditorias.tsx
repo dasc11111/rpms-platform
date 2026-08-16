@@ -215,11 +215,10 @@ export function AuditoriasTab({ facilityId, actorEmail }: any) {
       "<p>Alcance: " + (selectedAudit.scope || "-") + "</p>" +
       "<h2>Checklist</h2><table><tr><th>Item</th><th>Respuesta</th><th>Notas</th></tr>" + checklistRows + "</table>" +
       "<h2>Hallazgos</h2><table><tr><th>Descripcion</th><th>Clasificacion</th><th>Estado</th><th>Responsable</th></tr>" + findingRows + "</table>" +
-      "</body></html>"
+       "<button onclick=\"window.print()\" style=\"margin-top:16px;padding:8px 16px;\">Imprimir / Guardar como PDF</button></body></html>"
     );
     win.document.close();
     win.focus();
-    win.print();
     fetch("/api/radioterapia/audits", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
