@@ -397,3 +397,117 @@ export function getIncidentStageIndex(stage: any) {
 const idx = RT_INCIDENT_STAGES.findIndex((s) => s.value === stage);
 return idx === -1 ? 0 : idx;
 }
+
+
+export const RT_FINDING_CLASSIFICATIONS = [
+  { value: "conformidad", label: "Conformidad", color: "verde" },
+  { value: "no_conformidad_mayor", label: "No conformidad mayor", color: "rojo" },
+  { value: "no_conformidad_menor", label: "No conformidad menor", color: "naranjo" },
+  { value: "observacion", label: "Observacion", color: "amarillo" },
+  { value: "oportunidad_mejora", label: "Oportunidad de mejora", color: "azul" },
+];
+
+export const RT_FINDING_STATUSES = [
+  { value: "abierto", label: "Abierto" },
+  { value: "en_tratamiento", label: "En tratamiento" },
+  { value: "cerrado", label: "Cerrado" },
+];
+
+export const RT_CHECKLIST_RESPONSES = [
+  { value: "cumple", label: "Cumple" },
+  { value: "no_cumple", label: "No cumple" },
+  { value: "observado", label: "Observado" },
+  { value: "no_aplica", label: "No aplica" },
+];
+
+export const RT_DEFAULT_CHECKLIST_ITEMS: Record<string, string[]> = {
+  interna: [
+    "Documentacion de autorizacion vigente y disponible",
+    "Registros de dosimetria del personal al dia",
+    "Controles de calidad del acelerador al dia",
+    "Dispositivos de seguridad verificados y operativos",
+    "Procedimientos escritos disponibles y actualizados",
+    "Registro de incidentes y quasi-incidentes actualizado",
+    "Capacitacion del personal vigente",
+    "Plan de emergencia radiologica disponible y difundido",
+  ],
+  externa: [
+    "Cumplimiento de condiciones de la autorizacion",
+    "Registros solicitados disponibles para el organismo fiscalizador",
+    "Trazabilidad de fuentes y equipos generadores",
+    "Evidencia de acciones correctivas de auditorias previas",
+  ],
+  seremi: [
+    "Autorizacion sanitaria vigente",
+    "Licencias de operador vigentes",
+    "Registro de dosimetria personal disponible",
+  ],
+  cchen: [
+    "Autorizacion CCHEN vigente",
+    "Inventario de fuentes actualizado",
+    "Levantamientos radiometricos vigentes",
+  ],
+  iaea: [
+    "Cumplimiento de estandares de seguridad basicos (GSR Part 3)",
+    "Cultura de seguridad radiologica evidenciada",
+    "Sistema de gestion de calidad documentado",
+  ],
+};
+
+export function getFindingClassification(value: any) {
+  return RT_FINDING_CLASSIFICATIONS.find((c) => c.value === value) || RT_FINDING_CLASSIFICATIONS[3];
+}
+
+export async function ensureAuditExtensionsTables() {
+  await sql`
+    ALTER TABLE rt_audits
+    ADD COLUMN IF NOT EXISTS title TEXT,
+    ADD COLUMN IF NOT EXISTS scope TEXT,
+    ADD COLUMN IF NOT EXISTS lead_auditor TEXT,
+    ADD COLUMN IF NOT EXISTS participants TEXT,
+    ADD COLUMN IF NOT EXISTS closed_date DATE,
+    ADD COLUMN IF NOT EXISTS next_audit_date DATE,
+    ADD COLUMN IF NOT EXISTS report_generated_at TIMESTAMPTZ;
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS rt_audit_checklist_responses (
+      id SERIAL PRIMARY KEY,
+      audit_id INTEGER REFERENCES rt_audits(id) ON DELETE CASCADE,
+      item_text TEXT NOT NULL,
+      category TEXT,
+      response TEXT NOT NULL DEFAULT 'no_aplica',
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS rt_audit_findings (
+      id SERIAL PRIMARY KEY,
+      audit_id INTEGER REFERENCES rt_audits(id) ON DELETE CASCADE,
+      description TEXT NOT NULL,
+      classification TEXT NOT NULL DEFAULT 'observacion',
+      requirement_ref TEXT,
+      evidence_url TEXT,
+      responsible TEXT,
+      due_date DATE,
+      status TEXT NOT NULL DEFAULT 'abierto',
+      closed_date DATE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS rt_audit_checklist_templates (
+      id SERIAL PRIMARY KEY,
+      facility_id INTEGER REFERENCES rt_facilities(id) ON DELETE CASCADE,
+      audit_type TEXT NOT NULL,
+      item_text TEXT NOT NULL,
+      category TEXT,
+      order_index INTEGER NOT NULL DEFAULT 0,
+      active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `;
+}
