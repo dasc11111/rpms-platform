@@ -176,6 +176,11 @@ export async function GET(request: Request) {
   : { rows: [] as any[] };
   const trainings = trainingsRes.rows;
 
+  const actionsRes = facilityIds.length
+    ? await sql`SELECT * FROM rt_actions WHERE facility_id = ANY(${facilityIds}::int[])`
+      : { rows: [] as any[] };
+  const actions = actionsRes.rows;
+
   const workersRes = await sql`
   SELECT rut, name, status, service, category, authorization_expiry_date
   FROM workers
@@ -389,11 +394,19 @@ export async function GET(request: Request) {
                           null, null, null, null, total > 0 ? "Dar seguimiento y cierre a los incidentes abiertos." : null));
     }
 
-  // 11. Acciones correctivas pendientes (sin modulo dedicado aun - bloque futuro de Fase 7)
-  requisitos.push(mkReq("q11_acciones_correctivas_pendientes", "Existen acciones correctivas pendientes?",
-                        "Registro de acciones correctivas con estado y fecha compromiso", "pendiente_de_implementacion", "no_evaluado",
-                        "Aun no existe un modulo dedicado de acciones correctivas/preventivas en la plataforma; se implementara en un bloque posterior de la Fase 7 (Secciones 14 a 18).",
-                        null, null, null, null, "Implementar el modulo de Acciones Correctivas/Preventivas."));
+  // 11. Acciones correctivas pendientes
+  {
+      const openActions = actions.filter((a: any) => ["pendiente", "en_proceso", "atrasada"].includes(a.status));
+      const overdue = openActions.filter((a: any) => { const d = daysUntil(a.due_date); return d !== null && d < 0; });
+      const sinDatos = actions.length === 0;
+      const estado: Estado = sinDatos ? "no_evaluado" : overdue.length ? "no_cumple" : openActions.length ? "requiere_revision" : "cumple";
+      requisitos.push(mkReq("q11_acciones_correctivas_pendientes", "Existen acciones correctivas pendientes?",
+                                                "Registro de acciones correctivas/preventivas con estado y fecha compromiso", "rt_actions", estado,
+                                                sinDatos ? "No hay acciones correctivas/preventivas registradas." :
+                                                `${openActions.length} accion(es) abierta(s) (${overdue.length} vencida(s)) de ${actions.length} registrada(s) en total.`,
+                                                null, null, null, null,
+                                                overdue.length ? "Dar seguimiento a las acciones vencidas." : openActions.length ? "Completar el seguimiento de las acciones abiertas." : null));
+  }
 
   // 12. Mantenimiento pendiente
   if (!hasLinac) {
