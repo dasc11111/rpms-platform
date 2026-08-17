@@ -33,10 +33,25 @@ const GAP_COLOR: Record<string, string> = {
   NO_APLICA: "text-foreground",
 };
 
+const EFICACIA_COLOR: Record<string, string> = {
+  EFECTIVA: "text-success",
+  PARCIALMENTE_EFECTIVA: "text-warning",
+  NO_EFECTIVA: "text-danger",
+  NO_EVALUADA: "text-muted-foreground",
+};
+
+const EFICACIA_ICON: Record<string, string> = {
+  EFECTIVA: "✅",
+  PARCIALMENTE_EFECTIVA: "🟡",
+  NO_EFECTIVA: "❌",
+  NO_EVALUADA: "⏳",
+};
+
 const SECTIONS = [
   { id: "resumen", label: "Resumen y Control Room" },
   { id: "tendencias", label: "Tendencias" },
   { id: "recurrencias", label: "Recurrencias" },
+  { id: "eficacia", label: "Analisis de Eficacia" },
   { id: "gap", label: "Gap Analysis" },
   { id: "inspeccion", label: "Modo Inspeccion" },
 ];
@@ -121,10 +136,10 @@ export function InteligenciaTab({ facilityId }: { facilityId: number }) {
 
       {section === "resumen" && (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <ControlRoomCard title="🔴 Critico" items={data.controlRoom.critico} tone="text-danger" />
-          <ControlRoomCard title="🟠 Importante" items={data.controlRoom.importante} tone="text-orange-500" />
-          <ControlRoomCard title="🟡 Preventivo" items={data.controlRoom.preventivo} tone="text-warning" />
-          <ControlRoomCard title="🟢 Normal" items={data.controlRoom.normal} tone="text-success" />
+          <ControlRoomCard title="Critico" items={data.controlRoom.critico} tone="text-danger" />
+          <ControlRoomCard title="Importante" items={data.controlRoom.importante} tone="text-orange-500" />
+          <ControlRoomCard title="Preventivo" items={data.controlRoom.preventivo} tone="text-warning" />
+          <ControlRoomCard title="Normal" items={data.controlRoom.normal} tone="text-success" />
         </div>
       )}
 
@@ -154,9 +169,43 @@ export function InteligenciaTab({ facilityId }: { facilityId: number }) {
           <div className="space-y-2">
             {data.recurrencias.map((r: any, i: number) => (
               <div key={i} className="rounded-md border-l-4 border-warning border border-border bg-background p-2 text-xs">
-                <p className="font-medium text-foreground">⚠ {r.mensaje} — {r.tipo} ({r.campo}): {r.clave}</p>
+                <p className="font-medium text-foreground">{r.mensaje} - {r.tipo} ({r.campo}): {r.clave}</p>
                 <p className="text-muted-foreground">Frecuencia: {r.frecuencia} | Ultimo evento: {String(r.ultimoEvento).slice(0, 10)}</p>
-                {r.verificarEficaciaAccion && <p className="mt-1 font-medium text-danger">🔁 {r.mensajeEficacia}</p>}
+                {r.verificarEficaciaAccion && <p className="mt-1 font-medium text-danger">{r.mensajeEficacia}</p>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {section === "eficacia" && (
+        <div className="rounded-lg border border-border bg-surface p-3">
+          <p className="mb-2 text-sm font-semibold text-foreground">Analisis de eficacia de acciones cerradas</p>
+          <p className="mb-2 text-[11px] text-muted-foreground">
+            Compara la frecuencia de eventos con la misma causa antes y despues del cierre de cada accion. NO EVALUADA indica que aun no hay suficiente informacion u observacion.
+          </p>
+          {data.analisisEficacia.items.length === 0 && (
+            <p className="text-xs text-muted-foreground">Aun no hay acciones cerradas con causa registrada para evaluar.</p>
+          )}
+          <div className="mb-2 flex flex-wrap gap-3 text-xs">
+            {Object.entries(data.analisisEficacia.resumen).map(([k, v]: any) => (
+              <span key={k} className={EFICACIA_COLOR[k] || "text-foreground"}>{EFICACIA_ICON[k] || ""} {k}: {v}</span>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {data.analisisEficacia.items.map((e: any, i: number) => (
+              <div key={i} className="rounded-md border border-border bg-background p-2 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-medium text-foreground">Causa: {e.causa}</span>
+                  <span className={"font-medium " + (EFICACIA_COLOR[e.clasificacion] || "text-foreground")}>
+                    {EFICACIA_ICON[e.clasificacion] || ""} {e.clasificacionLabel}
+                  </span>
+                </div>
+                <p className="mt-1 text-muted-foreground">Accion: {e.accionTomada || "-"}</p>
+                <p className="text-muted-foreground">
+                  Antes: {e.eventosAntes ?? "S/D"} evento(s) | Despues: {e.eventosDespues ?? "S/D"} evento(s) | Cerrada: {String(e.cerrada).slice(0, 10)}
+                </p>
+                <p className="mt-1 text-muted-foreground">{e.motivo}</p>
               </div>
             ))}
           </div>
@@ -213,7 +262,7 @@ export function InteligenciaTab({ facilityId }: { facilityId: number }) {
               {data.inspeccion.checklist.map((c: any, i: number) => (
                 <div key={i} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background p-2 text-xs">
                   <span className="text-foreground">{SEMAFORO_DOT[c.estado] || "⚪"} {c.requisito}</span>
-                  <span className="text-muted-foreground">{c.responsable || "-"} {c.fecha ? "· " + String(c.fecha).slice(0, 10) : ""}</span>
+                  <span className="text-muted-foreground">{c.responsable || "-"} {c.fecha ? "- " + String(c.fecha).slice(0, 10) : ""}</span>
                 </div>
               ))}
             </div>
