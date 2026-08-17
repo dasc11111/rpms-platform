@@ -184,7 +184,7 @@ export async function GET(request: Request) {
   const riesgosTrendItem = buildTrend("Riesgos nuevos identificados", riskCur.rows[0]?.n ?? 0, riskHist ? riskPrev.rows[0]?.n ?? 0 : null, "riesgos", false);
   if (cumplimientoActual === null) {
     cumplimientoTrendItem.tendencia = "datos_insuficientes";
-    cumplimientoTrendItem.tendenciaLabel = TREND_LABELS.datos_insuficientes;
+    cumplimientoTrendItem.tendenciaLabel = TREND_LABELS.datos_insuficientes ?? "datos_insuficientes";
     cumplimientoTrendItem.actual = 0;
   }
   const tendencias = [cumplimientoTrendItem, incidentesTrendItem, accionesTrendItem, riesgosTrendItem];
