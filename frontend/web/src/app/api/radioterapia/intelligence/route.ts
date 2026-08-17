@@ -178,17 +178,16 @@ export async function GET(request: Request) {
     };
   }
 
-  const tendencias = [
-    buildTrend("Cumplimiento general", cumplimientoActual ?? 0, cumplimientoAnterior, "%", true),
-    buildTrend("Incidentes registrados", incCur.rows[0]?.n ?? 0, incHist ? incPrev.rows[0]?.n ?? 0 : null, "eventos", false),
-    buildTrend("Acciones creadas", accCur.rows[0]?.n ?? 0, accHist ? accPrev.rows[0]?.n ?? 0 : null, "acciones", false),
-    buildTrend("Riesgos nuevos identificados", riskCur.rows[0]?.n ?? 0, riskHist ? riskPrev.rows[0]?.n ?? 0 : null, "riesgos", false),
-  ];
+  const cumplimientoTrendItem = buildTrend("Cumplimiento general", cumplimientoActual ?? 0, cumplimientoAnterior, "%", true);
+  const incidentesTrendItem = buildTrend("Incidentes registrados", incCur.rows[0]?.n ?? 0, incHist ? incPrev.rows[0]?.n ?? 0 : null, "eventos", false);
+  const accionesTrendItem = buildTrend("Acciones creadas", accCur.rows[0]?.n ?? 0, accHist ? accPrev.rows[0]?.n ?? 0 : null, "acciones", false);
+  const riesgosTrendItem = buildTrend("Riesgos nuevos identificados", riskCur.rows[0]?.n ?? 0, riskHist ? riskPrev.rows[0]?.n ?? 0 : null, "riesgos", false);
   if (cumplimientoActual === null) {
-    tendencias[0].tendencia = "datos_insuficientes";
-    tendencias[0].tendenciaLabel = TREND_LABELS.datos_insuficientes;
-    tendencias[0].actual = 0;
+    cumplimientoTrendItem.tendencia = "datos_insuficientes";
+    cumplimientoTrendItem.tendenciaLabel = TREND_LABELS.datos_insuficientes;
+    cumplimientoTrendItem.actual = 0;
   }
+  const tendencias = [cumplimientoTrendItem, incidentesTrendItem, accionesTrendItem, riesgosTrendItem];
 
   const [accionesAbiertasRes, riesgosActivosRes] = await Promise.all([
     sql`SELECT count(*)::int AS n FROM rt_actions WHERE facility_id = ${facilityId} AND status NOT IN ('completada', 'cerrada')`,
@@ -285,7 +284,7 @@ export async function GET(request: Request) {
   resumenPartes.push(
     `Se identificaron ${alertasCriticasDash.length} alerta(s) critica(s), ${accionesAbiertas} accion(es) pendiente(s) y ${riesgosActivos} riesgo(s) activo(s).`
   );
-  const tCump = tendencias[0].tendencia;
+  const tCump = cumplimientoTrendItem.tendencia;
   if (tCump === "datos_insuficientes") {
     resumenPartes.push("Informacion insuficiente para establecer una tendencia de cumplimiento respecto del periodo anterior.");
   } else {
