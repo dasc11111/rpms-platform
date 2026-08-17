@@ -172,7 +172,7 @@ export async function GET(request: Request) {
       anterior,
       unidad,
       tendencia,
-      tendenciaLabel: TREND_LABELS[tendencia],
+      tendenciaLabel: TREND_LABELS[tendencia] ?? tendencia,
       variacionAbsoluta: anterior === null ? null : Number((actual - anterior).toFixed(2)),
       variacionPorcentual: anterior === null || anterior === 0 ? null : Number((((actual - anterior) / anterior) * 100).toFixed(1)),
     };
@@ -288,7 +288,7 @@ export async function GET(request: Request) {
   if (tCump === "datos_insuficientes") {
     resumenPartes.push("Informacion insuficiente para establecer una tendencia de cumplimiento respecto del periodo anterior.");
   } else {
-    resumenPartes.push(`El area presenta una tendencia de cumplimiento: ${TREND_LABELS[tCump].toLowerCase()}.`);
+    resumenPartes.push(`El area presenta una tendencia de cumplimiento: ${(TREND_LABELS[tCump] ?? tCump).toLowerCase()}.`);
   }
   if (recurrencias.length > 0) {
     resumenPartes.push(`Se detectaron ${recurrencias.length} patron(es) de recurrencia que ameritan revision.`);
