@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureRadioterapiaTables } from "@/lib/radioterapia";
+import { GET as dashboardGET } from "../dashboard/route";
+import { GET as gestionIntegralGET } from "../gestion-integral/route";
+import { GET as vencimientosGET } from "../vencimientos/route";
 
 export const dynamic = "force-dynamic";
 
@@ -112,9 +115,9 @@ export async function GET(request: Request) {
   const prevStart = addDays(now, -periodDays * 2);
 
   const [dashRes, giRes, vencRes] = await Promise.all([
-    fetch(`${origin}/api/radioterapia/dashboard?facilityId=${facilityId}`, { cache: "no-store" }),
-    fetch(`${origin}/api/radioterapia/gestion-integral?facilityId=${facilityId}`, { cache: "no-store" }),
-    fetch(`${origin}/api/radioterapia/vencimientos?facilityId=${facilityId}`, { cache: "no-store" }),
+    dashboardGET(new Request(`${origin}/api/radioterapia/dashboard?facilityId=${facilityId}`)),
+    gestionIntegralGET(new Request(`${origin}/api/radioterapia/gestion-integral?facilityId=${facilityId}`)),
+    vencimientosGET(new Request(`${origin}/api/radioterapia/vencimientos?facilityId=${facilityId}`)),
   ]);
   const dashboard = dashRes.ok ? await dashRes.json() : null;
   const gi = giRes.ok ? await giRes.json() : null;
