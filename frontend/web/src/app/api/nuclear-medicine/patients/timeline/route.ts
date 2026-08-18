@@ -6,6 +6,10 @@ export const dynamic = "force-dynamic";
 // Fase 1 - Medicina Nuclear: linea de tiempo de solo lectura para un
 // paciente especifico, identificado por paciente_run. Combina
 // i131_administrations y room_release_records. No modifica datos.
+//
+// La comparacion se hace sobre una version normalizada del RUN (solo
+// digitos y K) para incluir registros aunque el RUN este guardado con
+// distinto formato (con o sin puntos/guion) en cada tabla de origen.
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -29,7 +33,7 @@ export async function GET(req: NextRequest) {
       diagnostico AS contexto,
       notas AS observaciones
     FROM i131_administrations
-    WHERE paciente_run = $1
+    WHERE regexp_replace(upper(paciente_run), '[^0-9K]', '', 'g') = regexp_replace(upper($1), '[^0-9K]', '', 'g')
     UNION ALL
     SELECT
       'room_release'::text AS origen,
@@ -44,7 +48,7 @@ export async function GET(req: NextRequest) {
       criterio_liberacion AS contexto,
       observaciones
     FROM room_release_records
-    WHERE paciente_run = $1
+    WHERE regexp_replace(upper(paciente_run), '[^0-9K]', '', 'g') = regexp_replace(upper($1), '[^0-9K]', '', 'g')
     ORDER BY event_date ASC NULLS LAST
   `;
 
