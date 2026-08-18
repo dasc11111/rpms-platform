@@ -51,15 +51,18 @@ const NUCLEO_OPERACIONAL: ModuleCard[] = [
   },
 ];
 
-const PROXIMAMENTE: ModuleCard[] = [
+const TRAZABILIDAD: ModuleCard[] = [
   {
-    href: "#",
+    href: "/nuclear-medicine/patients",
     label: "Pacientes y Tratamientos",
-    description: "Trazabilidad integrada paciente, radiofarmaco, administracion y liberacion.",
+    description: "Vista de trazabilidad de solo lectura: combina I-131 y Liberacion de Sala por RUN del paciente. No crea ni modifica registros.",
     icon: Users,
-    status: "proximo",
-    phase: "Fase 4 (propuesta)",
+    status: "activo",
+    phase: "Fase 1 (nuevo)",
   },
+];
+
+const PROXIMAMENTE: ModuleCard[] = [
   {
     href: "#",
     label: "Emergencias e Incidentes (MN)",
@@ -86,6 +89,53 @@ const PROXIMAMENTE: ModuleCard[] = [
   },
 ];
 
+function ModuleGrid({ items }: { items: ModuleCard[] }) {
+  return (
+    <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((m) => {
+        const Icon = m.icon;
+        if (m.status === "activo") {
+          return (
+            <Link
+              key={m.href}
+              href={m.href}
+              className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 hover:bg-muted/40"
+            >
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 text-accent" strokeWidth={2} />
+                <span className="text-sm font-medium">{m.label}</span>
+                {m.phase && (
+                  <span className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium bg-accent-subtle text-foreground">
+                    {m.phase}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{m.description}</p>
+            </Link>
+          );
+        }
+        return (
+          <div
+            key={m.label}
+            className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-surface/50 p-4 opacity-70"
+          >
+            <div className="flex items-center gap-2">
+              <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+              <span className="text-sm font-medium">{m.label}</span>
+              {m.phase && (
+                <span className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
+                  {m.phase}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{m.description}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function NuclearMedicinePage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6">
@@ -101,50 +151,17 @@ export default function NuclearMedicinePage() {
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Nucleo operacional (en produccion)</h2>
       </div>
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {NUCLEO_OPERACIONAL.map((m) => {
-          const Icon = m.icon;
-          return (
-            <Link
-              key={m.href}
-              href={m.href}
-              className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 hover:bg-muted/40"
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-accent" strokeWidth={2} />
-                <span className="text-sm font-medium">{m.label}</span>
-              </div>
-              <p className="text-xs text-muted-foreground">{m.description}</p>
-            </Link>
-          );
-        })}
+      <ModuleGrid items={NUCLEO_OPERACIONAL} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Trazabilidad</h2>
       </div>
+      <ModuleGrid items={TRAZABILIDAD} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
       </div>
-      <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {PROXIMAMENTE.map((m) => {
-          const Icon = m.icon;
-          return (
-            <div
-              key={m.label}
-              className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-surface/50 p-4 opacity-70"
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-                <span className="text-sm font-medium">{m.label}</span>
-                {m.phase && (
-                  <span className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
-                    {m.phase}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">{m.description}</p>
-            </div>
-          );
-        })}
-      </div>
+      <ModuleGrid items={PROXIMAMENTE} />
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-2 text-sm font-semibold">Documentacion de referencia</h2>
