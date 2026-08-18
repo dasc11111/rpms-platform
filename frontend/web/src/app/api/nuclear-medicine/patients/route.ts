@@ -7,6 +7,13 @@ export const dynamic = "force-dynamic";
 // Combina i131_administrations y room_release_records usando paciente_run
 // como llave comun (ya existe en ambas tablas). No modifica ni escribe
 // datos en ninguna tabla existente.
+//
+// Nota sobre formato de RUN: el RUN puede estar guardado con o sin
+// puntos/guion segun el modulo de origen (ej. "13961611-1" vs
+// "13.961.611-1"). Para evitar duplicar al mismo paciente en el listado,
+// se agrupa por una version normalizada del RUN (solo digitos y K, en
+// mayuscula), calculada al vuelo unicamente para esta comparacion. El
+// dato original en cada tabla NO se modifica ni se sobrescribe.
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -36,17 +43,25 @@ export async function GET(req: NextRequest) {
         'room_release'::text AS origen
       FROM room_release_records
       WHERE paciente_run IS NOT NULL AND btrim(paciente_run) <> ''
+    ),
+    normalized AS (
+      SELECT
+        *,
+        regexp_replace(upper(paciente_run), '[^0-9K]', '', 'g') AS run_normalizado
+      FROM combined
     )
     SELECT
-      paciente_run,
+      run_normalizado,
+      (array_agg(paciente_run ORDER BY event_date DESC NULLS LAST))[1] AS paciente_run,
       (array_agg(paciente_nombre ORDER BY event_date DESC NULLS LAST))[1] AS paciente_nombre,
       COUNT(*) FILTER (WHERE origen = 'i131')::int AS total_administraciones,
       COUNT(*) FILTER (WHERE origen = 'room_release')::int AS total_liberaciones,
+      COUNT(DISTINCT paciente_run)::int AS variantes_run,
       MAX(event_date) AS ultima_actividad,
       MIN(event_date) AS primera_actividad
-    FROM combined
+    FROM normalized
     ${whereClause}
-    GROUP BY paciente_run
+    GROUP BY run_normalizado
     ORDER BY ultima_actividad DESC NULLS LAST
     LIMIT 200
   `;
