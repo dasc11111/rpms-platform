@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Syringe, Trash2 } from "lucide-react";
+import { Search, Syringe, Trash2, AlertTriangle } from "lucide-react";
 
 type PatientRow = {
+  run_normalizado: string;
   paciente_run: string;
   paciente_nombre: string;
   total_administraciones: number;
   total_liberaciones: number;
+  variantes_run: number;
   ultima_actividad: string | null;
   primera_actividad: string | null;
 };
@@ -74,7 +76,9 @@ export function PatientsApp() {
       <p className="mb-4 max-w-3xl text-xs text-muted-foreground">
         Vista de trazabilidad de solo lectura (Fase 1): combina Administracion de I-131 y Liberacion de Sala
         usando el RUN del paciente como llave comun. No permite crear, editar ni eliminar registros; los datos
-        se administran desde cada modulo de origen.
+        se administran desde cada modulo de origen. Si el RUN de un mismo paciente esta escrito con distinto
+        formato (con o sin puntos/guion) en cada modulo, esta vista lo agrupa igual para mostrar la trazabilidad
+        completa; el dato original no se modifica.
       </p>
 
       <div className="mb-4 flex items-center gap-2">
@@ -108,14 +112,27 @@ export function PatientsApp() {
               <tbody>
                 {rows.map((r) => (
                   <tr
-                    key={r.paciente_run}
+                    key={r.run_normalizado}
                     onClick={() => openPatient(r.paciente_run)}
                     className={`cursor-pointer border-t border-border/60 hover:bg-muted/40 ${
                       selected === r.paciente_run ? "bg-accent-subtle" : ""
                     }`}
                   >
                     <td className="py-1.5 pr-2">{r.paciente_nombre || "—"}</td>
-                    <td className="py-1.5 pr-2">{r.paciente_run}</td>
+                    <td className="py-1.5 pr-2">
+                      <span className="inline-flex items-center gap-1">
+                        {r.paciente_run}
+                        {r.variantes_run > 1 && (
+                          <span
+                            title="Este RUN aparece con mas de un formato entre los modulos de origen (ej. con y sin puntos/guion). Se agrupo para esta vista sin modificar el dato original."
+                            className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-500"
+                          >
+                            <AlertTriangle className="h-2.5 w-2.5" strokeWidth={2.5} />
+                            {r.variantes_run} formatos
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td className="py-1.5 pr-2 text-center">{r.total_administraciones}</td>
                     <td className="py-1.5 pr-2 text-center">{r.total_liberaciones}</td>
                     <td className="py-1.5 pr-2">{formatDate(r.ultima_actividad)}</td>
