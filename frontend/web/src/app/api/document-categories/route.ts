@@ -42,10 +42,11 @@ export async function POST(request: Request) {
   let parentSlug = "";
   if (parentId) {
     const { rows: parentRows } = await sql`SELECT slug FROM document_categories WHERE id = ${parentId}`;
-    if (parentRows.length === 0) {
+    const parentRow = parentRows[0];
+    if (!parentRow) {
       return NextResponse.json({ error: "parent_not_found" }, { status: 404 });
     }
-    parentSlug = parentRows[0].slug as string;
+    parentSlug = parentRow.slug as string;
   }
 
   const base = slugify(name);
