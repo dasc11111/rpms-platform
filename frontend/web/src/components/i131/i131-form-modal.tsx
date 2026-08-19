@@ -27,6 +27,15 @@ type FormState = {
   tasa_dosis: string;
   dosis_administrada: string;
   notas: string;
+  tipo_procedimiento: string;
+  identidad_confirmada: string;
+  embarazo_descartado: string;
+  fecha_test_embarazo: string;
+  lactancia_consultada: string;
+  segunda_verificacion_responsable: string;
+  bloqueo_tiroideo_considerado: string;
+  actividad_dentro_tolerancia: string;
+  informacion_radioproteccion_entregada: string;
 };
 
 const EMPTY: FormState = {
@@ -51,7 +60,28 @@ const EMPTY: FormState = {
   tasa_dosis: "",
   dosis_administrada: "",
   notas: "",
+  tipo_procedimiento: "",
+  identidad_confirmada: "",
+  embarazo_descartado: "",
+  fecha_test_embarazo: "",
+  lactancia_consultada: "",
+  segunda_verificacion_responsable: "",
+  bloqueo_tiroideo_considerado: "",
+  actividad_dentro_tolerancia: "",
+  informacion_radioproteccion_entregada: "",
 };
+
+function boolToSiNo(v: boolean | null | undefined): string {
+  if (v === true) return "si";
+  if (v === false) return "no";
+  return "";
+}
+
+function siNoToBool(v: string): boolean | null {
+  if (v === "si") return true;
+  if (v === "no") return false;
+  return null;
+}
 
 function recordToForm(r: I131Record): FormState {
   return {
@@ -76,6 +106,15 @@ function recordToForm(r: I131Record): FormState {
     tasa_dosis: r.tasa_dosis ?? "",
     dosis_administrada: r.dosis_administrada?.toString() ?? "",
     notas: r.notas ?? "",
+    tipo_procedimiento: r.tipo_procedimiento ?? "",
+    identidad_confirmada: boolToSiNo(r.identidad_confirmada),
+    embarazo_descartado: r.embarazo_descartado ?? "",
+    fecha_test_embarazo: r.fecha_test_embarazo ? String(r.fecha_test_embarazo).slice(0, 10) : "",
+    lactancia_consultada: r.lactancia_consultada ?? "",
+    segunda_verificacion_responsable: r.segunda_verificacion_responsable ?? "",
+    bloqueo_tiroideo_considerado: r.bloqueo_tiroideo_considerado ?? "",
+    actividad_dentro_tolerancia: boolToSiNo(r.actividad_dentro_tolerancia),
+    informacion_radioproteccion_entregada: boolToSiNo(r.informacion_radioproteccion_entregada),
   };
 }
 
@@ -154,6 +193,15 @@ export function I131FormModal({
       tasa_dosis: form.tasa_dosis || null,
       dosis_administrada: form.dosis_administrada ? Number(form.dosis_administrada) : null,
       notas: form.notas || null,
+      tipo_procedimiento: form.tipo_procedimiento || null,
+      identidad_confirmada: siNoToBool(form.identidad_confirmada),
+      embarazo_descartado: form.embarazo_descartado || null,
+      fecha_test_embarazo: form.fecha_test_embarazo || null,
+      lactancia_consultada: form.lactancia_consultada || null,
+      segunda_verificacion_responsable: form.segunda_verificacion_responsable || null,
+      bloqueo_tiroideo_considerado: form.bloqueo_tiroideo_considerado || null,
+      actividad_dentro_tolerancia: siNoToBool(form.actividad_dentro_tolerancia),
+      informacion_radioproteccion_entregada: siNoToBool(form.informacion_radioproteccion_entregada),
       force,
     };
 
@@ -406,6 +454,122 @@ export function I131FormModal({
             <div>
               <label className={FIELD_LABEL}>Protocolo</label>
               <AutocompleteInput field="protocolo" value={form.protocolo} onChange={(v) => set("protocolo", v)} />
+            </div>
+
+            <div className="col-span-2 mt-2 rounded-md border border-border bg-muted/20 p-3">
+              <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                Controles de seguridad radiológica (ARPANSA RPS 14.2)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={FIELD_LABEL}>Tipo de procedimiento</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.tipo_procedimiento}
+                    onChange={(e) => set("tipo_procedimiento", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="diagnostico">Diagnóstico</option>
+                    <option value="terapeutico">Terapéutico</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Identidad del paciente reconfirmada</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.identidad_confirmada}
+                    onChange={(e) => set("identidad_confirmada", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Embarazo descartado</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.embarazo_descartado}
+                    onChange={(e) => set("embarazo_descartado", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                    <option value="no_aplica">No aplica</option>
+                  </select>
+                </div>
+                {form.embarazo_descartado === "si" && (
+                  <div>
+                    <label className={FIELD_LABEL}>Fecha del test de embarazo</label>
+                    <input
+                      type="date"
+                      className={INPUT_CLASS}
+                      value={form.fecha_test_embarazo}
+                      onChange={(e) => set("fecha_test_embarazo", e.target.value)}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={FIELD_LABEL}>Lactancia consultada</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.lactancia_consultada}
+                    onChange={(e) => set("lactancia_consultada", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                    <option value="no_aplica">No aplica</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Agente bloqueante de tiroides considerado</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.bloqueo_tiroideo_considerado}
+                    onChange={(e) => set("bloqueo_tiroideo_considerado", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                    <option value="no_aplica">No aplica</option>
+                  </select>
+                </div>
+                {form.tipo_procedimiento === "terapeutico" && (
+                  <div>
+                    <label className={FIELD_LABEL}>Segunda persona que verificó la actividad</label>
+                    <input
+                      className={INPUT_CLASS}
+                      value={form.segunda_verificacion_responsable}
+                      onChange={(e) => set("segunda_verificacion_responsable", e.target.value)}
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className={FIELD_LABEL}>Actividad dentro de tolerancia (±10%)</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.actividad_dentro_tolerancia}
+                    onChange={(e) => set("actividad_dentro_tolerancia", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={FIELD_LABEL}>Información de radioprotección entregada</label>
+                  <select
+                    className={INPUT_CLASS}
+                    value={form.informacion_radioproteccion_entregada}
+                    onChange={(e) => set("informacion_radioproteccion_entregada", e.target.value)}
+                  >
+                    <option value="">—</option>
+                    <option value="si">Sí</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="col-span-2">
