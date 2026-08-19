@@ -68,6 +68,20 @@ export function PatientsApp() {
       .finally(() => setTimelineLoading(false));
   }
 
+  // Fase 2 (migracion/reciclaje): permite llegar directo a un paciente desde
+  // los modulos de origen (Administracion I-131, Liberacion de Sala) via
+  // enlace ?run=... sin duplicar la logica de busqueda ni los datos.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const run = params.get("run");
+    if (run) {
+      setQ(run);
+      openPatient(run);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-1 flex items-baseline justify-between">
