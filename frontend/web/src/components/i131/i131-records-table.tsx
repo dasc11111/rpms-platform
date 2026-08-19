@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Users,
 } from "lucide-react";
 import type { I131Filters } from "./i131-search-panel";
 import { pad2, type I131Record } from "@/lib/i131";
@@ -244,6 +245,15 @@ export function I131RecordsTable({
                 ))}
                 <td className="px-3 py-2.5 text-right">
                   <div className="flex justify-end gap-1">
+                    {row.paciente_run && (
+                      <a
+                        href={`/nuclear-medicine/patients?run=${encodeURIComponent(row.paciente_run)}`}
+                        className="rounded-md p-1.5 hover:bg-muted"
+                        title="Ver trazabilidad del paciente (Pacientes y Tratamientos)"
+                      >
+                        <Users className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                     <button onClick={() => onEdit(row)} className="rounded-md p-1.5 hover:bg-muted" title="Editar">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
