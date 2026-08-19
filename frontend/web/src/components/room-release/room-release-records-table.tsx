@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Download, Plus, Tag, RefreshCw, FileText, MoreVertical, Eye, Pencil, Trash2 } from "lucide-react";
+import { Download, Plus, Tag, RefreshCw, FileText, MoreVertical, Eye, Pencil, Trash2, Users } from "lucide-react";
 import type { RoomReleaseRecord } from "@/lib/waste";
 
 type MenuState = { id: number; top: number; left: number } | null;
@@ -198,6 +198,16 @@ export function RoomReleaseRecordsTable({
               >
                 <Eye className="h-3.5 w-3.5" /> Vista previa
               </a>
+              {activeRow.paciente_run && (
+                <a
+                  href={`/nuclear-medicine/patients?run=${encodeURIComponent(activeRow.paciente_run)}`}
+                  onClick={() => setOpenMenu(null)}
+                  className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-muted"
+                  title="Ver trazabilidad del paciente (Pacientes y Tratamientos)"
+                >
+                  <Users className="h-3.5 w-3.5" /> Ver trazabilidad
+                </a>
+              )}
               <button
                 onClick={() => {
                   setOpenMenu(null);
