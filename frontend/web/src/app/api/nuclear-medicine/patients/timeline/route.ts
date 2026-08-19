@@ -7,6 +7,14 @@ export const dynamic = "force-dynamic";
 // paciente especifico, identificado por paciente_run. Combina
 // i131_administrations y room_release_records. No modifica datos.
 //
+// Fase 3 (Base de datos y trazabilidad): se agrega un tercer origen,
+// "residuo" (radioactive_waste_labels), enlazado a traves de la relacion
+// ya existente room_release_id -> room_release_records.id (definida
+// desde el modulo de Gestion de Residuos Radiactivos). No se agrega
+// ningun campo nuevo ni se solicita informacion adicional: el RUN y
+// nombre del paciente se obtienen del Acta de Liberacion de Sala
+// asociada, igual que ya lo hace el propio rotulo de residuo.
+//
 // La comparacion se hace sobre una version normalizada del RUN (solo
 // digitos y K) para incluir registros aunque el RUN este guardado con
 // distinto formato (con o sin puntos/guion) en cada tabla de origen.
@@ -49,6 +57,22 @@ export async function GET(req: NextRequest) {
       observaciones
     FROM room_release_records
     WHERE regexp_replace(upper(paciente_run), '[^0-9K]', '', 'g') = regexp_replace(upper($1), '[^0-9K]', '', 'g')
+    UNION ALL
+    SELECT
+      'residuo'::text AS origen,
+      wl.id,
+      wl.generation_date::date AS event_date,
+      rr.paciente_nombre,
+      rr.paciente_run,
+      wl.label_number AS detalle_principal,
+      wl.actividad_estimada_residual::numeric AS valor,
+      COALESCE(wl.unidad_actividad, 'mCi')::text AS unidad,
+      wl.responsible AS responsable,
+      wl.waste_type AS contexto,
+      wl.observations AS observaciones
+    FROM radioactive_waste_labels wl
+    JOIN room_release_records rr ON rr.id = wl.room_release_id
+    WHERE regexp_replace(upper(rr.paciente_run), '[^0-9K]', '', 'g') = regexp_replace(upper($1), '[^0-9K]', '', 'g')
     ORDER BY event_date ASC NULLS LAST
   `;
 
