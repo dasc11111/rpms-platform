@@ -8,6 +8,12 @@ export const dynamic = "force-dynamic";
 // como llave comun (ya existe en ambas tablas). No modifica ni escribe
 // datos en ninguna tabla existente.
 //
+// Fase 3 (Base de datos y trazabilidad): se agrega un tercer origen,
+// "residuo" (radioactive_waste_labels), enlazado mediante la relacion ya
+// existente room_release_id -> room_release_records.id. Se usa el mismo
+// paciente_run/paciente_nombre del Acta de Liberacion de Sala asociada;
+// no se solicita ni se guarda informacion nueva.
+//
 // Nota sobre formato de RUN: el RUN puede estar guardado con o sin
 // puntos/guion segun el modulo de origen (ej. "13961611-1" vs
 // "13.961.611-1"). Para evitar duplicar al mismo paciente en el listado,
@@ -43,6 +49,15 @@ export async function GET(req: NextRequest) {
         'room_release'::text AS origen
       FROM room_release_records
       WHERE paciente_run IS NOT NULL AND btrim(paciente_run) <> ''
+      UNION ALL
+      SELECT
+        rr.paciente_run,
+        rr.paciente_nombre,
+        wl.generation_date::date AS event_date,
+        'residuo'::text AS origen
+      FROM radioactive_waste_labels wl
+      JOIN room_release_records rr ON rr.id = wl.room_release_id
+      WHERE rr.paciente_run IS NOT NULL AND btrim(rr.paciente_run) <> ''
     ),
     normalized AS (
       SELECT
@@ -56,6 +71,7 @@ export async function GET(req: NextRequest) {
       (array_agg(paciente_nombre ORDER BY event_date DESC NULLS LAST))[1] AS paciente_nombre,
       COUNT(*) FILTER (WHERE origen = 'i131')::int AS total_administraciones,
       COUNT(*) FILTER (WHERE origen = 'room_release')::int AS total_liberaciones,
+      COUNT(*) FILTER (WHERE origen = 'residuo')::int AS total_residuos,
       COUNT(DISTINCT paciente_run)::int AS variantes_run,
       MAX(event_date) AS ultima_actividad,
       MIN(event_date) AS primera_actividad
