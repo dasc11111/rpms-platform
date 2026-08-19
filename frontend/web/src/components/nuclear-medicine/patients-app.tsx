@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Syringe, Trash2, AlertTriangle } from "lucide-react";
+import { Search, Syringe, DoorOpen, Trash2, AlertTriangle } from "lucide-react";
 
 type PatientRow = {
   run_normalizado: string;
@@ -9,13 +9,14 @@ type PatientRow = {
   paciente_nombre: string;
   total_administraciones: number;
   total_liberaciones: number;
+  total_residuos: number;
   variantes_run: number;
   ultima_actividad: string | null;
   primera_actividad: string | null;
 };
 
 type TimelineRow = {
-  origen: "i131" | "room_release";
+  origen: "i131" | "room_release" | "residuo";
   id: number;
   event_date: string | null;
   paciente_nombre: string;
@@ -26,6 +27,12 @@ type TimelineRow = {
   responsable: string | null;
   contexto: string | null;
   observaciones: string | null;
+};
+
+const ORIGEN_LABEL: Record<TimelineRow["origen"], string> = {
+  i131: "Administracion I-131",
+  room_release: "Liberacion de Sala",
+  residuo: "Gestion de Residuos Radiactivos (Rotulo)",
 };
 
 function formatDate(d: string | null) {
@@ -88,11 +95,13 @@ export function PatientsApp() {
         <h1 className="text-lg font-semibold tracking-tight">Pacientes y Tratamientos</h1>
       </div>
       <p className="mb-4 max-w-3xl text-xs text-muted-foreground">
-        Vista de trazabilidad de solo lectura (Fase 1): combina Administracion de I-131 y Liberacion de Sala
-        usando el RUN del paciente como llave comun. No permite crear, editar ni eliminar registros; los datos
-        se administran desde cada modulo de origen. Si el RUN de un mismo paciente esta escrito con distinto
-        formato (con o sin puntos/guion) en cada modulo, esta vista lo agrupa igual para mostrar la trazabilidad
-        completa; el dato original no se modifica.
+        Vista de trazabilidad de solo lectura (Fase 1-3): combina Administracion de I-131, Liberacion de
+        Sala y Gestion de Residuos Radiactivos usando el RUN del paciente como llave comun. No permite
+        crear, editar ni eliminar registros; los datos se administran desde cada modulo de origen. Si el
+        RUN de un mismo paciente esta escrito con distinto formato (con o sin puntos/guion) en cada
+        modulo, esta vista lo agrupa igual para mostrar la trazabilidad completa; el dato original no se
+        modifica. Contaminacion no se incluye aqui porque sus registros son por area/punto de medicion y
+        no estan asociados a un paciente especifico en la estructura de datos actual.
       </p>
 
       <div className="mb-4 flex items-center gap-2">
@@ -120,6 +129,7 @@ export function PatientsApp() {
                   <th className="py-1.5 pr-2 font-medium">RUN</th>
                   <th className="py-1.5 pr-2 font-medium text-center">I-131</th>
                   <th className="py-1.5 pr-2 font-medium text-center">Liberaciones</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">Residuos</th>
                   <th className="py-1.5 pr-2 font-medium">Ultima actividad</th>
                 </tr>
               </thead>
@@ -149,13 +159,14 @@ export function PatientsApp() {
                     </td>
                     <td className="py-1.5 pr-2 text-center">{r.total_administraciones}</td>
                     <td className="py-1.5 pr-2 text-center">{r.total_liberaciones}</td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_residuos}</td>
                     <td className="py-1.5 pr-2">{formatDate(r.ultima_actividad)}</td>
                   </tr>
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                      Sin pacientes con RUN registrado en I-131 o Liberacion de Sala.
+                    <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                      Sin pacientes con RUN registrado en I-131, Liberacion de Sala o Residuos.
                     </td>
                   </tr>
                 )}
@@ -182,14 +193,14 @@ export function PatientsApp() {
                 <div key={`${t.origen}-${t.id}`} className="flex items-start gap-2 rounded-md border border-border/60 p-2">
                   {t.origen === "i131" ? (
                     <Syringe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  ) : t.origen === "room_release" ? (
+                    <DoorOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
                   ) : (
                     <Trash2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
                   )}
                   <div className="min-w-0 flex-1 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">
-                        {t.origen === "i131" ? "Administracion I-131" : "Liberacion de Sala"}
-                      </span>
+                      <span className="font-medium">{ORIGEN_LABEL[t.origen]}</span>
                       <span className="text-muted-foreground">{formatDate(t.event_date)}</span>
                     </div>
                     <p className="mt-0.5 text-muted-foreground">
