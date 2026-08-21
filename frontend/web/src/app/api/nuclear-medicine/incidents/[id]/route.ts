@@ -4,19 +4,21 @@ import { ensureNmIncidentsTables, logNmIncidentAudit } from "@/lib/nm-incidents"
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await ensureNmIncidentsTables();
-  const { rows } = await sql`SELECT * FROM nm_incidents WHERE id = ${params.id}`;
+  const { rows } = await sql`SELECT * FROM nm_incidents WHERE id = ${id}`;
   if (!rows[0]) {
     return NextResponse.json({ ok: false, error: "Registro no encontrado." }, { status: 404 });
   }
   const { rows: history } = await sql`
-    SELECT * FROM nm_incident_stage_history WHERE incident_id = ${params.id} ORDER BY stage_date ASC, id ASC
+    SELECT * FROM nm_incident_stage_history WHERE incident_id = ${id} ORDER BY stage_date ASC, id ASC
   `;
   return NextResponse.json({ ok: true, incident: rows[0], history });
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await ensureNmIncidentsTables();
   const body = await request.json();
   const actorEmail = body.actorEmail || null;
@@ -24,11 +26,11 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   if (body.kind === "stage") {
     const { rows } = await sql`
       INSERT INTO nm_incident_stage_history (incident_id, stage, notes, responsible, stage_date)
-      VALUES (${params.id}, ${body.stage}, ${body.notes || null}, ${body.responsible || null}, ${body.stageDate || null})
+      VALUES (${id}, ${body.stage}, ${body.notes || null}, ${body.responsible || null}, ${body.stageDate || null})
       RETURNING id;
     `;
-    await sql`UPDATE nm_incidents SET investigation_status = ${body.stage}, updated_at = now() WHERE id = ${params.id}`;
-    await logNmIncidentAudit("update_nm_incident_stage", actorEmail, { id: params.id, stage: body.stage });
+    await sql`UPDATE nm_incidents SET investigation_status = ${body.stage}, updated_at = now() WHERE id = ${id}`;
+    await logNmIncidentAudit("update_nm_incident_stage", actorEmail, { id, stage: body.stage });
     return NextResponse.json({ ok: true, id: rows[0]!.id });
   }
 
@@ -42,8 +44,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       responsible = COALESCE(${body.responsible || null}, responsible),
       documents_url = COALESCE(${body.documentsUrl || null}, documents_url),
       updated_at = now()
-    WHERE id = ${params.id}
+    WHERE id = ${id}
   `;
-  await logNmIncidentAudit("update_nm_incident", actorEmail, { id: params.id, fields: Object.keys(body) });
+  await logNmIncidentAudit("update_nm_incident", actorEmail, { id, fields: Object.keys(body) });
   return NextResponse.json({ ok: true });
 }
