@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCalibrationAlertLevel, getTrackingCheckpoint } from "@/lib/instruments";
+import { ensureInstrumentMnColumns } from "@/lib/instruments-mn-db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,13 @@ function buildWhere(filters: Filters): { where: string; params: unknown[] } {
   const conditions: string[] = [];
   const params: unknown[] = [];
 
-if (filters.q) {
-  params.push(`%${filters.q}%`);
-  const p = params.length;
-  conditions.push(
-    `(i.code ILIKE $${p} OR i.name ILIKE $${p} OR i.brand ILIKE $${p} OR i.model ILIKE $${p} OR i.serial_number ILIKE $${p} OR i.manufacturer ILIKE $${p} OR i.service ILIKE $${p} OR i.unit ILIKE $${p} OR i.location ILIKE $${p})`
+  if (filters.q) {
+    params.push(`%${filters.q}%`);
+    const p = params.length;
+    conditions.push(
+      `(i.code ILIKE $${p} OR i.name ILIKE $${p} OR i.brand ILIKE $${p} OR i.model ILIKE $${p} OR i.serial_number ILIKE $${p} OR i.manufacturer ILIKE $${p} OR i.service ILIKE $${p} OR i.unit ILIKE $${p} OR i.location ILIKE $${p})`
     );
-}
+  }
   if (filters.typeId) {
     params.push(Number(filters.typeId));
     conditions.push(`i.type_id = $${params.length}`);
@@ -40,11 +41,12 @@ if (filters.q) {
     conditions.push(`i.unit = $${params.length}`);
   }
 
-const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   return { where, params };
 }
 
 export async function GET(request: Request) {
+  await ensureInstrumentMnColumns();
   const { searchParams } = new URL(request.url);
   const filters: Filters = {
     q: searchParams.get("q") || undefined,
@@ -58,34 +60,34 @@ export async function GET(request: Request) {
   const hasFailures = searchParams.get("hasFailures") || "";
   const inMaintenance = searchParams.get("inMaintenance") || "";
 
-const { where, params } = buildWhere(filters);
+  const { where, params } = buildWhere(filters);
 
-const query = `
-SELECT
-i.*,
-t.name AS type_name,
-lc.calibration_date AS last_calibration_date,
-lc.expiry_date AS last_calibration_expiry,
-lc.certificate_number AS last_calibration_certificate,
-COALESCE(lc.company_name, cc.name) AS last_calibration_company,
-COALESCE(fc.open_count, 0) AS failures_open_count
-FROM instruments i
-LEFT JOIN instrument_types t ON t.id = i.type_id
-LEFT JOIN LATERAL (
-SELECT * FROM calibrations c WHERE c.instrument_id = i.id ORDER BY c.calibration_date DESC, c.id DESC LIMIT 1
-) lc ON true
-LEFT JOIN calibration_companies cc ON cc.id = lc.company_id
-LEFT JOIN LATERAL (
-SELECT COUNT(*)::int AS open_count FROM instrument_failures f WHERE f.instrument_id = i.id AND f.status IN ('abierta','en_proceso')
-) fc ON true
-${where}
-ORDER BY i.name ASC
-LIMIT 5000
-`;
+  const query = `
+    SELECT
+      i.*,
+      t.name AS type_name,
+      lc.calibration_date AS last_calibration_date,
+      lc.expiry_date AS last_calibration_expiry,
+      lc.certificate_number AS last_calibration_certificate,
+      COALESCE(lc.company_name, cc.name) AS last_calibration_company,
+      COALESCE(fc.open_count, 0) AS failures_open_count
+    FROM instruments i
+    LEFT JOIN instrument_types t ON t.id = i.type_id
+    LEFT JOIN LATERAL (
+      SELECT * FROM calibrations c WHERE c.instrument_id = i.id ORDER BY c.calibration_date DESC, c.id DESC LIMIT 1
+    ) lc ON true
+    LEFT JOIN calibration_companies cc ON cc.id = lc.company_id
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS open_count FROM instrument_failures f WHERE f.instrument_id = i.id AND f.status IN ('abierta','en_proceso')
+    ) fc ON true
+    ${where}
+    ORDER BY i.name ASC
+    LIMIT 5000
+  `;
 
-const { rows } = await sql.query(query, params);
+  const { rows } = await sql.query(query, params);
 
-type Row = Record<string, unknown>;
+  type Row = Record<string, unknown>;
   type EnrichedRow = Row & {
     alert_level: string;
     days_remaining: number | null;
@@ -103,9 +105,9 @@ type Row = Record<string, unknown>;
     } as EnrichedRow;
   });
 
-if (companyFilter) {
-  items = items.filter((it) => String(it.last_calibration_company ?? "").toLowerCase().includes(companyFilter));
-}
+  if (companyFilter) {
+    items = items.filter((it) => String(it.last_calibration_company ?? "").toLowerCase().includes(companyFilter));
+  }
   if (calibrationStatus) {
     items = items.filter((it) => it.alert_level === calibrationStatus);
   }
@@ -119,24 +121,25 @@ if (companyFilter) {
     items = items.filter((it) => it.in_maintenance === true);
   }
 
-return NextResponse.json({ instruments: items, total: items.length });
+  return NextResponse.json({ instruments: items, total: items.length });
 }
 
 export async function POST(request: Request) {
+  await ensureInstrumentMnColumns();
   const body = await request.json();
   const code = String(body.code || "").trim();
   const name = String(body.name || "").trim();
 
-if (!code || !name) {
-  return NextResponse.json({ error: "code_and_name_required" }, { status: 400 });
-}
+  if (!code || !name) {
+    return NextResponse.json({ error: "code_and_name_required" }, { status: 400 });
+  }
 
-const { rows: existing } = await sql`SELECT id FROM instruments WHERE code = ${code}`;
+  const { rows: existing } = await sql`SELECT id FROM instruments WHERE code = ${code}`;
   if (existing.length > 0) {
     return NextResponse.json({ error: "code_already_exists" }, { status: 409 });
   }
 
-const typeId = body.typeId ? Number(body.typeId) : null;
+  const typeId = body.typeId ? Number(body.typeId) : null;
   const brand = body.brand || null;
   const model = body.model || null;
   const serialNumber = body.serialNumber || null;
@@ -149,22 +152,29 @@ const typeId = body.typeId ? Number(body.typeId) : null;
   const status = body.status || "operativo";
   const notes = body.notes || null;
   const changedBy = body.changedBy || "Usuario RPMS";
+  // Fase 15 (Medicina Nuclear) - campos opcionales, nulos para instrumentos de otras areas.
+  const radionuclide = body.radionuclide || null;
+  const efficiencyPct = body.efficiencyPct !== undefined && body.efficiencyPct !== "" ? Number(body.efficiencyPct) : null;
+  const activeAreaCm2 = body.activeAreaCm2 !== undefined && body.activeAreaCm2 !== "" ? Number(body.activeAreaCm2) : null;
+  const geometry = body.geometry || null;
 
-const { rows } = await sql`
-INSERT INTO instruments (
-code, name, type_id, brand, model, serial_number, manufacturer, service, unit, location, acquisition_date, provider, status, notes
-) VALUES (
-${code}, ${name}, ${typeId}, ${brand}, ${model}, ${serialNumber}, ${manufacturer}, ${service}, ${unit}, ${location}, ${acquisitionDate}, ${provider}, ${status}, ${notes}
-)
-RETURNING *
-`;
+  const { rows } = await sql`
+    INSERT INTO instruments (
+      code, name, type_id, brand, model, serial_number, manufacturer, service, unit, location, acquisition_date, provider, status, notes,
+      radionuclide, efficiency_pct, active_area_cm2, geometry
+    ) VALUES (
+      ${code}, ${name}, ${typeId}, ${brand}, ${model}, ${serialNumber}, ${manufacturer}, ${service}, ${unit}, ${location}, ${acquisitionDate}, ${provider}, ${status}, ${notes},
+      ${radionuclide}, ${efficiencyPct}, ${activeAreaCm2}, ${geometry}
+    )
+    RETURNING *
+  `;
 
-const created = rows[0] as { id: number };
+  const created = rows[0] as { id: number };
 
-await sql`
-INSERT INTO instrument_history (instrument_id, changed_by, field_name, old_value, new_value)
-VALUES (${created.id}, ${changedBy}, 'creacion', NULL, ${"Instrumento creado: " + name})
-`;
+  await sql`
+    INSERT INTO instrument_history (instrument_id, changed_by, field_name, old_value, new_value)
+    VALUES (${created.id}, ${changedBy}, 'creacion', NULL, ${"Instrumento creado: " + name})
+  `;
 
-return NextResponse.json({ instrument: created });
+  return NextResponse.json({ instrument: created });
 }
