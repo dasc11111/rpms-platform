@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   BarChart3,
   ShieldAlert,
+  BookOpen,
   ExternalLink,
 } from "lucide-react";
 
@@ -49,7 +50,7 @@ const NUCLEO_OPERACIONAL: ModuleCard[] = [
     icon: Recycle,
     status: "activo",
   },
-];
+]; 
 
 const TRAZABILIDAD: ModuleCard[] = [
   {
@@ -60,7 +61,18 @@ const TRAZABILIDAD: ModuleCard[] = [
     status: "activo",
     phase: "Fase 1 (nuevo)",
   },
-];
+]; 
+
+const REFERENCIAS_CRITERIOS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/references",
+    label: "Referencias Tecnicas y Criterios Radiologicos",
+    description: "Catalogo trazable de referencias ARPANSA, IAEA, ICRP y criterios radiologicos citados por normativa chilena o procedimientos internos. No calcula ni aplica valores automaticamente.",
+    icon: BookOpen,
+    status: "activo",
+    phase: "Fase 13 (nuevo)",
+  },
+]; 
 
 const PROXIMAMENTE: ModuleCard[] = [
   {
@@ -87,7 +99,7 @@ const PROXIMAMENTE: ModuleCard[] = [
     status: "proximo",
     phase: "Fase 10 (propuesta)",
   },
-];
+]; 
 
 function ModuleGrid({ items }: { items: ModuleCard[] }) {
   return (
@@ -157,6 +169,11 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Trazabilidad</h2>
       </div>
       <ModuleGrid items={TRAZABILIDAD} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Referencias y criterios</h2>
+      </div>
+      <ModuleGrid items={REFERENCIAS_CRITERIOS} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
