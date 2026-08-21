@@ -9,6 +9,7 @@ import {
   BarChart3,
   ShieldAlert,
   ExternalLink,
+  Radiation,
 } from "lucide-react";
 
 type ModuleCard = {
@@ -59,6 +60,23 @@ const TRAZABILIDAD: ModuleCard[] = [
     icon: Users,
     status: "activo",
     phase: "Fase 1 (nuevo)",
+  },
+];
+
+// Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
+// Reutiliza el modulo general de Instrumentos y Calibracion ya existente en
+// la plataforma (compartido entre todas las areas), extendido con campos
+// opcionales especificos de MN (radionuclido, eficiencia, area activa,
+// geometria). No se creo un modulo ni una tabla nueva, para cumplir con las
+// reglas 2/32 y 16/32 de Fase 0 (no duplicar, priorizar reciclaje de codigo).
+const INSTRUMENTOS: ModuleCard[] = [
+  {
+    href: "/instruments",
+    label: "Instrumentos y Detectores",
+    description: "Modulo compartido de Instrumentos y Calibracion de la plataforma, extendido con datos de detectores de Medicina Nuclear (radionuclido, eficiencia, area activa, geometria).",
+    icon: Radiation,
+    status: "activo",
+    phase: "Fase 15",
   },
 ];
 
@@ -157,6 +175,11 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Trazabilidad</h2>
       </div>
       <ModuleGrid items={TRAZABILIDAD} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Instrumentos y Calibracion (modulo compartido de la plataforma)</h2>
+      </div>
+      <ModuleGrid items={INSTRUMENTOS} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
