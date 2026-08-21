@@ -60,17 +60,17 @@ const TRAZABILIDAD: ModuleCard[] = [
     status: "activo",
     phase: "Fase 1 (nuevo)",
   },
+  {
+    href: "/nuclear-medicine/incidents",
+    label: "Emergencias e Incidentes (MN)",
+    description: "Registro cualitativo de derrames, perdida de material, exposiciones y notificacion de incidentes. Severidad clasificada manualmente, sin umbrales numericos automaticos.",
+    icon: AlertTriangle,
+    status: "activo",
+    phase: "Fase 12 (nuevo)",
+  },
 ];
 
 const PROXIMAMENTE: ModuleCard[] = [
-  {
-    href: "#",
-    label: "Emergencias e Incidentes (MN)",
-    description: "Derrames, perdida de material, exposiciones y notificacion de incidentes.",
-    icon: AlertTriangle,
-    status: "proximo",
-    phase: "Fase 12 (propuesta)",
-  },
   {
     href: "#",
     label: "Dashboard de Medicina Nuclear",
