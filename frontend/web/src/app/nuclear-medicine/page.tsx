@@ -9,6 +9,8 @@ import {
   BarChart3,
   ShieldAlert,
   ExternalLink,
+  ClipboardCheck,
+  Truck,
 } from "lucide-react";
 
 type ModuleCard = {
@@ -62,6 +64,32 @@ const TRAZABILIDAD: ModuleCard[] = [
   },
 ];
 
+// Fase 16 (Medicina Nuclear) - ARPANSA RPS 14.2. CONTROL DE CALIDAD es un modulo
+// nuevo (pruebas internas de constancia, exactitud, linealidad, geometria,
+// uniformidad, resolucion y sensibilidad, complementarias a la calibracion
+// externa del modulo Instrumentos y Calibracion). TRANSPORTE reutiliza el
+// modulo /transport ya existente en la plataforma (I-131 y Mo-99/Tc-99m),
+// que hasta ahora no estaba enlazado desde este hub. No se duplico codigo
+// en ninguno de los dos casos (reglas 2/32 y 16/32 de Fase 0).
+const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
+  {
+    href: "/quality-control",
+    label: "Control de Calidad",
+    description: "Pruebas internas de constancia, exactitud, linealidad y geometria para activimetros y equipos de deteccion, complementarias a la calibracion externa.",
+    icon: ClipboardCheck,
+    status: "activo",
+    phase: "Fase 16",
+  },
+  {
+    href: "/transport",
+    label: "Transporte de Material Radiactivo",
+    description: "Modulo existente de la plataforma para despachos de I-131 y generadores Mo-99/Tc-99m: dosis, senaletica, choferes y documentos de autorizacion.",
+    icon: Truck,
+    status: "activo",
+    phase: "Fase 16",
+  },
+];
+
 const PROXIMAMENTE: ModuleCard[] = [
   {
     href: "#",
@@ -88,7 +116,6 @@ const PROXIMAMENTE: ModuleCard[] = [
     phase: "Fase 10 (propuesta)",
   },
 ];
-
 function ModuleGrid({ items }: { items: ModuleCard[] }) {
   return (
     <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,6 +184,11 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Trazabilidad</h2>
       </div>
       <ModuleGrid items={TRAZABILIDAD} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Control de Calidad y Transporte</h2>
+      </div>
+      <ModuleGrid items={CALIDAD_Y_TRANSPORTE} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
