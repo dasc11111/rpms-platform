@@ -5,16 +5,18 @@ import { computeDeviationPercent, evaluateResultStatus } from "@/lib/quality-con
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await ensureQualityControlTables();
-  const { rows } = await sql`SELECT * FROM quality_control_tests WHERE id = ${Number(params.id)}`;
+  const { rows } = await sql`SELECT * FROM quality_control_tests WHERE id = ${Number(id)}`;
   if (rows.length === 0) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json({ test: rows[0] });
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
   await ensureQualityControlTables();
-  const id = Number(params.id);
+  const id = Number(idParam);
   const body = await request.json();
 
   const { rows: existingRows } = await sql`SELECT * FROM quality_control_tests WHERE id = ${id}`;
@@ -59,8 +61,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   return NextResponse.json({ test: rows[0] });
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await ensureQualityControlTables();
-  await sql`DELETE FROM quality_control_tests WHERE id = ${Number(params.id)}`;
+  await sql`DELETE FROM quality_control_tests WHERE id = ${Number(id)}`;
   return NextResponse.json({ ok: true });
 }
