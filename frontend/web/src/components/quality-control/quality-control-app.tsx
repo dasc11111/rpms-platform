@@ -312,7 +312,7 @@ export function QualityControlApp({
                   {t.reference_value ?? "-"} {t.unit ?? ""}
                 </td>
                 <td className="px-3 py-2">
-                  {t.deviation_percent !== null ? `${t.deviation_percent.toFixed(2)}%` : "-"}
+                  {t.deviation_percent !== null && !Number.isNaN(Number(t.deviation_percent)) ? `${Number(t.deviation_percent).toFixed(2)}%` : "-"}
                 </td>
                 <td className="px-3 py-2">
                   <StatusBadge status={t.result_status} />
