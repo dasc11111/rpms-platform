@@ -8,7 +8,9 @@ import {
   AlertTriangle,
   BarChart3,
   ShieldAlert,
+  BookOpen,
   ExternalLink,
+  Radiation,
   ClipboardCheck,
   Truck,
 } from "lucide-react";
@@ -64,6 +66,45 @@ const TRAZABILIDAD: ModuleCard[] = [
   },
 ];
 
+const REFERENCIAS_CRITERIOS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/references",
+    label: "Referencias Tecnicas y Criterios Radiologicos",
+    description: "Catalogo trazable de referencias ARPANSA, IAEA, ICRP y criterios radiologicos citados por normativa chilena o procedimientos internos. No calcula ni aplica valores automaticamente.",
+    icon: BookOpen,
+    status: "activo",
+    phase: "Fase 13 (nuevo)",
+  },
+];
+
+const ANALITICA: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/dashboard",
+    label: "Dashboard de Medicina Nuclear",
+    description: "Vista consolidada de solo lectura: agrega los indicadores ya calculados por I-131, Contaminacion, Liberacion de Sala y Residuos. No crea ni modifica registros.",
+    icon: BarChart3,
+    status: "activo",
+    phase: "Fase 8 (nuevo)",
+  },
+];
+
+// Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
+// Reutiliza el modulo general de Instrumentos y Calibracion ya existente en
+// la plataforma (compartido entre todas las areas), extendido con campos
+// opcionales especificos de MN (radionuclido, eficiencia, area activa,
+// geometria). No se creo un modulo ni una tabla nueva, para cumplir con las
+// reglas 2/32 y 16/32 de Fase 0 (no duplicar, priorizar reciclaje de codigo).
+const INSTRUMENTOS: ModuleCard[] = [
+  {
+    href: "/instruments",
+    label: "Instrumentos y Detectores",
+    description: "Modulo compartido de Instrumentos y Calibracion de la plataforma, extendido con datos de detectores de Medicina Nuclear (radionuclido, eficiencia, area activa, geometria).",
+    icon: Radiation,
+    status: "activo",
+    phase: "Fase 15",
+  },
+];
+
 // Fase 16 (Medicina Nuclear) - ARPANSA RPS 14.2. CONTROL DE CALIDAD es un modulo
 // nuevo (pruebas internas de constancia, exactitud, linealidad, geometria,
 // uniformidad, resolucion y sensibilidad, complementarias a la calibracion
@@ -92,22 +133,13 @@ const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
 
 const PROXIMAMENTE: ModuleCard[] = [
   {
-    href: "#",
+    href: "/nuclear-medicine/incidents",
     label: "Emergencias e Incidentes (MN)",
-    description: "Derrames, perdida de material, exposiciones y notificacion de incidentes.",
+    description: "Registro cualitativo de derrames, perdida de material, exposiciones y notificacion de incidentes. Severidad clasificada manualmente, sin umbrales numericos automaticos.",
     icon: AlertTriangle,
-    status: "proximo",
-    phase: "Fase 12 (propuesta)",
-  },
-  {
-    href: "#",
-    label: "Dashboard de Medicina Nuclear",
-    description: "Vista consolidada de actividad, pacientes, contaminacion, residuos y cumplimiento.",
-    icon: BarChart3,
-    status: "proximo",
-    phase: "Fase 8 (propuesta)",
-  },
-  {
+    status: "activo",
+    phase: "Fase 12 (nuevo)",
+  }, {
     href: "#",
     label: "Alertas de Medicina Nuclear",
     description: "Alertas criticas, medias e informativas basadas en normativa chilena y procedimientos internos.",
@@ -116,6 +148,7 @@ const PROXIMAMENTE: ModuleCard[] = [
     phase: "Fase 10 (propuesta)",
   },
 ];
+
 function ModuleGrid({ items }: { items: ModuleCard[] }) {
   return (
     <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -184,6 +217,21 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Trazabilidad</h2>
       </div>
       <ModuleGrid items={TRAZABILIDAD} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Analitica</h2>
+      </div>
+      <ModuleGrid items={ANALITICA} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Referencias y criterios</h2>
+      </div>
+      <ModuleGrid items={REFERENCIAS_CRITERIOS} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Instrumentos y Calibracion (modulo compartido de la plataforma)</h2>
+      </div>
+      <ModuleGrid items={INSTRUMENTOS} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Control de Calidad y Transporte</h2>

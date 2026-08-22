@@ -22,14 +22,26 @@ export const DEFAULT_INSTRUMENT_TYPES: string[] = [
   "Monitor de Contaminacion Superficial",
   "Monitor de Tasa de Dosis",
   "Otros Detectores",
-  ];
+];
 
 export const DEFAULT_CALIBRATION_COMPANIES: string[] = [
   "CCHEN",
   "Laboratorio Acreditado",
   "Fabricante",
   "Otro",
-  ];
+];
+
+// Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
+// Lista de referencia para el campo opcional "radionuclido" en instrumentos
+// tipo detector. NO se copian parametros automaticamente entre radionuclidos
+// (regla 12/32 de Fase 0): cada instrumento mantiene sus propios valores.
+export const DEFAULT_RADIONUCLIDES: string[] = [
+  "I-131",
+  "Tc-99m",
+  "F-18",
+  "Ga-67",
+  "Otro",
+];
 
 export type FailureStatus = "abierta" | "en_proceso" | "resuelta" | "cerrada";
 export const FAILURE_STATUS_LABELS: Record<FailureStatus, string> = {
@@ -92,7 +104,7 @@ export function daysUntil(dateStr: string | null | undefined, now: Date = new Da
 export function getCalibrationAlertLevel(
   expiryDate: string | null | undefined,
   now: Date = new Date()
-  ): { level: CalibrationAlertLevel; daysRemaining: number | null } {
+): { level: CalibrationAlertLevel; daysRemaining: number | null } {
   const daysRemaining = daysUntil(expiryDate, now);
   if (daysRemaining === null) return { level: "sin_calibracion", daysRemaining: null };
   if (daysRemaining < 0) return { level: "vencida", daysRemaining };
@@ -105,21 +117,21 @@ export function getCalibrationAlertLevel(
 // checkpoint de alerta se encuentra un instrumento proximo a vencer.
 export function getTrackingCheckpoint(daysRemaining: number | null): number | null {
   if (daysRemaining === null || daysRemaining < 0) return null;
-      for (const t of ALERT_THRESHOLDS) {
-        if (daysRemaining <= t) return t;
-      }
+  for (const t of ALERT_THRESHOLDS) {
+    if (daysRemaining <= t) return t;
+  }
   return null;
 }
 
 export function slugifyType(input: string): string {
   return input
-  .toString()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
-  .trim()
-  .replace(/[^a-z0-9]+/g, "-")
-  .replace(/^-+|-+$/g, "");
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export function formatBytes(bytes: number): string {
@@ -156,6 +168,12 @@ export type InstrumentRow = {
   last_calibration_company?: string | null;
   failures_open_count?: number;
   in_maintenance?: boolean;
+  // Fase 15 (Medicina Nuclear) - campos opcionales, nulos para instrumentos
+  // de otras areas. Ver lib/instruments-mn-db.ts.
+  radionuclide?: string | null;
+  efficiency_pct?: number | null;
+  active_area_cm2?: number | null;
+  geometry?: string | null;
 };
 
 export type CalibrationRow = {

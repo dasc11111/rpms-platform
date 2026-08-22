@@ -72,9 +72,9 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
   const { rows: documents } = await sql.query(
     `SELECT * FROM instrument_documents
      WHERE (owner_type = 'instrument' AND owner_id = $1)
-        OR (owner_type = 'calibration' AND owner_id = ANY($2))
-        OR (owner_type = 'failure' AND owner_id = ANY($3))
-        OR (owner_type = 'maintenance' AND owner_id = ANY($4))
+     OR (owner_type = 'calibration' AND owner_id = ANY($2))
+     OR (owner_type = 'failure' AND owner_id = ANY($3))
+     OR (owner_type = 'maintenance' AND owner_id = ANY($4))
      ORDER BY created_at DESC`,
     [id, calibrationIds.length ? calibrationIds : [0], failureIds.length ? failureIds : [0], maintenanceIds.length ? maintenanceIds : [0]]
   );
@@ -93,6 +93,10 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
     { label: "Fecha de adquisición", value: fmtDate(instrument.acquisition_date) },
     { label: "Proveedor", value: instrument.provider },
   ];
+
+  const hasMnData = Boolean(
+    instrument.radionuclide || instrument.efficiency_pct != null || instrument.active_area_cm2 != null || instrument.geometry
+  );
 
   return (
     <div className="mx-auto max-w-[1200px] p-6">
@@ -130,6 +134,30 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
           </p>
         )}
       </div>
+
+      {hasMnData && (
+        <div className="mb-4 rounded-lg border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold mb-3">Datos Medicina Nuclear (ARPANSA RPS 14.2 — Base Detectores)</h2>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+            <div className="flex justify-between border-b border-border/60 pb-1">
+              <span className="text-muted-foreground">Radionúclido de referencia</span>
+              <span>{instrument.radionuclide || "—"}</span>
+            </div>
+            <div className="flex justify-between border-b border-border/60 pb-1">
+              <span className="text-muted-foreground">Eficiencia (%)</span>
+              <span>{instrument.efficiency_pct ?? "—"}</span>
+            </div>
+            <div className="flex justify-between border-b border-border/60 pb-1">
+              <span className="text-muted-foreground">Área activa (cm²)</span>
+              <span>{instrument.active_area_cm2 ?? "—"}</span>
+            </div>
+            <div className="flex justify-between border-b border-border/60 pb-1">
+              <span className="text-muted-foreground">Geometría de medición</span>
+              <span>{instrument.geometry || "—"}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
         <div className="mb-3 flex items-center justify-between">

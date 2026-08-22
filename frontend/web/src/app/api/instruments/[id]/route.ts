@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { ensureInstrumentMnColumns } from "@/lib/instruments-mn-db";
 
 export const dynamic = "force-dynamic";
 
@@ -18,105 +19,115 @@ const EDITABLE_FIELDS: Array<{ key: string; column: string; label: string }> = [
   { key: "provider", column: "provider", label: "Proveedor" },
   { key: "status", column: "status", label: "Estado" },
   { key: "notes", column: "notes", label: "Observaciones" },
-  ];
+  // Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
+  { key: "radionuclide", column: "radionuclide", label: "Radionuclido (MN)" },
+  { key: "efficiencyPct", column: "efficiency_pct", label: "Eficiencia % (MN)" },
+  { key: "activeAreaCm2", column: "active_area_cm2", label: "Area activa cm2 (MN)" },
+  { key: "geometry", column: "geometry", label: "Geometria de medicion (MN)" },
+];
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  await ensureInstrumentMnColumns();
   const { id: idParam } = await params;
   const id = Number(idParam);
   if (!id) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
 
-const { rows: instrumentRows } = await sql`
-SELECT i.*, t.name AS type_name
-FROM instruments i
-LEFT JOIN instrument_types t ON t.id = i.type_id
-WHERE i.id = ${id}
-`;
+  const { rows: instrumentRows } = await sql`
+    SELECT i.*, t.name AS type_name
+    FROM instruments i
+    LEFT JOIN instrument_types t ON t.id = i.type_id
+    WHERE i.id = ${id}
+  `;
   const instrument = instrumentRows[0];
   if (!instrument) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-const { rows: calibrations } = await sql`
-SELECT c.*, COALESCE(c.company_name, cc.name) AS company_name_resolved
-FROM calibrations c
-LEFT JOIN calibration_companies cc ON cc.id = c.company_id
-WHERE c.instrument_id = ${id}
-ORDER BY c.calibration_date DESC, c.id DESC
-`;
+  const { rows: calibrations } = await sql`
+    SELECT c.*, COALESCE(c.company_name, cc.name) AS company_name_resolved
+    FROM calibrations c
+    LEFT JOIN calibration_companies cc ON cc.id = c.company_id
+    WHERE c.instrument_id = ${id}
+    ORDER BY c.calibration_date DESC, c.id DESC
+  `;
 
-const { rows: failures } = await sql`
-SELECT * FROM instrument_failures WHERE instrument_id = ${id} ORDER BY failure_date DESC, id DESC
-`;
+  const { rows: failures } = await sql`
+    SELECT * FROM instrument_failures WHERE instrument_id = ${id} ORDER BY failure_date DESC, id DESC
+  `;
 
-const { rows: maintenances } = await sql`
-SELECT * FROM instrument_maintenances WHERE instrument_id = ${id} ORDER BY maintenance_date DESC, id DESC
-`;
+  const { rows: maintenances } = await sql`
+    SELECT * FROM instrument_maintenances WHERE instrument_id = ${id} ORDER BY maintenance_date DESC, id DESC
+  `;
 
-const { rows: history } = await sql`
-SELECT * FROM instrument_history WHERE instrument_id = ${id} ORDER BY changed_at DESC, id DESC
-`;
+  const { rows: history } = await sql`
+    SELECT * FROM instrument_history WHERE instrument_id = ${id} ORDER BY changed_at DESC, id DESC
+  `;
 
-const calibrationIds = calibrations.map((c: Record<string, unknown>) => c.id as number);
+  const calibrationIds = calibrations.map((c: Record<string, unknown>) => c.id as number);
   const failureIds = failures.map((f: Record<string, unknown>) => f.id as number);
   const maintenanceIds = maintenances.map((m: Record<string, unknown>) => m.id as number);
 
-const { rows: docRows } = await sql.query(
-  `SELECT * FROM instrument_documents
-  WHERE (owner_type = 'instrument' AND owner_id = $1)
-  OR (owner_type = 'calibration' AND owner_id = ANY($2))
-  OR (owner_type = 'failure' AND owner_id = ANY($3))
-  OR (owner_type = 'maintenance' AND owner_id = ANY($4))
-  ORDER BY created_at DESC`,
-  [id, calibrationIds.length ? calibrationIds : [0], failureIds.length ? failureIds : [0], maintenanceIds.length ? maintenanceIds : [0]]
+  const { rows: docRows } = await sql.query(
+    `SELECT * FROM instrument_documents
+     WHERE (owner_type = 'instrument' AND owner_id = $1)
+     OR (owner_type = 'calibration' AND owner_id = ANY($2))
+     OR (owner_type = 'failure' AND owner_id = ANY($3))
+     OR (owner_type = 'maintenance' AND owner_id = ANY($4))
+     ORDER BY created_at DESC`,
+    [id, calibrationIds.length ? calibrationIds : [0], failureIds.length ? failureIds : [0], maintenanceIds.length ? maintenanceIds : [0]]
   );
   const documents = docRows as Record<string, unknown>[];
 
-return NextResponse.json({ instrument, calibrations, failures, maintenances, history, documents });
+  return NextResponse.json({ instrument, calibrations, failures, maintenances, history, documents });
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  await ensureInstrumentMnColumns();
   const { id: idParam } = await params;
   const id = Number(idParam);
   if (!id) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
 
-const body = await request.json();
+  const body = await request.json();
   const changedBy = body.changedBy || "Usuario RPMS";
 
-const { rows: currentRows } = await sql`SELECT * FROM instruments WHERE id = ${id}`;
+  const { rows: currentRows } = await sql`SELECT * FROM instruments WHERE id = ${id}`;
   const current = currentRows[0] as Record<string, unknown> | undefined;
   if (!current) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-const updates: string[] = [];
+  const updates: string[] = [];
   const historyEntries: Array<{ field: string; oldValue: string | null; newValue: string | null }> = [];
   const values: unknown[] = [];
 
-for (const field of EDITABLE_FIELDS) {
-  if (!(field.key in body)) continue;
-  let newValue = body[field.key];
-  if (field.key === "typeId") newValue = newValue ? Number(newValue) : null;
-  const oldValue = current[field.column];
-  const oldStr = oldValue === null || oldValue === undefined ? null : String(oldValue);
-  const newStr = newValue === null || newValue === undefined ? null : String(newValue);
-  if (oldStr === newStr) continue;
+  for (const field of EDITABLE_FIELDS) {
+    if (!(field.key in body)) continue;
+    let newValue = body[field.key];
+    if (field.key === "typeId") newValue = newValue ? Number(newValue) : null;
+    if (field.key === "efficiencyPct" || field.key === "activeAreaCm2") {
+      newValue = newValue !== null && newValue !== undefined && newValue !== "" ? Number(newValue) : null;
+    }
+    const oldValue = current[field.column];
+    const oldStr = oldValue === null || oldValue === undefined ? null : String(oldValue);
+    const newStr = newValue === null || newValue === undefined ? null : String(newValue);
+    if (oldStr === newStr) continue;
 
-  values.push(newValue);
-  updates.push(`${field.column} = $${values.length}`);
-  historyEntries.push({ field: field.label, oldValue: oldStr, newValue: newStr });
-}
+    values.push(newValue);
+    updates.push(`${field.column} = $${values.length}`);
+    historyEntries.push({ field: field.label, oldValue: oldStr, newValue: newStr });
+  }
 
-if (updates.length === 0) {
-  return NextResponse.json({ instrument: current, changed: false });
-}
+  if (updates.length === 0) {
+    return NextResponse.json({ instrument: current, changed: false });
+  }
 
-values.push(id);
+  values.push(id);
   const query = `UPDATE instruments SET ${updates.join(", ")}, updated_at = now() WHERE id = $${values.length} RETURNING *`;
   const { rows: updatedRows } = await sql.query(query, values);
   const updated = updatedRows[0];
 
-for (const entry of historyEntries) {
-  await sql`
-  INSERT INTO instrument_history (instrument_id, changed_by, field_name, old_value, new_value)
-  VALUES (${id}, ${changedBy}, ${entry.field}, ${entry.oldValue}, ${entry.newValue})
-  `;
-}
+  for (const entry of historyEntries) {
+    await sql`
+      INSERT INTO instrument_history (instrument_id, changed_by, field_name, old_value, new_value)
+      VALUES (${id}, ${changedBy}, ${entry.field}, ${entry.oldValue}, ${entry.newValue})
+    `;
+  }
 
-return NextResponse.json({ instrument: updated, changed: true });
+  return NextResponse.json({ instrument: updated, changed: true });
 }
