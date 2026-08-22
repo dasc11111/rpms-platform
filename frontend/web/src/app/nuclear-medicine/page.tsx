@@ -74,24 +74,26 @@ const REFERENCIAS_CRITERIOS: ModuleCard[] = [
   },
 ]; 
 
+const ANALITICA: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/dashboard",
+    label: "Dashboard de Medicina Nuclear",
+    description: "Vista consolidada de solo lectura: agrega los indicadores ya calculados por I-131, Contaminacion, Liberacion de Sala y Residuos. No crea ni modifica registros.",
+    icon: BarChart3,
+    status: "activo",
+    phase: "Fase 8 (nuevo)",
+  },
+];
+
 const PROXIMAMENTE: ModuleCard[] = [
   {
-    href: "#",
+    href: "/nuclear-medicine/incidents",
     label: "Emergencias e Incidentes (MN)",
-    description: "Derrames, perdida de material, exposiciones y notificacion de incidentes.",
+    description: "Registro cualitativo de derrames, perdida de material, exposiciones y notificacion de incidentes. Severidad clasificada manualmente, sin umbrales numericos automaticos.",
     icon: AlertTriangle,
-    status: "proximo",
-    phase: "Fase 12 (propuesta)",
-  },
-  {
-    href: "#",
-    label: "Dashboard de Medicina Nuclear",
-    description: "Vista consolidada de actividad, pacientes, contaminacion, residuos y cumplimiento.",
-    icon: BarChart3,
-    status: "proximo",
-    phase: "Fase 8 (propuesta)",
-  },
-  {
+    status: "activo",
+    phase: "Fase 12 (nuevo)",
+  }, {
     href: "#",
     label: "Alertas de Medicina Nuclear",
     description: "Alertas criticas, medias e informativas basadas en normativa chilena y procedimientos internos.",
@@ -170,10 +172,15 @@ export default function NuclearMedicinePage() {
       </div>
       <ModuleGrid items={TRAZABILIDAD} />
 
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Referencias y criterios</h2>
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Analitica</h2>
       </div>
-      <ModuleGrid items={REFERENCIAS_CRITERIOS} />
+              <ModuleGrid items={ANALITICA} />
+      
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Referencias y criterios</h2>
+      </div>
+              <ModuleGrid items={REFERENCIAS_CRITERIOS} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
