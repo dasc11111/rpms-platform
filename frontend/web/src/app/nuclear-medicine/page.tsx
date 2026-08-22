@@ -75,14 +75,13 @@ const ANALITICA: ModuleCard[] = [
 
 const PROXIMAMENTE: ModuleCard[] = [
   {
-    href: "#",
+    href: "/nuclear-medicine/incidents",
     label: "Emergencias e Incidentes (MN)",
-    description: "Derrames, perdida de material, exposiciones y notificacion de incidentes.",
+    description: "Registro cualitativo de derrames, perdida de material, exposiciones y notificacion de incidentes. Severidad clasificada manualmente, sin umbrales numericos automaticos.",
     icon: AlertTriangle,
-    status: "proximo",
-    phase: "Fase 12 (propuesta)",
-  },
-  {
+    status: "activo",
+    phase: "Fase 12 (nuevo)",
+  }, {
     href: "#",
     label: "Alertas de Medicina Nuclear",
     description: "Alertas criticas, medias e informativas basadas en normativa chilena y procedimientos internos.",
