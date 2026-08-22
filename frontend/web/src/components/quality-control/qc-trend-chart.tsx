@@ -38,9 +38,9 @@ export function QcTrendChart({
       .sort((a, b) => (a.test_date < b.test_date ? -1 : 1))
       .map((p) => ({
         fecha: p.test_date,
-        Medido: p.measured_value,
-        Referencia: p.reference_value,
-        "Desviacion (%)": p.deviation_percent,
+        Medido: p.measured_value !== null ? Number(p.measured_value) : null,
+        Referencia: p.reference_value !== null ? Number(p.reference_value) : null,
+        "Desviacion (%)": p.deviation_percent !== null ? Number(p.deviation_percent) : null,
       }));
   }, [points]);
 
