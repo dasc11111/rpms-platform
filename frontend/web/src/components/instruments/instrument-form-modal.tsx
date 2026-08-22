@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Wrench, X, Loader2 } from "lucide-react";
-import { INSTRUMENT_STATUS_LABELS } from "@/lib/instruments";
+import { INSTRUMENT_STATUS_LABELS, DEFAULT_RADIONUCLIDES } from "@/lib/instruments";
 
 type InstrumentType = { id: number; name: string };
 
@@ -21,6 +21,11 @@ const emptyForm = {
   provider: "",
   status: "operativo",
   notes: "",
+  // Fase 15 (Medicina Nuclear) - campos opcionales, solo para detectores MN.
+  radionuclide: "",
+  efficiencyPct: "",
+  activeAreaCm2: "",
+  geometry: "",
 };
 
 type FormState = typeof emptyForm;
@@ -155,6 +160,53 @@ export function InstrumentFormModal() {
               ))}
             </select>
           </label>
+          <div className="col-span-2 mt-1 rounded-md border border-dashed border-border p-2.5">
+            <p className="mb-2 text-[11px] font-medium text-muted-foreground">
+              Datos Medicina Nuclear (opcional — activímetros y monitores de contaminación, ARPANSA RPS 14.2 Sección 15)
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              <label className="text-[11px]">
+                <span className="mb-1 block text-muted-foreground">Radionúclido de referencia</span>
+                <select
+                  value={form.radionuclide}
+                  onChange={(e) => update("radionuclide", e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+                >
+                  <option value="">— Sin especificar —</option>
+                  {DEFAULT_RADIONUCLIDES.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-[11px]">
+                <span className="mb-1 block text-muted-foreground">Eficiencia (%)</span>
+                <input
+                  type="text"
+                  value={form.efficiencyPct}
+                  onChange={(e) => update("efficiencyPct", e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+                />
+              </label>
+              <label className="text-[11px]">
+                <span className="mb-1 block text-muted-foreground">Área activa (cm²)</span>
+                <input
+                  type="text"
+                  value={form.activeAreaCm2}
+                  onChange={(e) => update("activeAreaCm2", e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+                />
+              </label>
+              <label className="text-[11px]">
+                <span className="mb-1 block text-muted-foreground">Geometría de medición</span>
+                <input
+                  type="text"
+                  value={form.geometry}
+                  onChange={(e) => update("geometry", e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+                />
+              </label>
+            </div>
+          </div>
           <label className="col-span-2 text-[11px]">
             <span className="mb-1 block text-muted-foreground">Observaciones</span>
             <textarea
