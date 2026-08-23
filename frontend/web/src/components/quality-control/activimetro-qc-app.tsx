@@ -108,7 +108,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; icon: an
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pendiente_revision;
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pendiente_revision!;
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-semibold ${cfg.className}`}>
