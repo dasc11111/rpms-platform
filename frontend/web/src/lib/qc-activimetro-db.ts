@@ -128,7 +128,7 @@ export async function ensureActivimetroQcTables() {
  * notes como "REVISAR CON FISICO MEDICO" en lugar de inventarse.
  */
 async function seedDefaultTolerances() {
-    const existing = await sql`SELECT COUNT(*)::int AS count FROM qc_activimetro_tolerances`;
+    const { rows: existing } = await sql`SELECT COUNT(*)::int AS count FROM qc_activimetro_tolerances`;
     if (existing[0]?.count > 0) return;
 
   const rows: Array<{
