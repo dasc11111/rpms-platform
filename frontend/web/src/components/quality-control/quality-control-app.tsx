@@ -1,14 +1,19 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { Plus, X, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Plus, X, AlertTriangle, CheckCircle2, Clock, Printer, Download, ChevronDown, ChevronUp, Bell } from "lucide-react";
 import {
   QC_TEST_TYPES,
   QC_RESULT_LABELS,
   QcResultStatus,
   getQcTestTypeConfig,
   getQcDueStatus,
+  getNextDueDate,
+  getUpcomingSchedule,
+  getDaysOverdue,
+  formatShortDate,
 } from "@/lib/quality-control";
+import { QcTrendChart } from "./qc-trend-chart";
 
 type Instrument = { id: number; code: string; name: string };
 
@@ -71,6 +76,8 @@ export function QualityControlApp({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [expandedType, setExpandedType] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const filtered = useMemo(() => {
     return tests.filter((t) => {
@@ -87,9 +94,14 @@ export function QualityControlApp({
         .sort((a, b) => (a.test_date < b.test_date ? 1 : -1));
       const last = relevant[0]?.test_date ?? null;
       const due = getQcDueStatus(last, cfg.suggestedFrequencyDays);
-      return { cfg, last, due };
+      const nextDue = getNextDueDate(last, cfg.suggestedFrequencyDays);
+      const upcoming = getUpcomingSchedule(last, cfg.suggestedFrequencyDays, 3);
+      const daysOverdue = getDaysOverdue(last, cfg.suggestedFrequencyDays);
+      return { cfg, last, due, nextDue, upcoming, daysOverdue };
     });
   }, [tests]);
+
+  const overdueItems = useMemo(() => dueSummary.filter((d) => d.due === "vencida"), [dueSummary]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -126,27 +138,80 @@ export function QualityControlApp({
       setSaving(false);
     }
   }
+
+  function buildExportUrl(format: "pdf" | "csv" | "xlsx") {
+    const params = new URLSearchParams();
+    params.set("format", format);
+    if (filterType) params.set("testType", filterType);
+    if (filterStatus) params.set("resultStatus", filterStatus);
+    return `/api/quality-control/export?${params.toString()}`;
+  }
+
   return (
-    <div className="mx-auto max-w-[1400px] p-6">
-      <div className="mb-1 flex items-baseline justify-between">
+    <div className="mx-auto max-w-[1400px] p-6 print:p-0">
+      {overdueItems.length > 0 && !bannerDismissed && (
+        <div className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-3 print:hidden">
+          <div className="flex items-start gap-2">
+            <Bell className="mt-0.5 h-4 w-4 shrink-0 text-red-500" strokeWidth={2} />
+            <div className="text-xs text-red-500">
+              <p className="font-medium">
+                Hay {overdueItems.length} prueba(s) de control de calidad atrasada(s) respecto de la frecuencia sugerida (IAEA-TECDOC-602):
+              </p>
+              <ul className="mt-1 list-disc pl-4">
+                {overdueItems.map(({ cfg, daysOverdue }) => (
+                  <li key={cfg.code}>
+                    {cfg.label} — {daysOverdue} dia(s) de atraso
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <button onClick={() => setBannerDismissed(true)} aria-label="Cerrar alerta">
+            <X className="h-4 w-4 text-red-500" strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-lg font-semibold tracking-tight">Control de Calidad</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2} /> Nueva prueba
-        </button>
+        <div className="flex items-center gap-2 print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted/40"
+          >
+            <Printer className="h-3.5 w-3.5" strokeWidth={2} /> Imprimir
+          </button>
+          <a
+            href={buildExportUrl("pdf")}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted/40"
+          >
+            <Download className="h-3.5 w-3.5" strokeWidth={2} /> PDF
+          </a>
+          <a
+            href={buildExportUrl("csv")}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted/40"
+          >
+            <Download className="h-3.5 w-3.5" strokeWidth={2} /> CSV
+          </a>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:opacity-90"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={2} /> Nueva prueba
+          </button>
+        </div>
       </div>
       <p className="mb-6 max-w-3xl text-xs text-muted-foreground">
         Registro de pruebas internas de control de calidad (constancia, exactitud, linealidad, geometria,
         uniformidad, resolucion, sensibilidad) para activimetros y equipos de deteccion de Medicina Nuclear,
         complementario a la calibracion externa certificada del modulo Instrumentos y Calibracion. Las
-        frecuencias sugeridas son valores de referencia configurables; deben ser validadas por el Oficial de
-        Proteccion Radiologica segun procedimiento interno o normativa vigente.
+        frecuencias sugeridas fueron verificadas contra IAEA-TECDOC-602 (ver referencia bajo cada prueba) y
+        deben ser validadas por el Oficial de Proteccion Radiologica segun procedimiento interno o normativa
+        vigente.
       </p>
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {dueSummary.map(({ cfg, last, due }) => (
+        {dueSummary.map(({ cfg, last, due, nextDue, upcoming }) => (
           <div key={cfg.code} className="flex flex-col gap-1 rounded-lg border border-border bg-surface p-3">
             <div className="flex items-center gap-1.5">
               {due === "vencida" && <AlertTriangle className="h-3.5 w-3.5 text-red-500" strokeWidth={2} />}
@@ -158,11 +223,43 @@ export function QualityControlApp({
             <span className="text-[10px] text-muted-foreground">
               {last ? `Ultima: ${last}` : "Sin registro"} - cada {cfg.suggestedFrequencyDays} dia(s)
             </span>
+            {nextDue && (
+              <span className="text-[10px] text-muted-foreground">Proxima: {formatShortDate(nextDue)}</span>
+            )}
+            <button
+              onClick={() => setExpandedType(expandedType === cfg.code ? null : cfg.code)}
+              className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-accent print:hidden"
+            >
+              {expandedType === cfg.code ? (
+                <ChevronUp className="h-3 w-3" strokeWidth={2} />
+              ) : (
+                <ChevronDown className="h-3 w-3" strokeWidth={2} />
+              )}
+              Ver tendencia y proximas fechas
+            </button>
+            {expandedType === cfg.code && (
+              <div className="mt-2 border-t border-border pt-2">
+                <QcTrendChart
+                  points={tests.filter((t) => t.test_type === cfg.code)}
+                  unit={tests.find((t) => t.test_type === cfg.code)?.unit ?? null}
+                />
+                {upcoming.length > 0 && (
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    <p className="font-medium">Aviso anticipado - proximas fechas programadas:</p>
+                    <ul className="list-disc pl-4">
+                      {upcoming.map((d, idx) => (
+                        <li key={idx}>{formatShortDate(d)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2 print:hidden">
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -188,7 +285,7 @@ export function QualityControlApp({
           ))}
         </select>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-lg border border-border print:overflow-visible">
         <table className="w-full text-xs">
           <thead className="bg-muted/40 text-left">
             <tr>
@@ -215,7 +312,7 @@ export function QualityControlApp({
                   {t.reference_value ?? "-"} {t.unit ?? ""}
                 </td>
                 <td className="px-3 py-2">
-                  {t.deviation_percent !== null ? `${t.deviation_percent.toFixed(2)}%` : "-"}
+                  {t.deviation_percent !== null && !Number.isNaN(Number(t.deviation_percent)) ? `${Number(t.deviation_percent).toFixed(2)}%` : "-"}
                 </td>
                 <td className="px-3 py-2">
                   <StatusBadge status={t.result_status} />
@@ -235,7 +332,7 @@ export function QualityControlApp({
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 print:hidden">
           <div className="w-full max-w-lg rounded-lg border border-border bg-surface p-4 max-h-[90vh] overflow-y-auto">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Nueva prueba de control de calidad</h2>
