@@ -131,7 +131,7 @@ const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
   },
 ];
 
-const PROXIMAMENTE: ModuleCard[] = [
+const EMERGENCIAS: ModuleCard[] = [
   {
     href: "/nuclear-medicine/incidents",
     label: "Emergencias e Incidentes (MN)",
@@ -139,7 +139,11 @@ const PROXIMAMENTE: ModuleCard[] = [
     icon: AlertTriangle,
     status: "activo",
     phase: "Fase 12 (nuevo)",
-  }, {
+  },
+];
+
+const PROXIMAMENTE: ModuleCard[] = [
+  {
     href: "#",
     label: "Alertas de Medicina Nuclear",
     description: "Alertas criticas, medias e informativas basadas en normativa chilena y procedimientos internos.",
@@ -237,6 +241,11 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Control de Calidad y Transporte</h2>
       </div>
       <ModuleGrid items={CALIDAD_Y_TRANSPORTE} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Emergencias e Incidentes (en produccion)</h2>
+      </div>
+      <ModuleGrid items={EMERGENCIAS} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
