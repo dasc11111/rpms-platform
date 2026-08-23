@@ -69,8 +69,8 @@ export function linearRegression(x: number[], y: number[]): LinearRegressionResu
     let sxx = 0;
     let syy = 0;
     for (let i = 0; i < n; i++) {
-          const dx = x[i] - mx;
-          const dy = y[i] - my;
+          const dx = x[i]! - mx;
+          const dy = y[i]! - my;
           sxy += dx * dy;
           sxx += dx * dx;
           syy += dy * dy;
