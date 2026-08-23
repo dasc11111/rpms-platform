@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   AlertTriangle,
@@ -73,6 +73,18 @@ type ActivimetroTest = {
 
 type Reading = { value: string; label: string; unit: string; elapsedMinutes: string };
 
+type DueAlert = {
+  instrumentId: number;
+  instrumentCode: string | null;
+  instrumentName: string | null;
+  testType: ActivimetroTestType;
+  frequencyDays: number;
+  lastTestDate: string | null;
+  nextDueDate: string | null;
+  daysUntilDue: number | null;
+  status: "overdue" | "upcoming" | "sin_registro";
+};
+
 const TEST_TYPES: Array<{
   code: ActivimetroTestType;
   label: string;
@@ -96,7 +108,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; icon: an
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pendiente_revision!;
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pendiente_revision;
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-semibold ${cfg.className}`}>
@@ -145,6 +157,20 @@ export function ActivimetroQcApp({
   const [lastResult, setLastResult] = useState<{ test: ActivimetroTest; readings: any[] } | null>(null);
   const [oprDetail, setOprDetail] = useState(false);
   const [historyOpenId, setHistoryOpenId] = useState<number | null>(null);
+  const [dueAlerts, setDueAlerts] = useState<DueAlert[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/quality-control/activimetro/due-status")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setDueAlerts(data.alerts || []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activeTolerance = useMemo(
     () => tolerances.find((t) => t.test_type === form.testType && t.active) || null,
@@ -237,6 +263,10 @@ export function ActivimetroQcApp({
       const data = await res.json();
       setTests((prev) => [data.test, ...prev]);
       setLastResult(data);
+      fetch("/api/quality-control/activimetro/due-status")
+        .then((r) => r.json())
+        .then((d) => setDueAlerts(d.alerts || []))
+        .catch(() => {});
     } catch {
       setError("No se pudo calcular/guardar la prueba. Revise los valores ingresados e intente nuevamente.");
     } finally {
@@ -249,6 +279,18 @@ export function ActivimetroQcApp({
     setReadings(emptyReadings(activeTolerance?.num_readings_required || 1));
     setLastResult(null);
     setError(null);
+  }
+
+  function dueAlertLabel(a: DueAlert) {
+    const testLabel = TEST_TYPES.find((t) => t.code === a.testType)?.label || a.testType;
+    const equipo = a.instrumentName || "Equipo sin asignar";
+    if (a.status === "overdue") {
+      return `${equipo} — ${testLabel}: prueba VENCIDA hace ${Math.abs(a.daysUntilDue || 0)} día(s) (vencía el ${a.nextDueDate}).`;
+    }
+    if (a.status === "sin_registro") {
+      return `${equipo} — ${testLabel}: sin registro histórico. Programar primera prueba.`;
+    }
+    return `${equipo} — ${testLabel}: vence en ${a.daysUntilDue} día(s) (${a.nextDueDate}).`;
   }
 
   return (
@@ -270,6 +312,26 @@ export function ActivimetroQcApp({
           <Printer className="h-3.5 w-3.5" strokeWidth={2} /> Imprimir
         </button>
       </div>
+
+      {dueAlerts.length > 0 && (
+        <div className="mb-4 space-y-1.5 print:hidden">
+          {dueAlerts.map((a, idx) => (
+            <div
+              key={`${a.instrumentId}-${a.testType}-${idx}`}
+              className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+                a.status === "overdue"
+                  ? "border-red-500/40 bg-red-500/10 text-red-500"
+                  : a.status === "sin_registro"
+                  ? "border-border bg-muted/40 text-muted-foreground"
+                  : "border-yellow-500/40 bg-yellow-500/10 text-yellow-600"
+              }`}
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" strokeWidth={2} />
+              <span>{dueAlertLabel(a)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-lg border border-border bg-surface p-4 print:hidden">
