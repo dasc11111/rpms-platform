@@ -157,6 +157,7 @@ export async function POST(request: Request) {
 
   for (let i = 0; i < readings.length; i++) {
     const r = readings[i];
+    if (!r) continue;
     await sql`
       INSERT INTO qc_activimetro_readings (
         test_id, reading_index, reading_label, measured_value, unit, elapsed_time_minutes, measured_at, metadata, notes
