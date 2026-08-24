@@ -461,13 +461,17 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
             <h2 className="font-medium">Historial y tendencia</h2>
           </div>
           <QcTrendChart
-            data={history.map((h) => ({
-              date: h.performedAt,
-              value:
+            points={history.map((h) => ({
+              test_date: h.performedAt,
+              measured_value:
                 h.testType === "centro_rotacion"
-                  ? h.absoluteDifference ?? 0
-                  : h.percentValue ?? 0,
-              status: h.status,
+                  ? h.absoluteDifference ?? null
+                  : h.percentValue ?? null,
+              reference_value: h.testType === "centro_rotacion" ? 0 : null,
+              deviation_percent:
+                h.testType === "uniformidad_tomografica"
+                  ? h.percentValue ?? null
+                  : null,
             }))}
             unit={currentTestConfig.unit}
           />
