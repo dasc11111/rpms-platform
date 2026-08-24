@@ -13,6 +13,8 @@ import {
   Radiation,
   ClipboardCheck,
   Truck,
+  Gauge,
+  ScanLine,
 } from "lucide-react";
 
 type ModuleCard = {
@@ -112,6 +114,11 @@ const INSTRUMENTOS: ModuleCard[] = [
 // modulo /transport ya existente en la plataforma (I-131 y Mo-99/Tc-99m),
 // que hasta ahora no estaba enlazado desde este hub. No se duplico codigo
 // en ninguno de los dos casos (reglas 2/32 y 16/32 de Fase 0).
+//
+// Fase 19/20 (Prompt maestro CC): el Control de Calidad "tal cual" del
+// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara) se
+// implemento como modulos independientes propios, enlazados aqui de forma
+// explicita para que no queden accesibles solo por URL directa.
 const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
   {
     href: "/quality-control",
@@ -120,6 +127,22 @@ const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
     icon: ClipboardCheck,
     status: "activo",
     phase: "Fase 16",
+  },
+  {
+    href: "/quality-control/activimetro",
+    label: "Control de Calidad - Modulo 1: Activimetro",
+    description: "Precision, exactitud, linealidad, respuesta de fondo y geometria/volumen del activimetro, con multiples lecturas, calculo automatico y avisos de vencimiento (documento QA proporcionado por el usuario + IAEA TECDOC-602).",
+    icon: Gauge,
+    status: "activo",
+    phase: "Fase 19 (nuevo)",
+  },
+  {
+    href: "/quality-control/gammacamara",
+    label: "Control de Calidad - Modulo 2: Gammacamara",
+    description: "Uniformidad (intrinseca/extrinseca), resolucion espacial y sensibilidad de la gammacamara planar, conforme a IAEA TECDOC-602, con avisos de vencimiento.",
+    icon: ScanLine,
+    status: "activo",
+    phase: "Fase 20 (nuevo)",
   },
   {
     href: "/transport",
