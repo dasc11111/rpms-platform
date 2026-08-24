@@ -45,7 +45,7 @@ const TEST_TYPES: TestTypeConfig[] = [
 ];
 
 const STATUS_CONFIG: Record<
-  string,
+  "pass" | "warning" | "fail",
   { label: string; color: string; icon: typeof CheckCircle2 }
 > = {
   pass: { label: "Aprobado", color: "text-green-600 bg-green-50 border-green-200", icon: CheckCircle2 },
