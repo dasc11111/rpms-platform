@@ -15,6 +15,7 @@ import {
   Truck,
   Gauge,
   ScanLine,
+  Orbit,
 } from "lucide-react";
 
 type ModuleCard = {
@@ -115,10 +116,10 @@ const INSTRUMENTOS: ModuleCard[] = [
 // que hasta ahora no estaba enlazado desde este hub. No se duplico codigo
 // en ninguno de los dos casos (reglas 2/32 y 16/32 de Fase 0).
 //
-// Fase 19/20 (Prompt maestro CC): el Control de Calidad "tal cual" del
-// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara) se
-// implemento como modulos independientes propios, enlazados aqui de forma
-// explicita para que no queden accesibles solo por URL directa.
+// Fase 19/20/21 (Prompt maestro CC): el Control de Calidad "tal cual" del
+// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara, SPECT)
+// se implemento como modulos independientes propios, enlazados aqui de
+// forma explicita para que no queden accesibles solo por URL directa.
 const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
   {
     href: "/quality-control",
@@ -143,6 +144,14 @@ const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
     icon: ScanLine,
     status: "activo",
     phase: "Fase 20 (nuevo)",
+  },
+  {
+    href: "/quality-control/spect",
+    label: "Control de Calidad - Modulo 3: SPECT",
+    description: "Centro de Rotacion (COR) y Uniformidad Tomografica especificas de la adquisicion tomografica SPECT, conforme a IAEA TECDOC-602, con avisos de vencimiento.",
+    icon: Orbit,
+    status: "activo",
+    phase: "Fase 21 (nuevo)",
   },
   {
     href: "/transport",
