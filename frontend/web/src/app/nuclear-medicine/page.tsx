@@ -16,6 +16,7 @@ import {
   Gauge,
   ScanLine,
   Orbit,
+  Atom,
 } from "lucide-react";
 
 type ModuleCard = {
@@ -116,10 +117,11 @@ const INSTRUMENTOS: ModuleCard[] = [
 // que hasta ahora no estaba enlazado desde este hub. No se duplico codigo
 // en ninguno de los dos casos (reglas 2/32 y 16/32 de Fase 0).
 //
-// Fase 19/20/21 (Prompt maestro CC): el Control de Calidad "tal cual" del
-// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara, SPECT)
-// se implemento como modulos independientes propios, enlazados aqui de
-// forma explicita para que no queden accesibles solo por URL directa.
+// Fase 19/20/21/22 (Prompt maestro CC): el Control de Calidad "tal cual" del
+// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara, SPECT) o
+// de IAEA Human Health Series No. 1 (PET/CT) se implemento como modulos
+// independientes propios, enlazados aqui de forma explicita para que no
+// queden accesibles solo por URL directa.
 const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
   {
     href: "/quality-control",
@@ -152,6 +154,14 @@ const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
     icon: Orbit,
     status: "activo",
     phase: "Fase 21 (nuevo)",
+  },
+  {
+    href: "/quality-control/petct",
+    label: "Control de Calidad - Modulo 4: PET/CT",
+    description: "Calibracion Cruzada (exactitud cuantitativa/SUV) y Uniformidad de Imagen especificas de PET, conforme a IAEA Human Health Series No. 1, con avisos de vencimiento. No incluye control de calidad del componente CT.",
+    icon: Atom,
+    status: "activo",
+    phase: "Fase 22 (nuevo)",
   },
   {
     href: "/transport",
