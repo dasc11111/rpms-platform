@@ -279,7 +279,7 @@ export async function setPetCtBaseline(input: {
   if (previousId) {
     await recordAuditLog({
       entity_type: 'qc_petct_baseline',
-      entity_id: rows[0].id,
+      entity_id: rows[0]!.id,
       action: 'update_baseline',
       field_name: input.parameter_name,
       old_value: null,
