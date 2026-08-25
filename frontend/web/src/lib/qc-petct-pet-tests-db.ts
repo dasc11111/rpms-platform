@@ -192,7 +192,7 @@ export async function listVersionChain(rootId: number): Promise<PetTestRecord[]>
     const record = await getPetTestById(currentId);
     if (!record) break;
     chain.push(record);
-    const { rows } = await sql`SELECT id FROM qc_petct_pet_tests WHERE supersedes_id = ${currentId} LIMIT 1;`;
+    const { rows }: { rows: Array<{ id: number }> } = await sql`SELECT id FROM qc_petct_pet_tests WHERE supersedes_id = ${currentId} LIMIT 1;`;
     currentId = (rows[0]?.id as number | undefined) ?? null;
   }
   return chain;
