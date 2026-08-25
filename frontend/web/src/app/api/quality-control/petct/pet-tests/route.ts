@@ -42,14 +42,14 @@ function computeForTestCode(
         fwhmObservedMm: Number(rawInputs.fwhmObservedMm),
         fwhmExpectedMm: Number(rawInputs.fwhmExpectedMm),
       });
-      return { calculated: out, status: out.status, actionLevel: out.actionLevel };
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
     case "PET-02": {
       const out = calculatePet02({
         sTotObservedCps: Number(rawInputs.sTotObservedCps),
         sTotExpectedCps: Number(rawInputs.sTotExpectedCps),
       });
-      return { calculated: out, status: out.status, actionLevel: out.actionLevel };
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
     case "PET-03": {
       const out = calculatePet03({
@@ -62,14 +62,14 @@ function computeForTestCode(
         necRecommendedKcps: Number(rawInputs.necRecommendedKcps),
         activityMbq: Number(rawInputs.activityMbq),
       });
-      return { calculated: out, status: out.status, actionLevel: out.actionLevel };
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
     case "PET-04": {
       const out = calculatePet04({
         energyResolutionObservedPercent: Number(rawInputs.energyResolutionObservedPercent),
         energyResolutionExpectedPercent: Number(rawInputs.energyResolutionExpectedPercent),
       });
-      return { calculated: out, status: out.status, actionLevel: out.actionLevel };
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
     case "PET-05": {
       const out = calculatePet05({
@@ -81,7 +81,7 @@ function computeForTestCode(
         sphereBehavior: rawInputs.sphereBehavior,
         attenuationScatterCorrection: rawInputs.attenuationScatterCorrection,
       });
-      return { calculated: out, status: out.status, actionLevel: "normal" };
+      return { calculated: { ...out }, status: out.status, actionLevel: "normal" };
     }
     case "PET-06": {
       const out = calculatePet06({
@@ -89,7 +89,7 @@ function computeForTestCode(
         timingResolutionObservedPs: Number(rawInputs.timingResolutionObservedPs),
         timingResolutionExpectedPs: Number(rawInputs.timingResolutionExpectedPs),
       });
-      return { calculated: out, status: out.status, actionLevel: out.actionLevel };
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
     default:
       throw new Error(`Codigo de prueba PET no soportado: ${testCode}`);
