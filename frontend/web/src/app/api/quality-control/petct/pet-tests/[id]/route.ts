@@ -20,10 +20,11 @@ import {
  *    (nunca modifica el original) con motivo y usuario de la correccion.
  */
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensurePetTestsTables();
-    const id = Number(params.id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const record = await getPetTestById(id);
     if (!record) {
       return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
@@ -36,10 +37,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensurePetTestsTables();
-    const id = Number(params.id);
+    const { id: idParam } = await params;
+    const id = Number(idParam);
     const body = await request.json();
 
     if (body.action === "finalizar") {
