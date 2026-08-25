@@ -326,7 +326,7 @@ export async function createServiceEvent(input: {
   let testsRequired = input.tests_required ?? null;
   if (!testsRequired) {
     const { rows } = await sql`SELECT test_code FROM qc_petct_test_catalog WHERE freq_post_service = true AND active = true;`;
-    testsRequired = rows.map((r: { test_code: string }) => r.test_code);
+    testsRequired = rows.map((r) => (r as { test_code: string }).test_code);
   }
 
   const { rows } = await sql`INSERT INTO qc_petct_service_events (equipment_id, service_type, component_affected, service_date, technician, work_order_number, description, tests_required, created_by) VALUES (${input.equipment_id}, ${input.service_type}, ${input.component_affected ?? null}, ${input.service_date}, ${input.technician ?? null}, ${input.work_order_number ?? null}, ${input.description ?? null}, ${JSON.stringify(testsRequired)}, ${input.created_by ?? null}) RETURNING *;`;
