@@ -14,12 +14,18 @@ export default async function PetCtQcPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
         <Link
           href="/quality-control/petct/equipment"
           className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
         >
           Ficha tecnica del equipo
+        </Link>
+        <Link
+          href="/quality-control/petct/pet-tests"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Pruebas PET (PET-01 a PET-06)
         </Link>
       </div>
       <PetCtQcApp instruments={JSON.parse(JSON.stringify(instrumentRows))} />
