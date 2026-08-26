@@ -722,3 +722,108 @@ export function calculateCt14(input: Ct14Input): Ct14Output {
   const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
   return { percentDeviation, status, actionLevel: deriveActionLevel(status, marginFraction) };
 }
+
+// ---- FASE D: PETCT-01 y PETCT-02 (pruebas de interaccion PET/CT, seccion 2
+// categoria C, secciones 6 y 14 del prompt de mejora). Estas pruebas NO
+// pertenecen al componente PET ni al componente CT por separado: evaluan la
+// relacion espacial entre ambos. Reutilizan CtAcceptanceStatus / CtActionLevel
+// (mismo lenguaje de 4 estados que el resto del Modulo 4).
+
+// PETCT-01: Exactitud del registro PET/CT. El operador ingresa el
+// desplazamiento medido en cada eje (mm) y el tamano de voxel (mm); el motor
+// expresa el desplazamiento maximo en voxels y compara contra la tolerancia
+// fija de +/-1 voxel (seccion 6 del prompt).
+export interface PetCt01Input {
+  voxelSizeMm: number;
+  displacementXMm: number;
+  displacementYMm: number;
+  displacementZMm: number;
+}
+export interface PetCt01Output {
+  maxDisplacementMm: number;
+  errorVoxels: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetCt01(input: PetCt01Input): PetCt01Output {
+  const maxDisplacementMm = Math.max(
+    Math.abs(input.displacementXMm),
+    Math.abs(input.displacementYMm),
+    Math.abs(input.displacementZMm)
+  );
+  if (!input.voxelSizeMm) {
+    return { maxDisplacementMm, errorVoxels: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const errorVoxels = maxDisplacementMm / input.voxelSizeMm;
+  const { status, marginFraction } = absoluteDeviationStatus(errorVoxels, 1);
+  return { maxDisplacementMm, errorVoxels, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// PETCT-02: PET/CT Offset Calibration X/Y/Z. El operador ingresa el offset
+// medido en cada eje (mm) y la tolerancia absoluta (mm); el motor calcula el
+// offset maximo y clasifica contra tolerancia. Si se dispone del resultado
+// anterior y/o del baseline vigente (secciones 14 y 27-28 del prompt:
+// "comparar automaticamente contra resultado anterior, baseline, resultado
+// posterior a servicio"), calcula ademas la deriva (delta) respecto de cada
+// uno para apoyar el analisis de tendencia; esta deriva se informa pero no
+// reemplaza el criterio de tolerancia absoluta del offset actual, ya que el
+// prompt aclara que no existe un valor universal fijo para la deriva.
+export interface PetCt02Input {
+  offsetXMm: number;
+  offsetYMm: number;
+  offsetZMm: number;
+  toleranceMm: number;
+  previousOffsetXMm?: number | null;
+  previousOffsetYMm?: number | null;
+  previousOffsetZMm?: number | null;
+  baselineOffsetXMm?: number | null;
+  baselineOffsetYMm?: number | null;
+  baselineOffsetZMm?: number | null;
+}
+export interface PetCt02Delta {
+  x: number | null;
+  y: number | null;
+  z: number | null;
+  max: number | null;
+}
+export interface PetCt02Output {
+  maxOffsetMm: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+  deltaFromPreviousMm: PetCt02Delta;
+  deltaFromBaselineMm: PetCt02Delta;
+}
+function offsetDelta(
+  xMm: number,
+  yMm: number,
+  zMm: number,
+  refXMm: number | null | undefined,
+  refYMm: number | null | undefined,
+  refZMm: number | null | undefined
+): PetCt02Delta {
+  const dx = refXMm === null || refXMm === undefined ? null : xMm - refXMm;
+  const dy = refYMm === null || refYMm === undefined ? null : yMm - refYMm;
+  const dz = refZMm === null || refZMm === undefined ? null : zMm - refZMm;
+  const values = [dx, dy, dz].filter((v): v is number => v !== null).map((v) => Math.abs(v));
+  const max = values.length ? Math.max(...values) : null;
+  return { x: dx, y: dy, z: dz, max };
+}
+export function calculatePetCt02(input: PetCt02Input): PetCt02Output {
+  const maxOffsetMm = Math.max(Math.abs(input.offsetXMm), Math.abs(input.offsetYMm), Math.abs(input.offsetZMm));
+  const { status, marginFraction } = absoluteDeviationStatus(maxOffsetMm, input.toleranceMm);
+  const deltaFromPreviousMm = offsetDelta(
+    input.offsetXMm, input.offsetYMm, input.offsetZMm,
+    input.previousOffsetXMm, input.previousOffsetYMm, input.previousOffsetZMm
+  );
+  const deltaFromBaselineMm = offsetDelta(
+    input.offsetXMm, input.offsetYMm, input.offsetZMm,
+    input.baselineOffsetXMm, input.baselineOffsetYMm, input.baselineOffsetZMm
+  );
+  return {
+    maxOffsetMm,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+    deltaFromPreviousMm,
+    deltaFromBaselineMm,
+  };
+}
