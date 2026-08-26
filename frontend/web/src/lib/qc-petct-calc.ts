@@ -339,3 +339,386 @@ export function calculateDecayCorrection(input: DecayCorrectionInput): DecayCorr
   const correctedActivity = input.initialActivity * Math.pow(0.5, elapsedMinutes / input.halfLifeMinutes);
   return { correctedActivity, elapsedMinutes };
 }
+
+
+// ---- FASE C: CT-01 a CT-14 (control de calidad del componente CT del
+// equipo hibrido PET/CT, seccion 19 del prompt de mejora). La bibliografia
+// PET (IAEA Human Health Series No. 1) no fija valores de referencia
+// numericos para las pruebas radiologicas de CT con el mismo nivel de
+// detalle que las pruebas PET; por eso las tolerancias de estas pruebas se
+// marcan REVISAR CON FISICO MEDICO en las tolerancias por defecto
+// (secciones 25 y 28 del prompt) y el motor solo aplica la comparacion
+// configurada, nunca inventa un limite regulatorio. Se reutiliza el mismo
+// modelo de 4 estados (CtAcceptanceStatus = PetAcceptanceStatus) y el mismo
+// nivel de accion (CtActionLevel = PetActionLevel) que las pruebas PET,
+// para mantener un unico lenguaje de resultado en todo el Modulo 4, aunque
+// el componente CT es independiente del componente PET (secciones 2 y 19).
+
+export type CtAcceptanceStatus = PetAcceptanceStatus;
+export type CtActionLevel = PetActionLevel;
+
+/**
+ * Compara una desviacion (absoluta o en %, segun la unidad del parametro)
+ * contra una tolerancia absoluta/porcentual. marginFraction = 0 en el
+ * valor de referencia, 1 en el limite de tolerancia (mismo significado que
+ * en deriveActionLevel, para reutilizarla sin cambios).
+ */
+function absoluteDeviationStatus(
+  deviation: number,
+  tolerance: number | null | undefined
+): { status: CtAcceptanceStatus; marginFraction: number } {
+  if (tolerance === null || tolerance === undefined || !tolerance || Number.isNaN(deviation)) {
+    return { status: "requiere_revision", marginFraction: NaN };
+  }
+  const abs = Math.abs(deviation);
+  const marginFraction = abs / tolerance;
+  const status: CtAcceptanceStatus = abs <= tolerance ? "cumple" : "no_cumple";
+  return { status, marginFraction };
+}
+
+// CT-01: Radiacion dispersa y verificacion de blindaje. El operador ingresa
+// la tasa de dosis medida en el punto de referencia; el limite proviene del
+// informe de blindaje/proteccion radiologica del recinto (no de este
+// modulo). Criterio: tasa medida <= limite.
+export interface Ct01Input {
+  measuredDoseRateUSvH: number;
+  doseRateLimitUSvH: number;
+}
+export interface Ct01Output {
+  marginFraction: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt01(input: Ct01Input): Ct01Output {
+  if (!input.doseRateLimitUSvH) {
+    return { marginFraction: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const marginFraction = input.measuredDoseRateUSvH / input.doseRateLimitUSvH;
+  const status: CtAcceptanceStatus = input.measuredDoseRateUSvH <= input.doseRateLimitUSvH ? "cumple" : "no_cumple";
+  return { marginFraction, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-02: Alineacion de laser. Criterio: |desviacion| <= tolerancia (mm).
+export interface Ct02Input {
+  laserDeviationMm: number;
+  toleranceMm: number;
+}
+export interface Ct02Output {
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt02(input: Ct02Input): Ct02Output {
+  const { status, marginFraction } = absoluteDeviationStatus(input.laserDeviationMm, input.toleranceMm);
+  return { status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-03: Alineacion de mesa y exactitud posicional. Criterio: |error| <= tolerancia (mm).
+export interface Ct03Input {
+  tablePositionErrorMm: number;
+  toleranceMm: number;
+}
+export interface Ct03Output {
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt03(input: Ct03Input): Ct03Output {
+  const { status, marginFraction } = absoluteDeviationStatus(input.tablePositionErrorMm, input.toleranceMm);
+  return { status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-04: Exactitud del scout view. Criterio: |error| <= tolerancia (mm).
+export interface Ct04Input {
+  scoutViewErrorMm: number;
+  toleranceMm: number;
+}
+export interface Ct04Output {
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt04(input: Ct04Input): Ct04Output {
+  const { status, marginFraction } = absoluteDeviationStatus(input.scoutViewErrorMm, input.toleranceMm);
+  return { status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-05: Inspeccion visual y revision del programa. Evaluacion NO numerica
+// (analoga a PET-05): el operador reporta el estado observado de cada
+// componente y el motor solo consolida el resultado global.
+export type Ct05ComponentStatus = "cumple" | "no_cumple" | "requiere_revision";
+export interface Ct05Input {
+  visualInspection: Ct05ComponentStatus;
+  safetyInterlocks: Ct05ComponentStatus;
+  tableMotion: Ct05ComponentStatus;
+  gantryMotion: Ct05ComponentStatus;
+  softwareVersion: Ct05ComponentStatus;
+}
+export interface Ct05Output {
+  status: CtAcceptanceStatus;
+}
+export function calculateCt05(input: Ct05Input): Ct05Output {
+  const components = Object.values(input);
+  const status: CtAcceptanceStatus = components.includes("no_cumple")
+    ? "no_cumple"
+    : components.includes("requiere_revision")
+    ? "requiere_revision"
+    : "cumple";
+  return { status };
+}
+
+// CT-06: Perfil y ancho de corte (slice width). Criterio: % desviacion
+// respecto del ancho nominal dentro de tolerancia.
+export interface Ct06Input {
+  measuredSliceWidthMm: number;
+  nominalSliceWidthMm: number;
+  tolerancePercent: number;
+}
+export interface Ct06Output {
+  percentDeviation: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt06(input: Ct06Input): Ct06Output {
+  if (!input.nominalSliceWidthMm) {
+    return { percentDeviation: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const percentDeviation = ((input.measuredSliceWidthMm - input.nominalSliceWidthMm) / input.nominalSliceWidthMm) * 100;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
+  return { percentDeviation, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-07: Modulacion de alto contraste (resolucion espacial de alto
+// contraste). Criterio: resolucion observada >= 0.95 x resolucion esperada
+// (misma logica de limite inferior que PET-02/sensibilidad).
+export interface Ct07Input {
+  observedResolutionLpCm: number;
+  expectedResolutionLpCm: number;
+}
+export interface Ct07Output {
+  ratio: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt07(input: Ct07Input): Ct07Output {
+  if (!input.expectedResolutionLpCm) {
+    return { ratio: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const { ratio, status, marginFraction } = ratioLowerBoundStatus(
+    input.observedResolutionLpCm / input.expectedResolutionLpCm,
+    0.95
+  );
+  return { ratio, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-08: kVp y HVL. Dos sub-parametros independientes, consolidados igual
+// que PET-03 (SF + NEC): si alguno no cumple, el resultado global es NO
+// CUMPLE.
+export interface Ct08Input {
+  kvpMeasured: number;
+  kvpNominal: number;
+  kvpTolerancePercent: number;
+  hvlMeasuredMmAl: number;
+  hvlExpectedMmAl: number;
+  hvlTolerancePercent: number;
+}
+export interface Ct08Output {
+  kvpPercentDeviation: number;
+  kvpStatus: CtAcceptanceStatus;
+  hvlPercentDeviation: number;
+  hvlStatus: CtAcceptanceStatus;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt08(input: Ct08Input): Ct08Output {
+  const kvpPercentDeviation = input.kvpNominal
+    ? ((input.kvpMeasured - input.kvpNominal) / input.kvpNominal) * 100
+    : NaN;
+  const kvpEval = input.kvpNominal
+    ? absoluteDeviationStatus(kvpPercentDeviation, input.kvpTolerancePercent)
+    : { status: "requiere_revision" as CtAcceptanceStatus, marginFraction: NaN };
+
+  const hvlPercentDeviation = input.hvlExpectedMmAl
+    ? ((input.hvlMeasuredMmAl - input.hvlExpectedMmAl) / input.hvlExpectedMmAl) * 100
+    : NaN;
+  const hvlEval = input.hvlExpectedMmAl
+    ? absoluteDeviationStatus(hvlPercentDeviation, input.hvlTolerancePercent)
+    : { status: "requiere_revision" as CtAcceptanceStatus, marginFraction: NaN };
+
+  const status: CtAcceptanceStatus =
+    kvpEval.status === "no_cumple" || hvlEval.status === "no_cumple"
+      ? "no_cumple"
+      : kvpEval.status === "requiere_revision" || hvlEval.status === "requiere_revision"
+      ? "requiere_revision"
+      : "cumple";
+  const margins = [kvpEval.marginFraction, hvlEval.marginFraction].filter((m) => !Number.isNaN(m));
+  const marginFraction = margins.length ? Math.max(...margins) : NaN;
+  return {
+    kvpPercentDeviation,
+    kvpStatus: kvpEval.status,
+    hvlPercentDeviation,
+    hvlStatus: hvlEval.status,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+  };
+}
+
+// CT-09: Dosis (CTDIvol / DLP). Mismo patron de consolidacion de dos
+// sub-parametros que CT-08.
+export interface Ct09Input {
+  ctdivolMeasuredMgy: number;
+  ctdivolReferenceMgy: number;
+  dlpMeasuredMgyCm: number;
+  dlpReferenceMgyCm: number;
+  tolerancePercent: number;
+}
+export interface Ct09Output {
+  ctdivolPercentDeviation: number;
+  ctdivolStatus: CtAcceptanceStatus;
+  dlpPercentDeviation: number;
+  dlpStatus: CtAcceptanceStatus;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt09(input: Ct09Input): Ct09Output {
+  const ctdivolPercentDeviation = input.ctdivolReferenceMgy
+    ? ((input.ctdivolMeasuredMgy - input.ctdivolReferenceMgy) / input.ctdivolReferenceMgy) * 100
+    : NaN;
+  const ctdivolEval = input.ctdivolReferenceMgy
+    ? absoluteDeviationStatus(ctdivolPercentDeviation, input.tolerancePercent)
+    : { status: "requiere_revision" as CtAcceptanceStatus, marginFraction: NaN };
+
+  const dlpPercentDeviation = input.dlpReferenceMgyCm
+    ? ((input.dlpMeasuredMgyCm - input.dlpReferenceMgyCm) / input.dlpReferenceMgyCm) * 100
+    : NaN;
+  const dlpEval = input.dlpReferenceMgyCm
+    ? absoluteDeviationStatus(dlpPercentDeviation, input.tolerancePercent)
+    : { status: "requiere_revision" as CtAcceptanceStatus, marginFraction: NaN };
+
+  const status: CtAcceptanceStatus =
+    ctdivolEval.status === "no_cumple" || dlpEval.status === "no_cumple"
+      ? "no_cumple"
+      : ctdivolEval.status === "requiere_revision" || dlpEval.status === "requiere_revision"
+      ? "requiere_revision"
+      : "cumple";
+  const margins = [ctdivolEval.marginFraction, dlpEval.marginFraction].filter((m) => !Number.isNaN(m));
+  const marginFraction = margins.length ? Math.max(...margins) : NaN;
+  return {
+    ctdivolPercentDeviation,
+    ctdivolStatus: ctdivolEval.status,
+    dlpPercentDeviation,
+    dlpStatus: dlpEval.status,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+  };
+}
+
+// CT-10: Ruido. Criterio: % desviacion del ruido (SD en HU) respecto del
+// esperado, dentro de tolerancia.
+export interface Ct10Input {
+  measuredNoiseSdHu: number;
+  expectedNoiseSdHu: number;
+  tolerancePercent: number;
+}
+export interface Ct10Output {
+  percentDeviation: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt10(input: Ct10Input): Ct10Output {
+  if (!input.expectedNoiseSdHu) {
+    return { percentDeviation: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const percentDeviation = ((input.measuredNoiseSdHu - input.expectedNoiseSdHu) / input.expectedNoiseSdHu) * 100;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
+  return { percentDeviation, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-11: Uniformidad (numero CT y ruido por ROI, seccion 21 del prompt).
+// El operador ingresa la media del ROI central y de hasta 4 ROI
+// perifericos (en HU); el motor calcula la desviacion maxima respecto del
+// central y clasifica contra la tolerancia (HU).
+export interface Ct11Input {
+  centralRoiHu: number;
+  peripheralRoiHu: number[];
+  toleranceHu: number;
+}
+export interface Ct11Output {
+  meanPeripheralHu: number;
+  maxDeviationHu: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt11(input: Ct11Input): Ct11Output {
+  const validPeripheral = input.peripheralRoiHu.filter((v) => !Number.isNaN(v));
+  if (!validPeripheral.length) {
+    return { meanPeripheralHu: NaN, maxDeviationHu: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const meanPeripheralHu = mean(validPeripheral);
+  const maxDeviationHu = Math.max(...validPeripheral.map((v) => Math.abs(v - input.centralRoiHu)));
+  const { status, marginFraction } = absoluteDeviationStatus(maxDeviationHu, input.toleranceHu);
+  return { meanPeripheralHu, maxDeviationHu, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-12: Artefactos (seccion 22 del prompt). Formulario estructurado: el
+// operador solo selecciona el tipo observado; el motor decide si requiere
+// revision del Fisico Medico (nunca clasifica el operador manualmente).
+export type Ct12ArtifactType =
+  | "sin_artefactos"
+  | "anillo"
+  | "bandas"
+  | "streak"
+  | "anormalidad_uniformidad"
+  | "metalico"
+  | "otros";
+export interface Ct12Input {
+  artifactType: Ct12ArtifactType;
+}
+export interface Ct12Output {
+  status: CtAcceptanceStatus;
+}
+export function calculateCt12(input: Ct12Input): Ct12Output {
+  const status: CtAcceptanceStatus = input.artifactType === "sin_artefactos" ? "cumple" : "requiere_revision";
+  return { status };
+}
+
+// CT-13: Numero CT. Criterio: |HU medido - HU esperado del material| <= tolerancia (HU absolutos).
+export interface Ct13Input {
+  materialMeasuredHu: number;
+  materialExpectedHu: number;
+  toleranceHu: number;
+}
+export interface Ct13Output {
+  deviationHu: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt13(input: Ct13Input): Ct13Output {
+  const deviationHu = input.materialMeasuredHu - input.materialExpectedHu;
+  const { status, marginFraction } = absoluteDeviationStatus(deviationHu, input.toleranceHu);
+  return { deviationHu, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// CT-14: Exactitud de densidad electronica. "Cuando corresponda" (catalogo,
+// uso en planificacion de radioterapia): si notApplicable = true, el
+// resultado es NO APLICA y no se exige registro numerico.
+export interface Ct14Input {
+  notApplicable?: boolean;
+  measuredElectronDensityRatio: number;
+  referenceElectronDensityRatio: number;
+  tolerancePercent: number;
+}
+export interface Ct14Output {
+  percentDeviation: number | null;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculateCt14(input: Ct14Input): Ct14Output {
+  if (input.notApplicable) {
+    return { percentDeviation: null, status: "no_aplica", actionLevel: "no_aplica" };
+  }
+  if (!input.referenceElectronDensityRatio) {
+    return { percentDeviation: NaN, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const percentDeviation =
+    ((input.measuredElectronDensityRatio - input.referenceElectronDensityRatio) / input.referenceElectronDensityRatio) * 100;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
+  return { percentDeviation, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
