@@ -990,3 +990,108 @@ export function calculatePetSuvCal(input: PetSuvCalInput): PetSuvCalOutput {
     actionLevel: deriveActionLevel(status, marginFraction),
   };
 }
+
+
+
+// ---- FASE G: PET-CLINICO (seccion 9) y PET-QI-RUTINA (seccion 15) ----
+// PET-CLINICO: evaluacion de un estudio PET/CT adquirido en modo clinico
+// real (no con maniqui), segun el catalogo (seccion 4 del prompt de
+// mejora): artefactos, uniformidad, errores de reconstruccion, correccion
+// de atenuacion/dispersion y fusion PET/CT. Igual que PET-05 y CT-05, es
+// una evaluacion NO puramente numerica: el operador/Fisico Medico reporta
+// el estado observado de cada componente sobre el estudio clinico y el
+// motor solo consolida el resultado global (si algun componente es NO
+// CUMPLE, el global es NO CUMPLE; si ninguno es NO CUMPLE pero alguno
+// requiere revision, el global es REQUIERE REVISION).
+export type PetClinicoComponentStatus = "cumple" | "no_cumple" | "requiere_revision";
+export interface PetClinicoInput {
+  artifacts: PetClinicoComponentStatus;
+  uniformity: PetClinicoComponentStatus;
+  reconstructionErrors: PetClinicoComponentStatus;
+  attenuationScatterCorrection: PetClinicoComponentStatus;
+  fusion: PetClinicoComponentStatus;
+}
+export interface PetClinicoOutput {
+  status: CtAcceptanceStatus;
+}
+export function calculatePetClinico(input: PetClinicoInput): PetClinicoOutput {
+  const components = Object.values(input);
+  const status: CtAcceptanceStatus = components.includes("no_cumple")
+    ? "no_cumple"
+    : components.includes("requiere_revision")
+    ? "requiere_revision"
+    : "cumple";
+  return { status };
+}
+
+// PET-QI-RUTINA: prueba rutinaria integrada de calidad de imagen PET/CT
+// (seccion 15 del prompt de mejora), con adquisicion de aproximadamente 20
+// millones de eventos verdaderos. El catalogo (qc-petct-architecture-db.ts)
+// define su objetivo como el analisis conjunto de uniformidad,
+// concentracion y resolucion espacial sobre una unica adquisicion; el motor
+// reutiliza los calculos ya validados en PET-CONC (seccion 11, incluye la
+// correccion por decaimiento de la seccion 13) y PET-01 (seccion 5,
+// resolucion espacial) para no duplicar logica, y consolida un unico
+// resultado global (mismo criterio de "peor caso" que PET-03/CT-08). El
+// numero de eventos verdaderos es informativo (indica si la adquisicion
+// alcanzo el minimo recomendado por el protocolo) y no participa de la
+// clasificacion CUMPLE/NO CUMPLE, ya que la bibliografia no fija una
+// tolerancia sobre el conteo en si, sino sobre los parametros de imagen
+// resultantes.
+export interface PetQiRutinaInput {
+  trueEventCountMillions: number;
+  recommendedEventCountMillions?: number | null;
+  uniformityPercent: number;
+  uniformityTolerancePercent: number | null;
+  realActivityMbq: number;
+  activityDateTimeIso: string;
+  referenceDateTimeIso: string;
+  halfLifeMinutes: number;
+  volumeMl: number;
+  measuredConcentrationBqMl: number;
+  concentrationTolerancePercent: number;
+  fwhmObservedMm: number;
+  fwhmExpectedMm: number;
+}
+export interface PetQiRutinaOutput {
+  eventCountSufficient: boolean | null;
+  uniformityStatus: CtAcceptanceStatus;
+  concentration: PetConcOutput;
+  resolution: Pet01Output;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetQiRutina(input: PetQiRutinaInput): PetQiRutinaOutput {
+  const eventCountSufficient =
+    input.recommendedEventCountMillions === null || input.recommendedEventCountMillions === undefined
+      ? null
+      : input.trueEventCountMillions >= input.recommendedEventCountMillions;
+
+  const { status: uniformityStatus } = absoluteDeviationStatus(input.uniformityPercent, input.uniformityTolerancePercent);
+
+  const concentration = calculatePetConc({
+    realActivityMbq: input.realActivityMbq,
+    activityDateTimeIso: input.activityDateTimeIso,
+    referenceDateTimeIso: input.referenceDateTimeIso,
+    halfLifeMinutes: input.halfLifeMinutes,
+    volumeMl: input.volumeMl,
+    measuredConcentrationBqMl: input.measuredConcentrationBqMl,
+    tolerancePercent: input.concentrationTolerancePercent,
+  });
+
+  const resolution = calculatePet01({
+    fwhmObservedMm: input.fwhmObservedMm,
+    fwhmExpectedMm: input.fwhmExpectedMm,
+  });
+
+  const statuses: CtAcceptanceStatus[] = [uniformityStatus, concentration.status, resolution.status];
+  const status: CtAcceptanceStatus = statuses.includes("no_cumple")
+    ? "no_cumple"
+    : statuses.includes("requiere_revision")
+    ? "requiere_revision"
+    : "cumple";
+  const actionLevel: CtActionLevel =
+    status === "no_cumple" ? "no_conformidad" : status === "requiere_revision" ? "advertencia" : "normal";
+
+  return { eventCountSufficient, uniformityStatus, concentration, resolution, status, actionLevel };
+}
