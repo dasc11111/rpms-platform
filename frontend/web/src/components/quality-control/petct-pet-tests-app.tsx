@@ -21,7 +21,7 @@ type Equipment = {
   has_tof: boolean;
 };
 
-type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06";
+type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC";
 
 type PetTestRecord = {
   id: number;
@@ -49,6 +49,8 @@ const TEST_LABELS: Record<PetTestCode, string> = {
   "PET-04": "PET-04 Resolucion energetica",
   "PET-05": "PET-05 Calidad de imagen y atenuacion/dispersion",
   "PET-06": "PET-06 Coincidencia temporal (TOF)",
+  "PET-ESTAB": "PET-ESTAB Estabilidad del detector (rutina)",
+  "PET-CONC": "PET-CONC Concentracion de radioactividad",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -307,6 +309,34 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
                   <TextField label="Resolucion temporal esperada (ps)" value={rawInputs.timingResolutionExpectedPs ?? ""} onChange={(v) => updateRaw("timingResolutionExpectedPs", v)} type="number" />
                 </>
               )}
+     {testCode === "PET-ESTAB" && (
+       <>
+         <TextField label="Resultado del sistema (valor medido)" value={rawInputs.systemResultValue ?? ""} onChange={(v) => updateRaw("systemResultValue", v)} type="number" />
+         <SelectField
+           label="Resultado automatico del equipo (si esta disponible)"
+           value={rawInputs.systemReportedStatus ?? ""}
+           onChange={(v) => updateRaw("systemReportedStatus", v)}
+           options={[
+             { value: "", label: "No disponible (comparar con baseline)" },
+             { value: "ok", label: "OK" },
+             { value: "atencion", label: "Atencion" },
+             { value: "falla", label: "Falla" },
+           ]}
+         />
+         <TextField label="Tolerancia vs baseline (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+       </>
+     )}
+     {testCode === "PET-CONC" && (
+       <>
+         <TextField label="Actividad real (MBq)" value={rawInputs.realActivityMbq ?? ""} onChange={(v) => updateRaw("realActivityMbq", v)} type="number" />
+         <TextField label="Fecha/hora de la actividad" value={rawInputs.activityDateTimeIso ?? ""} onChange={(v) => updateRaw("activityDateTimeIso", v)} type="datetime-local" />
+         <TextField label="Fecha/hora de referencia (medicion)" value={rawInputs.referenceDateTimeIso ?? ""} onChange={(v) => updateRaw("referenceDateTimeIso", v)} type="datetime-local" />
+         <TextField label="Periodo de semidesintegracion (min)" value={rawInputs.halfLifeMinutes ?? ""} onChange={(v) => updateRaw("halfLifeMinutes", v)} type="number" />
+         <TextField label="Volumen (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
+         <TextField label="Concentracion medida (Bq/mL)" value={rawInputs.measuredConcentrationBqMl ?? ""} onChange={(v) => updateRaw("measuredConcentrationBqMl", v)} type="number" />
+         <TextField label="Tolerancia (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+       </>
+     )}
             </div>
           </div>
 
@@ -383,12 +413,23 @@ function TextField({
   );
 }
 
-function SelectField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options?: { value: string; label: string }[];
+}) {
+  const opts = options ?? COMPONENT_OPTIONS;
   return (
     <div>
       <label className="text-sm font-medium block mb-1">{label}</label>
       <select className="w-full border rounded px-2 py-1 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
-        {COMPONENT_OPTIONS.map((opt) => (
+        {opts.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>
