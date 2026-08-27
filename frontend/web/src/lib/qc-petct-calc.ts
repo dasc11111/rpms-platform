@@ -919,3 +919,74 @@ export function calculatePetConc(input: PetConcInput): PetConcOutput {
     actionLevel: deriveActionLevel(status, marginFraction),
   };
 }
+
+
+
+// ---- FASE F: PET-SUV-CAL (seccion 12 del prompt de mejora) ----
+// Calibracion de concentracion radioactiva / SUV: mantiene la trazabilidad
+// Activimetro (Modulo 1) <-> PET/CT para la cuantificacion clinica (SUV),
+// segun las especificaciones del fabricante (tolerancia configurada por el
+// Fisico Medico). A diferencia de PET-CONC (seccion 11, exactitud puntual
+// de la concentracion informada por el propio PET), esta prueba compara la
+// actividad de referencia MEDIDA EN EL ACTIVIMETRO (trazabilidad
+// metrologica externa e independiente del PET/CT) corregida por
+// decaimiento (seccion 13, calculateDecayCorrection) contra la
+// concentracion que el PET/CT reporta para la misma fuente/maniqui, y
+// ademas informa la deriva respecto del baseline vigente (secciones 27-28)
+// para el analisis de tendencia de la calibracion SUV en el tiempo.
+export interface PetSuvCalInput {
+  activimeterActivityMbq: number;
+  activimeterDateTimeIso: string;
+  referenceDateTimeIso: string;
+  halfLifeMinutes: number;
+  volumeMl: number;
+  petReportedConcentrationBqMl: number;
+  tolerancePercent: number | null;
+  baselinePercentDeviation?: number | null;
+}
+export interface PetSuvCalOutput {
+  correctedActivimeterActivityMbq: number;
+  elapsedMinutes: number;
+  referenceConcentrationBqMl: number;
+  percentDeviation: number;
+  deltaFromBaselinePercent: number | null;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetSuvCal(input: PetSuvCalInput): PetSuvCalOutput {
+  const { correctedActivity, elapsedMinutes } = calculateDecayCorrection({
+    initialActivity: input.activimeterActivityMbq,
+    halfLifeMinutes: input.halfLifeMinutes,
+    initialDateTimeIso: input.activimeterDateTimeIso,
+    referenceDateTimeIso: input.referenceDateTimeIso,
+  });
+  if (!input.volumeMl) {
+    return {
+      correctedActivimeterActivityMbq: correctedActivity,
+      elapsedMinutes,
+      referenceConcentrationBqMl: NaN,
+      percentDeviation: NaN,
+      deltaFromBaselinePercent: null,
+      status: "requiere_revision",
+      actionLevel: "no_aplica",
+    };
+  }
+  const referenceConcentrationBqMl = (correctedActivity * 1000) / input.volumeMl;
+  const percentDeviation = referenceConcentrationBqMl
+    ? ((input.petReportedConcentrationBqMl - referenceConcentrationBqMl) / referenceConcentrationBqMl) * 100
+    : NaN;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
+  const deltaFromBaselinePercent =
+    input.baselinePercentDeviation === null || input.baselinePercentDeviation === undefined
+      ? null
+      : percentDeviation - input.baselinePercentDeviation;
+  return {
+    correctedActivimeterActivityMbq: correctedActivity,
+    elapsedMinutes,
+    referenceConcentrationBqMl,
+    percentDeviation,
+    deltaFromBaselinePercent,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+  };
+}
