@@ -8,21 +8,26 @@ import {
 import {
   calculatePetCt01,
   calculatePetCt02,
+  calculatePetClinico,
+  calculatePetQiRutina,
   type CtAcceptanceStatus,
   type CtActionLevel,
 } from "@/lib/qc-petct-calc";
 
 /**
- * MODULO 4 - PET/CT - FASE D
- * API de resultados de las pruebas de interaccion PET/CT (PETCT-01 y
- * PETCT-02, secciones 6 y 14 del prompt de mejora). GET lista/filtra
- * registros. POST crea un registro nuevo: el cliente envia unicamente los
- * datos medidos (raw_inputs) y el motor de calculo determina
- * calculated/status/action_level - el operador nunca clasifica el resultado
- * manualmente (seccion 3 del prompt maestro).
+ * MODULO 4 - PET/CT - FASE D (extendido en FASE G)
+ * API de resultados de las pruebas de interaccion/integracion PET/CT
+ * (PETCT-01, PETCT-02, seccion 6 y 14; PET-CLINICO, seccion 9; PET-QI-
+ * RUTINA, seccion 15). Las 4 comparten esta tabla porque su modalidad de
+ * catalogo es PETCT (evaluan al equipo hibrido en conjunto, no a un solo
+ * componente por separado, seccion 2 categoria C del prompt de mejora).
+ * GET lista/filtra registros. POST crea un registro nuevo: el cliente
+ * envia unicamente los datos medidos (raw_inputs) y el motor de calculo
+ * determina calculated/status/action_level - el operador nunca clasifica
+ * el resultado manualmente (seccion 3 del prompt maestro).
  */
 
-const VALID_TEST_CODES: JointTestCode[] = ["PETCT-01", "PETCT-02"];
+const VALID_TEST_CODES: JointTestCode[] = ["PETCT-01", "PETCT-02", "PET-CLINICO", "PET-QI-RUTINA"];
 
 function computeForTestCode(
   testCode: JointTestCode,
@@ -51,6 +56,39 @@ function computeForTestCode(
         baselineOffsetXMm: num(rawInputs.baselineOffsetXMm),
         baselineOffsetYMm: num(rawInputs.baselineOffsetYMm),
         baselineOffsetZMm: num(rawInputs.baselineOffsetZMm),
+      });
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
+    }
+    case "PET-CLINICO": {
+      const out = calculatePetClinico({
+        artifacts: rawInputs.artifacts,
+        uniformity: rawInputs.uniformity,
+        reconstructionErrors: rawInputs.reconstructionErrors,
+        attenuationScatterCorrection: rawInputs.attenuationScatterCorrection,
+        fusion: rawInputs.fusion,
+      });
+      return {
+        calculated: { ...out },
+        status: out.status,
+        actionLevel: out.status === "no_cumple" ? "no_conformidad" : out.status === "requiere_revision" ? "advertencia" : "normal",
+      };
+    }
+    case "PET-QI-RUTINA": {
+      const num = (v: unknown): number | null => (v === undefined || v === null || v === "" ? null : Number(v));
+      const out = calculatePetQiRutina({
+        trueEventCountMillions: Number(rawInputs.trueEventCountMillions),
+        recommendedEventCountMillions: num(rawInputs.recommendedEventCountMillions),
+        uniformityPercent: Number(rawInputs.uniformityPercent),
+        uniformityTolerancePercent: num(rawInputs.uniformityTolerancePercent),
+        realActivityMbq: Number(rawInputs.realActivityMbq),
+        activityDateTimeIso: rawInputs.activityDateTimeIso,
+        referenceDateTimeIso: rawInputs.referenceDateTimeIso,
+        halfLifeMinutes: Number(rawInputs.halfLifeMinutes),
+        volumeMl: Number(rawInputs.volumeMl),
+        measuredConcentrationBqMl: Number(rawInputs.measuredConcentrationBqMl),
+        concentrationTolerancePercent: Number(rawInputs.concentrationTolerancePercent),
+        fwhmObservedMm: Number(rawInputs.fwhmObservedMm),
+        fwhmExpectedMm: Number(rawInputs.fwhmExpectedMm),
       });
       return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
@@ -84,7 +122,10 @@ export async function POST(request: NextRequest) {
     const { test_code, equipment_id, raw_inputs, ...rest } = body;
 
     if (!test_code || !VALID_TEST_CODES.includes(test_code)) {
-      return NextResponse.json({ error: "test_code invalido. Debe ser PETCT-01 o PETCT-02." }, { status: 400 });
+      return NextResponse.json(
+        { error: "test_code invalido. Debe ser PETCT-01, PETCT-02, PET-CLINICO o PET-QI-RUTINA." },
+        { status: 400 }
+      );
     }
     if (!rest.operator) {
       return NextResponse.json({ error: "Falta el operador que realizo la prueba" }, { status: 400 });
