@@ -21,7 +21,7 @@ type Equipment = {
   has_tof: boolean;
 };
 
-type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC";
+type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC" | "PET-SUV-CAL";
 
 type PetTestRecord = {
   id: number;
@@ -51,6 +51,7 @@ const TEST_LABELS: Record<PetTestCode, string> = {
   "PET-06": "PET-06 Coincidencia temporal (TOF)",
   "PET-ESTAB": "PET-ESTAB Estabilidad del detector (rutina)",
   "PET-CONC": "PET-CONC Concentracion de radioactividad",
+  "PET-SUV-CAL": "PET-SUV-CAL Calibracion de concentracion / SUV",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -309,34 +310,45 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
                   <TextField label="Resolucion temporal esperada (ps)" value={rawInputs.timingResolutionExpectedPs ?? ""} onChange={(v) => updateRaw("timingResolutionExpectedPs", v)} type="number" />
                 </>
               )}
-     {testCode === "PET-ESTAB" && (
-       <>
-         <TextField label="Resultado del sistema (valor medido)" value={rawInputs.systemResultValue ?? ""} onChange={(v) => updateRaw("systemResultValue", v)} type="number" />
-         <SelectField
-           label="Resultado automatico del equipo (si esta disponible)"
-           value={rawInputs.systemReportedStatus ?? ""}
-           onChange={(v) => updateRaw("systemReportedStatus", v)}
-           options={[
-             { value: "", label: "No disponible (comparar con baseline)" },
-             { value: "ok", label: "OK" },
-             { value: "atencion", label: "Atencion" },
-             { value: "falla", label: "Falla" },
-           ]}
-         />
-         <TextField label="Tolerancia vs baseline (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
-       </>
-     )}
-     {testCode === "PET-CONC" && (
-       <>
-         <TextField label="Actividad real (MBq)" value={rawInputs.realActivityMbq ?? ""} onChange={(v) => updateRaw("realActivityMbq", v)} type="number" />
-         <TextField label="Fecha/hora de la actividad" value={rawInputs.activityDateTimeIso ?? ""} onChange={(v) => updateRaw("activityDateTimeIso", v)} type="datetime-local" />
-         <TextField label="Fecha/hora de referencia (medicion)" value={rawInputs.referenceDateTimeIso ?? ""} onChange={(v) => updateRaw("referenceDateTimeIso", v)} type="datetime-local" />
-         <TextField label="Periodo de semidesintegracion (min)" value={rawInputs.halfLifeMinutes ?? ""} onChange={(v) => updateRaw("halfLifeMinutes", v)} type="number" />
-         <TextField label="Volumen (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
-         <TextField label="Concentracion medida (Bq/mL)" value={rawInputs.measuredConcentrationBqMl ?? ""} onChange={(v) => updateRaw("measuredConcentrationBqMl", v)} type="number" />
-         <TextField label="Tolerancia (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
-       </>
-     )}
+              {testCode === "PET-ESTAB" && (
+                <>
+                  <TextField label="Resultado del sistema (valor medido)" value={rawInputs.systemResultValue ?? ""} onChange={(v) => updateRaw("systemResultValue", v)} type="number" />
+                  <SelectField
+                    label="Resultado automatico del equipo (si esta disponible)"
+                    value={rawInputs.systemReportedStatus ?? ""}
+                    onChange={(v) => updateRaw("systemReportedStatus", v)}
+                    options={[
+                      { value: "", label: "No disponible (comparar con baseline)" },
+                      { value: "ok", label: "OK" },
+                      { value: "atencion", label: "Atencion" },
+                      { value: "falla", label: "Falla" },
+                    ]}
+                  />
+                  <TextField label="Tolerancia vs baseline (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+                </>
+              )}
+              {testCode === "PET-CONC" && (
+                <>
+                  <TextField label="Actividad real (MBq)" value={rawInputs.realActivityMbq ?? ""} onChange={(v) => updateRaw("realActivityMbq", v)} type="number" />
+                  <TextField label="Fecha/hora de la actividad" value={rawInputs.activityDateTimeIso ?? ""} onChange={(v) => updateRaw("activityDateTimeIso", v)} type="datetime-local" />
+                  <TextField label="Fecha/hora de referencia (medicion)" value={rawInputs.referenceDateTimeIso ?? ""} onChange={(v) => updateRaw("referenceDateTimeIso", v)} type="datetime-local" />
+                  <TextField label="Periodo de semidesintegracion (min)" value={rawInputs.halfLifeMinutes ?? ""} onChange={(v) => updateRaw("halfLifeMinutes", v)} type="number" />
+                  <TextField label="Volumen (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
+                  <TextField label="Concentracion medida (Bq/mL)" value={rawInputs.measuredConcentrationBqMl ?? ""} onChange={(v) => updateRaw("measuredConcentrationBqMl", v)} type="number" />
+                  <TextField label="Tolerancia (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+                </>
+              )}
+              {testCode === "PET-SUV-CAL" && (
+                <>
+                  <TextField label="Actividad medida en activimetro (MBq)" value={rawInputs.activimeterActivityMbq ?? ""} onChange={(v) => updateRaw("activimeterActivityMbq", v)} type="number" />
+                  <TextField label="Fecha/hora de la medicion en activimetro" value={rawInputs.activimeterDateTimeIso ?? ""} onChange={(v) => updateRaw("activimeterDateTimeIso", v)} type="datetime-local" />
+                  <TextField label="Fecha/hora de referencia (medicion en PET/CT)" value={rawInputs.referenceDateTimeIso ?? ""} onChange={(v) => updateRaw("referenceDateTimeIso", v)} type="datetime-local" />
+                  <TextField label="Periodo de semidesintegracion (min)" value={rawInputs.halfLifeMinutes ?? ""} onChange={(v) => updateRaw("halfLifeMinutes", v)} type="number" />
+                  <TextField label="Volumen (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
+                  <TextField label="Concentracion reportada por PET/CT (Bq/mL)" value={rawInputs.petReportedConcentrationBqMl ?? ""} onChange={(v) => updateRaw("petReportedConcentrationBqMl", v)} type="number" />
+                  <TextField label="Tolerancia segun fabricante (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+                </>
+              )}
             </div>
           </div>
 
