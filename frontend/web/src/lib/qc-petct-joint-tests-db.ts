@@ -25,7 +25,7 @@ import { sql } from "@/lib/db";
 
 let ensured = false;
 
-export type JointTestCode = "PETCT-01" | "PETCT-02";
+export type JointTestCode = "PETCT-01" | "PETCT-02" | "PET-CLINICO" | "PET-QI-RUTINA";
 
 export type JointTestRecord = {
   id: number;
