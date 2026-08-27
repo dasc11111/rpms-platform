@@ -15,6 +15,7 @@ import {
   calculatePet06,
   calculatePetEstab,
   calculatePetConc,
+  calculatePetSuvCal,
   type PetAcceptanceStatus,
   type PetActionLevel,
 } from "@/lib/qc-petct-calc";
@@ -32,13 +33,24 @@ import { getCurrentBaseline } from "@/lib/qc-petct-architecture-db";
  * NO APLICA sea una consecuencia de la configuracion real del equipo.
  */
 
-const VALID_TEST_CODES: PetTestCode[] = ["PET-01", "PET-02", "PET-03", "PET-04", "PET-05", "PET-06", "PET-ESTAB", "PET-CONC"];
+const VALID_TEST_CODES: PetTestCode[] = [
+  "PET-01",
+  "PET-02",
+  "PET-03",
+  "PET-04",
+  "PET-05",
+  "PET-06",
+  "PET-ESTAB",
+  "PET-CONC",
+  "PET-SUV-CAL",
+];
 
 function computeForTestCode(
   testCode: PetTestCode,
   rawInputs: Record<string, any>,
   hasTof: boolean,
-  baselineValue: number | null
+  baselineValue: number | null,
+  baselineSuvPercentDeviation: number | null
 ): { calculated: Record<string, unknown>; status: PetAcceptanceStatus; actionLevel: PetActionLevel } {
   switch (testCode) {
     case "PET-01": {
@@ -119,6 +131,22 @@ function computeForTestCode(
       });
       return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
+    case "PET-SUV-CAL": {
+      const out = calculatePetSuvCal({
+        activimeterActivityMbq: Number(rawInputs.activimeterActivityMbq),
+        activimeterDateTimeIso: rawInputs.activimeterDateTimeIso,
+        referenceDateTimeIso: rawInputs.referenceDateTimeIso,
+        halfLifeMinutes: Number(rawInputs.halfLifeMinutes),
+        volumeMl: Number(rawInputs.volumeMl),
+        petReportedConcentrationBqMl: Number(rawInputs.petReportedConcentrationBqMl),
+        tolerancePercent:
+          rawInputs.tolerancePercent === undefined || rawInputs.tolerancePercent === "" || rawInputs.tolerancePercent === null
+            ? null
+            : Number(rawInputs.tolerancePercent),
+        baselinePercentDeviation: baselineSuvPercentDeviation,
+      });
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
+    }
     default:
       throw new Error(`Codigo de prueba PET no soportado: ${testCode}`);
   }
@@ -149,7 +177,7 @@ export async function POST(request: NextRequest) {
     const { test_code, equipment_id, raw_inputs, ...rest } = body;
 
     if (!test_code || !VALID_TEST_CODES.includes(test_code)) {
-      return NextResponse.json({ error: "test_code invalido. Debe ser PET-01 a PET-06, PET-ESTAB o PET-CONC." }, { status: 400 });
+      return NextResponse.json({ error: "test_code invalido. Debe ser PET-01 a PET-06, PET-ESTAB, PET-CONC o PET-SUV-CAL." }, { status: 400 });
     }
     if (!rest.operator) {
       return NextResponse.json({ error: "Falta el operador que realizo la prueba" }, { status: 400 });
@@ -167,7 +195,20 @@ export async function POST(request: NextRequest) {
       baselineValue = baseline && baseline.value !== null && baseline.value !== undefined ? Number(baseline.value) : null;
     }
 
-    const { calculated, status, actionLevel } = computeForTestCode(test_code, raw_inputs ?? {}, hasTof, baselineValue);
+    let baselineSuvPercentDeviation: number | null = null;
+    if (test_code === "PET-SUV-CAL" && equipment_id) {
+      const baseline = await getCurrentBaseline(Number(equipment_id), "PET-SUV-CAL", "percentDeviation");
+      baselineSuvPercentDeviation =
+        baseline && baseline.value !== null && baseline.value !== undefined ? Number(baseline.value) : null;
+    }
+
+    const { calculated, status, actionLevel } = computeForTestCode(
+      test_code,
+      raw_inputs ?? {},
+      hasTof,
+      baselineValue,
+      baselineSuvPercentDeviation
+    );
 
     const created = await createPetTest({
       equipment_id: equipment_id ? Number(equipment_id) : null,
