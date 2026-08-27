@@ -827,3 +827,95 @@ export function calculatePetCt02(input: PetCt02Input): PetCt02Output {
     deltaFromBaselineMm,
   };
 }
+
+// ---- FASE E: PET-ESTAB (seccion 7) y PET-CONC (seccion 11) ----
+// PET-ESTAB: control rutinario de estabilidad del detector. El prompt exige
+// "no exigir calculos innecesarios al operador" y "permitir cargar resultado
+// automatico si hay integracion disponible": si el equipo ya entrega un
+// estado clasificado (systemReportedStatus), el motor solo lo traduce al
+// lenguaje comun de 4 estados sin recalcular nada. Si no hay clasificacion
+// automatica, el motor compara el valor reportado contra el baseline vigente
+// (secciones 27-28) usando la tolerancia porcentual configurada por el
+// Fisico Medico; sin baseline ni tolerancia, el resultado queda REQUIERE
+// REVISION (nunca se inventa un limite).
+export type PetEstabSystemStatus = "ok" | "atencion" | "falla";
+export interface PetEstabInput {
+  systemResultValue: number;
+  systemReportedStatus?: PetEstabSystemStatus | null;
+  baselineValue?: number | null;
+  tolerancePercent?: number | null;
+}
+export interface PetEstabOutput {
+  percentDeviationFromBaseline: number | null;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetEstab(input: PetEstabInput): PetEstabOutput {
+  if (input.systemReportedStatus) {
+    const status: CtAcceptanceStatus =
+      input.systemReportedStatus === "ok" ? "cumple" : input.systemReportedStatus === "falla" ? "no_cumple" : "requiere_revision";
+    const actionLevel: CtActionLevel =
+      status === "no_cumple" ? "no_conformidad" : status === "requiere_revision" ? "advertencia" : "normal";
+    return { percentDeviationFromBaseline: null, status, actionLevel };
+  }
+  if (!input.baselineValue || input.tolerancePercent === null || input.tolerancePercent === undefined) {
+    return { percentDeviationFromBaseline: null, status: "requiere_revision", actionLevel: "no_aplica" };
+  }
+  const percentDeviationFromBaseline = ((input.systemResultValue - input.baselineValue) / input.baselineValue) * 100;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviationFromBaseline, input.tolerancePercent);
+  return { percentDeviationFromBaseline, status, actionLevel: deriveActionLevel(status, marginFraction) };
+}
+
+// PET-CONC: concentracion de radioactividad (seccion 11), base de la
+// cuantificacion/SUV (seccion 12): una calibracion incorrecta aqui afecta
+// directamente el SUV clinico. La actividad real SIEMPRE se corrige por
+// decaimiento (seccion 13, calculateDecayCorrection) antes de comparar; el
+// operador nunca realiza este calculo manualmente.
+export interface PetConcInput {
+  realActivityMbq: number;
+  activityDateTimeIso: string;
+  referenceDateTimeIso: string;
+  halfLifeMinutes: number;
+  volumeMl: number;
+  measuredConcentrationBqMl: number;
+  tolerancePercent: number;
+}
+export interface PetConcOutput {
+  correctedActivityMbq: number;
+  elapsedMinutes: number;
+  knownConcentrationBqMl: number;
+  percentDeviation: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetConc(input: PetConcInput): PetConcOutput {
+  const { correctedActivity, elapsedMinutes } = calculateDecayCorrection({
+    initialActivity: input.realActivityMbq,
+    halfLifeMinutes: input.halfLifeMinutes,
+    initialDateTimeIso: input.activityDateTimeIso,
+    referenceDateTimeIso: input.referenceDateTimeIso,
+  });
+  if (!input.volumeMl) {
+    return {
+      correctedActivityMbq: correctedActivity,
+      elapsedMinutes,
+      knownConcentrationBqMl: NaN,
+      percentDeviation: NaN,
+      status: "requiere_revision",
+      actionLevel: "no_aplica",
+    };
+  }
+  const knownConcentrationBqMl = (correctedActivity * 1000) / input.volumeMl;
+  const percentDeviation = knownConcentrationBqMl
+    ? ((input.measuredConcentrationBqMl - knownConcentrationBqMl) / knownConcentrationBqMl) * 100
+    : NaN;
+  const { status, marginFraction } = absoluteDeviationStatus(percentDeviation, input.tolerancePercent);
+  return {
+    correctedActivityMbq: correctedActivity,
+    elapsedMinutes,
+    knownConcentrationBqMl,
+    percentDeviation,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+  };
+}
