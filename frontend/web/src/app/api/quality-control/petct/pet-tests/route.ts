@@ -13,9 +13,12 @@ import {
   calculatePet04,
   calculatePet05,
   calculatePet06,
+  calculatePetEstab,
+  calculatePetConc,
   type PetAcceptanceStatus,
   type PetActionLevel,
 } from "@/lib/qc-petct-calc";
+import { getCurrentBaseline } from "@/lib/qc-petct-architecture-db";
 
 /**
  * MODULO 4 - PET/CT - FASE B
@@ -29,12 +32,13 @@ import {
  * NO APLICA sea una consecuencia de la configuracion real del equipo.
  */
 
-const VALID_TEST_CODES: PetTestCode[] = ["PET-01", "PET-02", "PET-03", "PET-04", "PET-05", "PET-06"];
+const VALID_TEST_CODES: PetTestCode[] = ["PET-01", "PET-02", "PET-03", "PET-04", "PET-05", "PET-06", "PET-ESTAB", "PET-CONC"];
 
 function computeForTestCode(
   testCode: PetTestCode,
   rawInputs: Record<string, any>,
-  hasTof: boolean
+  hasTof: boolean,
+  baselineValue: number | null
 ): { calculated: Record<string, unknown>; status: PetAcceptanceStatus; actionLevel: PetActionLevel } {
   switch (testCode) {
     case "PET-01": {
@@ -91,6 +95,30 @@ function computeForTestCode(
       });
       return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
+    case "PET-ESTAB": {
+      const out = calculatePetEstab({
+        systemResultValue: Number(rawInputs.systemResultValue),
+        systemReportedStatus: rawInputs.systemReportedStatus || null,
+        baselineValue,
+        tolerancePercent:
+          rawInputs.tolerancePercent === undefined || rawInputs.tolerancePercent === "" || rawInputs.tolerancePercent === null
+            ? null
+            : Number(rawInputs.tolerancePercent),
+      });
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
+    }
+    case "PET-CONC": {
+      const out = calculatePetConc({
+        realActivityMbq: Number(rawInputs.realActivityMbq),
+        activityDateTimeIso: rawInputs.activityDateTimeIso,
+        referenceDateTimeIso: rawInputs.referenceDateTimeIso,
+        halfLifeMinutes: Number(rawInputs.halfLifeMinutes),
+        volumeMl: Number(rawInputs.volumeMl),
+        measuredConcentrationBqMl: Number(rawInputs.measuredConcentrationBqMl),
+        tolerancePercent: Number(rawInputs.tolerancePercent),
+      });
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
+    }
     default:
       throw new Error(`Codigo de prueba PET no soportado: ${testCode}`);
   }
@@ -121,7 +149,7 @@ export async function POST(request: NextRequest) {
     const { test_code, equipment_id, raw_inputs, ...rest } = body;
 
     if (!test_code || !VALID_TEST_CODES.includes(test_code)) {
-      return NextResponse.json({ error: "test_code invalido. Debe ser PET-01 a PET-06." }, { status: 400 });
+      return NextResponse.json({ error: "test_code invalido. Debe ser PET-01 a PET-06, PET-ESTAB o PET-CONC." }, { status: 400 });
     }
     if (!rest.operator) {
       return NextResponse.json({ error: "Falta el operador que realizo la prueba" }, { status: 400 });
@@ -133,7 +161,13 @@ export async function POST(request: NextRequest) {
       hasTof = equipment?.has_tof ?? false;
     }
 
-    const { calculated, status, actionLevel } = computeForTestCode(test_code, raw_inputs ?? {}, hasTof);
+    let baselineValue: number | null = null;
+    if (test_code === "PET-ESTAB" && equipment_id) {
+      const baseline = await getCurrentBaseline(Number(equipment_id), "PET-ESTAB", "systemResultValue");
+      baselineValue = baseline && baseline.value !== null && baseline.value !== undefined ? Number(baseline.value) : null;
+    }
+
+    const { calculated, status, actionLevel } = computeForTestCode(test_code, raw_inputs ?? {}, hasTof, baselineValue);
 
     const created = await createPetTest({
       equipment_id: equipment_id ? Number(equipment_id) : null,
