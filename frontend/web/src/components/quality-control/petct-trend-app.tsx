@@ -148,8 +148,16 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
   }, [data]);
 
   const groupedByTable = useMemo(() => {
-    const groups: Record<string, TrendMetricInfo[]> = { pet: [], ct: [], joint: [] };
-    for (const m of metrics) groups[m.table]?.push(m);
+    const groups: { pet: TrendMetricInfo[]; ct: TrendMetricInfo[]; joint: TrendMetricInfo[] } = {
+      pet: [],
+      ct: [],
+      joint: [],
+    };
+    for (const m of metrics) {
+      if (m.table === "pet") groups.pet.push(m);
+      else if (m.table === "ct") groups.ct.push(m);
+      else groups.joint.push(m);
+    }
     return groups;
   }, [metrics]);
 
