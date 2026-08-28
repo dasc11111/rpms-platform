@@ -39,6 +39,12 @@ export default async function PetCtQcPage() {
         >
           Interaccion PET/CT (PETCT-01, PETCT-02)
         </Link>
+        <Link
+          href="/quality-control/petct/compliance"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Cumplimiento y catalogo
+        </Link>
       </div>
       <PetCtQcApp instruments={JSON.parse(JSON.stringify(instrumentRows))} />
     </div>
