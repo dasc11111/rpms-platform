@@ -3,12 +3,22 @@
 import { useEffect, useState } from "react";
 
 /**
- * MODULO 4 - PET/CT - FASE D
+ * MODULO 4 - PET/CT - FASE D (extendido en FASE G)
  * Pruebas de interaccion PET/CT (categoria C de la seccion 2 del prompt de
  * mejora: relacion espacial entre el componente PET y el componente CT).
  * PETCT-01 (seccion 6): exactitud del registro PET/CT, en voxels.
  * PETCT-02 (seccion 14): PET/CT Offset Calibration X/Y/Z, con comparacion
  * automatica contra el resultado anterior y el baseline vigente.
+ *
+ * FASE G agrega aqui dos pruebas cuya modalidad de catalogo es "PETCT" (no
+ * pertenecen ni a PET ni a CT por separado, igual que PETCT-01/02):
+ * PET-CLINICO (seccion 9): evaluacion cualitativa de un estudio clinico
+ * (artefactos, uniformidad, errores de reconstruccion, correccion de
+ * atenuacion/dispersion y fusion), siguiendo el mismo patron de checklist
+ * de PET-05/CT-05.
+ * PET-QI-RUTINA (seccion 15): prueba rutinaria integrada de calidad de
+ * imagen (uniformidad, concentracion con correccion de decaimiento y
+ * resolucion espacial), que reutiliza el motor de PET-CONC y PET-01.
  *
  * Incluye ademas una pestana "Vista integrada" (seccion 24 del prompt):
  * muestra, para el equipo seleccionado, el ultimo resultado de cada prueba
@@ -25,7 +35,7 @@ type Equipment = {
   internal_code: string | null;
 };
 
-type JointTestCode = "PETCT-01" | "PETCT-02";
+type JointTestCode = "PETCT-01" | "PETCT-02" | "PET-CLINICO" | "PET-QI-RUTINA";
 
 type JointTestRecord = {
   id: number;
@@ -57,6 +67,8 @@ type SummaryRecord = {
 const TEST_LABELS: Record<JointTestCode, string> = {
   "PETCT-01": "PETCT-01 Exactitud del registro PET/CT",
   "PETCT-02": "PETCT-02 PET/CT Offset Calibration (X/Y/Z)",
+  "PET-CLINICO": "PET-CLINICO Evaluacion de estudio clinico",
+  "PET-QI-RUTINA": "PET-QI-RUTINA Prueba rutinaria de calidad de imagen",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -72,6 +84,12 @@ const ACTION_LEVEL_LABELS: Record<string, string> = {
   no_conformidad: "No conformidad",
   no_aplica: "No aplica",
 };
+
+const COMPONENT_OPTIONS = [
+  { value: "cumple", label: "Cumple" },
+  { value: "no_cumple", label: "No cumple" },
+  { value: "requiere_revision", label: "Requiere revision" },
+];
 
 function StatusBadge({ status }: { status: string }) {
   const cls = STATUS_STYLES[status] ?? STATUS_STYLES.requiere_revision;
@@ -230,10 +248,10 @@ export default function PetCtJointTestsApp({ equipment }: { equipment: Equipment
       <div>
         <h1 className="text-2xl font-bold">Pruebas de interaccion PET/CT</h1>
         <p className="text-sm text-gray-500">
-          Modulo 4 - Fase D. Pruebas que evaluan la relacion espacial entre el componente PET y
-          el componente CT (seccion 2, categoria C del prompt de mejora): NO pertenecen ni a PET
-          ni a CT por separado. El operador registra unicamente los valores medidos; el sistema
-          calcula la desviacion y clasifica el resultado.
+          Modulo 4 - Fase D/G. Pruebas que evaluan la relacion espacial entre el componente PET y
+          el componente CT, y pruebas cuya modalidad de catalogo es PETCT (seccion 2, categoria C
+          del prompt de mejora): NO pertenecen ni a PET ni a CT por separado. El operador registra
+          unicamente los valores medidos; el sistema calcula la desviacion y clasifica el resultado.
         </p>
       </div>
 
@@ -281,7 +299,7 @@ export default function PetCtJointTestsApp({ equipment }: { equipment: Equipment
           </p>
           <IntegratedColumn title="PET (PET-01 a PET-06)" rows={petSummary} />
           <IntegratedColumn title="CT (CT-01 a CT-14)" rows={ctSummary} />
-          <IntegratedColumn title="Interaccion PET/CT (PETCT-01, PETCT-02)" rows={jointSummary} />
+          <IntegratedColumn title="Interaccion PET/CT (PETCT-01, PETCT-02, PET-CLINICO, PET-QI-RUTINA)" rows={jointSummary} />
         </div>
       )}
 
@@ -333,6 +351,32 @@ export default function PetCtJointTestsApp({ equipment }: { equipment: Equipment
                     <TextField label="Offset baseline X (mm, opcional)" value={rawInputs.baselineOffsetXMm ?? ""} onChange={(v) => updateRaw("baselineOffsetXMm", v)} type="number" />
                     <TextField label="Offset baseline Y (mm, opcional)" value={rawInputs.baselineOffsetYMm ?? ""} onChange={(v) => updateRaw("baselineOffsetYMm", v)} type="number" />
                     <TextField label="Offset baseline Z (mm, opcional)" value={rawInputs.baselineOffsetZMm ?? ""} onChange={(v) => updateRaw("baselineOffsetZMm", v)} type="number" />
+                  </>
+                )}
+                {testCode === "PET-CLINICO" && (
+                  <>
+                    <SelectField label="Artefactos" value={rawInputs.artifacts ?? ""} onChange={(v) => updateRaw("artifacts", v)} />
+                    <SelectField label="Uniformidad" value={rawInputs.uniformity ?? ""} onChange={(v) => updateRaw("uniformity", v)} />
+                    <SelectField label="Errores de reconstruccion" value={rawInputs.reconstructionErrors ?? ""} onChange={(v) => updateRaw("reconstructionErrors", v)} />
+                    <SelectField label="Correccion de atenuacion/dispersion" value={rawInputs.attenuationScatterCorrection ?? ""} onChange={(v) => updateRaw("attenuationScatterCorrection", v)} />
+                    <SelectField label="Fusion PET/CT" value={rawInputs.fusion ?? ""} onChange={(v) => updateRaw("fusion", v)} />
+                  </>
+                )}
+                {testCode === "PET-QI-RUTINA" && (
+                  <>
+                    <TextField label="Eventos verdaderos adquiridos (millones)" value={rawInputs.trueEventCountMillions ?? ""} onChange={(v) => updateRaw("trueEventCountMillions", v)} type="number" />
+                    <TextField label="Eventos verdaderos recomendados (millones, opcional)" value={rawInputs.recommendedEventCountMillions ?? ""} onChange={(v) => updateRaw("recommendedEventCountMillions", v)} type="number" />
+                    <TextField label="Uniformidad medida (%)" value={rawInputs.uniformityPercent ?? ""} onChange={(v) => updateRaw("uniformityPercent", v)} type="number" />
+                    <TextField label="Tolerancia de uniformidad (%)" value={rawInputs.uniformityTolerancePercent ?? ""} onChange={(v) => updateRaw("uniformityTolerancePercent", v)} type="number" />
+                    <TextField label="Actividad real (MBq)" value={rawInputs.realActivityMbq ?? ""} onChange={(v) => updateRaw("realActivityMbq", v)} type="number" />
+                    <TextField label="Fecha/hora de la actividad" value={rawInputs.activityDateTimeIso ?? ""} onChange={(v) => updateRaw("activityDateTimeIso", v)} type="datetime-local" />
+                    <TextField label="Fecha/hora de referencia (medicion)" value={rawInputs.referenceDateTimeIso ?? ""} onChange={(v) => updateRaw("referenceDateTimeIso", v)} type="datetime-local" />
+                    <TextField label="Vida media (minutos)" value={rawInputs.halfLifeMinutes ?? ""} onChange={(v) => updateRaw("halfLifeMinutes", v)} type="number" />
+                    <TextField label="Volumen del maniqui (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
+                    <TextField label="Concentracion medida (Bq/mL)" value={rawInputs.measuredConcentrationBqMl ?? ""} onChange={(v) => updateRaw("measuredConcentrationBqMl", v)} type="number" />
+                    <TextField label="Tolerancia de concentracion (%)" value={rawInputs.concentrationTolerancePercent ?? ""} onChange={(v) => updateRaw("concentrationTolerancePercent", v)} type="number" />
+                    <TextField label="FWHM observado (mm)" value={rawInputs.fwhmObservedMm ?? ""} onChange={(v) => updateRaw("fwhmObservedMm", v)} type="number" />
+                    <TextField label="FWHM esperado (mm)" value={rawInputs.fwhmExpectedMm ?? ""} onChange={(v) => updateRaw("fwhmExpectedMm", v)} type="number" />
                   </>
                 )}
               </div>
@@ -427,6 +471,30 @@ function TextField({
     <div>
       <label className="text-sm font-medium block mb-1">{label}</label>
       <input type={type} className="w-full border rounded px-2 py-1 text-sm" value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-medium block mb-1">{label}</label>
+      <select className="w-full border rounded px-2 py-1 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Seleccione...</option>
+        {COMPONENT_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
