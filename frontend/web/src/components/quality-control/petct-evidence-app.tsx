@@ -50,7 +50,7 @@ function equipmentLabel(eq: Equipment | undefined): string {
 
 const emptyForm = {
   test_id: "",
-  evidence_type: EVIDENCE_TYPES[0].value,
+  evidence_type: "foto_equipo",
   file_name: "",
   file_url: "",
   description: "",
