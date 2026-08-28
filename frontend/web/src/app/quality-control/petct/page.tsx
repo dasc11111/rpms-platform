@@ -34,6 +34,12 @@ export default async function PetCtQcPage() {
           Eventos de servicio tecnico
         </Link>
         <Link
+          href="/quality-control/petct/evidence"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Evidencia grafica
+        </Link>
+        <Link
           href="/quality-control/petct/pet-tests"
           className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
         >
