@@ -122,6 +122,11 @@ export interface TrendSeries {
  * fecha ascendente. La media y desviacion estandar se calculan sobre el
  * total de puntos disponibles: el prompt de mejora no exige un periodo de
  * referencia fijo distinto del historico de resultados finalizados.
+ *
+ * Recorre los puntos con un acumulador de la desviacion anterior (en vez
+ * de indexar el arreglo por posicion) para evitar depender del acceso
+ * indexado, que TypeScript en modo estricto trata como posiblemente
+ * indefinido incluso cuando el indice es valido.
  */
 export function buildTrendSeries(points: TrendPoint[]): TrendSeries | null {
   if (points.length === 0) return null;
@@ -135,24 +140,29 @@ export function buildTrendSeries(points: TrendPoint[]): TrendSeries | null {
   const upperAction = hasLimits ? meanValue + 3 * sd : null;
   const lowerAction = hasLimits ? meanValue - 3 * sd : null;
 
-  const statsPoints: TrendStatsPoint[] = points.map((p, idx) => {
+  const statsPoints: TrendStatsPoint[] = [];
+  let previousDeviation: number | null = null;
+  for (const p of points) {
+    const deviation = p.value - meanValue;
     let status: TrendPointStatus = "dentro_control";
     if (hasLimits) {
-      const dev = Math.abs(p.value - meanValue);
-      if (dev > 3 * sd) status = "fuera_control_3de";
-      else if (dev > 2 * sd) status = "alerta_2de";
+      const absDeviation = Math.abs(deviation);
+      if (absDeviation > 3 * sd) status = "fuera_control_3de";
+      else if (absDeviation > 2 * sd) status = "alerta_2de";
     }
     let westgard = false;
-    if (hasLimits && idx > 0) {
-      const prev = points[idx - 1];
-      const prevDev = prev.value - meanValue;
-      const curDev = p.value - meanValue;
-      if (Math.abs(prevDev) > 2 * sd && Math.abs(curDev) > 2 * sd && Math.sign(prevDev) === Math.sign(curDev)) {
-        westgard = true;
-      }
+    if (
+      hasLimits &&
+      previousDeviation !== null &&
+      Math.abs(previousDeviation) > 2 * sd &&
+      Math.abs(deviation) > 2 * sd &&
+      Math.sign(previousDeviation) === Math.sign(deviation)
+    ) {
+      westgard = true;
     }
-    return { ...p, status, westgard_2_2de: westgard };
-  });
+    statsPoints.push({ ...p, status, westgard_2_2de: westgard });
+    previousDeviation = deviation;
+  }
 
   return {
     n: points.length,
