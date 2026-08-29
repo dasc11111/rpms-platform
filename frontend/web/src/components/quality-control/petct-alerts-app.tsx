@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 
 /**
- * MODULO 4 - PET/CT - FASE M
- * UI del motor de inteligencia de alertas (seccion 29 del prompt de
- * mejora). Consume /api/quality-control/petct/alerts, que ya cruza
- * tolerancia/nivel de accion, tendencia (Fase K), baseline (Fase A/I) y
- * eventos de servicio pendientes (Fase A/I) en un unico listado ordenado
- * por severidad.
+ * MODULO 4 - PET/CT - FASE M / FASE N
+ * UI del motor de inteligencia de alertas (seccion 29) y del motor de
+ * decision (seccion 30 del prompt de mejora). Consume
+ * /api/quality-control/petct/alerts, que ya cruza tolerancia/nivel de
+ * accion, tendencia (Fase K), baseline (Fase A/I) y eventos de servicio
+ * pendientes (Fase A/I) en un unico listado ordenado por severidad, y
+ * ahora incluye ademas la accion recomendada textual (Fase N) para cada
+ * alerta.
  */
 
 type Equipment = {
@@ -20,6 +22,12 @@ type Equipment = {
 };
 
 type AlertSeverity = "alta" | "media" | "baja";
+type DecisionUrgency = "inmediata" | "prioritaria" | "programada" | "informativa";
+
+type RecommendedAction = {
+  urgency: DecisionUrgency;
+  action: string;
+};
 
 type Alert = {
   id: string;
@@ -32,6 +40,7 @@ type Alert = {
   title: string;
   description: string;
   href: string;
+  recommended_action: RecommendedAction;
 };
 
 type AlertsResponse = {
@@ -52,6 +61,20 @@ const SEVERITY_LABELS: Record<AlertSeverity, string> = {
   baja: "BAJA",
 };
 
+const URGENCY_STYLES: Record<DecisionUrgency, string> = {
+  inmediata: "bg-red-600 text-white",
+  prioritaria: "bg-orange-500 text-white",
+  programada: "bg-blue-500 text-white",
+  informativa: "bg-slate-400 text-white",
+};
+
+const URGENCY_LABELS: Record<DecisionUrgency, string> = {
+  inmediata: "Accion inmediata",
+  prioritaria: "Accion prioritaria",
+  programada: "Accion programada",
+  informativa: "Informativa",
+};
+
 const TYPE_LABELS: Record<string, string> = {
   fuera_de_tolerancia: "Fuera de tolerancia",
   cercano_al_limite: "Cercano al limite",
@@ -67,6 +90,14 @@ function SeverityBadge({ severity }: { severity: AlertSeverity }) {
   return (
     <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold border ${SEVERITY_STYLES[severity]}`}>
       {SEVERITY_LABELS[severity]}
+    </span>
+  );
+}
+
+function UrgencyBadge({ urgency }: { urgency: DecisionUrgency }) {
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${URGENCY_STYLES[urgency]}`}>
+      {URGENCY_LABELS[urgency]}
     </span>
   );
 }
@@ -104,10 +135,11 @@ export default function PetCtAlertsApp({ equipment }: { equipment: Equipment[] }
       <div>
         <h1 className="text-2xl font-bold">Alertas PET/CT</h1>
         <p className="text-sm text-gray-500">
-          Modulo 4 - Fase M. Inteligencia de alertas (seccion 29 del prompt de mejora): cruza el estado de
+          Modulo 4 - Fase M/N. Inteligencia de alertas (seccion 29 del prompt de mejora): cruza el estado de
           tolerancia/nivel de accion de cada prueba, el analisis de tendencia (Fase K), la comparacion contra
-          el baseline vigente (Fase A/I) y los eventos de servicio tecnico pendientes (Fase A/I). No reemplaza
-          el criterio del Fisico Medico ni ejecuta ninguna decision clinica automatica.
+          el baseline vigente (Fase A/I) y los eventos de servicio tecnico pendientes (Fase A/I). Cada alerta
+          incluye ademas una accion recomendada textual (motor de decision, seccion 30) que nunca reemplaza el
+          criterio del Fisico Medico ni ejecuta ninguna decision clinica automatica.
         </p>
       </div>
 
@@ -168,18 +200,26 @@ export default function PetCtAlertsApp({ equipment }: { equipment: Equipment[] }
           <p className="text-sm text-gray-500">No hay alertas activas para este filtro.</p>
         )}
         {visibleAlerts.map((a) => (
-          <a key={a.id} href={a.href} className="block border rounded p-3 space-y-1 text-sm hover:bg-gray-50">
-            <div className="flex flex-wrap items-center gap-2">
-              <SeverityBadge severity={a.severity} />
-              <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-white">
-                {TYPE_LABELS[a.type] ?? a.type}
-              </span>
-              {a.test_code && <span className="font-mono text-xs text-gray-600">{a.test_code}</span>}
-              <span className="font-medium">{a.title}</span>
-            </div>
-            <p className="text-xs text-gray-600">{a.description}</p>
-            <div className="text-xs text-gray-400">{a.equipment_label}</div>
-          </a>
+          <div key={a.id} className="block border rounded p-3 space-y-2 text-sm hover:bg-gray-50">
+            <a href={a.href} className="block space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <SeverityBadge severity={a.severity} />
+                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-white">
+                  {TYPE_LABELS[a.type] ?? a.type}
+                </span>
+                {a.test_code && <span className="font-mono text-xs text-gray-600">{a.test_code}</span>}
+                <span className="font-medium">{a.title}</span>
+              </div>
+              <p className="text-xs text-gray-600">{a.description}</p>
+              <div className="text-xs text-gray-400">{a.equipment_label}</div>
+            </a>
+            {a.recommended_action && (
+              <div className="border-t pt-2 flex flex-wrap items-start gap-2">
+                <UrgencyBadge urgency={a.recommended_action.urgency} />
+                <p className="text-xs text-gray-700 flex-1">{a.recommended_action.action}</p>
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </div>
