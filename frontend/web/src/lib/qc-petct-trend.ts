@@ -62,6 +62,7 @@ export const TREND_METRICS: TrendMetricDefinition[] = [
   { test_code: "PETCT-01", table: "joint", label: "Error de registro PET/CT", unit: "voxels", source: "calculated", path: "errorVoxels" },
   { test_code: "PETCT-02", table: "joint", label: "Offset maximo de calibracion PET/CT", unit: "mm", source: "calculated", path: "maxOffsetMm" },
   { test_code: "PET-QI-RUTINA", table: "joint", label: "Desviacion de concentracion (QI-Rutina)", unit: "%", source: "calculated", path: "concentration.percentDeviation" },
+  { test_code: "PET-UNIF", table: "pet", label: "Uniformidad integral maxima (6 cortes)", unit: "%", source: "calculated", path: "globalUniformityIntegralPercent" },
 ];
 
 export function getTrendMetricDefinition(testCode: string): TrendMetricDefinition | null {
