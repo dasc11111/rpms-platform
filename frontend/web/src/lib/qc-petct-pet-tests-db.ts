@@ -23,7 +23,7 @@ import { sql } from "@/lib/db";
 
 let ensured = false;
 
-export type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC" | "PET-SUV-CAL";
+export type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC" | "PET-SUV-CAL" | "PET-UNIF";
 
 export type PetTestRecord = {
   id: number;
