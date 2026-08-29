@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PetCtPdfViewer from "@/components/quality-control/petct-pdf-viewer";
 
 /**
 * MODULO 4 - PET/CT - FASE J
@@ -16,6 +17,12 @@ import { useState } from "react";
 * mejora, pagina /quality-control/petct/comparison). Es una extension
 * aditiva del vocabulario existente; no cambia el modelo de datos ni el
 * comportamiento de los tipos ya existentes.
+*
+* FASE Q: cuando la evidencia registrada es un archivo PDF (por ejemplo,
+* un informe o una orden de trabajo escaneada), se ofrece un boton "Ver
+* PDF" que despliega el visualizador embebido (seccion 32 del prompt de
+* mejora, petct-pdf-viewer.tsx) en lugar de exigir la descarga previa del
+* archivo para revisarlo.
 */
 
 type Equipment = {
@@ -58,6 +65,11 @@ if (!eq) return "General (sin equipo especifico)";
 return `${eq.manufacturer ?? ""} ${eq.model ?? ""} (${eq.internal_code ?? "s/codigo"})`;
 }
 
+function isPdfUrl(url: string | null): boolean {
+if (!url) return false;
+return /\.pdf($|\?)/i.test(url);
+}
+
 const emptyForm = {
 test_id: "",
 evidence_type: "foto_equipo",
@@ -75,6 +87,7 @@ const [showForm, setShowForm] = useState(false);
 const [form, setForm] = useState(emptyForm);
 const [loading, setLoading] = useState(false);
 const [message, setMessage] = useState<string | null>(null);
+const [openPdfId, setOpenPdfId] = useState<number | null>(null);
 
 function updateField<K extends keyof typeof emptyForm>(key: K, value: string) {
 setForm((prev) => ({ ...prev, [key]: value }));
@@ -138,6 +151,7 @@ Modulo 4 - Fase J (seccion 23 del prompt de mejora). Referencia y metadatos de e
 asociada a un control o al equipo. El archivo se administra en almacenamiento externo;
 aqui solo se guarda su URL de referencia. Use los tipos Imagen PET / Imagen CT / Imagen
 Fusion para que la evidencia aparezca en la vista de Comparacion PET+CT+Fusion (Fase O).
+Los archivos PDF pueden revisarse sin descargarlos con el boton "Ver PDF" (Fase Q).
 </p>
 </div>
 
@@ -256,6 +270,8 @@ onChange={(e) => updateField("uploaded_by", e.target.value)}
 {records.map((r) => {
 const typeLabel = EVIDENCE_TYPES.find((t) => t.value === r.evidence_type)?.label ?? r.evidence_type;
 const eq = equipment.find((e) => e.id === r.equipment_id);
+const showPdfButton = isPdfUrl(r.file_url);
+const isOpen = openPdfId === r.id;
 return (
 <div key={r.id} className="border rounded p-2 text-xs space-y-1">
 <div className="flex flex-wrap items-center gap-2">
@@ -267,6 +283,15 @@ return (
 {r.file_name || r.file_url}
 </a>
 )}
+{showPdfButton && (
+<button
+type="button"
+onClick={() => setOpenPdfId(isOpen ? null : r.id)}
+className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-300 font-semibold"
+>
+{isOpen ? "Ocultar PDF" : "Ver PDF"}
+</button>
+)}
 <span className="text-gray-500">{new Date(r.uploaded_at).toLocaleString()}</span>
 </div>
 <div className="text-gray-600">
@@ -275,6 +300,11 @@ return (
 {r.uploaded_by && <span className="mr-3">Registrado por: {r.uploaded_by}</span>}
 </div>
 {r.description && <div className="text-gray-600">{r.description}</div>}
+{showPdfButton && isOpen && r.file_url && (
+<div className="pt-2">
+<PetCtPdfViewer fileUrl={r.file_url} title={r.file_name ?? typeLabel} />
+</div>
+)}
 </div>
 );
 })}
