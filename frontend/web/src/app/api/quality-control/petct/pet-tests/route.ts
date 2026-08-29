@@ -16,21 +16,24 @@ import {
   calculatePetEstab,
   calculatePetConc,
   calculatePetSuvCal,
+  calculatePetUnif,
   type PetAcceptanceStatus,
   type PetActionLevel,
 } from "@/lib/qc-petct-calc";
 import { getCurrentBaseline } from "@/lib/qc-petct-architecture-db";
 
 /**
- * MODULO 4 - PET/CT - FASE B
+ * MODULO 4 - PET/CT - FASE B (extendido en FASE L con PET-UNIF)
  * API de resultados de las pruebas PET-01 a PET-06 (seccion 5 del prompt de
- * mejora). GET lista/filtra registros. POST crea un registro nuevo: el
- * cliente envia unicamente los datos medidos (raw_inputs) y el motor de
- * calculo (qc-petct-calc.ts) determina calculated/status/action_level -
- * el operador nunca clasifica el resultado manualmente (seccion 3 del
- * prompt maestro). Para PET-06, el flag hasTof se obtiene siempre de la
- * ficha del equipo (petct_equipment.has_tof), nunca del cliente, para que
- * NO APLICA sea una consecuencia de la configuracion real del equipo.
+ * mejora), mas PET-ESTAB, PET-CONC, PET-SUV-CAL y PET-UNIF (uniformidad de
+ * imagen PET con analisis de 6 cortes, seccion 10). GET lista/filtra
+ * registros. POST crea un registro nuevo: el cliente envia unicamente los
+ * datos medidos (raw_inputs) y el motor de calculo (qc-petct-calc.ts)
+ * determina calculated/status/action_level - el operador nunca clasifica
+ * el resultado manualmente (seccion 3 del prompt maestro). Para PET-06, el
+ * flag hasTof se obtiene siempre de la ficha del equipo
+ * (petct_equipment.has_tof), nunca del cliente, para que NO APLICA sea una
+ * consecuencia de la configuracion real del equipo.
  */
 
 const VALID_TEST_CODES: PetTestCode[] = [
@@ -43,7 +46,17 @@ const VALID_TEST_CODES: PetTestCode[] = [
   "PET-ESTAB",
   "PET-CONC",
   "PET-SUV-CAL",
+  "PET-UNIF",
 ];
+
+function parseSliceRoiValues(rawInputs: Record<string, any>, sliceIndex: number): number[] {
+  const raw = rawInputs[`slice${sliceIndex}RoiValues`];
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  return raw
+    .split(",")
+    .map((v: string) => Number(v.trim()))
+    .filter((v: number) => !Number.isNaN(v));
+}
 
 function computeForTestCode(
   testCode: PetTestCode,
@@ -147,6 +160,20 @@ function computeForTestCode(
       });
       return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
     }
+    case "PET-UNIF": {
+      const slices = [1, 2, 3, 4, 5, 6].map((idx) => ({
+        sliceIndex: idx,
+        roiValues: parseSliceRoiValues(rawInputs, idx),
+      }));
+      const out = calculatePetUnif({
+        slices,
+        tolerancePercent:
+          rawInputs.tolerancePercent === undefined || rawInputs.tolerancePercent === "" || rawInputs.tolerancePercent === null
+            ? null
+            : Number(rawInputs.tolerancePercent),
+      });
+      return { calculated: { ...out }, status: out.status, actionLevel: out.actionLevel };
+    }
     default:
       throw new Error(`Codigo de prueba PET no soportado: ${testCode}`);
   }
@@ -177,7 +204,10 @@ export async function POST(request: NextRequest) {
     const { test_code, equipment_id, raw_inputs, ...rest } = body;
 
     if (!test_code || !VALID_TEST_CODES.includes(test_code)) {
-      return NextResponse.json({ error: "test_code invalido. Debe ser PET-01 a PET-06, PET-ESTAB, PET-CONC o PET-SUV-CAL." }, { status: 400 });
+      return NextResponse.json(
+        { error: "test_code invalido. Debe ser PET-01 a PET-06, PET-ESTAB, PET-CONC, PET-SUV-CAL o PET-UNIF." },
+        { status: 400 }
+      );
     }
     if (!rest.operator) {
       return NextResponse.json({ error: "Falta el operador que realizo la prueba" }, { status: 400 });
