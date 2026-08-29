@@ -184,7 +184,7 @@ export async function ensurePetCtArchitectureTables() {
  * y bibliografia.
  */
 async function seedTestCatalog() {
-/ FASE L: se elimina el "return" temprano por conteo total. El propio
+  // FASE L: se elimina el "return" temprano por conteo total. El propio
   // "ON CONFLICT (test_code) DO NOTHING" de cada INSERT ya protege los
   // ajustes del Fisico Medico; el "return" anterior impedia insertar
   // nuevas pruebas agregadas en fases posteriores (ej. PET-UNIF) si la
