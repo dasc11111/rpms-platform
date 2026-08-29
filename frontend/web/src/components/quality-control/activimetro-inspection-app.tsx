@@ -28,6 +28,8 @@ type ChecklistItem = {
 
 type ItemResult = "cumple" | "no_cumple" | "requiere_revision" | "no_aplica";
 
+type ItemState = { result: ItemResult; comments: string };
+
 type Inspection = {
   id: number;
   equipment_id: number | null;
@@ -67,6 +69,8 @@ const BADGE_LABELS: Record<string, string> = {
   NO_APLICA: "NO APLICA",
 };
 
+const DEFAULT_ITEM_STATE: ItemState = { result: "cumple", comments: "" };
+
 function ResultBadge({ result }: { result: string }) {
   return (
     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${BADGE_STYLES[result] ?? "bg-gray-100 text-gray-700"}`}>
@@ -85,7 +89,7 @@ export default function ActivimetroInspectionApp() {
   const [performedBy, setPerformedBy] = useState("");
   const [physicistReviewedBy, setPhysicistReviewedBy] = useState("");
   const [observaciones, setObservaciones] = useState("");
-  const [itemResults, setItemResults] = useState<Record<string, { result: ItemResult; comments: string }>>({});
+  const [itemResults, setItemResults] = useState<Record<string, ItemState>>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -95,7 +99,7 @@ export default function ActivimetroInspectionApp() {
     fetch("/api/quality-control/activimetro/equipment").then((r) => r.json()).then(setEquipmentList);
     fetch("/api/quality-control/activimetro/inspection/checklist").then((r) => r.json()).then((items: ChecklistItem[]) => {
       setChecklist(items);
-      const initial: Record<string, { result: ItemResult; comments: string }> = {};
+      const initial: Record<string, ItemState> = {};
       for (const item of items) {
         initial[item.item_code] = { result: "cumple", comments: "" };
       }
@@ -111,11 +115,17 @@ export default function ActivimetroInspectionApp() {
   }
 
   function setItemResult(code: string, result: ItemResult) {
-    setItemResults((prev) => ({ ...prev, [code]: { ...prev[code], result } }));
+    setItemResults((prev) => {
+      const current = prev[code] ?? DEFAULT_ITEM_STATE;
+      return { ...prev, [code]: { ...current, result } };
+    });
   }
 
   function setItemComment(code: string, comments: string) {
-    setItemResults((prev) => ({ ...prev, [code]: { ...prev[code], comments } }));
+    setItemResults((prev) => {
+      const current = prev[code] ?? DEFAULT_ITEM_STATE;
+      return { ...prev, [code]: { ...current, comments } };
+    });
   }
 
   const previewOverall = useMemo(() => {
