@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 
 /**
- * MODULO 4 - PET/CT - FASE B
+ * MODULO 4 - PET/CT - FASE B (extendido en FASE L con PET-UNIF)
  * Pruebas de aceptacion y control de calidad PET (PET-01 a PET-06, seccion
- * 5 del prompt de mejora). El operador solo ingresa los valores medidos;
- * el servidor calcula razon, estado (CUMPLE/NO CUMPLE/REQUIERE
- * REVISION/NO APLICA) y nivel de accion (normal/advertencia/no
- * conformidad) usando qc-petct-calc.ts. PET-06 se oculta como
- * incumplimiento si el equipo no tiene TOF (se muestra NO APLICA).
+ * 5 del prompt de mejora), mas PET-ESTAB, PET-CONC, PET-SUV-CAL y PET-UNIF
+ * (uniformidad de imagen PET con analisis de 6 cortes, seccion 10). El
+ * operador solo ingresa los valores medidos; el servidor calcula razon,
+ * estado (CUMPLE/NO CUMPLE/REQUIERE REVISION/NO APLICA) y nivel de accion
+ * (normal/advertencia/no conformidad) usando qc-petct-calc.ts. PET-06 se
+ * oculta como incumplimiento si el equipo no tiene TOF (se muestra NO
+ * APLICA).
  */
 
 type Equipment = {
@@ -21,7 +23,17 @@ type Equipment = {
   has_tof: boolean;
 };
 
-type PetTestCode = "PET-01" | "PET-02" | "PET-03" | "PET-04" | "PET-05" | "PET-06" | "PET-ESTAB" | "PET-CONC" | "PET-SUV-CAL";
+type PetTestCode =
+  | "PET-01"
+  | "PET-02"
+  | "PET-03"
+  | "PET-04"
+  | "PET-05"
+  | "PET-06"
+  | "PET-ESTAB"
+  | "PET-CONC"
+  | "PET-SUV-CAL"
+  | "PET-UNIF";
 
 type PetTestRecord = {
   id: number;
@@ -52,6 +64,7 @@ const TEST_LABELS: Record<PetTestCode, string> = {
   "PET-ESTAB": "PET-ESTAB Estabilidad del detector (rutina)",
   "PET-CONC": "PET-CONC Concentracion de radioactividad",
   "PET-SUV-CAL": "PET-SUV-CAL Calibracion de concentracion / SUV",
+  "PET-UNIF": "PET-UNIF Uniformidad de imagen (6 cortes)",
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -347,6 +360,23 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
                   <TextField label="Volumen (mL)" value={rawInputs.volumeMl ?? ""} onChange={(v) => updateRaw("volumeMl", v)} type="number" />
                   <TextField label="Concentracion reportada por PET/CT (Bq/mL)" value={rawInputs.petReportedConcentrationBqMl ?? ""} onChange={(v) => updateRaw("petReportedConcentrationBqMl", v)} type="number" />
                   <TextField label="Tolerancia segun fabricante (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
+                </>
+              )}
+              {testCode === "PET-UNIF" && (
+                <>
+                  <div className="md:col-span-3 text-xs text-gray-500">
+                    Ingrese los valores de intensidad/conteo de las ROI de cada uno de los 6 cortes
+                    igualmente espaciados, separados por coma (ej: 950,960,945,955). El sistema calcula
+                    Cmax, Cmin, uniformidad integral, media y desviacion estandar de cada corte y el
+                    resultado global (seccion 10 del prompt de mejora).
+                  </div>
+                  <TextField label="Corte 1 - valores ROI (csv)" value={rawInputs.slice1RoiValues ?? ""} onChange={(v) => updateRaw("slice1RoiValues", v)} />
+                  <TextField label="Corte 2 - valores ROI (csv)" value={rawInputs.slice2RoiValues ?? ""} onChange={(v) => updateRaw("slice2RoiValues", v)} />
+                  <TextField label="Corte 3 - valores ROI (csv)" value={rawInputs.slice3RoiValues ?? ""} onChange={(v) => updateRaw("slice3RoiValues", v)} />
+                  <TextField label="Corte 4 - valores ROI (csv)" value={rawInputs.slice4RoiValues ?? ""} onChange={(v) => updateRaw("slice4RoiValues", v)} />
+                  <TextField label="Corte 5 - valores ROI (csv)" value={rawInputs.slice5RoiValues ?? ""} onChange={(v) => updateRaw("slice5RoiValues", v)} />
+                  <TextField label="Corte 6 - valores ROI (csv)" value={rawInputs.slice6RoiValues ?? ""} onChange={(v) => updateRaw("slice6RoiValues", v)} />
+                  <TextField label="Tolerancia de uniformidad integral (%)" value={rawInputs.tolerancePercent ?? ""} onChange={(v) => updateRaw("tolerancePercent", v)} type="number" />
                 </>
               )}
             </div>
