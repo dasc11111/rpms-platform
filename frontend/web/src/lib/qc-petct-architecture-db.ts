@@ -184,9 +184,11 @@ export async function ensurePetCtArchitectureTables() {
  * y bibliografia.
  */
 async function seedTestCatalog() {
-  const { rows: existing } = await sql`SELECT COUNT(*)::int AS count FROM qc_petct_test_catalog`;
-  if (existing[0]?.count > 0) return;
-
+/ FASE L: se elimina el "return" temprano por conteo total. El propio
+  // "ON CONFLICT (test_code) DO NOTHING" de cada INSERT ya protege los
+  // ajustes del Fisico Medico; el "return" anterior impedia insertar
+  // nuevas pruebas agregadas en fases posteriores (ej. PET-UNIF) si la
+  // tabla ya tenia filas de una fase anterior.
   const entries: Array<Partial<PetCtTestCatalogEntry> & { test_code: string; test_name: string; modality: string }> = [
     { test_code: 'calibracion_cruzada', test_name: 'Calibracion Cruzada (Cross-Calibration)', modality: 'PET', objective: 'Verificar concordancia entre la concentracion de actividad reportada por el PET y la de referencia del activimetro (base de exactitud de SUV).', responsible_level: 'fisico_medico', freq_quarterly: true, implemented: true },
     { test_code: 'uniformidad_imagen', test_name: 'Uniformidad de Imagen PET', modality: 'PET', objective: 'Evaluar uniformidad sobre cortes reconstruidos de un maniqui cilindrico uniforme.', responsible_level: 'fisico_medico', freq_monthly: true, implemented: true },
@@ -203,6 +205,7 @@ async function seedTestCatalog() {
     { test_code: 'PET-CONC', test_name: 'Concentracion de radioactividad', modality: 'PET', objective: 'Comparar la concentracion medida contra la concentracion conocida (% diferencia); base de la cuantificacion.', responsible_level: 'fisico_medico', freq_quarterly: true },
     { test_code: 'PET-SUV-CAL', test_name: 'Calibracion de concentracion radioactiva / SUV', modality: 'PET', objective: 'Mantener la trazabilidad activimetro <-> PET/CT para la cuantificacion (SUV), segun especificaciones del fabricante.', responsible_level: 'fisico_medico', freq_quarterly: true, freq_post_service: true },
     { test_code: 'PET-QI-RUTINA', test_name: 'Prueba rutinaria de calidad de imagen PET/CT', modality: 'PETCT', objective: 'Adquisicion integrada (aprox. 20 millones de eventos verdaderos) con analisis de uniformidad, concentracion y resolucion espacial.', responsible_level: 'fisico_medico', freq_monthly: true },
+    { test_code: 'PET-UNIF', test_name: 'Uniformidad de Imagen PET (analisis de 6 cortes)', modality: 'PET', objective: 'Evaluar la uniformidad de imagen PET sobre 6 cortes igualmente espaciados de un maniqui cilindrico uniforme, conservando Cmax, Cmin, uniformidad integral, media y desviacion estandar de cada corte y el resultado global (seccion 10 del prompt de mejora).', responsible_level: 'fisico_medico', freq_monthly: true, formula: 'Uniformidad integral = (Cmax - Cmin) / (Cmax + Cmin) x 100, calculada por corte', tolerance_description: 'Tolerancia de la uniformidad integral configurada por el Fisico Medico; la bibliografia no fija un limite universal (seccion 37 del prompt)' },
     { test_code: 'CT-01', test_name: 'Radiacion dispersa y verificacion de blindaje', modality: 'CT', responsible_level: 'fisico_medico', freq_acceptance: true },
     { test_code: 'CT-02', test_name: 'Alineacion de laser', modality: 'CT', responsible_level: 'opr', freq_daily: true, freq_monthly: true },
     { test_code: 'CT-03', test_name: 'Alineacion de mesa y exactitud posicional', modality: 'CT', responsible_level: 'opr', freq_monthly: true },
