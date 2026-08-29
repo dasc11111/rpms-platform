@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { sql } from "@/lib/db";
 import { ensureActivimetroQcTables } from "@/lib/qc-activimetro-db";
 import { ActivimetroQcApp } from "@/components/quality-control/activimetro-qc-app";
@@ -20,10 +21,20 @@ export default async function ActivimetroQcPage() {
   `;
 
   return (
-    <ActivimetroQcApp
-      initialTests={JSON.parse(JSON.stringify(testRows))}
-      instruments={JSON.parse(JSON.stringify(instrumentRows))}
-      tolerances={JSON.parse(JSON.stringify(toleranceRows))}
-    />
+    <div className="space-y-4">
+      <div className="flex justify-end gap-2 flex-wrap px-6 pt-4">
+        <Link
+          href="/quality-control/activimetro/equipment"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Ficha tecnica del equipo
+        </Link>
+      </div>
+      <ActivimetroQcApp
+        initialTests={JSON.parse(JSON.stringify(testRows))}
+        instruments={JSON.parse(JSON.stringify(instrumentRows))}
+        tolerances={JSON.parse(JSON.stringify(toleranceRows))}
+      />
+    </div>
   );
 }
