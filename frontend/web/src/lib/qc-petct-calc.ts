@@ -1095,3 +1095,97 @@ export function calculatePetQiRutina(input: PetQiRutinaInput): PetQiRutinaOutput
 
   return { eventCountSufficient, uniformityStatus, concentration, resolution, status, actionLevel };
 }
+
+
+// ---- FASE L: PET-UNIF (seccion 10 del prompt de mejora) ----
+// Uniformidad de Imagen PET con analisis de 6 cortes igualmente espaciados
+// del maniqui cilindrico uniforme (IAEA Human Health Series No. 1). A
+// diferencia del test legacy "uniformidad_imagen" (que solo registra un
+// valor de uniformidad ya calculado externamente), esta prueba exige
+// conservar el resultado de CADA corte (Cmax, Cmin, uniformidad integral,
+// media, desviacion estandar) y no solo un promedio global. El operador
+// ingresa unicamente los valores de intensidad/conteo medidos en las ROI
+// de cada corte; el motor calcula todo lo demas. La tolerancia de la
+// uniformidad integral no tiene un valor universal fijado por la
+// bibliografia (seccion 37 del prompt): se compara contra la tolerancia
+// configurada por el Fisico Medico para el equipo/protocolo.
+export interface PetUnifSliceInput {
+  sliceIndex: number;
+  roiValues: number[];
+}
+export interface PetUnifSliceOutput {
+  sliceIndex: number;
+  cmax: number;
+  cmin: number;
+  meanValue: number;
+  stddevValue: number;
+  uniformityIntegralPercent: number;
+}
+export function calculatePetUnifSlice(input: PetUnifSliceInput): PetUnifSliceOutput {
+  const values = input.roiValues.filter((v) => !Number.isNaN(v));
+  if (!values.length) {
+    return {
+      sliceIndex: input.sliceIndex,
+      cmax: NaN,
+      cmin: NaN,
+      meanValue: NaN,
+      stddevValue: NaN,
+      uniformityIntegralPercent: NaN,
+    };
+  }
+  const cmax = Math.max(...values);
+  const cmin = Math.min(...values);
+  const sum = cmax + cmin;
+  const uniformityIntegralPercent = sum ? ((cmax - cmin) / sum) * 100 : NaN;
+  return {
+    sliceIndex: input.sliceIndex,
+    cmax,
+    cmin,
+    meanValue: mean(values),
+    stddevValue: stddev(values),
+    uniformityIntegralPercent,
+  };
+}
+
+export interface PetUnifInput {
+  slices: PetUnifSliceInput[];
+  tolerancePercent: number | null;
+}
+export interface PetUnifOutput {
+  slices: PetUnifSliceOutput[];
+  worstSliceIndex: number | null;
+  globalUniformityIntegralPercent: number;
+  globalMeanValue: number;
+  globalStddevValue: number;
+  status: CtAcceptanceStatus;
+  actionLevel: CtActionLevel;
+}
+export function calculatePetUnif(input: PetUnifInput): PetUnifOutput {
+  const sliceOutputs = input.slices.map(calculatePetUnifSlice);
+
+  let worstSliceIndex: number | null = null;
+  let globalUniformityIntegralPercent = NaN;
+  for (const s of sliceOutputs) {
+    if (Number.isNaN(s.uniformityIntegralPercent)) continue;
+    if (Number.isNaN(globalUniformityIntegralPercent) || s.uniformityIntegralPercent > globalUniformityIntegralPercent) {
+      globalUniformityIntegralPercent = s.uniformityIntegralPercent;
+      worstSliceIndex = s.sliceIndex;
+    }
+  }
+
+  const allValues = input.slices.flatMap((s) => s.roiValues).filter((v) => !Number.isNaN(v));
+  const globalMeanValue = allValues.length ? mean(allValues) : NaN;
+  const globalStddevValue = allValues.length ? stddev(allValues) : NaN;
+
+  const { status, marginFraction } = absoluteDeviationStatus(globalUniformityIntegralPercent, input.tolerancePercent);
+
+  return {
+    slices: sliceOutputs,
+    worstSliceIndex,
+    globalUniformityIntegralPercent,
+    globalMeanValue,
+    globalStddevValue,
+    status,
+    actionLevel: deriveActionLevel(status, marginFraction),
+  };
+}
