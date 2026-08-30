@@ -186,7 +186,10 @@ export async function createPurityTest(input: CreatePurityInput) {
       1, ${impurityPercent}, ${tolerance?.tolerance_percent ?? null}, ${impurityPercent},
       ${tolerance?.tolerance_percent ?? null}, ${PARAMETER_NAME}, ${status}, ${JSON.stringify({ equipment_id: equipmentId })}, ${input.observaciones ?? null}, ${input.created_by ?? null}
     ) RETURNING *;`;
-  const linkedTest = linkedRows[0];
+  const linkedTest = linkedRows[0] as { id: number } | undefined;
+  if (!linkedTest) {
+    throw new Error("No se pudo crear el registro resumen de la prueba en qc_activimetro_tests.");
+  }
 
   const { rows } = await sql`INSERT INTO qc_activimetro_purity_tests (
       instrument_id, equipment_id, linked_test_id, test_date, test_time,
@@ -220,7 +223,10 @@ export async function createPurityTest(input: CreatePurityInput) {
       ${input.observaciones ?? null}, ${input.created_by ?? null}
     ) RETURNING *;`;
 
-  const test = rows[0];
+  const test = rows[0] as { id: number } | undefined;
+  if (!test) {
+    throw new Error("No se pudo registrar la prueba de pureza radionucleidica.");
+  }
 
   await recordActivimetroAuditLog({
     entity_type: "qc_activimetro_purity_tests",
