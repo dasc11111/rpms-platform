@@ -535,7 +535,7 @@ export async function setActivimetroBaseline(input: {
 }) {
   await ensureActivimetroArchitectureTables();
 
-  const { rows: currentRows } = await sql`SELECT id FROM qc_activimetro_baseline WHERE test_code = ${input.test_code} AND parameter_name = ${input.parameter_name} AND is_current = true AND (equipment_id = ${input.equipment_id} OR (equipment_id IS NULL AND ${input.equipment_id} IS NULL));`;
+  const { rows: currentRows } = await sql`SELECT id FROM qc_activimetro_baseline WHERE test_code = ${input.test_code} AND parameter_name = ${input.parameter_name} AND is_current = true AND (equipment_id = ${input.equipment_id} OR (equipment_id IS NULL AND ${input.equipment_id}::integer IS NULL));`;
   const previousId = currentRows[0]?.id ?? null;
 
   if (previousId) {
@@ -564,13 +564,13 @@ export async function setActivimetroBaseline(input: {
 
 export async function getCurrentActivimetroBaseline(equipmentId: number | null, testCode: string, parameterName: string) {
   await ensureActivimetroArchitectureTables();
-  const { rows } = await sql`SELECT * FROM qc_activimetro_baseline WHERE test_code = ${testCode} AND parameter_name = ${parameterName} AND is_current = true AND (equipment_id = ${equipmentId} OR (equipment_id IS NULL AND ${equipmentId} IS NULL)) LIMIT 1;`;
+  const { rows } = await sql`SELECT * FROM qc_activimetro_baseline WHERE test_code = ${testCode} AND parameter_name = ${parameterName} AND is_current = true AND (equipment_id = ${equipmentId} OR (equipment_id IS NULL AND ${equipmentId}::integer IS NULL)) LIMIT 1;`;
   return rows[0] ?? null;
 }
 
 export async function listActivimetroBaselineHistory(equipmentId: number | null, testCode: string, parameterName: string) {
   await ensureActivimetroArchitectureTables();
-  const { rows } = await sql`SELECT * FROM qc_activimetro_baseline WHERE test_code = ${testCode} AND parameter_name = ${parameterName} AND (equipment_id = ${equipmentId} OR (equipment_id IS NULL AND ${equipmentId} IS NULL)) ORDER BY created_at DESC;`;
+  const { rows } = await sql`SELECT * FROM qc_activimetro_baseline WHERE test_code = ${testCode} AND parameter_name = ${parameterName} AND (equipment_id = ${equipmentId} OR (equipment_id IS NULL AND ${equipmentId}::integer IS NULL)) ORDER BY created_at DESC;`;
   return rows;
 }
 
