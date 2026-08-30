@@ -24,7 +24,18 @@ import {
  * el sistema informa el porcentaje de variacion, pero el resultado se
  * muestra como "pendiente de revision" hasta que el Fisico Medico
  * responsable configure una tolerancia (nunca se inventa).
+ *
+ * Unidad de actividad: el operador puede registrar la actividad
+ * certificada y las lecturas en MBq o en mCi (conversion fisica estandar
+ * 1 mCi = 37 MBq). El sistema siempre convierte y almacena en MBq para
+ * mantener consistencia con el baseline y las tolerancias existentes.
  */
+
+const MCI_TO_MBQ = 37;
+
+function toMBq(value: number, unit: "MBq" | "mCi") {
+  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+}
 
 type Instrument = { id: number; code: string | null; name: string | null };
 
@@ -127,6 +138,7 @@ export default function ActivimetroConstancyApp() {
   const [testTime, setTestTime] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [oprReviewedBy, setOprReviewedBy] = useState("");
+  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi">("MBq");
   const [referenceActivity, setReferenceActivity] = useState("");
   const [referenceDatetime, setReferenceDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
   const [measurementDatetime, setMeasurementDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
@@ -175,7 +187,7 @@ export default function ActivimetroConstancyApp() {
   }, [tests, instrumentId]);
 
   const preview = useMemo(() => {
-    const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v));
+    const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v)).map((v) => toMBq(v, activityUnit));
     if (values.length === 0) return null;
 
     const meanValue = mean(values);
@@ -187,7 +199,7 @@ export default function ActivimetroConstancyApp() {
     let elapsedMinutes: number | null = null;
     if (selectedRadionuclide && referenceActivity) {
       elapsedMinutes = (new Date(measurementDatetime).getTime() - new Date(referenceDatetime).getTime()) / 60000;
-      correctedActivity = decayCorrectActivity(Number(referenceActivity), Number(selectedRadionuclide.half_life_minutes), elapsedMinutes, "forward");
+      correctedActivity = decayCorrectActivity(toMBq(Number(referenceActivity), activityUnit), Number(selectedRadionuclide.half_life_minutes), elapsedMinutes, "forward");
       measuredValue = correctedActivity;
     }
 
@@ -202,7 +214,7 @@ export default function ActivimetroConstancyApp() {
     const status = evaluateTolerance(diffBaseline ?? NaN, tolerance?.tolerance_percent ?? null, tolerance?.warning_percent ?? null);
 
     return { meanValue, stddevValue, cvPercent, correctedActivity, elapsedMinutes, measuredValue, diffBaseline, diffPrevious, status };
-  }, [readings, selectedRadionuclide, referenceActivity, referenceDatetime, measurementDatetime, baselineInfo, previousTestForInstrument, tolerance]);
+  }, [readings, selectedRadionuclide, referenceActivity, referenceDatetime, measurementDatetime, baselineInfo, previousTestForInstrument, tolerance, activityUnit]);
 
   function updateReading(index: number, value: string) {
     setReadings((prev) => prev.map((r, i) => (i === index ? value : r)));
@@ -221,7 +233,7 @@ export default function ActivimetroConstancyApp() {
     setLoading(true);
     setMessage(null);
     try {
-      const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v));
+      const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v)).map((v) => toMBq(v, activityUnit));
       if (values.length === 0) throw new Error("Debe registrar al menos una lectura medida.");
 
       const useDecay = Boolean(selectedRadionuclide && referenceActivity);
@@ -236,7 +248,7 @@ export default function ActivimetroConstancyApp() {
           performed_by: performedBy || null,
           opr_reviewed_by: oprReviewedBy || null,
           radionuclide: radionuclideSymbol || null,
-          reference_activity: useDecay ? Number(referenceActivity) : null,
+          reference_activity: useDecay ? toMBq(Number(referenceActivity), activityUnit) : null,
           reference_datetime: useDecay ? new Date(referenceDatetime).toISOString() : null,
           measurement_datetime: useDecay ? new Date(measurementDatetime).toISOString() : null,
           readings: values,
@@ -328,6 +340,13 @@ export default function ActivimetroConstancyApp() {
             <label className="text-sm font-medium block mb-1">Revisado por (fisico medico)</label>
             <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
           </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
+            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : "MBq")}>
+              <option value="MBq">MBq</option>
+              <option value="mCi">mCi</option>
+            </select>
+          </div>
         </div>
 
         {radionuclideSymbol && (
@@ -335,7 +354,7 @@ export default function ActivimetroConstancyApp() {
             <h3 className="text-sm font-semibold">Correccion por decaimiento (opcional, solo si aplica al radionuclido seleccionado)</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium block mb-1">Actividad certificada (MBq)</label>
+                <label className="text-sm font-medium block mb-1">Actividad certificada ({activityUnit})</label>
                 <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
               </div>
               <div>
@@ -352,7 +371,7 @@ export default function ActivimetroConstancyApp() {
 
         <div className="border rounded-md p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Lecturas medidas (MBq)</h3>
+            <h3 className="text-sm font-semibold">Lecturas medidas ({activityUnit})</h3>
             <button type="button" onClick={addReading} className="text-xs px-2 py-1 rounded border">
               + Agregar lectura
             </button>
@@ -412,6 +431,9 @@ export default function ActivimetroConstancyApp() {
         {preview && (
           <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm text-slate-800">
             <h3 className="text-sm font-semibold mb-1">Resultado (calculado, vista previa)</h3>
+            {activityUnit === "mCi" && (
+              <div className="text-xs text-amber-700">Lecturas ingresadas en mCi, convertidas automaticamente a MBq (1 mCi = 37 MBq).</div>
+            )}
             <div>Media de lecturas: {preview.meanValue.toFixed(3)} MBq</div>
             <div>Desviacion estandar: {preview.stddevValue.toFixed(3)} MBq</div>
             <div>CV%: {preview.cvPercent.toFixed(2)}%</div>
