@@ -110,6 +110,10 @@ function toLocalDateTimeInputValue(d: Date) {
   );
 }
 
+function formatTestDate(value: string) {
+  return String(value).slice(0, 10);
+}
+
 export default function ActivimetroConstancyApp() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [radionuclides, setRadionuclides] = useState<Radionuclide[]>([]);
@@ -446,7 +450,7 @@ export default function ActivimetroConstancyApp() {
             <div key={t.id} className="p-3">
               <div className="flex flex-wrap items-center gap-3 justify-between">
                 <div className="text-sm">
-                  <span className="font-medium">{t.test_date}</span>{" "}
+                  <span className="font-medium">{formatTestDate(t.test_date)}</span>{" "}
                   {t.test_time ? t.test_time + " - " : ""}
                   {t.radionuclide ? t.radionuclide + " - " : ""}
                   {instrumentLabel(t.instrument_id)}
