@@ -16,7 +16,19 @@ import { useEffect, useMemo, useState } from "react";
  * hasta que el Fisico Medico responsable lo configure. El % de impureza
  * (paso 8) es aritmetica basica (impureza / eluido x 100), no una
  * tolerancia inventada.
+ *
+ * Unidad de actividad: el operador puede registrar las lecturas en MBq o
+ * en mCi (conversion fisica estandar 1 mCi = 37 MBq). El sistema siempre
+ * convierte y almacena en MBq para mantener consistencia con las
+ * tolerancias y comparaciones existentes; la unidad elegida solo afecta
+ * la forma de captura.
  */
+
+const MCI_TO_MBQ = 37;
+
+function toMBq(value: number, unit: "MBq" | "mCi") {
+  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+}
 
 type Instrument = { id: number; code: string | null; name: string | null };
 
@@ -123,6 +135,7 @@ export default function ActivimetroPurityApp() {
   const [tests, setTests] = useState<PurityTest[]>([]);
 
   const [form, setForm] = useState(emptyForm);
+  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi">("MBq");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -189,16 +202,16 @@ export default function ActivimetroPurityApp() {
           generator_batch: form.generatorBatch || null,
           elution_datetime: form.elutionDatetime ? new Date(form.elutionDatetime).toISOString() : null,
           eluate_volume_ml: form.eluateVolumeMl ? Number(form.eluateVolumeMl) : null,
-          eluate_activity_mbq: form.eluateActivityMbq ? Number(form.eluateActivityMbq) : null,
+          eluate_activity_mbq: form.eluateActivityMbq ? toMBq(Number(form.eluateActivityMbq), activityUnit) : null,
           procedure_reference: form.procedureReference || null,
           preparation_method: form.preparationMethod || null,
           materials_used: form.materialsUsed || null,
           geometry: form.geometry || null,
           energy_window: form.energyWindow || null,
-          background_reading: form.backgroundReading ? Number(form.backgroundReading) : null,
-          eluate_reading: Number(form.eluateReading),
+          background_reading: form.backgroundReading ? toMBq(Number(form.backgroundReading), activityUnit) : null,
+          eluate_reading: toMBq(Number(form.eluateReading), activityUnit),
           impurity_type: form.impurityType || null,
-          impurity_reading: form.impurityReading ? Number(form.impurityReading) : null,
+          impurity_reading: form.impurityReading ? toMBq(Number(form.impurityReading), activityUnit) : null,
           observaciones: form.observaciones || null,
         }),
       });
@@ -305,6 +318,13 @@ export default function ActivimetroPurityApp() {
               <label className="text-sm font-medium block mb-1">Fisico medico responsable</label>
               <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.physicistReviewedBy} onChange={(e) => updateField("physicistReviewedBy", e.target.value)} />
             </div>
+            <div>
+              <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
+              <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : "MBq")}>
+                <option value="MBq">MBq</option>
+                <option value="mCi">mCi</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -324,7 +344,7 @@ export default function ActivimetroPurityApp() {
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateVolumeMl} onChange={(e) => updateField("eluateVolumeMl", e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Actividad del eluido (MBq)</label>
+              <label className="text-sm font-medium block mb-1">Actividad del eluido ({activityUnit})</label>
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateActivityMbq} onChange={(e) => updateField("eluateActivityMbq", e.target.value)} />
             </div>
           </div>
@@ -370,7 +390,7 @@ export default function ActivimetroPurityApp() {
           <h3 className="text-sm font-semibold">Paso 6 - Fondo</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium block mb-1">Lectura de fondo (MBq)</label>
+              <label className="text-sm font-medium block mb-1">Lectura de fondo ({activityUnit})</label>
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.backgroundReading} onChange={(e) => updateField("backgroundReading", e.target.value)} />
             </div>
           </div>
@@ -380,7 +400,7 @@ export default function ActivimetroPurityApp() {
           <h3 className="text-sm font-semibold">Paso 7 - Mediciones</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium block mb-1">Lectura del eluido de 99mTc (MBq) *</label>
+              <label className="text-sm font-medium block mb-1">Lectura del eluido de 99mTc ({activityUnit}) *</label>
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateReading} onChange={(e) => updateField("eluateReading", e.target.value)} />
             </div>
             <div>
@@ -388,7 +408,7 @@ export default function ActivimetroPurityApp() {
               <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.impurityType} onChange={(e) => updateField("impurityType", e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium block mb-1">Lectura de la impureza (MBq)</label>
+              <label className="text-sm font-medium block mb-1">Lectura de la impureza ({activityUnit})</label>
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.impurityReading} onChange={(e) => updateField("impurityReading", e.target.value)} />
             </div>
           </div>
@@ -404,7 +424,7 @@ export default function ActivimetroPurityApp() {
             <h3 className="text-sm font-semibold mb-1">Pasos 8 a 10 - Impurezas, calculo y evaluacion (vista previa)</h3>
             <div>
               Formula: % impureza = (Actividad de impureza / Actividad del eluido) x 100 (aritmetica
-              basica).
+              basica; el % es independiente de la unidad siempre que ambas lecturas usen la misma).
             </div>
             <div>
               % de impureza calculado:{" "}
