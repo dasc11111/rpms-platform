@@ -20,7 +20,18 @@ import {
  * instante de medicion se calcula automaticamente con la vida media
  * del catalogo; el operador solo introduce actividad certificada,
  * fechas/horas y lecturas medidas.
+ *
+ * Unidad de actividad: el operador puede registrar la actividad
+ * certificada y las lecturas en MBq o en mCi (conversion fisica estandar
+ * 1 mCi = 37 MBq). El sistema siempre convierte y almacena en MBq para
+ * mantener consistencia con las tolerancias existentes.
  */
+
+const MCI_TO_MBQ = 37;
+
+function toMBq(value: number, unit: "MBq" | "mCi") {
+  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+}
 
 type Instrument = { id: number; code: string | null; name: string | null };
 
@@ -106,6 +117,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
   const [testTime, setTestTime] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [oprReviewedBy, setOprReviewedBy] = useState("");
+  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi">("MBq");
   const [referenceActivity, setReferenceActivity] = useState("");
   const [referenceDatetime, setReferenceDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
   const [measurementDatetime, setMeasurementDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
@@ -141,17 +153,17 @@ export default function ActivimetroRadionuclideAccuracyApp() {
   );
 
   const preview = useMemo(() => {
-    const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v));
+    const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v)).map((v) => toMBq(v, activityUnit));
     if (!selectedRadionuclide || !referenceActivity || values.length === 0) return null;
     const meanValue = mean(values);
     const stddevValue = stddev(values);
     const cvPercent = coefficientOfVariation(values);
     const elapsedMinutes = (new Date(measurementDatetime).getTime() - new Date(referenceDatetime).getTime()) / 60000;
-    const correctedActivity = decayCorrectActivity(Number(referenceActivity), Number(selectedRadionuclide.half_life_minutes), elapsedMinutes, "forward");
+    const correctedActivity = decayCorrectActivity(toMBq(Number(referenceActivity), activityUnit), Number(selectedRadionuclide.half_life_minutes), elapsedMinutes, "forward");
     const diff = percentDifference(meanValue, correctedActivity);
     const status = evaluateTolerance(diff, tolerance?.tolerance_percent ?? null, tolerance?.warning_percent ?? null);
     return { meanValue, stddevValue, cvPercent, correctedActivity, diff, status, elapsedMinutes };
-  }, [readings, selectedRadionuclide, referenceActivity, referenceDatetime, measurementDatetime, tolerance]);
+  }, [readings, selectedRadionuclide, referenceActivity, referenceDatetime, measurementDatetime, tolerance, activityUnit]);
 
   function updateReading(index: number, value: string) {
     setReadings((prev) => prev.map((r, i) => (i === index ? value : r)));
@@ -170,7 +182,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
     setLoading(true);
     setMessage(null);
     try {
-      const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v));
+      const values = readings.filter((r) => r !== "").map((r) => Number(r)).filter((v) => !Number.isNaN(v)).map((v) => toMBq(v, activityUnit));
       if (!radionuclideSymbol) throw new Error("Debe seleccionar un radionucleido del catalogo.");
       if (!referenceActivity) throw new Error("Debe indicar la actividad certificada de la fuente de referencia.");
       if (values.length === 0) throw new Error("Debe registrar al menos una lectura medida.");
@@ -185,7 +197,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
           performed_by: performedBy || null,
           opr_reviewed_by: oprReviewedBy || null,
           radionuclide: radionuclideSymbol,
-          reference_activity: Number(referenceActivity),
+          reference_activity: toMBq(Number(referenceActivity), activityUnit),
           reference_datetime: new Date(referenceDatetime).toISOString(),
           measurement_datetime: new Date(measurementDatetime).toISOString(),
           readings: values,
@@ -267,13 +279,20 @@ export default function ActivimetroRadionuclideAccuracyApp() {
             <label className="text-sm font-medium block mb-1">Revisado por (fisico medico)</label>
             <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
           </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
+            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : "MBq")}>
+              <option value="MBq">MBq</option>
+              <option value="mCi">mCi</option>
+            </select>
+          </div>
         </div>
 
         <div className="border rounded-md p-3 space-y-3">
           <h3 className="text-sm font-semibold">Fuente de referencia certificada</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium block mb-1">Actividad certificada (MBq)</label>
+              <label className="text-sm font-medium block mb-1">Actividad certificada ({activityUnit})</label>
               <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
             </div>
             <div>
@@ -289,7 +308,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
 
         <div className="border rounded-md p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Lecturas medidas (MBq)</h3>
+            <h3 className="text-sm font-semibold">Lecturas medidas ({activityUnit})</h3>
             <button type="button" onClick={addReading} className="text-xs px-2 py-1 rounded border">
               + Agregar lectura
             </button>
@@ -326,6 +345,9 @@ export default function ActivimetroRadionuclideAccuracyApp() {
         {preview && (
           <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm text-slate-800">
             <h3 className="text-sm font-semibold mb-1">Resultado (calculado, vista previa)</h3>
+            {activityUnit === "mCi" && (
+              <div className="text-xs text-amber-700">Lecturas ingresadas en mCi, convertidas automaticamente a MBq (1 mCi = 37 MBq).</div>
+            )}
             <div>Media de lecturas: {preview.meanValue.toFixed(3)} MBq</div>
             <div>Desviacion estandar: {preview.stddevValue.toFixed(3)} MBq</div>
             <div>CV%: {preview.cvPercent.toFixed(2)}%</div>
