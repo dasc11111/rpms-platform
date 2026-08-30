@@ -227,7 +227,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-4 text-slate-800">
+      <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-sm font-medium block mb-1">Equipo</label>
@@ -349,7 +349,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial de pruebas ACTIV-05</h2>
-        <div className="border rounded-lg divide-y text-slate-800">
+        <div className="border rounded-lg divide-y">
           {tests.length === 0 && <div className="p-3 text-sm text-gray-500">Sin pruebas registradas.</div>}
           {tests.map((t) => (
             <div key={t.id} className="p-3">
