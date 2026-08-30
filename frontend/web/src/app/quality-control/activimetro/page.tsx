@@ -33,7 +33,13 @@ export default async function ActivimetroQcPage() {
           href="/quality-control/activimetro/inspection"
           className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
         >
-          ACTIV-01 · Inspeccion fisica y funcional
+          ACTIV-01 - Inspeccion fisica y funcional
+        </Link>
+        <Link
+          href="/quality-control/activimetro/radionuclide-accuracy"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          ACTIV-05 - Exactitud por radionuclido
         </Link>
       </div>
       <ActivimetroQcApp
