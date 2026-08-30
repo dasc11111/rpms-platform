@@ -147,7 +147,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
     const stddevValue = stddev(values);
     const cvPercent = coefficientOfVariation(values);
     const elapsedMinutes = (new Date(measurementDatetime).getTime() - new Date(referenceDatetime).getTime()) / 60000;
-    const correctedActivity = decayCorrectActivity(Number(referenceActivity), selectedRadionuclide.half_life_minutes, elapsedMinutes, "forward");
+    const correctedActivity = decayCorrectActivity(Number(referenceActivity), Number(selectedRadionuclide.half_life_minutes), elapsedMinutes, "forward");
     const diff = percentDifference(meanValue, correctedActivity);
     const status = evaluateTolerance(diff, tolerance?.tolerance_percent ?? null, tolerance?.warning_percent ?? null);
     return { meanValue, stddevValue, cvPercent, correctedActivity, diff, status, elapsedMinutes };
@@ -246,7 +246,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
               <option value="">Seleccionar...</option>
               {radionuclides.map((rn) => (
                 <option key={rn.symbol} value={rn.symbol}>
-                  {rn.name} ({rn.symbol}) T1/2 {rn.half_life_minutes.toFixed(1)} min
+                  {rn.name} ({rn.symbol}) T1/2 {Number(rn.half_life_minutes).toFixed(1)} min
                 </option>
               ))}
             </select>
