@@ -227,11 +227,11 @@ export default function ActivimetroRadionuclideAccuracyApp() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-4">
+      <form onSubmit={handleSubmit} className="border rounded-lg p-4 space-y-4 text-slate-800">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-sm font-medium block mb-1">Equipo</label>
-            <select className="w-full border rounded px-2 py-1 text-sm" value={instrumentId} onChange={(e) => setInstrumentId(e.target.value)}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={instrumentId} onChange={(e) => setInstrumentId(e.target.value)}>
               <option value="">Sin equipo asociado</option>
               {instruments.map((inst) => (
                 <option key={inst.id} value={inst.id}>
@@ -242,7 +242,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Radionuclido</label>
-            <select className="w-full border rounded px-2 py-1 text-sm" value={radionuclideSymbol} onChange={(e) => setRadionuclideSymbol(e.target.value)}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={radionuclideSymbol} onChange={(e) => setRadionuclideSymbol(e.target.value)}>
               <option value="">Seleccionar...</option>
               {radionuclides.map((rn) => (
                 <option key={rn.symbol} value={rn.symbol}>
@@ -253,19 +253,19 @@ export default function ActivimetroRadionuclideAccuracyApp() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Fecha</label>
-            <input type="date" className="w-full border rounded px-2 py-1 text-sm" value={testDate} onChange={(e) => setTestDate(e.target.value)} />
+            <input type="date" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={testDate} onChange={(e) => setTestDate(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Hora</label>
-            <input type="time" className="w-full border rounded px-2 py-1 text-sm" value={testTime} onChange={(e) => setTestTime(e.target.value)} />
+            <input type="time" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={testTime} onChange={(e) => setTestTime(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Realizado por (operador)</label>
-            <input type="text" className="w-full border rounded px-2 py-1 text-sm" value={performedBy} onChange={(e) => setPerformedBy(e.target.value)} />
+            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={performedBy} onChange={(e) => setPerformedBy(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Revisado por (fisico medico)</label>
-            <input type="text" className="w-full border rounded px-2 py-1 text-sm" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
+            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
           </div>
         </div>
 
@@ -274,15 +274,15 @@ export default function ActivimetroRadionuclideAccuracyApp() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Actividad certificada (MBq)</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Fecha/hora de referencia (calibracion)</label>
-              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm" value={referenceDatetime} onChange={(e) => setReferenceDatetime(e.target.value)} />
+              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceDatetime} onChange={(e) => setReferenceDatetime(e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Fecha/hora de medicion</label>
-              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm" value={measurementDatetime} onChange={(e) => setMeasurementDatetime(e.target.value)} />
+              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={measurementDatetime} onChange={(e) => setMeasurementDatetime(e.target.value)} />
             </div>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
                   type="number"
                   step="any"
                   placeholder={"Lectura " + (idx + 1)}
-                  className="w-full border rounded px-2 py-1 text-sm"
+                  className="w-full border rounded px-2 py-1 text-sm text-slate-800"
                   value={r}
                   onChange={(e) => updateReading(idx, e.target.value)}
                 />
@@ -320,11 +320,11 @@ export default function ActivimetroRadionuclideAccuracyApp() {
 
         <div>
           <label className="text-sm font-medium block mb-1">Observaciones generales</label>
-          <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+          <textarea className="w-full border rounded px-2 py-1 text-sm text-slate-800" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
         </div>
 
         {preview && (
-          <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm">
+          <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm text-slate-800">
             <h3 className="text-sm font-semibold mb-1">Resultado (calculado, vista previa)</h3>
             <div>Media de lecturas: {preview.meanValue.toFixed(3)} MBq</div>
             <div>Desviacion estandar: {preview.stddevValue.toFixed(3)} MBq</div>
@@ -349,7 +349,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial de pruebas ACTIV-05</h2>
-        <div className="border rounded-lg divide-y">
+        <div className="border rounded-lg divide-y text-slate-800">
           {tests.length === 0 && <div className="p-3 text-sm text-gray-500">Sin pruebas registradas.</div>}
           {tests.map((t) => (
             <div key={t.id} className="p-3">
