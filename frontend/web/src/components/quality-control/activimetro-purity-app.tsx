@@ -17,17 +17,20 @@ import { useEffect, useMemo, useState } from "react";
  * (paso 8) es aritmetica basica (impureza / eluido x 100), no una
  * tolerancia inventada.
  *
- * Unidad de actividad: el operador puede registrar las lecturas en MBq o
- * en mCi (conversion fisica estandar 1 mCi = 37 MBq). El sistema siempre
- * convierte y almacena en MBq para mantener consistencia con las
- * tolerancias y comparaciones existentes; la unidad elegida solo afecta
- * la forma de captura.
+ * Unidad de actividad: el operador puede registrar las lecturas en MBq,
+ * mCi o uCi (conversion fisica estandar 1 mCi = 37 MBq; 1 uCi = 0.037 MBq).
+ * El sistema siempre convierte y almacena en MBq para mantener consistencia
+ * con las tolerancias y comparaciones existentes; la unidad elegida solo
+ * afecta la forma de captura.
  */
 
 const MCI_TO_MBQ = 37;
+const UCI_TO_MBQ = 0.037;
 
-function toMBq(value: number, unit: "MBq" | "mCi") {
-  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+function toMBq(value: number, unit: "MBq" | "mCi" | "uCi") {
+  if (unit === "mCi") return value * MCI_TO_MBQ;
+  if (unit === "uCi") return value * UCI_TO_MBQ;
+  return value;
 }
 
 type Instrument = { id: number; code: string | null; name: string | null };
@@ -135,7 +138,7 @@ export default function ActivimetroPurityApp() {
   const [tests, setTests] = useState<PurityTest[]>([]);
 
   const [form, setForm] = useState(emptyForm);
-  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi">("MBq");
+  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi" | "uCi">("MBq");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -320,9 +323,10 @@ export default function ActivimetroPurityApp() {
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
-              <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : "MBq")}>
+              <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
                 <option value="MBq">MBq</option>
                 <option value="mCi">mCi</option>
+                <option value="uCi">uCi</option>
               </select>
             </div>
           </div>
