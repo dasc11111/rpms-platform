@@ -10,7 +10,19 @@ import { useState } from "react";
  * se sobrescribe: al establecer un nuevo valor el anterior se conserva
  * (is_current = false) y queda enlazado via previous_baseline_id, junto
  * con el motivo, usuario y fecha del cambio.
+ *
+ * Unidad de actividad: si el parametro registrado es una actividad, el
+ * operador puede capturar el valor en MBq o en mCi (conversion fisica
+ * estandar 1 mCi = 37 MBq). El sistema siempre convierte y almacena en
+ * MBq para mantener consistencia con las demas pruebas del modulo, que
+ * comparan sus lecturas contra este baseline.
  */
+
+const MCI_TO_MBQ = 37;
+
+function toMBq(value: number, unit: "MBq" | "mCi") {
+  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+}
 
 type Equipment = {
   id: number;
@@ -50,7 +62,7 @@ function equipmentLabel(eq: Equipment | undefined): string {
 
 const emptyBaselineForm = {
   value: "",
-  unit: "",
+  unit: "MBq" as "MBq" | "mCi",
   radionuclide: "",
   geometry: "",
   operator: "",
@@ -71,7 +83,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  function updateField<K extends keyof typeof emptyBaselineForm>(key: K, value: string) {
+  function updateField<K extends keyof typeof emptyBaselineForm>(key: K, value: (typeof emptyBaselineForm)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -107,6 +119,8 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
     setLoading(true);
     setMessage(null);
     try {
+      const isActivity = form.unit === "MBq" || form.unit === "mCi";
+      const convertedValue = form.value === "" ? null : isActivity ? toMBq(Number(form.value), form.unit) : Number(form.value);
       const res = await fetch("/api/quality-control/activimetro/baseline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,8 +128,8 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
           equipment_id: equipmentId || null,
           test_code: testCode,
           parameter_name: parameterName,
-          value: form.value === "" ? null : Number(form.value),
-          unit: form.unit || null,
+          value: convertedValue,
+          unit: isActivity ? "MBq" : form.unit || null,
           radionuclide: form.radionuclide || null,
           geometry: form.geometry || null,
           operator: form.operator || null,
@@ -230,7 +244,17 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
           {showForm && (
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-lg p-4">
               <NumField label="Valor" value={form.value} onChange={(v) => updateField("value", v)} />
-              <TxtField label="Unidad" value={form.unit} onChange={(v) => updateField("unit", v)} />
+              <div>
+                <label className="text-sm font-medium block mb-1">Unidad</label>
+                <select
+                  className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+                  value={form.unit}
+                  onChange={(e) => updateField("unit", e.target.value === "mCi" ? "mCi" : "MBq")}
+                >
+                  <option value="MBq">MBq</option>
+                  <option value="mCi">mCi (se convertira a MBq automaticamente)</option>
+                </select>
+              </div>
               <TxtField label="Radionucleido" value={form.radionuclide} onChange={(v) => updateField("radionuclide", v)} />
               <TxtField label="Geometria" value={form.geometry} onChange={(v) => updateField("geometry", v)} />
               <TxtField label="Operador" value={form.operator} onChange={(v) => updateField("operator", v)} />
