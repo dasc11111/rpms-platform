@@ -678,3 +678,16 @@ export async function listActivimetroAuditLog(entityType: string, entityId: numb
   const { rows } = await sql`SELECT * FROM qc_activimetro_audit_log WHERE entity_type = ${entityType} AND entity_id = ${entityId} ORDER BY changed_at DESC;`;
   return rows;
 }
+
+
+/**
+ * Lista general de la bitacora de auditoria (sin filtrar por entidad),
+ * para la pantalla de Auditoria (bitacora generica y reutilizable,
+ * seccion 40 del prompt maestro). Util para revisar los cambios mas
+ * recientes en cualquier entidad del modulo Activimetro.
+ */
+export async function listActivimetroAuditLogRecent(limit: number = 200) {
+  await ensureActivimetroArchitectureTables();
+  const { rows } = await sql`SELECT * FROM qc_activimetro_audit_log ORDER BY changed_at DESC LIMIT ${limit};`;
+  return rows;
+}
