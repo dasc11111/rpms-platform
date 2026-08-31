@@ -311,7 +311,7 @@ export default function PetCtJointTestsApp({ equipment }: { equipment: Equipment
                 key={code}
                 type="button"
                 onClick={() => setTestCode(code)}
-                className={`px-3 py-1.5 rounded text-sm border ${testCode === code ? "bg-gray-800 text-white" : "bg-white"}`}
+                className={`px-3 py-1.5 rounded text-sm border ${testCode === code ? "bg-gray-800 text-white border-gray-800" : "bg-white text-slate-700 border-slate-300"}`}
               >
                 {code}
               </button>
