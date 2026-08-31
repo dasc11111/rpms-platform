@@ -65,6 +65,12 @@ export default async function ActivimetroQcPage() {
         >
           Eventos de servicio tecnico
         </Link>
+        <Link
+          href="/quality-control/activimetro/evidence"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Evidencia grafica y documental
+        </Link>
       </div>
       <ActivimetroQcApp
         initialTests={JSON.parse(JSON.stringify(testRows))}
