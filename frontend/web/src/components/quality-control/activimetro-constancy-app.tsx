@@ -26,15 +26,19 @@ import {
  * responsable configure una tolerancia (nunca se inventa).
  *
  * Unidad de actividad: el operador puede registrar la actividad
- * certificada y las lecturas en MBq o en mCi (conversion fisica estandar
- * 1 mCi = 37 MBq). El sistema siempre convierte y almacena en MBq para
- * mantener consistencia con el baseline y las tolerancias existentes.
+ * certificada y las lecturas en MBq, mCi o uCi (conversion fisica
+ * estandar 1 mCi = 37 MBq; 1 uCi = 0.001 mCi = 0.037 MBq). El sistema
+ * siempre convierte y almacena en MBq para mantener consistencia con el
+ * baseline y las tolerancias existentes.
  */
 
 const MCI_TO_MBQ = 37;
+const UCI_TO_MBQ = 0.037;
 
-function toMBq(value: number, unit: "MBq" | "mCi") {
-  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+function toMBq(value: number, unit: "MBq" | "mCi" | "uCi") {
+  if (unit === "mCi") return value * MCI_TO_MBQ;
+  if (unit === "uCi") return value * UCI_TO_MBQ;
+  return value;
 }
 
 type Instrument = { id: number; code: string | null; name: string | null };
@@ -138,7 +142,7 @@ export default function ActivimetroConstancyApp() {
   const [testTime, setTestTime] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [oprReviewedBy, setOprReviewedBy] = useState("");
-  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi">("MBq");
+  const [activityUnit, setActivityUnit] = useState<"MBq" | "mCi" | "uCi">("MBq");
   const [referenceActivity, setReferenceActivity] = useState("");
   const [referenceDatetime, setReferenceDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
   const [measurementDatetime, setMeasurementDatetime] = useState(() => toLocalDateTimeInputValue(new Date()));
@@ -342,9 +346,10 @@ export default function ActivimetroConstancyApp() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
-            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : "MBq")}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
               <option value="MBq">MBq</option>
               <option value="mCi">mCi</option>
+              <option value="uCi">µCi</option>
             </select>
           </div>
         </div>
@@ -433,6 +438,9 @@ export default function ActivimetroConstancyApp() {
             <h3 className="text-sm font-semibold mb-1">Resultado (calculado, vista previa)</h3>
             {activityUnit === "mCi" && (
               <div className="text-xs text-amber-700">Lecturas ingresadas en mCi, convertidas automaticamente a MBq (1 mCi = 37 MBq).</div>
+            )}
+            {activityUnit === "uCi" && (
+              <div className="text-xs text-amber-700">Lecturas ingresadas en µCi, convertidas automaticamente a MBq (1 µCi = 0.037 MBq).</div>
             )}
             <div>Media de lecturas: {preview.meanValue.toFixed(3)} MBq</div>
             <div>Desviacion estandar: {preview.stddevValue.toFixed(3)} MBq</div>
