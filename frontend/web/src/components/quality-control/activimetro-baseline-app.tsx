@@ -12,16 +12,20 @@ import { useState } from "react";
  * con el motivo, usuario y fecha del cambio.
  *
  * Unidad de actividad: si el parametro registrado es una actividad, el
- * operador puede capturar el valor en MBq o en mCi (conversion fisica
- * estandar 1 mCi = 37 MBq). El sistema siempre convierte y almacena en
- * MBq para mantener consistencia con las demas pruebas del modulo, que
- * comparan sus lecturas contra este baseline.
+ * operador puede capturar el valor en MBq, mCi o uCi (conversion fisica
+ * estandar 1 mCi = 37 MBq; 1 uCi = 0.001 mCi = 0.037 MBq). El sistema
+ * siempre convierte y almacena en MBq para mantener consistencia con las
+ * demas pruebas del modulo, que comparan sus lecturas contra este
+ * baseline.
  */
 
 const MCI_TO_MBQ = 37;
+const UCI_TO_MBQ = 0.037;
 
-function toMBq(value: number, unit: "MBq" | "mCi") {
-  return unit === "mCi" ? value * MCI_TO_MBQ : value;
+function toMBq(value: number, unit: "MBq" | "mCi" | "uCi") {
+  if (unit === "mCi") return value * MCI_TO_MBQ;
+  if (unit === "uCi") return value * UCI_TO_MBQ;
+  return value;
 }
 
 type Equipment = {
@@ -62,7 +66,7 @@ function equipmentLabel(eq: Equipment | undefined): string {
 
 const emptyBaselineForm = {
   value: "",
-  unit: "MBq" as "MBq" | "mCi",
+  unit: "MBq" as "MBq" | "mCi" | "uCi",
   radionuclide: "",
   geometry: "",
   operator: "",
@@ -119,7 +123,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
     setLoading(true);
     setMessage(null);
     try {
-      const isActivity = form.unit === "MBq" || form.unit === "mCi";
+      const isActivity = form.unit === "MBq" || form.unit === "mCi" || form.unit === "uCi";
       const convertedValue = form.value === "" ? null : isActivity ? toMBq(Number(form.value), form.unit) : Number(form.value);
       const res = await fetch("/api/quality-control/activimetro/baseline", {
         method: "POST",
@@ -249,10 +253,11 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
                 <select
                   className="w-full border rounded px-2 py-1 text-sm text-slate-800"
                   value={form.unit}
-                  onChange={(e) => updateField("unit", e.target.value === "mCi" ? "mCi" : "MBq")}
+                  onChange={(e) => updateField("unit", e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}
                 >
                   <option value="MBq">MBq</option>
                   <option value="mCi">mCi (se convertira a MBq automaticamente)</option>
+                  <option value="uCi">µCi (se convertira a MBq automaticamente)</option>
                 </select>
               </div>
               <TxtField label="Radionucleido" value={form.radionuclide} onChange={(v) => updateField("radionuclide", v)} />
