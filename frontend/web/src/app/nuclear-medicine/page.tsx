@@ -92,6 +92,23 @@ const ANALITICA: ModuleCard[] = [
   },
 ];
 
+// Fase 10 (Medicina Nuclear) - Alertas: vista de solo lectura que agrega
+// alertas ya clasificadas por los modulos existentes (Contaminacion,
+// Liberacion de Sala, Gestion de Residuos, Instrumentos y Calibracion,
+// Transporte). No define nuevos limites, formulas ni clasificaciones (ver
+// seccion 55 del prompt maestro, no invencion). No consulta datos de
+// Control de Calidad (seccion 2, exclusion absoluta).
+const ALERTAS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/alerts",
+    label: "Alertas de Medicina Nuclear",
+    description: "Alertas criticas, medias e informativas que agregan los niveles ya calculados por Contaminacion, Liberacion de Sala, Residuos, Instrumentos y Transporte.",
+    icon: ShieldAlert,
+    status: "activo",
+    phase: "Fase 10 (nuevo)",
+  },
+];
+
 // Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
 // Reutiliza el modulo general de Instrumentos y Calibracion ya existente en
 // la plataforma (compartido entre todas las areas), extendido con campos
@@ -184,17 +201,6 @@ const EMERGENCIAS: ModuleCard[] = [
   },
 ];
 
-const PROXIMAMENTE: ModuleCard[] = [
-  {
-    href: "#",
-    label: "Alertas de Medicina Nuclear",
-    description: "Alertas criticas, medias e informativas basadas en normativa chilena y procedimientos internos.",
-    icon: ShieldAlert,
-    status: "proximo",
-    phase: "Fase 10 (propuesta)",
-  },
-];
-
 function ModuleGrid({ items }: { items: ModuleCard[] }) {
   return (
     <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -270,6 +276,11 @@ export default function NuclearMedicinePage() {
       <ModuleGrid items={ANALITICA} />
 
       <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Alertas</h2>
+      </div>
+      <ModuleGrid items={ALERTAS} />
+
+      <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Referencias y criterios</h2>
       </div>
       <ModuleGrid items={REFERENCIAS_CRITERIOS} />
@@ -288,11 +299,6 @@ export default function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Emergencias e Incidentes (en produccion)</h2>
       </div>
       <ModuleGrid items={EMERGENCIAS} />
-
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Proximamente (diseno Fase 0, pendiente de autorizacion)</h2>
-      </div>
-      <ModuleGrid items={PROXIMAMENTE} />
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-2 text-sm font-semibold">Documentacion de referencia</h2>
