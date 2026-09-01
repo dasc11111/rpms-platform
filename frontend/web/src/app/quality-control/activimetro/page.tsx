@@ -24,6 +24,12 @@ export default async function ActivimetroQcPage() {
     <div className="space-y-4">
       <div className="flex justify-end gap-2 flex-wrap px-6 pt-4">
         <Link
+          href="/quality-control/activimetro/dashboard"
+          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Tablero de control
+        </Link>
+        <Link
           href="/quality-control/activimetro/equipment"
           className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
         >
