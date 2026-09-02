@@ -9,6 +9,7 @@ export const I131_SUGGESTION_FIELDS = [
     "tipo_examen",
     "prevision",
     "paciente_nombre",
+    "sala",
   ] as const;
 
 export type I131SuggestionField = (typeof I131_SUGGESTION_FIELDS)[number];
@@ -24,6 +25,7 @@ export const I131_SUGGESTION_FIELD_LABELS: Record<string, string> = {
     tipo_examen: "Tipo de examen",
     prevision: "Previsión",
     paciente_nombre: "Paciente",
+    sala: "Sala",
 };
 
 export const MESES = [
@@ -99,6 +101,7 @@ export type I131Record = {
     procedencia: string | null;
     tipo_examen: string | null;
     equipo: string | null;
+    sala: string | null;
     motivo: string | null;
     protocolo: string | null;
     tasa_dosis: string | null;
