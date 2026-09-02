@@ -72,6 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const procedencia = body.procedencia ?? current.procedencia;
     const tipo_examen = body.tipo_examen ?? current.tipo_examen;
     const equipo = body.equipo ?? current.equipo;
+    const sala = body.sala ?? current.sala;
     const motivo = body.motivo ?? current.motivo;
     const protocolo = body.protocolo ?? current.protocolo;
     const tasa_dosis = body.tasa_dosis ?? current.tasa_dosis;
@@ -114,6 +115,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                                                                                                 procedencia = ${procedencia},
                                                                                                       tipo_examen = ${tipo_examen},
                                                                                                             equipo = ${equipo},
+                                                                                                            sala = ${sala},
                                                                                                                   motivo = ${motivo},
                                                                                                                         protocolo = ${protocolo},
                                                                                                                               tasa_dosis = ${tasa_dosis},
