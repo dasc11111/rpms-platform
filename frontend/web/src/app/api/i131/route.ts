@@ -24,6 +24,7 @@ const FILTER_FIELDS: Record<string, string> = {
     ficha_clinica: "ficha_clinica",
     partida: "partida",
     pedido_numero: "pedido_numero",
+    sala: "sala",
 };
 
 const SORTABLE = new Set([
@@ -40,6 +41,7 @@ const SORTABLE = new Set([
     "procedencia",
     "tipo_examen",
     "equipo",
+    "sala",
   ]);
 
 function buildFilters(searchParams: URLSearchParams) {
@@ -185,7 +187,7 @@ export async function POST(req: NextRequest) {
                               dosis_administrada, responsable, notas, dedupe_key,
                                     tipo_procedimiento, identidad_confirmada, embarazo_descartado, fecha_test_embarazo,
                                           lactancia_consultada, segunda_verificacion_responsable, bloqueo_tiroideo_considerado,
-                                                actividad_dentro_tolerancia, informacion_radioproteccion_entregada
+                                                actividad_dentro_tolerancia, informacion_radioproteccion_entregada, sala
                                                     ) VALUES (
                                                           ${admin_year}, ${admin_month}, ${admin_day}, ${admin_date}, ${body.partida ?? null}, ${body.pedido_numero ?? null}, ${radiofarmaco},
                                                                 ${body.cantidad_solicitada ?? null}, ${paciente_nombre}, ${body.paciente_run ?? null}, ${body.ficha_clinica ?? null}, ${body.prevision ?? null}, ${body.diagnostico ?? null},
@@ -193,7 +195,7 @@ export async function POST(req: NextRequest) {
                                                                             ${body.dosis_administrada ?? null}, ${RESPONSABLE_FIJO}, ${body.notas ?? null}, ${dedupeKey},
                                                                                   ${body.tipo_procedimiento ?? null}, ${body.identidad_confirmada ?? null}, ${body.embarazo_descartado ?? null}, ${body.fecha_test_embarazo ?? null},
                                                                                         ${body.lactancia_consultada ?? null}, ${body.segunda_verificacion_responsable ?? null}, ${body.bloqueo_tiroideo_considerado ?? null},
-                                                                                              ${body.actividad_dentro_tolerancia ?? null}, ${body.informacion_radioproteccion_entregada ?? null}
+                                                                                              ${body.actividad_dentro_tolerancia ?? null}, ${body.informacion_radioproteccion_entregada ?? null}, ${body.sala ?? null}
                                                                                                   )
                                                                                                       RETURNING *
                                                                                                         `;
