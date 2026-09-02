@@ -10,6 +10,7 @@
 // (ver src/app/api/init/route.ts), nunca como valores fijos en el codigo.
 
 import { sql } from "@/lib/db";
+import { calcConteoNeto, calcActividadBqCm2 } from "./contamination";
 
 export const WASTE_LABEL_PREFIX = "GRR";
 
@@ -261,15 +262,17 @@ export function isReleaseEligible(
 export const ACTA_I131_EFICIENCIA_DETECTOR = 0.15;
 export const ACTA_I131_AREA_MONITOREADA_CM2 = 15;
 
+// Revision: reutiliza calcConteoNeto/calcActividadBqCm2 de contamination.ts (mismo
+// motor de calculo que Registro de Contaminacion y Liberacion de Sala), en vez de
+// reimplementar la formula por separado, para evitar un tercer motor duplicado.
 export function calcActaActividadBqCm2(
   cps: number | null | undefined,
   cpsFondo: number | null | undefined = 0
 ): number {
   const c = Number(cps ?? 0);
   const fondo = Number(cpsFondo ?? 0);
-  const neto = c - fondo;
-  if (!neto || neto <= 0) return 0;
-  return neto / (ACTA_I131_EFICIENCIA_DETECTOR * ACTA_I131_AREA_MONITOREADA_CM2);
+  const neto = calcConteoNeto(c, fondo);
+  return calcActividadBqCm2(neto, ACTA_I131_EFICIENCIA_DETECTOR, ACTA_I131_AREA_MONITOREADA_CM2);
 }
 
 export type ActaPuntoCategoria = "controlada" | "publica_ropa_basura";
