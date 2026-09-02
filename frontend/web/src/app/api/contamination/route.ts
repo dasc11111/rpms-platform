@@ -305,7 +305,7 @@ export async function POST(req: NextRequest) {
                                                       requiere_limpieza, limpieza_realizada,
                                                             conteo_post_limpieza_cps, actividad_post_limpieza_bq_cm2,
                                                                   factor_descontaminacion, pct_actividad_residual,
-                                                                        accion_correctiva, estado, motivo, responsable, observaciones, dedupe_key
+                                                                        accion_correctiva, estado, motivo, responsable, hora_medicion, opr, observaciones, dedupe_key
                                                                             ) VALUES (
                                                                                   ${monitor_year}, ${monitor_month}, ${monitor_day}, ${monitor_date},
                                                                                         ${body.area ?? null}, ${body.sala ?? null}, ${body.dependencia ?? null}, ${punto_medicion}, ${body.equipo ?? null}, ${body.superficie ?? null},
@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
                                                                                                                             ${requiere_limpieza}, ${Boolean(body.limpieza_realizada)},
                                                                                                                                   ${conteo_post_limpieza_cps}, ${derivados.actividad_post_limpieza_bq_cm2},
                                                                                                                                         ${derivados.factor_descontaminacion}, ${derivados.pct_actividad_residual},
-                                                                                                                                              ${body.accion_correctiva ?? null}, ${body.estado ?? "ABIERTO"}, ${body.motivo ?? null}, ${responsable}, ${body.observaciones ?? null}, ${dedupeKey}
+                                                                                                                                              ${body.accion_correctiva ?? null}, ${body.estado ?? "ABIERTO"}, ${body.motivo ?? null}, ${responsable}, ${body.hora_medicion ?? null}, ${body.opr ?? null}, ${body.observaciones ?? null}, ${dedupeKey}
                                                                                                                                                   )
                                                                                                                                                       RETURNING *
                                                                                                                                                         `;
