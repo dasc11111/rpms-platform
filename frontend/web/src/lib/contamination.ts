@@ -204,6 +204,8 @@ export type ContaminationRecord = {
     estado: string;
     motivo: string | null;
     responsable: string;
+    hora_medicion: string | null;
+    opr: string | null;
     observaciones: string | null;
     created_at: string;
     updated_at: string;
