@@ -22,6 +22,7 @@ type FormState = {
   procedencia: string;
   tipo_examen: string;
   equipo: string;
+  sala: string;
   motivo: string;
   protocolo: string;
   tasa_dosis: string;
@@ -55,6 +56,7 @@ const EMPTY: FormState = {
   procedencia: "",
   tipo_examen: "",
   equipo: "",
+  sala: "",
   motivo: "",
   protocolo: "",
   tasa_dosis: "",
@@ -101,6 +103,7 @@ function recordToForm(r: I131Record): FormState {
     procedencia: r.procedencia ?? "",
     tipo_examen: r.tipo_examen ?? "",
     equipo: r.equipo ?? "",
+    sala: r.sala ?? "",
     motivo: r.motivo ?? "",
     protocolo: r.protocolo ?? "",
     tasa_dosis: r.tasa_dosis ?? "",
@@ -188,6 +191,7 @@ export function I131FormModal({
       procedencia: form.procedencia || null,
       tipo_examen: form.tipo_examen || null,
       equipo: form.equipo || null,
+      sala: form.sala || null,
       motivo: form.motivo || null,
       protocolo: form.protocolo || null,
       tasa_dosis: form.tasa_dosis || null,
@@ -446,6 +450,10 @@ export function I131FormModal({
             <div>
               <label className={FIELD_LABEL}>Equipo</label>
               <AutocompleteInput field="equipo" value={form.equipo} onChange={(v) => set("equipo", v)} />
+            </div>
+            <div>
+            <label className={FIELD_LABEL}>Sala</label>
+            <AutocompleteInput field="sala" value={form.sala} onChange={(v) => set("sala", v)} />
             </div>
             <div>
               <label className={FIELD_LABEL}>Motivo</label>
