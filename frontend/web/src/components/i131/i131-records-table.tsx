@@ -30,6 +30,7 @@ type ColumnKey =
   | "procedencia"
   | "tipo_examen"
   | "equipo"
+  | "sala"
   | "motivo"
   | "protocolo"
   | "partida"
@@ -48,6 +49,7 @@ const ALL_COLUMNS: { key: ColumnKey; label: string; core?: boolean }[] = [
   { key: "procedencia", label: "Procedencia" },
   { key: "tipo_examen", label: "Tipo examen" },
   { key: "equipo", label: "Equipo" },
+  { key: "sala", label: "Sala" },
   { key: "motivo", label: "Motivo" },
   { key: "protocolo", label: "Protocolo" },
   { key: "partida", label: "Partida" },
