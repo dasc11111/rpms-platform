@@ -36,6 +36,9 @@ export const RC_LABORATORIO_PUNTOS = [
 
 export const RC_SALA_PACIENTES_PUNTOS = [
   "Sala del paciente",
+  "Cama",
+  "Ropa de cama",
+  "Almohada", // mismo criterio de contaminación que "Ropa de cama" (sección 13 del documento; sin límite independiente salvo referencia oficial que lo establezca)
   "Piso baño del paciente",
   "WC del paciente",
   "Lavamanos del paciente",
