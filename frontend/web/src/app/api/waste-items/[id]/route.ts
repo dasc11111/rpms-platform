@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 // Fase C - Ficha individual completa de un residuo (Seccion 10, 39: cada
 // decision debe ser reconstruible: residuo -> mediciones -> historial de
 // estados -> correcciones -> autorizaciones).
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    await ensureWasteExpertSchema();
-    const id = Number(params.id);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+      await ensureWasteExpertSchema();
+      const { id: idParam } = await params;
+      const id = Number(idParam);
     if (!Number.isFinite(id)) {
           return NextResponse.json({ error: "Id invalido" }, { status: 400 });
     }
