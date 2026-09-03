@@ -26,9 +26,10 @@ export const dynamic = "force-dynamic";
 
 const TIPOS_MEDICION = ["directa", "wipe", "tasa_dosis"] as const;
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-    await ensureWasteExpertSchema();
-    const id = Number(params.id);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+      await ensureWasteExpertSchema();
+      const { id: idParam } = await params;
+      const id = Number(idParam);
     if (!Number.isFinite(id)) {
           return NextResponse.json({ error: "Id invalido" }, { status: 400 });
         }
@@ -42,9 +43,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return NextResponse.json({ measurements: rows });
   }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
-    await ensureWasteExpertSchema();
-    const id = Number(params.id);
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+      await ensureWasteExpertSchema();
+      const { id: idParam } = await params;
+      const id = Number(idParam);
     if (!Number.isFinite(id)) {
           return NextResponse.json({ error: "Id invalido" }, { status: 400 });
         }
