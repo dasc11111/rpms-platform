@@ -72,6 +72,9 @@ export async function POST(request: Request) {
                                                                     `;
 
   const item = rows[0];
+      if (!item) {
+              return NextResponse.json({ error: "No se pudo crear la ficha del residuo" }, { status: 500 });
+      }
     await sql`
         INSERT INTO waste_item_status_history (waste_item_id, estado_anterior, estado_nuevo, motivo, usuario)
             VALUES (${item.id}, NULL, 'registrado', 'Alta inicial de ficha individual', ${body.responsable ?? null})
