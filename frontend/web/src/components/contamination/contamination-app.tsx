@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardCheck, LayoutDashboard, Search, Settings2, Table2 } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, MapPin, Search, Settings2, Table2 } from "lucide-react";
 import { ContaminationSearchPanel, EMPTY_FILTERS, type ContaminationFilters } from "./contamination-search-panel";
 import { ContaminationDashboard } from "./contamination-dashboard";
 import { ContaminationRecordsTable } from "./contamination-records-table";
 import { ContaminationFormModal } from "./contamination-form-modal";
 import { ContaminationLimitsPanel } from "./contamination-limits-panel";
+import { ContaminationPointsPanel } from "./contamination-points-panel";
 import { RoomClearanceApp } from "./room-clearance-app";
 import type { ContaminationRecord } from "@/lib/contamination";
 
@@ -17,6 +18,7 @@ export function ContaminationApp() {
   const [filters, setFilters] = useState<ContaminationFilters>(EMPTY_FILTERS);
   const [searchOpen, setSearchOpen] = useState(false);
   const [limitsOpen, setLimitsOpen] = useState(false);
+  const [pointsOpen, setPointsOpen] = useState(false);
   const [version, setVersion] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ContaminationRecord | null>(null);
@@ -46,6 +48,14 @@ export function ContaminationApp() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPointsOpen((s) => !s)}
+            className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
+              pointsOpen ? "border-accent bg-accent-subtle" : "border-border hover:bg-muted"
+            }`}
+          >
+            <MapPin className="h-4 w-4" /> Puntos de medición
+          </button>
           <button
             onClick={() => setLimitsOpen((s) => !s)}
             className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
@@ -91,6 +101,8 @@ export function ContaminationApp() {
           <ClipboardCheck className="h-4 w-4" /> Liberación de Sala
         </button>
       </div>
+
+      <ContaminationPointsPanel open={pointsOpen} />
 
       <ContaminationLimitsPanel open={limitsOpen} />
 
