@@ -28,6 +28,18 @@ type ModuleCard = {
   phase?: string;
 };
 
+// Fase D+ (Medicina Nuclear) - Gestion de Desechos Radiactivos: el modulo
+// anterior (/waste-management) fue reemplazado como entrada principal por el
+// nuevo Sistema Experto (/waste-expert), construido bajo el PROMPT MAESTRO
+// DEFINITIVO especifico de desechos (Motores 1-5: fisica nuclear, metrologia
+// ISO 11929, contaminacion superficial, tasa de dosis y decision regulatoria
+// trazable por ficha individual). Ese prompt instruyo explicitamente
+// reemplazar el modulo anterior. Conforme a la Seccion 1 (conservar, no
+// borrar) y a la Seccion 60 (proponer fusion, no eliminar sin justificacion)
+// de este Prompt Maestro de Medicina Nuclear, /waste-management NO se elimino:
+// se mantiene enlazado por separado porque Liberacion de Sala
+// (/room-release/label/[id]) depende de su funcion de etiqueta imprimible,
+// que aun no fue incorporada al Sistema Experto.
 const NUCLEO_OPERACIONAL: ModuleCard[] = [
   {
     href: "/i131",
@@ -51,11 +63,20 @@ const NUCLEO_OPERACIONAL: ModuleCard[] = [
     status: "activo",
   },
   {
-    href: "/waste-management",
-    label: "Gestion de Residuos Radiactivos",
-    description: "Inventario, ubicaciones, movimientos y decaimiento de residuos radiactivos.",
+    href: "/waste-expert",
+    label: "Gestion de Desechos Radiactivos (Sistema Experto)",
+    description: "Evaluacion individual de residuos por ficha: decaimiento (Bateman), metrologia ISO 11929, contaminacion superficial, tasa de dosis y decision regulatoria trazable. Reemplaza al modulo anterior de gestion de residuos.",
     icon: Recycle,
     status: "activo",
+    phase: "Fase D (nuevo)",
+  },
+  {
+    href: "/waste-management",
+    label: "Etiquetas de Residuos (modulo anterior)",
+    description: "Modulo anterior de gestion de residuos. Se mantiene enlazado unicamente por su funcion de etiqueta imprimible, utilizada tambien por Liberacion de Sala, mientras se incorpora al Sistema Experto.",
+    icon: Gauge,
+    status: "activo",
+    phase: "legado",
   },
 ];
 
