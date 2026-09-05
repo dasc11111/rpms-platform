@@ -25,7 +25,7 @@ type PdfTextItem = { str?: string };
 
 export async function extractPdfPagesText(data: Uint8Array): Promise<string[]> {
   const pdfjsLib: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
+  const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false, disableWorker: true } as any).promise;
   const pages: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
@@ -42,7 +42,7 @@ export async function extractPdfPagesText(data: Uint8Array): Promise<string[]> {
 export async function fetchBlobBuffer(blobUrl: string): Promise<Uint8Array> {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   const res = await fetch(blobUrl, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
-  if (!res.ok) throw new Error("blob_fetch_failed");
+  if (!res.ok) throw new Error(`blob_fetch_failed_${res.status}`);
   const buf = await res.arrayBuffer();
   return new Uint8Array(buf);
 }
@@ -68,7 +68,13 @@ function buildSnippet(text: string, idx: number, termLen: number): string {
 export async function searchDocumentsFullText(params: {
   categoryId: number;
   query: string;
-}): Promise<{ matches: DocSearchMatch[]; indexedNow: number; pendingCount: number; totalCandidates: number }> {
+}): Promise<{
+  matches: DocSearchMatch[];
+  indexedNow: number;
+  pendingCount: number;
+  totalCandidates: number;
+  lastError?: string;
+}> {
   await ensureDocumentTextColumns();
   const { categoryId, query } = params;
   const term = query.trim().toLowerCase();
@@ -84,16 +90,19 @@ export async function searchDocumentsFullText(params: {
 
   const matches: DocSearchMatch[] = [];
   let indexedNow = 0;
+  let attempts = 0;
   let pendingCount = 0;
+  let lastError: string | undefined;
 
   for (const row of rows) {
     let pages: string[] | null = Array.isArray(row.extracted_pages) ? (row.extracted_pages as string[]) : null;
 
     if (!pages) {
-      if (indexedNow >= MAX_DOCS_TO_INDEX_PER_CALL) {
+      if (attempts >= MAX_DOCS_TO_INDEX_PER_CALL) {
         pendingCount++;
         continue;
       }
+      attempts++;
       try {
         const buffer = await fetchBlobBuffer(row.blob_url as string);
         pages = await extractPdfPagesText(buffer);
@@ -103,8 +112,9 @@ export async function searchDocumentsFullText(params: {
         `;
         indexedNow++;
       } catch (err) {
+        lastError = `${row.original_name}: ${String(err instanceof Error ? err.message : err)}`;
         await sql`
-          UPDATE documents SET text_extraction_error = ${String(err instanceof Error ? err.message : err)}, text_extracted_at = now()
+          UPDATE documents SET text_extraction_error = ${lastError}, text_extracted_at = now()
           WHERE id = ${row.id}
         `;
         continue;
@@ -125,5 +135,5 @@ export async function searchDocumentsFullText(params: {
     });
   }
 
-  return { matches, indexedNow, pendingCount, totalCandidates: rows.length };
+  return { matches, indexedNow, pendingCount, totalCandidates: rows.length, lastError };
 }
