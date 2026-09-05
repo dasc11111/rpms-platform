@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Asegura que el worker de pdfjs-dist (usado para extraer texto de PDF en
+  // Documentos > Busqueda de texto completo, Seccion 37 del Prompt Maestro
+  // Medicina Nuclear) se incluya en el bundle de la funcion serverless. Sin
+  // esto, pdfjs-dist falla en tiempo de ejecucion al no encontrar su propio
+  // modulo de worker dentro del bundle de Next.js.
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/documents/fulltext-search": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    },
+  },
   async headers() {
     return [
       {
