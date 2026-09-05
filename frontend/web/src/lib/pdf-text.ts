@@ -23,9 +23,30 @@ export async function ensureDocumentTextColumns(): Promise<void> {
 
 type PdfTextItem = { str?: string };
 
+let workerSrcConfigured = false;
+
+// pdfjs-dist intenta, por defecto, resolver dinamicamente su propio modulo
+// de worker (para ejecutarlo como "fake worker" en Node). Esa resolucion
+// relativa falla dentro del bundle serverless de Next.js ("Cannot find
+// module .../pdf.worker.mjs"). Para evitarlo, resolvemos nosotros mismos la
+// ruta real del archivo (incluido explicitamente en el bundle via
+// next.config.mjs / outputFileTracingIncludes) y se la indicamos a pdfjs.
+function configureWorkerSrc(pdfjsLib: any): void {
+  if (workerSrcConfigured) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const resolved = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = resolved;
+  } catch {
+    // Si no se puede resolver, se deja el comportamiento por defecto de pdfjs-dist.
+  }
+  workerSrcConfigured = true;
+}
+
 export async function extractPdfPagesText(data: Uint8Array): Promise<string[]> {
   const pdfjsLib: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false, disableWorker: true } as any).promise;
+  configureWorkerSrc(pdfjsLib);
+  const doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
   const pages: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
