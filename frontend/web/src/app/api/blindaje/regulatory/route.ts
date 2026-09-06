@@ -49,6 +49,9 @@ if (body.type === "material") {
   ) RETURNING *;
   `;
   const material = rows[0];
+  if (!material) {
+    return NextResponse.json({ ok: false, error: "No se pudo crear el material." }, { status: 500 });
+  }
   await logBlindajeAudit(
     "blindaje_materials",
     material.id,
@@ -74,6 +77,9 @@ ${body.source_section || null}, ${body.notes || null}
 ) RETURNING *;
 `;
   const parameter = rows[0];
+  if (!parameter) {
+    return NextResponse.json({ ok: false, error: "No se pudo crear el parametro regulatorio." }, { status: 500 });
+  }
   await logBlindajeAudit(
     "blindaje_regulatory_parameters",
     parameter.id,
