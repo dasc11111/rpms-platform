@@ -32,6 +32,9 @@ RETURNING *
 `;
 
 const project = rows[0];
+  if (!project) {
+    return NextResponse.json({ ok: false, error: "No se pudo crear el proyecto." }, { status: 500 });
+  }
   await logBlindajeAudit("blindaje_projects", project.id, null, null, JSON.stringify(project), created_by || null, "Creacion de proyecto (Paso 1 - Identificacion)");
 
 return NextResponse.json({ ok: true, project });
