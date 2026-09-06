@@ -189,64 +189,76 @@ ensured = true;
 
 export async function listBlindajeProjects() {
   await ensureBlindajeTables();
-  const rows = await sql`SELECT * FROM blindaje_projects ORDER BY created_at DESC`;
+  const { rows } = await sql`SELECT * FROM blindaje_projects ORDER BY updated_at DESC`;
   return rows;
 }
 
 export async function getBlindajeProject(id: number) {
   await ensureBlindajeTables();
-  const rows = await sql`SELECT * FROM blindaje_projects WHERE id = ${id}`;
+  const { rows } = await sql`SELECT * FROM blindaje_projects WHERE id = ${id}`;
   return rows[0] || null;
-}
-
-export async function createBlindajeProject(data: Record<string, unknown>) {
-  await ensureBlindajeTables();
-  const rows = await sql`
-  INSERT INTO blindaje_projects (
-  project_number, name, institution, service, unit, address, city,
-  responsible, opr_name, medical_physicist, facility_type, mode, status, notes, created_by
-  ) VALUES (
-  ${data.project_number || null}, ${data.name}, ${data.institution || null},
-  ${data.service || null}, ${data.unit || null}, ${data.address || null},
-  ${data.city || null}, ${data.responsible || null}, ${data.opr_name || null},
-  ${data.medical_physicist || null}, ${data.facility_type || 'diagnostico'},
-  ${data.mode || 'simple'}, ${data.status || 'borrador'}, ${data.notes || null},
-  ${data.created_by || null}
-  ) RETURNING *;
-  `;
-  return rows[0];
 }
 
 export async function listBlindajeMaterials() {
   await ensureBlindajeTables();
-  return sql`SELECT * FROM blindaje_materials ORDER BY name ASC`;
+  const { rows } = await sql`SELECT * FROM blindaje_materials ORDER BY name ASC`;
+  return rows;
 }
 
 export async function listBlindajeRegulatoryParameters(modality?: string) {
   await ensureBlindajeTables();
   if (modality) {
-    return sql`SELECT * FROM blindaje_regulatory_parameters WHERE modality = ${modality} ORDER BY norma ASC`;
+    const { rows } = await sql`SELECT * FROM blindaje_regulatory_parameters WHERE modality = ${modality} ORDER BY norma ASC`;
+    return rows;
   }
-  return sql`SELECT * FROM blindaje_regulatory_parameters ORDER BY norma ASC`;
+  const { rows } = await sql`SELECT * FROM blindaje_regulatory_parameters ORDER BY norma ASC`;
+  return rows;
 }
 
 export async function listBlindajeFormulas(modality?: string) {
   await ensureBlindajeTables();
   if (modality) {
-    return sql`SELECT * FROM blindaje_formulas WHERE modality = ${modality} ORDER BY internal_code ASC`;
+    const { rows } = await sql`SELECT * FROM blindaje_formulas WHERE modality = ${modality} ORDER BY internal_code ASC`;
+    return rows;
   }
-  return sql`SELECT * FROM blindaje_formulas ORDER BY internal_code ASC`;
+  const { rows } = await sql`SELECT * FROM blindaje_formulas ORDER BY internal_code ASC`;
+  return rows;
 }
 
-export async function addBlindajeAudit(entry: Record<string, unknown>) {
+export async function listBlindajePir(projectId: number) {
+  await ensureBlindajeTables();
+  const { rows } = await sql`SELECT * FROM blindaje_pir WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
+
+export async function listBlindajeBarriers(projectId: number) {
+  await ensureBlindajeTables();
+  const { rows } = await sql`SELECT * FROM blindaje_barriers WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
+
+export async function logBlindajeAudit(
+  entityType: string,
+  entityId: number | null,
+  fieldName: string | null,
+  oldValue: string | null,
+  newValue: string | null,
+  userName: string | null,
+  reason: string | null,
+  projectId?: number | null
+  ) {
   await ensureBlindajeTables();
   await sql`
   INSERT INTO blindaje_audit (
   project_id, entity_type, entity_id, field_name, old_value, new_value, user_name, reason
   ) VALUES (
-  ${entry.project_id || null}, ${entry.entity_type}, ${entry.entity_id || null},
-  ${entry.field_name || null}, ${entry.old_value || null}, ${entry.new_value || null},
-  ${entry.user_name || null}, ${entry.reason || null}
+  ${projectId || null}, ${entityType}, ${entityId}, ${fieldName}, ${oldValue}, ${newValue}, ${userName}, ${reason}
   );
   `;
+}
+
+export async function listBlindajeAudit(projectId: number) {
+  await ensureBlindajeTables();
+  const { rows } = await sql`SELECT * FROM blindaje_audit WHERE project_id = ${projectId} ORDER BY changed_at DESC`;
+  return rows;
 }
