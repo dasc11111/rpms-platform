@@ -4,7 +4,7 @@ import {
   ensureBlindajeTables,
   listBlindajeRegulatoryParameters,
   listBlindajeMaterials,
-  addBlindajeAudit,
+  logBlindajeAudit,
 } from "@/lib/blindaje";
 
 // MODULO: BLINDAJE Y DISENO - Motor Regulatorio (S6).
@@ -37,7 +37,7 @@ if (!body.source_document) {
 }
 
 if (body.type === "material") {
-  const rows = await sql`
+  const { rows } = await sql`
   INSERT INTO blindaje_materials (
   name, density, density_unit, hvl, tvl, coefficients, method,
   application_range, source_document, source_page
@@ -48,18 +48,20 @@ if (body.type === "material") {
   ${body.source_document}, ${body.source_page || null}
   ) RETURNING *;
   `;
-  await addBlindajeAudit({
-    entity_type: "blindaje_materials",
-    entity_id: rows[0].id,
-    field_name: "create",
-    new_value: body.name,
-    user_name: body.user_name || null,
-    reason: "Alta de material con fuente citada",
-  });
-  return NextResponse.json({ ok: true, material: rows[0] });
+  const material = rows[0];
+  await logBlindajeAudit(
+    "blindaje_materials",
+    material.id,
+    "create",
+    null,
+    JSON.stringify(material),
+    body.user_name || null,
+    "Alta de material con fuente citada"
+    );
+  return NextResponse.json({ ok: true, material });
 }
 
-const rows = await sql`
+const { rows } = await sql`
 INSERT INTO blindaje_regulatory_parameters (
 norma, version, effective_date, parameter_name, value, unit, modality,
 applicability, source_document, source_page, source_section, notes
@@ -71,13 +73,15 @@ ${body.source_document}, ${body.source_page || null},
 ${body.source_section || null}, ${body.notes || null}
 ) RETURNING *;
 `;
-  await addBlindajeAudit({
-    entity_type: "blindaje_regulatory_parameters",
-    entity_id: rows[0].id,
-    field_name: "create",
-    new_value: body.parameter_name,
-    user_name: body.user_name || null,
-    reason: "Alta de parametro regulatorio con fuente citada",
-  });
-  return NextResponse.json({ ok: true, parameter: rows[0] });
+  const parameter = rows[0];
+  await logBlindajeAudit(
+    "blindaje_regulatory_parameters",
+    parameter.id,
+    "create",
+    null,
+    JSON.stringify(parameter),
+    body.user_name || null,
+    "Alta de parametro regulatorio con fuente citada"
+    );
+  return NextResponse.json({ ok: true, parameter });
 }
