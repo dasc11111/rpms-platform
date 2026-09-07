@@ -415,7 +415,7 @@ export function BlindajeApp() {
         setSavingWorkload(true);
         setWorkloadError(null);
         try {
-                const keys = WORKLOAD_FIELDS_BY_MODE[workloadForm.input_mode] || WORKLOAD_FIELDS_BY_MODE.simple;
+      const keys: string[] = WORKLOAD_FIELDS_BY_MODE[workloadForm.input_mode] || WORKLOAD_FIELDS_BY_MODE.simple || [];
                 const data: Record<string, string> = {};
                 keys.forEach((key) => {
                           data[key] = (workloadForm as any)[key];
@@ -464,7 +464,7 @@ export function BlindajeApp() {
   }
 
   function workloadFieldInputs(mode: string) {
-        const keys = WORKLOAD_FIELDS_BY_MODE[mode] || WORKLOAD_FIELDS_BY_MODE.simple;
+            const keys: string[] = WORKLOAD_FIELDS_BY_MODE[mode] || WORKLOAD_FIELDS_BY_MODE.simple || [];
         const inputs: any[] = [];
         keys.forEach((key) => {
                 if (key === "scenario") {
