@@ -262,3 +262,10 @@ export async function listBlindajeAudit(projectId: number) {
   const { rows } = await sql`SELECT * FROM blindaje_audit WHERE project_id = ${projectId} ORDER BY changed_at DESC`;
   return rows;
 }
+
+
+export async function listBlindajeEquipment(projectId: number) {
+    await ensureBlindajeTables();
+    const { rows } = await sql`SELECT * FROM blindaje_equipment WHERE project_id = ${projectId} ORDER BY created_at ASC`;
+    return rows;
+}
