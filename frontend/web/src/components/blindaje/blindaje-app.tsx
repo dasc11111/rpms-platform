@@ -3,40 +3,48 @@
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
 
 type BlindajeProject = {
-  id: number;
-  name: string;
-  institution: string | null;
-  service: string | null;
-  unit: string | null;
-  facility_type: string;
-  status: string;
-  version: string;
-  project_number: string | null;
-  created_at: string;
+    id: number;
+    name: string;
+    institution: string | null;
+    service: string | null;
+    unit: string | null;
+    facility_type: string;
+    status: string;
+    version: string;
+    project_number: string | null;
+    created_at: string;
 };
 
 type BlindajeEquipment = {
-  id: number;
-  project_id: number;
-  manufacturer: string | null;
-  model: string | null;
-  equipment_type: string;
-  parameters: Record<string, unknown> | null;
-  created_at: string;
+    id: number;
+    project_id: number;
+    manufacturer: string | null;
+    model: string | null;
+    equipment_type: string;
+    parameters: Record<string, unknown> | null;
+    created_at: string;
 };
 
 type BlindajeSource = {
-  id: number;
-  project_id: number;
-  source_type: string;
-  radionuclide: string | null;
-  energy: string | null;
-  activity: number | null;
-  activity_unit: string | null;
-  dose_rate: number | null;
-  dose_rate_unit: string | null;
-  geometry: string | null;
-  created_at: string;
+    id: number;
+    project_id: number;
+    source_type: string;
+    radionuclide: string | null;
+    energy: string | null;
+    activity: number | null;
+    activity_unit: string | null;
+    dose_rate: number | null;
+    dose_rate_unit: string | null;
+    geometry: string | null;
+    created_at: string;
+};
+
+type BlindajeWorkload = {
+    id: number;
+    project_id: number;
+    input_mode: string;
+    data: Record<string, unknown> | null;
+    created_at: string;
 };
 
 const FACILITY_TYPES: { value: string; label: string }[] = [
@@ -47,632 +55,857 @@ const FACILITY_TYPES: { value: string; label: string }[] = [
   ];
 
 const EQUIPMENT_TYPES: Record<string, { value: string; label: string }[]> = {
-  diagnostico: [
-    { value: "radiografia_general", label: "Radiografia General" },
-    { value: "fluoroscopia", label: "Fluoroscopia" },
-    { value: "mamografia", label: "Mamografia" },
-    { value: "tomografia_computada", label: "Tomografia Computada (TC)" },
-    ],
-  medicina_nuclear: [
-    { value: "gamma_camara", label: "Gamma Camara" },
-    { value: "spect", label: "SPECT" },
-    { value: "pet", label: "PET" },
-    { value: "pet_ct", label: "PET/CT" },
-    ],
-  radioterapia: [
-    { value: "acelerador_lineal", label: "Acelerador Lineal" },
-    { value: "cobalto_60", label: "Unidad de Cobalto-60" },
-    ],
-  braquiterapia: [
-    { value: "hdr", label: "Braquiterapia HDR" },
-    { value: "ldr", label: "Braquiterapia LDR" },
-    { value: "pdr", label: "Braquiterapia PDR" },
-    ],
+    diagnostico: [
+      { value: "radiografia_general", label: "Radiografia General" },
+      { value: "fluoroscopia", label: "Fluoroscopia" },
+      { value: "mamografia", label: "Mamografia" },
+      { value: "tomografia_computada", label: "Tomografia Computada (TC)" },
+        ],
+    medicina_nuclear: [
+      { value: "gamma_camara", label: "Gamma Camara" },
+      { value: "spect", label: "SPECT" },
+      { value: "pet", label: "PET" },
+      { value: "pet_ct", label: "PET/CT" },
+        ],
+    radioterapia: [
+      { value: "acelerador_lineal", label: "Acelerador Lineal" },
+      { value: "cobalto_60", label: "Unidad de Cobalto-60" },
+        ],
+    braquiterapia: [
+      { value: "hdr", label: "Braquiterapia HDR" },
+      { value: "ldr", label: "Braquiterapia LDR" },
+      { value: "pdr", label: "Braquiterapia PDR" },
+        ],
 };
 
 const SOURCE_TYPE_BY_FACILITY: Record<string, { value: string; label: string }> = {
-  diagnostico: { value: "tubo_rayos_x", label: "Tubo de rayos X" },
-  medicina_nuclear: { value: "radionucleido_no_sellado", label: "Radionuclido no sellado" },
-  radioterapia: { value: "haz_acelerador", label: "Haz de fotones/electrones" },
-  braquiterapia: { value: "fuente_sellada", label: "Fuente sellada" },
+    diagnostico: { value: "tubo_rayos_x", label: "Tubo de rayos X" },
+    medicina_nuclear: { value: "radionucleido_no_sellado", label: "Radionuclido no sellado" },
+    radioterapia: { value: "haz_acelerador", label: "Haz de fotones/electrones" },
+    braquiterapia: { value: "fuente_sellada", label: "Fuente sellada" },
 };
 
 const SOURCE_FIELDS_BY_FACILITY: Record<string, string[]> = {
-  diagnostico: ["energy", "dose_rate", "geometry"],
-  medicina_nuclear: ["radionuclide", "activity", "geometry"],
-  radioterapia: ["energy", "dose_rate", "geometry"],
-  braquiterapia: ["radionuclide", "activity", "geometry"],
+    diagnostico: ["energy", "dose_rate", "geometry"],
+    medicina_nuclear: ["radionuclide", "activity", "geometry"],
+    radioterapia: ["energy", "dose_rate", "geometry"],
+    braquiterapia: ["radionuclide", "activity", "geometry"],
 };
 
 const SOURCE_FIELD_LABELS: Record<string, Record<string, string>> = {
-  diagnostico: { energy: "Energia (kVp)", dose_rate: "Carga / corriente (mA o mGy por mAs)", geometry: "Distancia foco-piel / geometria" },
-  medicina_nuclear: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria (captacion, distancia)" },
-  radioterapia: { energy: "Energia nominal (MV o MeV)", dose_rate: "Tasa de dosis (UM/min)", geometry: "Isocentro / distancia fuente-eje" },
-  braquiterapia: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria de aplicacion" },
+    diagnostico: { energy: "Energia (kVp)", dose_rate: "Carga / corriente (mA o mGy por mAs)", geometry: "Distancia foco-piel / geometria" },
+    medicina_nuclear: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria (captacion, distancia)" },
+    radioterapia: { energy: "Energia nominal (MV o MeV)", dose_rate: "Tasa de dosis (UM/min)", geometry: "Isocentro / distancia fuente-eje" },
+    braquiterapia: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria de aplicacion" },
+};
+
+const WORKLOAD_MODES: { value: string; label: string }[] = [
+  { value: "simple", label: "Simple" },
+  { value: "detallada", label: "Detallada" },
+  { value: "avanzada", label: "Avanzada" },
+  ];
+
+const WORKLOAD_SCENARIOS: { value: string; label: string }[] = [
+  { value: "A", label: "A - Escenario normal" },
+  { value: "B", label: "B - Carga maxima" },
+  { value: "C", label: "C - Peor caso" },
+  { value: "D", label: "D - Definido por usuario" },
+  ];
+
+const WORKLOAD_FIELDS_BY_MODE: Record<string, string[]> = {
+    simple: ["workload_value", "workload_unit", "notes"],
+    detallada: ["procedures_per_week", "workload_value", "workload_unit", "use_factor", "occupancy_factor", "distance", "notes"],
+    avanzada: ["procedures_per_week", "workload_value", "workload_unit", "use_factor", "occupancy_factor", "distance", "scenario", "sensitivity_notes", "notes"],
+};
+
+const WORKLOAD_FIELD_LABELS: Record<string, string> = {
+    procedures_per_week: "Procedimientos / sesiones por semana",
+    workload_value: "Carga de trabajo (valor) *",
+    workload_unit: "Unidad (ej. mA-min/sem, Gy/sem, GBq-h/sem)",
+    use_factor: "Factor de uso (U)",
+    occupancy_factor: "Factor de ocupacion (T)",
+    distance: "Distancia de referencia (m)",
+    scenario: "Escenario (S36)",
+    sensitivity_notes: "Notas de analisis de sensibilidad (S37)",
+    notes: "Notas / supuestos (S59)",
 };
 
 const EMPTY_FORM = {
-  name: "",
-  institution: "",
-  service: "",
-  unit: "",
-  address: "",
-  city: "",
-  responsible: "",
-  opr_name: "",
-  medical_physicist: "",
-  facility_type: "diagnostico",
-  project_number: "",
+    name: "",
+    institution: "",
+    service: "",
+    unit: "",
+    address: "",
+    city: "",
+    responsible: "",
+    opr_name: "",
+    medical_physicist: "",
+    facility_type: "diagnostico",
+    project_number: "",
 };
 
 const EMPTY_EQUIPMENT_FORM = {
-  equipment_type: "",
-  manufacturer: "",
-  model: "",
-  notes: "",
+    equipment_type: "",
+    manufacturer: "",
+    model: "",
+    notes: "",
 };
 
 const EMPTY_SOURCE_FORM = {
-  radionuclide: "",
-  energy: "",
-  activity: "",
-  activity_unit: "",
-  dose_rate: "",
-  dose_rate_unit: "",
-  geometry: "",
+    radionuclide: "",
+    energy: "",
+    activity: "",
+    activity_unit: "",
+    dose_rate: "",
+    dose_rate_unit: "",
+    geometry: "",
+};
+
+const EMPTY_WORKLOAD_FORM = {
+    input_mode: "simple",
+    procedures_per_week: "",
+    workload_value: "",
+    workload_unit: "",
+    use_factor: "",
+    occupancy_factor: "",
+    distance: "",
+    scenario: "A",
+    sensitivity_notes: "",
+    notes: "",
 };
 
 function field(label: string, value: string, onChange: (v: string) => void, placeholder?: string) {
-  return h(
-    "label",
-    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
-    label,
-    h("input", {
-      className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
-      value,
-      placeholder: placeholder || "",
-      onChange: (e: any) => onChange(e.target.value),
-    })
-    );
+    return h(
+          "label",
+      { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+          label,
+          h("input", {
+                  className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                  value,
+                  placeholder: placeholder || "",
+                  onChange: (e: any) => onChange(e.target.value),
+          })
+        );
 }
 
 export function BlindajeApp() {
-  const [projects, setProjects] = useState<BlindajeProject[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+    const [projects, setProjects] = useState<BlindajeProject[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
-  const [facilityTypeDraft, setFacilityTypeDraft] = useState("");
-  const [savingFacilityType, setSavingFacilityType] = useState(false);
-  const [facilityTypeError, setFacilityTypeError] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+    const [facilityTypeDraft, setFacilityTypeDraft] = useState("");
+    const [savingFacilityType, setSavingFacilityType] = useState(false);
+    const [facilityTypeError, setFacilityTypeError] = useState<string | null>(null);
 
-const [equipmentList, setEquipmentList] = useState<BlindajeEquipment[]>([]);
-  const [loadingEquipment, setLoadingEquipment] = useState(false);
-  const [equipmentForm, setEquipmentForm] = useState(EMPTY_EQUIPMENT_FORM);
-  const [savingEquipment, setSavingEquipment] = useState(false);
-  const [equipmentError, setEquipmentError] = useState<string | null>(null);
+  const [equipmentList, setEquipmentList] = useState<BlindajeEquipment[]>([]);
+    const [loadingEquipment, setLoadingEquipment] = useState(false);
+    const [equipmentForm, setEquipmentForm] = useState(EMPTY_EQUIPMENT_FORM);
+    const [savingEquipment, setSavingEquipment] = useState(false);
+    const [equipmentError, setEquipmentError] = useState<string | null>(null);
 
-const [sourcesList, setSourcesList] = useState<BlindajeSource[]>([]);
-  const [loadingSources, setLoadingSources] = useState(false);
-  const [sourceForm, setSourceForm] = useState(EMPTY_SOURCE_FORM);
-  const [savingSource, setSavingSource] = useState(false);
-  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [sourcesList, setSourcesList] = useState<BlindajeSource[]>([]);
+    const [loadingSources, setLoadingSources] = useState(false);
+    const [sourceForm, setSourceForm] = useState(EMPTY_SOURCE_FORM);
+    const [savingSource, setSavingSource] = useState(false);
+    const [sourceError, setSourceError] = useState<string | null>(null);
 
-function load() {
-  setLoading(true);
-  fetch("/api/blindaje")
-  .then((r) => (r.ok ? r.json() : { projects: [] }))
-  .then((data) => setProjects(data.projects ?? []))
-  .finally(() => setLoading(false));
-}
+  const [workloadList, setWorkloadList] = useState<BlindajeWorkload[]>([]);
+    const [loadingWorkload, setLoadingWorkload] = useState(false);
+    const [workloadForm, setWorkloadForm] = useState(EMPTY_WORKLOAD_FORM);
+    const [savingWorkload, setSavingWorkload] = useState(false);
+    const [workloadError, setWorkloadError] = useState<string | null>(null);
 
-useEffect(() => {
-  load();
-}, []);
-
-const selectedProject = projects.find((p) => p.id === selectedProjectId) || null;
-
-function loadEquipment(projectId: number) {
-  setLoadingEquipment(true);
-  fetch("/api/blindaje/equipment?project_id=" + projectId)
-  .then((r) => (r.ok ? r.json() : { equipment: [] }))
-  .then((data) => setEquipmentList(data.equipment ?? []))
-  .finally(() => setLoadingEquipment(false));
-}
-
-function loadSources(projectId: number) {
-  setLoadingSources(true);
-  fetch("/api/blindaje/sources?project_id=" + projectId)
-  .then((r) => (r.ok ? r.json() : { sources: [] }))
-  .then((data) => setSourcesList(data.sources ?? []))
-  .finally(() => setLoadingSources(false));
-}
-
-function selectProject(p: BlindajeProject) {
-  setSelectedProjectId(p.id);
-  setFacilityTypeDraft(p.facility_type);
-  setFacilityTypeError(null);
-  setEquipmentForm(EMPTY_EQUIPMENT_FORM);
-  setEquipmentError(null);
-  setSourceForm(EMPTY_SOURCE_FORM);
-  setSourceError(null);
-  loadEquipment(p.id);
-  loadSources(p.id);
-}
-
-async function saveFacilityType() {
-  if (!selectedProject) return;
-  setSavingFacilityType(true);
-  setFacilityTypeError(null);
-  try {
-    const res = await fetch("/api/blindaje/" + selectedProject.id, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ facility_type: facilityTypeDraft }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      setFacilityTypeError(data.error || "No se pudo actualizar el tipo de instalacion.");
-      return;
-    }
-    load();
-  } finally {
-    setSavingFacilityType(false);
+  function load() {
+        setLoading(true);
+        fetch("/api/blindaje")
+          .then((r) => (r.ok ? r.json() : { projects: [] }))
+          .then((data) => setProjects(data.projects ?? []))
+          .finally(() => setLoading(false));
   }
-}
 
-function updateField(key: string, value: string) {
-  setForm((f) => ({ ...f, [key]: value }));
-}
+  useEffect(() => {
+        load();
+  }, []);
 
-function updateEquipmentField(key: string, value: string) {
-  setEquipmentForm((f) => ({ ...f, [key]: value }));
-}
+  const selectedProject = projects.find((p) => p.id === selectedProjectId) || null;
 
-function updateSourceField(key: string, value: string) {
-  setSourceForm((f) => ({ ...f, [key]: value }));
-}
-
-async function createProject(e: FormEvent) {
-  e.preventDefault();
-  if (!form.name.trim()) {
-    setError("El nombre del proyecto es obligatorio.");
-    return;
+  function loadEquipment(projectId: number) {
+        setLoadingEquipment(true);
+        fetch("/api/blindaje/equipment?project_id=" + projectId)
+          .then((r) => (r.ok ? r.json() : { equipment: [] }))
+          .then((data) => setEquipmentList(data.equipment ?? []))
+          .finally(() => setLoadingEquipment(false));
   }
-  setSaving(true);
-  setError(null);
-  try {
-    const res = await fetch("/api/blindaje", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      setError(data.error || "No se pudo crear el proyecto.");
-      return;
-    }
-    setForm(EMPTY_FORM);
-    load();
-  } finally {
-    setSaving(false);
-  }
-}
 
-async function createEquipment(e: FormEvent) {
-  e.preventDefault();
-  if (!selectedProject) return;
-  if (!equipmentForm.equipment_type) {
-    setEquipmentError("El tipo de equipo es obligatorio.");
-    return;
+  function loadSources(projectId: number) {
+        setLoadingSources(true);
+        fetch("/api/blindaje/sources?project_id=" + projectId)
+          .then((r) => (r.ok ? r.json() : { sources: [] }))
+          .then((data) => setSourcesList(data.sources ?? []))
+          .finally(() => setLoadingSources(false));
   }
-  setSavingEquipment(true);
-  setEquipmentError(null);
-  try {
-    const res = await fetch("/api/blindaje/equipment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        project_id: selectedProject.id,
-        equipment_type: equipmentForm.equipment_type,
-        manufacturer: equipmentForm.manufacturer,
-        model: equipmentForm.model,
-        parameters: { notes: equipmentForm.notes },
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      setEquipmentError(data.error || "No se pudo crear el equipo.");
-      return;
-    }
-    setEquipmentForm(EMPTY_EQUIPMENT_FORM);
-    loadEquipment(selectedProject.id);
-  } finally {
-    setSavingEquipment(false);
-  }
-}
 
-async function createSource(e: FormEvent) {
-  e.preventDefault();
-  if (!selectedProject) return;
-  const sourceTypeConfig = SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type];
-  if (!sourceTypeConfig) {
-    setSourceError("Este tipo de instalacion todavia no tiene fuente de radiacion configurada.");
-    return;
+  function loadWorkload(projectId: number) {
+        setLoadingWorkload(true);
+        fetch("/api/blindaje/workload?project_id=" + projectId)
+          .then((r) => (r.ok ? r.json() : { workload: [] }))
+          .then((data) => setWorkloadList(data.workload ?? []))
+          .finally(() => setLoadingWorkload(false));
   }
-  setSavingSource(true);
-  setSourceError(null);
-  try {
-    const res = await fetch("/api/blindaje/sources", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        project_id: selectedProject.id,
-        source_type: sourceTypeConfig.value,
-        radionuclide: sourceForm.radionuclide,
-        energy: sourceForm.energy,
-        activity: sourceForm.activity,
-        activity_unit: sourceForm.activity_unit,
-        dose_rate: sourceForm.dose_rate,
-        dose_rate_unit: sourceForm.dose_rate_unit,
-        geometry: sourceForm.geometry,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) {
-      setSourceError(data.error || "No se pudo guardar la fuente de radiacion.");
-      return;
-    }
-    setSourceForm(EMPTY_SOURCE_FORM);
-    loadSources(selectedProject.id);
-  } finally {
-    setSavingSource(false);
-  }
-}
 
-function sourceFieldInputs(facilityType: string) {
-  const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
-  const labels = SOURCE_FIELD_LABELS[facilityType] || {};
-  const inputs: any[] = [];
-  keys.forEach((key) => {
-    if (key === "activity") {
-      inputs.push(field(labels.activity || "Actividad", sourceForm.activity, (v) => updateSourceField("activity", v)));
-      inputs.push(field("Unidad de actividad (GBq, mCi, etc.)", sourceForm.activity_unit, (v) => updateSourceField("activity_unit", v)));
-    } else if (key === "dose_rate") {
-      inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
-      inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
-    } else if (key === "radionuclide") {
-      inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
-    } else if (key === "energy") {
-      inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
-    } else if (key === "geometry") {
-      inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
-    }
+  function selectProject(p: BlindajeProject) {
+        setSelectedProjectId(p.id);
+        setFacilityTypeDraft(p.facility_type);
+        setFacilityTypeError(null);
+        setEquipmentForm(EMPTY_EQUIPMENT_FORM);
+        setEquipmentError(null);
+        setSourceForm(EMPTY_SOURCE_FORM);
+        setSourceError(null);
+        setWorkloadForm(EMPTY_WORKLOAD_FORM);
+        setWorkloadError(null);
+        loadEquipment(p.id);
+        loadSources(p.id);
+        loadWorkload(p.id);
+  }
+
+  async function saveFacilityType() {
+        if (!selectedProject) return;
+        setSavingFacilityType(true);
+        setFacilityTypeError(null);
+        try {
+                const res = await fetch("/api/blindaje/" + selectedProject.id, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ facility_type: facilityTypeDraft }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                          setFacilityTypeError(data.error || "No se pudo actualizar el tipo de instalacion.");
+                          return;
+                }
+                load();
+        } finally {
+                setSavingFacilityType(false);
+        }
+  }
+
+  function updateField(key: string, value: string) {
+        setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateEquipmentField(key: string, value: string) {
+        setEquipmentForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateSourceField(key: string, value: string) {
+        setSourceForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateWorkloadField(key: string, value: string) {
+        setWorkloadForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function createProject(e: FormEvent) {
+        e.preventDefault();
+        if (!form.name.trim()) {
+                setError("El nombre del proyecto es obligatorio.");
+                return;
+        }
+        setSaving(true);
+        setError(null);
+        try {
+                const res = await fetch("/api/blindaje", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(form),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                          setError(data.error || "No se pudo crear el proyecto.");
+                          return;
+                }
+                setForm(EMPTY_FORM);
+                load();
+        } finally {
+                setSaving(false);
+        }
+  }
+
+  async function createEquipment(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!equipmentForm.equipment_type) {
+                setEquipmentError("El tipo de equipo es obligatorio.");
+                return;
+        }
+        setSavingEquipment(true);
+        setEquipmentError(null);
+        try {
+                const res = await fetch("/api/blindaje/equipment", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                                      project_id: selectedProject.id,
+                                      equipment_type: equipmentForm.equipment_type,
+                                      manufacturer: equipmentForm.manufacturer,
+                                      model: equipmentForm.model,
+                                      parameters: { notes: equipmentForm.notes },
+                          }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                          setEquipmentError(data.error || "No se pudo crear el equipo.");
+                          return;
+                }
+                setEquipmentForm(EMPTY_EQUIPMENT_FORM);
+                loadEquipment(selectedProject.id);
+        } finally {
+                setSavingEquipment(false);
+        }
+  }
+
+  async function createSource(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        const sourceTypeConfig = SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type];
+        if (!sourceTypeConfig) {
+                setSourceError("Este tipo de instalacion todavia no tiene fuente de radiacion configurada.");
+                return;
+        }
+        setSavingSource(true);
+        setSourceError(null);
+        try {
+                const res = await fetch("/api/blindaje/sources", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                                      project_id: selectedProject.id,
+                                      source_type: sourceTypeConfig.value,
+                                      radionuclide: sourceForm.radionuclide,
+                                      energy: sourceForm.energy,
+                                      activity: sourceForm.activity,
+                                      activity_unit: sourceForm.activity_unit,
+                                      dose_rate: sourceForm.dose_rate,
+                                      dose_rate_unit: sourceForm.dose_rate_unit,
+                                      geometry: sourceForm.geometry,
+                          }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                          setSourceError(data.error || "No se pudo guardar la fuente de radiacion.");
+                          return;
+                }
+                setSourceForm(EMPTY_SOURCE_FORM);
+                loadSources(selectedProject.id);
+        } finally {
+                setSavingSource(false);
+        }
+  }
+
+  async function createWorkload(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!workloadForm.workload_value.trim()) {
+                setWorkloadError("El valor de carga de trabajo es obligatorio.");
+                return;
+        }
+        setSavingWorkload(true);
+        setWorkloadError(null);
+        try {
+                const keys = WORKLOAD_FIELDS_BY_MODE[workloadForm.input_mode] || WORKLOAD_FIELDS_BY_MODE.simple;
+                const data: Record<string, string> = {};
+                keys.forEach((key) => {
+                          data[key] = (workloadForm as any)[key];
+                });
+                const res = await fetch("/api/blindaje/workload", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                                      project_id: selectedProject.id,
+                                      input_mode: workloadForm.input_mode,
+                                      data,
+                          }),
+                });
+                const resData = await res.json();
+                if (!res.ok || !resData.ok) {
+                          setWorkloadError(resData.error || "No se pudo guardar la carga de trabajo.");
+                          return;
+                }
+                setWorkloadForm((f) => ({ ...EMPTY_WORKLOAD_FORM, input_mode: f.input_mode }));
+                loadWorkload(selectedProject.id);
+        } finally {
+                setSavingWorkload(false);
+        }
+  }
+
+  function sourceFieldInputs(facilityType: string) {
+        const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
+        const labels = SOURCE_FIELD_LABELS[facilityType] || {};
+        const inputs: any[] = [];
+        keys.forEach((key) => {
+                if (key === "activity") {
+                          inputs.push(field(labels.activity || "Actividad", sourceForm.activity, (v) => updateSourceField("activity", v)));
+                          inputs.push(field("Unidad de actividad (GBq, mCi, etc.)", sourceForm.activity_unit, (v) => updateSourceField("activity_unit", v)));
+                } else if (key === "dose_rate") {
+                          inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
+                          inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
+                } else if (key === "radionuclide") {
+                          inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
+                } else if (key === "energy") {
+                          inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
+                } else if (key === "geometry") {
+                          inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
+                }
+        });
+        return inputs;
+  }
+
+  function workloadFieldInputs(mode: string) {
+        const keys = WORKLOAD_FIELDS_BY_MODE[mode] || WORKLOAD_FIELDS_BY_MODE.simple;
+        const inputs: any[] = [];
+        keys.forEach((key) => {
+                if (key === "scenario") {
+                          inputs.push(
+                                      h(
+                                                    "label",
+                                        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+                                                    WORKLOAD_FIELD_LABELS.scenario,
+                                                    h(
+                                                                    "select",
+                                                      {
+                                                                        className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                                                                        value: workloadForm.scenario,
+                                                                        onChange: (e: any) => updateWorkloadField("scenario", e.target.value),
+                                                      },
+                                                                    WORKLOAD_SCENARIOS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+                                                                  )
+                                                  )
+                                    );
+                } else {
+                          inputs.push(field(WORKLOAD_FIELD_LABELS[key] || key, (workloadForm as any)[key], (v) => updateWorkloadField(key, v)));
+                }
+        });
+        return inputs;
+  }
+
+  const disclaimer = h(
+        "div",
+    { className: "rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning" },
+        "Los resultados de este modulo corresponden a una herramienta de apoyo para el diseno y evaluacion de proteccion radiologica. La responsabilidad profesional del estudio, su revision y su presentacion ante la autoridad competente corresponde al profesional responsable (OPR / Fisico Medico)."
+      );
+
+  const header = h(
+        "div",
+    { className: "flex flex-col gap-1" },
+        h("h1", { className: "text-lg font-semibold text-foreground" }, "Blindaje y Diseno"),
+        h(
+                "p",
+          { className: "text-sm text-muted-foreground" },
+                "Sistema experto de calculo, diseno, validacion, trazabilidad y documentacion de blindajes radiologicos."
+              )
+      );
+
+  const formFacilitySelect = h(
+        "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de instalacion",
+        h(
+                "select",
+          {
+                    className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                    value: form.facility_type,
+                    onChange: (e: any) => updateField("facility_type", e.target.value),
+          },
+                FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+              )
+      );
+
+  const projectForm = h(
+        "form",
+    { onSubmit: createProject, className: "grid grid-cols-1 gap-3 rounded-lg border border-border bg-surface p-4 md:grid-cols-3" },
+        h("div", { className: "md:col-span-3 text-sm font-medium text-foreground" }, "Paso 1 - Identificacion del proyecto"),
+        field("Nombre del proyecto *", form.name, (v) => updateField("name", v)),
+        field("N de proyecto", form.project_number, (v) => updateField("project_number", v)),
+        formFacilitySelect,
+        field("Institucion", form.institution, (v) => updateField("institution", v)),
+        field("Servicio", form.service, (v) => updateField("service", v)),
+        field("Unidad", form.unit, (v) => updateField("unit", v)),
+        field("Direccion", form.address, (v) => updateField("address", v)),
+        field("Ciudad", form.city, (v) => updateField("city", v)),
+        field("Responsable", form.responsible, (v) => updateField("responsible", v)),
+        field("OPR", form.opr_name, (v) => updateField("opr_name", v)),
+        field("Fisico Medico", form.medical_physicist, (v) => updateField("medical_physicist", v)),
+        error ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, error) : null,
+        h(
+                "div",
+          { className: "md:col-span-3" },
+                h(
+                          "button",
+                  {
+                              type: "submit",
+                              disabled: saving,
+                              className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                  },
+                          saving ? "Guardando..." : "Crear proyecto"
+                        )
+              )
+      );
+
+  const projectRows = projects.map((p) =>
+        h(
+                "tr",
+          {
+                    key: p.id,
+                    className: "cursor-pointer border-b border-border hover:bg-muted" + (p.id === selectedProjectId ? " bg-accent-subtle" : ""),
+                    onClick: () => selectProject(p),
+          },
+                h("td", { className: "px-3 py-2 text-sm" }, p.name),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.facility_type),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.institution || "-"),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.version),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.status)
+              )
+                                     );
+
+  const projectsTable = h(
+        "div",
+    { className: "rounded-lg border border-border bg-surface" },
+        h(
+                "div",
+          { className: "border-b border-border p-3 text-sm font-medium" },
+                "Proyectos (" + projects.length + ") - seleccione uno para continuar con Paso 2, Paso 3, Paso 4 y Paso 5"
+              ),
+        loading
+          ? h("div", { className: "p-4 text-sm text-muted-foreground" }, "Cargando...")
+          : h(
+                      "table",
+            { className: "w-full text-left" },
+                      h(
+                                    "thead",
+                                    null,
+                                    h(
+                                                    "tr",
+                                      { className: "border-b border-border text-xs text-muted-foreground" },
+                                                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                                                    h("th", { className: "px-3 py-2" }, "Tipo"),
+                                                    h("th", { className: "px-3 py-2" }, "Institucion"),
+                                                    h("th", { className: "px-3 py-2" }, "Version"),
+                                                    h("th", { className: "px-3 py-2" }, "Estado")
+                                                  )
+                                  ),
+                      h("tbody", null, projectRows)
+                    )
+      );
+
+  const facilityTypeSelect = h(
+        "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de instalacion",
+        h(
+                "select",
+          {
+                    className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                    value: facilityTypeDraft,
+                    onChange: (e: any) => setFacilityTypeDraft(e.target.value),
+          },
+                FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+              )
+      );
+
+  const paso2Panel = selectedProject
+      ? h(
+                "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                h("div", { className: "text-sm font-medium text-foreground" }, "Paso 2 - Tipo de instalacion (" + selectedProject.name + ")"),
+                h(
+                            "div",
+                  { className: "flex flex-wrap items-end gap-3" },
+                            facilityTypeSelect,
+                            h(
+                                          "button",
+                              {
+                                              type: "button",
+                                              disabled: savingFacilityType || facilityTypeDraft === selectedProject.facility_type,
+                                              onClick: saveFacilityType,
+                                              className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                              },
+                                          savingFacilityType ? "Guardando..." : "Guardar tipo de instalacion"
+                                        )
+                          ),
+                facilityTypeError ? h("div", { className: "text-xs text-red-500" }, facilityTypeError) : null
+              )
+        : null;
+
+  const equipmentTypeOptions = selectedProject ? EQUIPMENT_TYPES[selectedProject.facility_type] || [] : [];
+
+  const equipmentTypeSelect = h(
+        "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de equipo *",
+        h(
+                "select",
+          {
+                    className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                    value: equipmentForm.equipment_type,
+                    onChange: (e: any) => updateEquipmentField("equipment_type", e.target.value),
+          },
+                [h("option", { key: "", value: "" }, "Seleccione...")].concat(
+                          equipmentTypeOptions.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+                        )
+              )
+      );
+
+  const equipmentRows = equipmentList.map((eq) =>
+        h(
+                "tr",
+          { key: eq.id, className: "border-b border-border" },
+                h("td", { className: "px-3 py-2 text-sm" }, eq.equipment_type),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, eq.manufacturer || "-"),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, eq.model || "-")
+              )
+                                            );
+
+  const equipmentTable = h(
+        "div",
+    { className: "rounded-lg border border-border" },
+        h(
+                "table",
+          { className: "w-full text-left" },
+                h(
+                          "thead",
+                          null,
+                          h(
+                                      "tr",
+                            { className: "border-b border-border text-xs text-muted-foreground" },
+                                      h("th", { className: "px-3 py-2" }, "Tipo"),
+                                      h("th", { className: "px-3 py-2" }, "Fabricante"),
+                                      h("th", { className: "px-3 py-2" }, "Modelo")
+                                    )
+                        ),
+                h("tbody", null, equipmentRows)
+              )
+      );
+
+  const equipmentForm_ = h(
+        "form",
+    { onSubmit: createEquipment, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+        equipmentTypeSelect,
+        field("Fabricante", equipmentForm.manufacturer, (v) => updateEquipmentField("manufacturer", v)),
+        field("Modelo", equipmentForm.model, (v) => updateEquipmentField("model", v)),
+        field("Notas", equipmentForm.notes, (v) => updateEquipmentField("notes", v)),
+        equipmentError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, equipmentError) : null,
+        h(
+                "div",
+          { className: "md:col-span-3" },
+                h(
+                          "button",
+                  {
+                              type: "submit",
+                              disabled: savingEquipment,
+                              className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                  },
+                          savingEquipment ? "Guardando..." : "Agregar equipo"
+                        )
+              )
+      );
+
+  const paso3Panel = selectedProject
+      ? h(
+                "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                h("div", { className: "text-sm font-medium text-foreground" }, "Paso 3 - Equipo (" + selectedProject.name + ")"),
+                loadingEquipment ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando equipos...") : equipmentTable,
+                equipmentForm_
+              )
+        : null;
+
+  const sourceRows = sourcesList.map((s) =>
+        h(
+                "tr",
+          { key: s.id, className: "border-b border-border" },
+                h("td", { className: "px-3 py-2 text-sm" }, s.source_type || "-"),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.radionuclide || s.energy || "-"),
+                h(
+                          "td",
+                  { className: "px-3 py-2 text-sm text-muted-foreground" },
+                          s.activity ? s.activity + " " + (s.activity_unit || "") : s.dose_rate ? s.dose_rate + " " + (s.dose_rate_unit || "") : "-"
+                        ),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.geometry || "-")
+              )
+                                       );
+
+  const sourcesTable = h(
+        "div",
+    { className: "rounded-lg border border-border" },
+        h(
+                "table",
+          { className: "w-full text-left" },
+                h(
+                          "thead",
+                          null,
+                          h(
+                                      "tr",
+                            { className: "border-b border-border text-xs text-muted-foreground" },
+                                      h("th", { className: "px-3 py-2" }, "Tipo de fuente"),
+                                      h("th", { className: "px-3 py-2" }, "Radionuclido / Energia"),
+                                      h("th", { className: "px-3 py-2" }, "Actividad / Tasa de dosis"),
+                                      h("th", { className: "px-3 py-2" }, "Geometria")
+                                    )
+                        ),
+                h("tbody", null, sourceRows)
+              )
+      );
+
+  const sourceFormEl = selectedProject
+      ? h(
+                "form",
+        { onSubmit: createSource, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+                ...sourceFieldInputs(selectedProject.facility_type),
+                sourceError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, sourceError) : null,
+                h(
+                            "div",
+                  { className: "md:col-span-3" },
+                            h(
+                                          "button",
+                              {
+                                              type: "submit",
+                                              disabled: savingSource,
+                                              className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                              },
+                                          savingSource ? "Guardando..." : "Agregar fuente de radiacion"
+                                        )
+                          )
+              )
+        : null;
+
+  const paso4Panel = selectedProject
+      ? h(
+                "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                h("div", { className: "text-sm font-medium text-foreground" }, "Paso 4 - Fuente de radiacion (" + selectedProject.name + ")"),
+                h(
+                            "div",
+                  { className: "text-xs text-muted-foreground" },
+                            "Tipo de fuente segun instalacion: " + ((SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type] || {}).label || "no configurado")
+                          ),
+                loadingSources ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando fuentes...") : sourcesTable,
+                sourceFormEl
+              )
+        : null;
+
+  const workloadModeSelect = h(
+        "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Modo de ingreso (S18)",
+        h(
+                "select",
+          {
+                    className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                    value: workloadForm.input_mode,
+                    onChange: (e: any) => updateWorkloadField("input_mode", e.target.value),
+          },
+                WORKLOAD_MODES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+              )
+      );
+
+  const workloadRows = workloadList.map((w) => {
+        const data = (w.data || {}) as Record<string, any>;
+        return h(
+                "tr",
+          { key: w.id, className: "border-b border-border" },
+                h("td", { className: "px-3 py-2 text-sm" }, w.input_mode),
+                h(
+                          "td",
+                  { className: "px-3 py-2 text-sm text-muted-foreground" },
+                          data.workload_value ? data.workload_value + " " + (data.workload_unit || "") : "-"
+                        ),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, data.procedures_per_week || "-"),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, data.scenario || "-"),
+                h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, new Date(w.created_at).toLocaleString())
+              );
   });
-  return inputs;
-}
 
-const disclaimer = h(
-  "div",
-  { className: "rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning" },
-  "Los resultados de este modulo corresponden a una herramienta de apoyo para el diseno y evaluacion de proteccion radiologica. La responsabilidad profesional del estudio, su revision y su presentacion ante la autoridad competente corresponde al profesional responsable (OPR / Fisico Medico)."
-  );
+  const workloadTable = h(
+        "div",
+    { className: "rounded-lg border border-border" },
+        h(
+                "table",
+          { className: "w-full text-left" },
+                h(
+                          "thead",
+                          null,
+                          h(
+                                      "tr",
+                            { className: "border-b border-border text-xs text-muted-foreground" },
+                                      h("th", { className: "px-3 py-2" }, "Modo"),
+                                      h("th", { className: "px-3 py-2" }, "Carga de trabajo"),
+                                      h("th", { className: "px-3 py-2" }, "Procedimientos/sem"),
+                                      h("th", { className: "px-3 py-2" }, "Escenario"),
+                                      h("th", { className: "px-3 py-2" }, "Registrado")
+                                    )
+                        ),
+                h("tbody", null, workloadRows)
+              )
+      );
 
-const header = h(
-  "div",
-  { className: "flex flex-col gap-1" },
-  h("h1", { className: "text-lg font-semibold text-foreground" }, "Blindaje y Diseno"),
-  h(
-    "p",
-    { className: "text-sm text-muted-foreground" },
-    "Sistema experto de calculo, diseno, validacion, trazabilidad y documentacion de blindajes radiologicos."
-    )
-  );
+  const workloadFormEl = selectedProject
+      ? h(
+                "form",
+        { onSubmit: createWorkload, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+                workloadModeSelect,
+                ...workloadFieldInputs(workloadForm.input_mode),
+                workloadError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, workloadError) : null,
+                h(
+                            "div",
+                  { className: "md:col-span-3" },
+                            h(
+                                          "button",
+                              {
+                                              type: "submit",
+                                              disabled: savingWorkload,
+                                              className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                              },
+                                          savingWorkload ? "Guardando..." : "Agregar carga de trabajo"
+                                        )
+                          )
+              )
+        : null;
 
-const formFacilitySelect = h(
-  "label",
-  { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
-  "Tipo de instalacion",
-  h(
-    "select",
-    {
-      className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
-      value: form.facility_type,
-      onChange: (e: any) => updateField("facility_type", e.target.value),
-    },
-    FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
-    )
-  );
+  const paso5Panel = selectedProject
+      ? h(
+                "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                h("div", { className: "text-sm font-medium text-foreground" }, "Paso 5 - Carga de trabajo (" + selectedProject.name + ")"),
+                h(
+                            "div",
+                  { className: "text-xs text-muted-foreground" },
+                            "El historico de cargas de trabajo se conserva completo y no se sobrescribe (S35). Modos disponibles: Simple, Detallada y Avanzada (S18)."
+                          ),
+                loadingWorkload ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando carga de trabajo...") : workloadTable,
+                workloadFormEl
+              )
+        : null;
 
-const projectForm = h(
-  "form",
-  { onSubmit: createProject, className: "grid grid-cols-1 gap-3 rounded-lg border border-border bg-surface p-4 md:grid-cols-3" },
-  h("div", { className: "md:col-span-3 text-sm font-medium text-foreground" }, "Paso 1 - Identificacion del proyecto"),
-  field("Nombre del proyecto *", form.name, (v) => updateField("name", v)),
-  field("N de proyecto", form.project_number, (v) => updateField("project_number", v)),
-  formFacilitySelect,
-  field("Institucion", form.institution, (v) => updateField("institution", v)),
-  field("Servicio", form.service, (v) => updateField("service", v)),
-  field("Unidad", form.unit, (v) => updateField("unit", v)),
-  field("Direccion", form.address, (v) => updateField("address", v)),
-  field("Ciudad", form.city, (v) => updateField("city", v)),
-  field("Responsable", form.responsible, (v) => updateField("responsible", v)),
-  field("OPR", form.opr_name, (v) => updateField("opr_name", v)),
-  field("Fisico Medico", form.medical_physicist, (v) => updateField("medical_physicist", v)),
-  error ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, error) : null,
-  h(
-    "div",
-    { className: "md:col-span-3" },
-    h(
-      "button",
-      {
-        type: "submit",
-        disabled: saving,
-        className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
-      },
-        saving ? "Guardando..." : "Crear proyecto"
-      )
-    )
-  );
+  const nextPhases = h(
+        "div",
+    { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
+        "Proximas fases (en desarrollo): geometria y puntos de interes (PIR), barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+      );
 
-const projectRows = projects.map((p) =>
-  h(
-    "tr",
-    {
-      key: p.id,
-      className: "cursor-pointer border-b border-border hover:bg-muted" + (p.id === selectedProjectId ? " bg-accent-subtle" : ""),
-      onClick: () => selectProject(p),
-    },
-    h("td", { className: "px-3 py-2 text-sm" }, p.name),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.facility_type),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.institution || "-"),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.version),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.status)
-    )
-                                 );
-
-const projectsTable = h(
-  "div",
-  { className: "rounded-lg border border-border bg-surface" },
-  h(
-    "div",
-    { className: "border-b border-border p-3 text-sm font-medium" },
-    "Proyectos (" + projects.length + ") - seleccione uno para continuar con Paso 2, Paso 3 y Paso 4"
-    ),
-  loading
-  ? h("div", { className: "p-4 text-sm text-muted-foreground" }, "Cargando...")
-  : h(
-    "table",
-    { className: "w-full text-left" },
-    h(
-      "thead",
-      null,
-      h(
-        "tr",
-        { className: "border-b border-border text-xs text-muted-foreground" },
-        h("th", { className: "px-3 py-2" }, "Nombre"),
-        h("th", { className: "px-3 py-2" }, "Tipo"),
-        h("th", { className: "px-3 py-2" }, "Institucion"),
-        h("th", { className: "px-3 py-2" }, "Version"),
-        h("th", { className: "px-3 py-2" }, "Estado")
-        )
-      ),
-    h("tbody", null, projectRows)
-    )
-  );
-
-const facilityTypeSelect = h(
-  "label",
-  { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
-  "Tipo de instalacion",
-  h(
-    "select",
-    {
-      className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
-      value: facilityTypeDraft,
-      onChange: (e: any) => setFacilityTypeDraft(e.target.value),
-    },
-    FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
-    )
-  );
-
-const paso2Panel = selectedProject
-  ? h(
-    "div",
-    { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
-    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 2 - Tipo de instalacion (" + selectedProject.name + ")"),
-    h("div", { className: "flex flex-wrap items-end gap-3" },
-      facilityTypeSelect,
-      h(
-        "button",
-        {
-          type: "button",
-          disabled: savingFacilityType || facilityTypeDraft === selectedProject.facility_type,
-          onClick: saveFacilityType,
-          className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
-        },
-        savingFacilityType ? "Guardando..." : "Guardar tipo de instalacion"
-        )
-      ),
-    facilityTypeError ? h("div", { className: "text-xs text-red-500" }, facilityTypeError) : null
-    )
-  : null;
-
-const equipmentTypeOptions = selectedProject ? EQUIPMENT_TYPES[selectedProject.facility_type] || [] : [];
-
-const equipmentTypeSelect = h(
-  "label",
-  { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
-  "Tipo de equipo *",
-  h(
-    "select",
-    {
-      className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
-      value: equipmentForm.equipment_type,
-      onChange: (e: any) => updateEquipmentField("equipment_type", e.target.value),
-    },
-    [h("option", { key: "", value: "" }, "Seleccione...")].concat(
-      equipmentTypeOptions.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
-      )
-    )
-  );
-
-const equipmentRows = equipmentList.map((eq) =>
-  h(
-    "tr",
-    { key: eq.id, className: "border-b border-border" },
-    h("td", { className: "px-3 py-2 text-sm" }, eq.equipment_type),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, eq.manufacturer || "-"),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, eq.model || "-")
-    )
-                                        );
-
-const equipmentTable = h(
-  "div",
-  { className: "rounded-lg border border-border" },
-  h(
-    "table",
-    { className: "w-full text-left" },
-    h(
-      "thead",
-      null,
-      h(
-        "tr",
-        { className: "border-b border-border text-xs text-muted-foreground" },
-        h("th", { className: "px-3 py-2" }, "Tipo"),
-        h("th", { className: "px-3 py-2" }, "Fabricante"),
-        h("th", { className: "px-3 py-2" }, "Modelo")
-        )
-      ),
-    h("tbody", null, equipmentRows)
-    )
-  );
-
-const equipmentForm_ = h(
-  "form",
-  { onSubmit: createEquipment, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
-  equipmentTypeSelect,
-  field("Fabricante", equipmentForm.manufacturer, (v) => updateEquipmentField("manufacturer", v)),
-  field("Modelo", equipmentForm.model, (v) => updateEquipmentField("model", v)),
-  field("Notas", equipmentForm.notes, (v) => updateEquipmentField("notes", v)),
-  equipmentError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, equipmentError) : null,
-  h(
-    "div",
-    { className: "md:col-span-3" },
-    h(
-      "button",
-      {
-        type: "submit",
-        disabled: savingEquipment,
-        className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
-      },
-      savingEquipment ? "Guardando..." : "Agregar equipo"
-      )
-    )
-  );
-
-const paso3Panel = selectedProject
-  ? h(
-    "div",
-    { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
-    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 3 - Equipo (" + selectedProject.name + ")"),
-    loadingEquipment ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando equipos...") : equipmentTable,
-    equipmentForm_
-    )
-  : null;
-
-const sourceRows = sourcesList.map((s) =>
-  h(
-    "tr",
-    { key: s.id, className: "border-b border-border" },
-    h("td", { className: "px-3 py-2 text-sm" }, s.source_type || "-"),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.radionuclide || s.energy || "-"),
-    h(
-      "td",
-      { className: "px-3 py-2 text-sm text-muted-foreground" },
-      s.activity ? s.activity + " " + (s.activity_unit || "") : s.dose_rate ? s.dose_rate + " " + (s.dose_rate_unit || "") : "-"
-      ),
-    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.geometry || "-")
-    )
-                                   );
-
-const sourcesTable = h(
-  "div",
-  { className: "rounded-lg border border-border" },
-  h(
-    "table",
-    { className: "w-full text-left" },
-    h(
-      "thead",
-      null,
-      h(
-        "tr",
-        { className: "border-b border-border text-xs text-muted-foreground" },
-        h("th", { className: "px-3 py-2" }, "Tipo de fuente"),
-        h("th", { className: "px-3 py-2" }, "Radionuclido / Energia"),
-        h("th", { className: "px-3 py-2" }, "Actividad / Tasa de dosis"),
-        h("th", { className: "px-3 py-2" }, "Geometria")
-        )
-      ),
-    h("tbody", null, sourceRows)
-    )
-  );
-
-const sourceFormEl = selectedProject
-  ? h(
-    "form",
-    { onSubmit: createSource, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
-    ...sourceFieldInputs(selectedProject.facility_type),
-    sourceError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, sourceError) : null,
-    h(
-      "div",
-      { className: "md:col-span-3" },
-      h(
-        "button",
-        {
-          type: "submit",
-          disabled: savingSource,
-          className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
-        },
-        savingSource ? "Guardando..." : "Agregar fuente de radiacion"
-        )
-      )
-    )
-  : null;
-
-const paso4Panel = selectedProject
-  ? h(
-    "div",
-    { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
-    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 4 - Fuente de radiacion (" + selectedProject.name + ")"),
-    h(
-      "div",
-      { className: "text-xs text-muted-foreground" },
-      "Tipo de fuente segun instalacion: " + ((SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type] || {}).label || "no configurado")
-      ),
-    loadingSources ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando fuentes...") : sourcesTable,
-    sourceFormEl
-    )
-  : null;
-
-const nextPhases = h(
-  "div",
-  { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-  "Proximas fases (en desarrollo): carga de trabajo, geometria y puntos de interes (PIR), barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
-  );
-
-return h(
-  "div",
-  { className: "flex flex-col gap-4 p-4" },
-  header,
-  disclaimer,
-  projectForm,
-  projectsTable,
-  paso2Panel,
-  paso3Panel,
-  paso4Panel,
-  nextPhases
-  );
+  return h(
+        "div",
+    { className: "flex flex-col gap-4 p-4" },
+        header,
+        disclaimer,
+        projectForm,
+        projectsTable,
+        paso2Panel,
+        paso3Panel,
+        paso4Panel,
+        paso5Panel,
+        nextPhases
+      );
 }
