@@ -88,6 +88,10 @@ result_status TEXT,
 created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `;
+await sql`ALTER TABLE blindaje_pir ADD COLUMN IF NOT EXISTS coordinates TEXT`;
+  await sql`ALTER TABLE blindaje_pir ADD COLUMN IF NOT EXISTS design_criterion_value NUMERIC`;
+  await sql`ALTER TABLE blindaje_pir ADD COLUMN IF NOT EXISTS design_criterion_unit TEXT`;
+  await sql`ALTER TABLE blindaje_pir ADD COLUMN IF NOT EXISTS design_criterion_source TEXT`;
 
 await sql`
 CREATE TABLE IF NOT EXISTS blindaje_barriers (
