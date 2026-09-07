@@ -25,6 +25,20 @@ type BlindajeEquipment = {
   created_at: string;
 };
 
+type BlindajeSource = {
+  id: number;
+  project_id: number;
+  source_type: string;
+  radionuclide: string | null;
+  energy: string | null;
+  activity: number | null;
+  activity_unit: string | null;
+  dose_rate: number | null;
+  dose_rate_unit: string | null;
+  geometry: string | null;
+  created_at: string;
+};
+
 const FACILITY_TYPES: { value: string; label: string }[] = [
   { value: "diagnostico", label: "Radiologia Diagnostica" },
   { value: "medicina_nuclear", label: "Medicina Nuclear" },
@@ -56,6 +70,27 @@ const EQUIPMENT_TYPES: Record<string, { value: string; label: string }[]> = {
     ],
 };
 
+const SOURCE_TYPE_BY_FACILITY: Record<string, { value: string; label: string }> = {
+  diagnostico: { value: "tubo_rayos_x", label: "Tubo de rayos X" },
+  medicina_nuclear: { value: "radionucleido_no_sellado", label: "Radionuclido no sellado" },
+  radioterapia: { value: "haz_acelerador", label: "Haz de fotones/electrones" },
+  braquiterapia: { value: "fuente_sellada", label: "Fuente sellada" },
+};
+
+const SOURCE_FIELDS_BY_FACILITY: Record<string, string[]> = {
+  diagnostico: ["energy", "dose_rate", "geometry"],
+  medicina_nuclear: ["radionuclide", "activity", "geometry"],
+  radioterapia: ["energy", "dose_rate", "geometry"],
+  braquiterapia: ["radionuclide", "activity", "geometry"],
+};
+
+const SOURCE_FIELD_LABELS: Record<string, Record<string, string>> = {
+  diagnostico: { energy: "Energia (kVp)", dose_rate: "Carga / corriente (mA o mGy por mAs)", geometry: "Distancia foco-piel / geometria" },
+  medicina_nuclear: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria (captacion, distancia)" },
+  radioterapia: { energy: "Energia nominal (MV o MeV)", dose_rate: "Tasa de dosis (UM/min)", geometry: "Isocentro / distancia fuente-eje" },
+  braquiterapia: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria de aplicacion" },
+};
+
 const EMPTY_FORM = {
   name: "",
   institution: "",
@@ -75,6 +110,16 @@ const EMPTY_EQUIPMENT_FORM = {
   manufacturer: "",
   model: "",
   notes: "",
+};
+
+const EMPTY_SOURCE_FORM = {
+  radionuclide: "",
+  energy: "",
+  activity: "",
+  activity_unit: "",
+  dose_rate: "",
+  dose_rate_unit: "",
+  geometry: "",
 };
 
 function field(label: string, value: string, onChange: (v: string) => void, placeholder?: string) {
@@ -109,6 +154,12 @@ const [equipmentList, setEquipmentList] = useState<BlindajeEquipment[]>([]);
   const [savingEquipment, setSavingEquipment] = useState(false);
   const [equipmentError, setEquipmentError] = useState<string | null>(null);
 
+const [sourcesList, setSourcesList] = useState<BlindajeSource[]>([]);
+  const [loadingSources, setLoadingSources] = useState(false);
+  const [sourceForm, setSourceForm] = useState(EMPTY_SOURCE_FORM);
+  const [savingSource, setSavingSource] = useState(false);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+
 function load() {
   setLoading(true);
   fetch("/api/blindaje")
@@ -131,13 +182,24 @@ function loadEquipment(projectId: number) {
   .finally(() => setLoadingEquipment(false));
 }
 
+function loadSources(projectId: number) {
+  setLoadingSources(true);
+  fetch("/api/blindaje/sources?project_id=" + projectId)
+  .then((r) => (r.ok ? r.json() : { sources: [] }))
+  .then((data) => setSourcesList(data.sources ?? []))
+  .finally(() => setLoadingSources(false));
+}
+
 function selectProject(p: BlindajeProject) {
   setSelectedProjectId(p.id);
   setFacilityTypeDraft(p.facility_type);
   setFacilityTypeError(null);
   setEquipmentForm(EMPTY_EQUIPMENT_FORM);
   setEquipmentError(null);
+  setSourceForm(EMPTY_SOURCE_FORM);
+  setSourceError(null);
   loadEquipment(p.id);
+  loadSources(p.id);
 }
 
 async function saveFacilityType() {
@@ -167,6 +229,10 @@ function updateField(key: string, value: string) {
 
 function updateEquipmentField(key: string, value: string) {
   setEquipmentForm((f) => ({ ...f, [key]: value }));
+}
+
+function updateSourceField(key: string, value: string) {
+  setSourceForm((f) => ({ ...f, [key]: value }));
 }
 
 async function createProject(e: FormEvent) {
@@ -228,6 +294,66 @@ async function createEquipment(e: FormEvent) {
   }
 }
 
+async function createSource(e: FormEvent) {
+  e.preventDefault();
+  if (!selectedProject) return;
+  const sourceTypeConfig = SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type];
+  if (!sourceTypeConfig) {
+    setSourceError("Este tipo de instalacion todavia no tiene fuente de radiacion configurada.");
+    return;
+  }
+  setSavingSource(true);
+  setSourceError(null);
+  try {
+    const res = await fetch("/api/blindaje/sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        project_id: selectedProject.id,
+        source_type: sourceTypeConfig.value,
+        radionuclide: sourceForm.radionuclide,
+        energy: sourceForm.energy,
+        activity: sourceForm.activity,
+        activity_unit: sourceForm.activity_unit,
+        dose_rate: sourceForm.dose_rate,
+        dose_rate_unit: sourceForm.dose_rate_unit,
+        geometry: sourceForm.geometry,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      setSourceError(data.error || "No se pudo guardar la fuente de radiacion.");
+      return;
+    }
+    setSourceForm(EMPTY_SOURCE_FORM);
+    loadSources(selectedProject.id);
+  } finally {
+    setSavingSource(false);
+  }
+}
+
+function sourceFieldInputs(facilityType: string) {
+  const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
+  const labels = SOURCE_FIELD_LABELS[facilityType] || {};
+  const inputs: any[] = [];
+  keys.forEach((key) => {
+    if (key === "activity") {
+      inputs.push(field(labels.activity || "Actividad", sourceForm.activity, (v) => updateSourceField("activity", v)));
+      inputs.push(field("Unidad de actividad (GBq, mCi, etc.)", sourceForm.activity_unit, (v) => updateSourceField("activity_unit", v)));
+    } else if (key === "dose_rate") {
+      inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
+      inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
+    } else if (key === "radionuclide") {
+      inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
+    } else if (key === "energy") {
+      inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
+    } else if (key === "geometry") {
+      inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
+    }
+  });
+  return inputs;
+}
+
 const disclaimer = h(
   "div",
   { className: "rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-warning" },
@@ -286,7 +412,7 @@ const projectForm = h(
         disabled: saving,
         className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
       },
-      saving ? "Guardando..." : "Crear proyecto"
+        saving ? "Guardando..." : "Crear proyecto"
       )
     )
   );
@@ -313,7 +439,7 @@ const projectsTable = h(
   h(
     "div",
     { className: "border-b border-border p-3 text-sm font-medium" },
-    "Proyectos (" + projects.length + ") - seleccione uno para continuar con Paso 2 y Paso 3"
+    "Proyectos (" + projects.length + ") - seleccione uno para continuar con Paso 2, Paso 3 y Paso 4"
     ),
   loading
   ? h("div", { className: "p-4 text-sm text-muted-foreground" }, "Cargando...")
@@ -457,10 +583,84 @@ const paso3Panel = selectedProject
     )
   : null;
 
+const sourceRows = sourcesList.map((s) =>
+  h(
+    "tr",
+    { key: s.id, className: "border-b border-border" },
+    h("td", { className: "px-3 py-2 text-sm" }, s.source_type || "-"),
+    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.radionuclide || s.energy || "-"),
+    h(
+      "td",
+      { className: "px-3 py-2 text-sm text-muted-foreground" },
+      s.activity ? s.activity + " " + (s.activity_unit || "") : s.dose_rate ? s.dose_rate + " " + (s.dose_rate_unit || "") : "-"
+      ),
+    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.geometry || "-")
+    )
+                                   );
+
+const sourcesTable = h(
+  "div",
+  { className: "rounded-lg border border-border" },
+  h(
+    "table",
+    { className: "w-full text-left" },
+    h(
+      "thead",
+      null,
+      h(
+        "tr",
+        { className: "border-b border-border text-xs text-muted-foreground" },
+        h("th", { className: "px-3 py-2" }, "Tipo de fuente"),
+        h("th", { className: "px-3 py-2" }, "Radionuclido / Energia"),
+        h("th", { className: "px-3 py-2" }, "Actividad / Tasa de dosis"),
+        h("th", { className: "px-3 py-2" }, "Geometria")
+        )
+      ),
+    h("tbody", null, sourceRows)
+    )
+  );
+
+const sourceFormEl = selectedProject
+  ? h(
+    "form",
+    { onSubmit: createSource, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+    ...sourceFieldInputs(selectedProject.facility_type),
+    sourceError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, sourceError) : null,
+    h(
+      "div",
+      { className: "md:col-span-3" },
+      h(
+        "button",
+        {
+          type: "submit",
+          disabled: savingSource,
+          className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+        },
+        savingSource ? "Guardando..." : "Agregar fuente de radiacion"
+        )
+      )
+    )
+  : null;
+
+const paso4Panel = selectedProject
+  ? h(
+    "div",
+    { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 4 - Fuente de radiacion (" + selectedProject.name + ")"),
+    h(
+      "div",
+      { className: "text-xs text-muted-foreground" },
+      "Tipo de fuente segun instalacion: " + ((SOURCE_TYPE_BY_FACILITY[selectedProject.facility_type] || {}).label || "no configurado")
+      ),
+    loadingSources ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando fuentes...") : sourcesTable,
+    sourceFormEl
+    )
+  : null;
+
 const nextPhases = h(
   "div",
   { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-  "Proximas fases (en desarrollo): fuente de radiacion, carga de trabajo, geometria y puntos de interes (PIR), barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+  "Proximas fases (en desarrollo): carga de trabajo, geometria y puntos de interes (PIR), barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
   );
 
 return h(
@@ -472,6 +672,7 @@ return h(
   projectsTable,
   paso2Panel,
   paso3Panel,
+  paso4Panel,
   nextPhases
   );
 }
