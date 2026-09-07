@@ -47,6 +47,26 @@ type BlindajeWorkload = {
     created_at: string;
 };
 
+type BlindajePir = {
+        id: number;
+        project_id: number;
+        code: string;
+        name: string;
+        description: string | null;
+        coordinates: string | null;
+        distance_m: number | null;
+        area_type: string | null;
+        occupancy_type: string | null;
+        occupancy_factor: number | null;
+        design_criterion_value: number | null;
+        design_criterion_unit: string | null;
+        design_criterion_source: string | null;
+        result_value: number | null;
+        result_unit: string | null;
+        result_status: string | null;
+        created_at: string;
+};
+
 const FACILITY_TYPES: { value: string; label: string }[] = [
   { value: "diagnostico", label: "Radiologia Diagnostica" },
   { value: "medicina_nuclear", label: "Medicina Nuclear" },
@@ -130,6 +150,18 @@ const WORKLOAD_FIELD_LABELS: Record<string, string> = {
     notes: "Notas / supuestos (S59)",
 };
 
+const AREA_CLASSIFICATIONS: { value: string; label: string }[] = [
+    { value: "controlada", label: "Area controlada (POE)" },
+    { value: "no_controlada", label: "Area no controlada (Publico)" },
+    ];
+
+const RESULT_STATUS_OPTIONS: { value: string; label: string }[] = [
+    { value: "sin_informacion", label: "Sin informacion (S60)" },
+    { value: "cumple", label: "Cumple" },
+    { value: "revisar", label: "Revisar" },
+    { value: "no_cumple", label: "No cumple" },
+    ];
+
 const EMPTY_FORM = {
     name: "",
     institution: "",
@@ -172,6 +204,21 @@ const EMPTY_WORKLOAD_FORM = {
     scenario: "A",
     sensitivity_notes: "",
     notes: "",
+};
+
+const EMPTY_PIR_FORM = {
+        code: "",
+        name: "",
+        description: "",
+        coordinates: "",
+        distance_m: "",
+        area_type: "controlada",
+        occupancy_type: "",
+        occupancy_factor: "",
+        design_criterion_value: "",
+        design_criterion_unit: "",
+        design_criterion_source: "",
+        result_status: "sin_informacion",
 };
 
 function field(label: string, value: string, onChange: (v: string) => void, placeholder?: string) {
@@ -218,6 +265,12 @@ export function BlindajeApp() {
     const [savingWorkload, setSavingWorkload] = useState(false);
     const [workloadError, setWorkloadError] = useState<string | null>(null);
 
+        const [pirList, setPirList] = useState<BlindajePir[]>([]);
+        const [loadingPir, setLoadingPir] = useState(false);
+        const [pirForm, setPirForm] = useState(EMPTY_PIR_FORM);
+        const [savingPir, setSavingPir] = useState(false);
+        const [pirError, setPirError] = useState<string | null>(null);
+
   function load() {
         setLoading(true);
         fetch("/api/blindaje")
@@ -256,6 +309,14 @@ export function BlindajeApp() {
           .finally(() => setLoadingWorkload(false));
   }
 
+        function loadPir(projectId: number) {
+                    setLoadingPir(true);
+                    fetch("/api/blindaje/pir?project_id=" + projectId)
+                        .then((r) => (r.ok ? r.json() : { pir: [] }))
+                        .then((data) => setPirList(data.pir ?? []))
+                        .finally(() => setLoadingPir(false));
+        }
+
   function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
         setFacilityTypeDraft(p.facility_type);
@@ -269,6 +330,9 @@ export function BlindajeApp() {
         loadEquipment(p.id);
         loadSources(p.id);
         loadWorkload(p.id);
+              setPirForm(EMPTY_PIR_FORM);
+              setPirError(null);
+              loadPir(p.id);
   }
 
   async function saveFacilityType() {
@@ -307,6 +371,10 @@ export function BlindajeApp() {
   function updateWorkloadField(key: string, value: string) {
         setWorkloadForm((f) => ({ ...f, [key]: value }));
   }
+
+        function updatePirField(key: string, value: string) {
+                    setPirForm((f) => ({ ...f, [key]: value }));
+        }
 
   async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -440,6 +508,47 @@ export function BlindajeApp() {
                 setSavingWorkload(false);
         }
   }
+
+        async function createPir(e: FormEvent) {
+                    e.preventDefault();
+                    if (!selectedProject) return;
+                    if (!pirForm.code.trim() || !pirForm.name.trim()) {
+                                    setPirError("El codigo y el nombre del punto de interes son obligatorios.");
+                                    return;
+                    }
+                    setSavingPir(true);
+                    setPirError(null);
+                    try {
+                                    const res = await fetch("/api/blindaje/pir", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({
+                                                                                project_id: selectedProject.id,
+                                                                                code: pirForm.code,
+                                                                                name: pirForm.name,
+                                                                                description: pirForm.description,
+                                                                                coordinates: pirForm.coordinates,
+                                                                                distance_m: pirForm.distance_m,
+                                                                                area_type: pirForm.area_type,
+                                                                                occupancy_type: pirForm.occupancy_type,
+                                                                                occupancy_factor: pirForm.occupancy_factor,
+                                                                                design_criterion_value: pirForm.design_criterion_value,
+                                                                                design_criterion_unit: pirForm.design_criterion_unit,
+                                                                                design_criterion_source: pirForm.design_criterion_source,
+                                                                                result_status: pirForm.result_status,
+                                                        }),
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok || !data.ok) {
+                                                        setPirError(data.error || "No se pudo guardar el punto de interes.");
+                                                        return;
+                                    }
+                                    setPirForm(EMPTY_PIR_FORM);
+                                    loadPir(selectedProject.id);
+                    } finally {
+                                    setSavingPir(false);
+                    }
+        }
 
   function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -889,13 +998,132 @@ export function BlindajeApp() {
               )
         : null;
 
-  const nextPhases = h(
+        const areaTypeSelect = h(
+                    "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+                    "Clasificacion de area (S20)",
+                    h(
+                                    "select",
+                        {
+                                            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                                            value: pirForm.area_type,
+                                            onChange: (e: any) => updatePirField("area_type", e.target.value),
+                        },
+                                    AREA_CLASSIFICATIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+                                )
+                );
+
+        const resultStatusSelect = h(
+                    "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+                    "Estado (S39, S60)",
+                    h(
+                                    "select",
+                        {
+                                            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                                            value: pirForm.result_status,
+                                            onChange: (e: any) => updatePirField("result_status", e.target.value),
+                        },
+                                    RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+                                )
+                );
+
+        const pirRows = pirList.map((pir) =>
+                    h(
+                                    "tr",
+                        { key: pir.id, className: "border-b border-border" },
+                                    h("td", { className: "px-3 py-2 text-sm" }, pir.code),
+                                    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, pir.name),
+                                    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, pir.area_type || "-"),
+                                    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, pir.distance_m ? String(pir.distance_m) + " m" : "-"),
+                                    h(
+                                                        "td",
+                                        { className: "px-3 py-2 text-sm text-muted-foreground" },
+                                                        pir.design_criterion_value ? pir.design_criterion_value + " " + (pir.design_criterion_unit || "") : "-"
+                                                    ),
+                                    h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, pir.result_status || "sin_informacion")
+                                )
+                );
+
+        const pirTable = h(
+                    "div",
+            { className: "rounded-lg border border-border" },
+                    h(
+                                    "table",
+                        { className: "w-full text-left" },
+                                    h(
+                                                        "thead",
+                                                        null,
+                                                        h(
+                                                                                "tr",
+                                                            { className: "border-b border-border text-xs text-muted-foreground" },
+                                                                                h("th", { className: "px-3 py-2" }, "Codigo"),
+                                                                                h("th", { className: "px-3 py-2" }, "Nombre"),
+                                                                                h("th", { className: "px-3 py-2" }, "Clasificacion"),
+                                                                                h("th", { className: "px-3 py-2" }, "Distancia"),
+                                                                                h("th", { className: "px-3 py-2" }, "Criterio de diseno"),
+                                                                                h("th", { className: "px-3 py-2" }, "Estado")
+                                                                            )
+                                                    ),
+                                    h("tbody", null, pirRows)
+                                )
+                );
+
+                const pirFormEl = selectedProject
+            ? h(
+                              "form",
+                { onSubmit: createPir, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+                              field("Codigo del PIR *", pirForm.code, (v) => updatePirField("code", v)),
+                              field("Nombre del PIR *", pirForm.name, (v) => updatePirField("name", v)),
+                              field("Descripcion", pirForm.description, (v) => updatePirField("description", v)),
+                              field("Coordenadas / ubicacion", pirForm.coordinates, (v) => updatePirField("coordinates", v)),
+                              field("Distancia fuente-punto (m)", pirForm.distance_m, (v) => updatePirField("distance_m", v)),
+                              areaTypeSelect,
+                              field("Ocupacion (descripcion)", pirForm.occupancy_type, (v) => updatePirField("occupancy_type", v)),
+                              field("Factor de ocupacion (T)", pirForm.occupancy_factor, (v) => updatePirField("occupancy_factor", v)),
+                              field("Criterio de diseno (valor)", pirForm.design_criterion_value, (v) => updatePirField("design_criterion_value", v)),
+                              field("Criterio de diseno (unidad)", pirForm.design_criterion_unit, (v) => updatePirField("design_criterion_unit", v)),
+                              field("Fuente del criterio (norma, pagina) *", pirForm.design_criterion_source, (v) => updatePirField("design_criterion_source", v)),
+                              resultStatusSelect,
+                              pirError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, pirError) : null,
+                              h(
+                                                    "div",
+                                  { className: "md:col-span-3" },
+                                                    h(
+                                                                              "button",
+                                                        {
+                                                                                      type: "submit",
+                                                                                      disabled: savingPir,
+                                                                                      className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                                                        },
+                                                                              savingPir ? "Guardando..." : "Agregar punto de interes"
+                                                                          )
+                                                )
+                          )
+                    : null;
+
+            const paso6Panel = selectedProject
+            ? h(
+                              "div",
+                { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                              h("div", { className: "text-sm font-medium text-foreground" }, "Paso 6 - Geometria y Puntos de Interes / PIR (" + selectedProject.name + ")"),
+                    h(
+                                "div",
+                        { className: "text-xs text-muted-foreground" },
+                                "Cada PIR registra codigo, nombre, coordenadas, distancia, clasificacion de area, ocupacion y el criterio de diseno con su fuente (S20, S33)."
+                                ),
+                        loadingPir ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando puntos de interes...") : pirTable,
+                        pirFormEl
+                              )
+                        : null;
+
+          const nextPhases = h(
         "div",
-    { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-        "Proximas fases (en desarrollo): geometria y puntos de interes (PIR), barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+              { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
+    "Proximas fases (en desarrollo): barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
       );
 
-  return h(
+      return h(
         "div",
     { className: "flex flex-col gap-4 p-4" },
         header,
@@ -906,6 +1134,7 @@ export function BlindajeApp() {
         paso3Panel,
         paso4Panel,
         paso5Panel,
+                  paso6Panel,
         nextPhases
       );
 }
