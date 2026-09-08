@@ -235,6 +235,54 @@ function field(label: string, value: string, onChange: (v: string) => void, plac
         );
 }
 
+type BlindajeBarrier = {
+    id: number;
+    project_id: number;
+    pir_id: number | null;
+    code: string;
+    name: string;
+    barrier_type: string;
+    material: string | null;
+    density: number | null;
+    material_source: string | null;
+    thickness_existing_cm: number | null;
+    thickness_required_cm: number | null;
+    thickness_adopted_cm: number | null;
+    margin_cm: number | null;
+    distance_m: number | null;
+    use_factor: number | null;
+    occupancy_factor: number | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    created_at: string;
+};
+
+const BARRIER_TYPES: { value: string; label: string }[] = [
+    { value: "primaria", label: "Barrera primaria" },
+    { value: "secundaria", label: "Barrera secundaria" },
+    { value: "neutronica", label: "Barrera neutronica" },
+    { value: "captura", label: "Barrera de captura" },
+    ];
+
+const EMPTY_BARRIER_FORM = {
+    pir_id: "",
+    code: "",
+    name: "",
+    barrier_type: "primaria",
+    material: "",
+    density: "",
+    material_source: "",
+    thickness_existing_cm: "",
+    thickness_required_cm: "",
+    thickness_adopted_cm: "",
+    margin_cm: "",
+    distance_m: "",
+    use_factor: "",
+    occupancy_factor: "",
+    result_status: "sin_informacion",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -270,6 +318,12 @@ export function BlindajeApp() {
         const [pirForm, setPirForm] = useState(EMPTY_PIR_FORM);
         const [savingPir, setSavingPir] = useState(false);
         const [pirError, setPirError] = useState<string | null>(null);
+
+    const [barriersList, setBarriersList] = useState<BlindajeBarrier[]>([]);
+    const [loadingBarriers, setLoadingBarriers] = useState(false);
+    const [barrierForm, setBarrierForm] = useState(EMPTY_BARRIER_FORM);
+    const [savingBarrier, setSavingBarrier] = useState(false);
+    const [barrierError, setBarrierError] = useState<string | null>(null);
 
   function load() {
         setLoading(true);
@@ -317,6 +371,14 @@ export function BlindajeApp() {
                         .finally(() => setLoadingPir(false));
         }
 
+    function loadBarriers(projectId: number) {
+        setLoadingBarriers(true);
+        fetch("/api/blindaje/barriers?project_id=" + projectId)
+        .then((r) => (r.ok ? r.json() : { barriers: [] }))
+        .then((data) => setBarriersList(data.barriers ?? []))
+        .finally(() => setLoadingBarriers(false));
+    }
+
   function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
         setFacilityTypeDraft(p.facility_type);
@@ -333,6 +395,9 @@ export function BlindajeApp() {
               setPirForm(EMPTY_PIR_FORM);
               setPirError(null);
               loadPir(p.id);
+      setBarrierForm(EMPTY_BARRIER_FORM);
+      setBarrierError(null);
+      loadBarriers(p.id);
   }
 
   async function saveFacilityType() {
@@ -375,6 +440,10 @@ export function BlindajeApp() {
         function updatePirField(key: string, value: string) {
                     setPirForm((f) => ({ ...f, [key]: value }));
         }
+
+    function updateBarrierField(key: string, value: string) {
+        setBarrierForm((f) => ({ ...f, [key]: value }));
+    }
 
   async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -549,6 +618,50 @@ export function BlindajeApp() {
                                     setSavingPir(false);
                     }
         }
+
+    async function createBarrier(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!barrierForm.code.trim() || !barrierForm.name.trim()) {
+            setBarrierError("El codigo y el nombre de la barrera son obligatorios.");
+            return;
+        }
+        setSavingBarrier(true);
+        setBarrierError(null);
+        try {
+            const res = await fetch("/api/blindaje/barriers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: selectedProject.id,
+                    pir_id: barrierForm.pir_id || null,
+                    code: barrierForm.code,
+                    name: barrierForm.name,
+                    barrier_type: barrierForm.barrier_type,
+                    material: barrierForm.material,
+                    density: barrierForm.density,
+                    material_source: barrierForm.material_source,
+                    thickness_existing_cm: barrierForm.thickness_existing_cm,
+                    thickness_required_cm: barrierForm.thickness_required_cm,
+                    thickness_adopted_cm: barrierForm.thickness_adopted_cm,
+                    margin_cm: barrierForm.margin_cm,
+                    distance_m: barrierForm.distance_m,
+                    use_factor: barrierForm.use_factor,
+                    occupancy_factor: barrierForm.occupancy_factor,
+                    result_status: barrierForm.result_status,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                setBarrierError(data.error || "No se pudo guardar la barrera.");
+                return;
+            }
+            setBarrierForm(EMPTY_BARRIER_FORM);
+            loadBarriers(selectedProject.id);
+        } finally {
+            setSavingBarrier(false);
+        }
+    }
 
   function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -1117,10 +1230,156 @@ export function BlindajeApp() {
                               )
                         : null;
 
-          const nextPhases = h(
+    const barrierTypeSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de barrera (S25)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: barrierForm.barrier_type,
+                onChange: (e: any) => updateBarrierField("barrier_type", e.target.value),
+            },
+            BARRIER_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+
+    const barrierResultStatusSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Estado (S39, S60)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: barrierForm.result_status,
+                onChange: (e: any) => updateBarrierField("result_status", e.target.value),
+            },
+            RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+
+    const barrierPirSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "PIR asociado",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: barrierForm.pir_id,
+                onChange: (e: any) => updateBarrierField("pir_id", e.target.value),
+            },
+            [h("option", { key: "", value: "" }, "Sin PIR asociado")].concat(
+                pirList.map((pir) => h("option", { key: pir.id, value: String(pir.id) }, pir.code + " - " + pir.name))
+                )
+            )
+        );
+    
+
+          const barrierRows = barriersList.map((b) =>
+              h(
+                  "tr",
+                  { key: b.id, className: "border-b border-border" },
+                  h("td", { className: "px-3 py-2 text-sm" }, b.code),
+                  h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, b.name),
+                  h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, b.barrier_type),
+                  h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, b.material || "-"),
+                  h(
+                      "td",
+                      { className: "px-3 py-2 text-sm text-muted-foreground" },
+                      b.thickness_required_cm ? String(b.thickness_required_cm) + " cm" : "-"
+                      ),
+                  h(
+                      "td",
+                      { className: "px-3 py-2 text-sm text-muted-foreground" },
+                      b.thickness_adopted_cm ? String(b.thickness_adopted_cm) + " cm" : "-"
+                      ),
+                  h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, b.result_status || "sin_informacion")
+                  )
+                                               );
+    
+    const barriersTable = h(
         "div",
-              { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-    "Proximas fases (en desarrollo): barreras y materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+        { className: "rounded-lg border border-border" },
+        h(
+            "table",
+            { className: "w-full text-left" },
+            h(
+                "thead",
+                null,
+                h(
+                    "tr",
+                    { className: "border-b border-border text-xs text-muted-foreground" },
+                    h("th", { className: "px-3 py-2" }, "Codigo"),
+                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                    h("th", { className: "px-3 py-2" }, "Tipo"),
+                    h("th", { className: "px-3 py-2" }, "Material"),
+                    h("th", { className: "px-3 py-2" }, "Espesor requerido"),
+                    h("th", { className: "px-3 py-2" }, "Espesor adoptado"),
+                    h("th", { className: "px-3 py-2" }, "Estado")
+                    )
+                ),
+            h("tbody", null, barrierRows)
+            )
+        );
+    
+    const barrierFormEl = selectedProject
+        ? h(
+            "form",
+            { onSubmit: createBarrier, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+            field("Codigo de la barrera *", barrierForm.code, (v) => updateBarrierField("code", v)),
+            field("Nombre de la barrera *", barrierForm.name, (v) => updateBarrierField("name", v)),
+            barrierTypeSelect,
+            barrierPirSelect,
+            field("Material", barrierForm.material, (v) => updateBarrierField("material", v)),
+            field("Densidad (g/cm3)", barrierForm.density, (v) => updateBarrierField("density", v)),
+            field("Fuente del material (norma, pagina)", barrierForm.material_source, (v) => updateBarrierField("material_source", v)),
+            field("Espesor existente (cm)", barrierForm.thickness_existing_cm, (v) => updateBarrierField("thickness_existing_cm", v)),
+            field("Espesor requerido (cm)", barrierForm.thickness_required_cm, (v) => updateBarrierField("thickness_required_cm", v)),
+            field("Espesor adoptado (cm)", barrierForm.thickness_adopted_cm, (v) => updateBarrierField("thickness_adopted_cm", v)),
+            field("Margen (cm)", barrierForm.margin_cm, (v) => updateBarrierField("margin_cm", v)),
+            field("Distancia (m)", barrierForm.distance_m, (v) => updateBarrierField("distance_m", v)),
+            field("Factor de uso (U)", barrierForm.use_factor, (v) => updateBarrierField("use_factor", v)),
+            field("Factor de ocupacion (T)", barrierForm.occupancy_factor, (v) => updateBarrierField("occupancy_factor", v)),
+            barrierResultStatusSelect,
+            barrierError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, barrierError) : null,
+            h(
+                "div",
+                { className: "md:col-span-3" },
+                h(
+                    "button",
+                    {
+                        type: "submit",
+                        disabled: savingBarrier,
+                        className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                    },
+                    savingBarrier ? "Guardando..." : "Agregar barrera"
+                    )
+                )
+            )
+        : null;
+    
+    const paso7Panel = selectedProject
+        ? h(
+            "div",
+            { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+            h("div", { className: "text-sm font-medium text-foreground" }, "Paso 7 - Barreras (" + selectedProject.name + ")"),
+            h(
+                "div",
+                { className: "text-xs text-muted-foreground" },
+                "Cada barrera guarda tipo, material y espesores existente/requerido/adoptado con su margen, PIR asociado y factores de uso/ocupacion (S21, S23, S24, S25)."
+                ),
+            loadingBarriers ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando barreras...") : barriersTable,
+            barrierFormEl
+            )
+        : null;
+    
+const nextPhases = h(
+    "div",
+    { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
+    "Proximas fases (en desarrollo): materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
       );
 
       return h(
@@ -1135,6 +1394,7 @@ export function BlindajeApp() {
         paso4Panel,
         paso5Panel,
                   paso6Panel,
+          paso7Panel,
         nextPhases
       );
 }
