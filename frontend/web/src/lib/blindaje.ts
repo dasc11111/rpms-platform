@@ -286,3 +286,38 @@ export async function listBlindajeWorkload(projectId: number) {
     const { rows } = await sql`SELECT * FROM blindaje_workload WHERE project_id = ${projectId} ORDER BY created_at DESC`;
     return rows;
 }
+
+
+let doorsEnsured = false;
+
+export async function ensureBlindajeDoorsTable() {
+  if (doorsEnsured) return;
+  await sql`
+  CREATE TABLE IF NOT EXISTS blindaje_doors (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES blindaje_projects(id) ON DELETE CASCADE,
+  barrier_id INTEGER REFERENCES blindaje_barriers(id) ON DELETE SET NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  location TEXT,
+  width_cm NUMERIC,
+  height_cm NUMERIC,
+  material TEXT,
+  thickness_cm NUMERIC,
+  lead_equivalent_mm NUMERIC,
+  result_value NUMERIC,
+  result_unit TEXT,
+  result_status TEXT,
+  source_document TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  doorsEnsured = true;
+}
+
+export async function listBlindajeDoors(projectId: number) {
+  await ensureBlindajeDoorsTable();
+  const { rows } = await sql`SELECT * FROM blindaje_doors WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
