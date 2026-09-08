@@ -309,6 +309,41 @@ const EMPTY_MATERIAL_FORM = {
     source_page: "",
 };
 
+type BlindajeDoor = {
+        id: number;
+        project_id: number;
+        barrier_id: number | null;
+        code: string;
+        name: string;
+        location: string | null;
+        width_cm: number | null;
+        height_cm: number | null;
+        material: string | null;
+        thickness_cm: number | null;
+        lead_equivalent_mm: number | null;
+        result_value: number | null;
+        result_unit: string | null;
+        result_status: string | null;
+        source_document: string | null;
+        notes: string | null;
+        created_at: string;
+};
+
+const EMPTY_DOOR_FORM = {
+        barrier_id: "",
+        code: "",
+        name: "",
+        location: "",
+        width_cm: "",
+        height_cm: "",
+        material: "",
+        thickness_cm: "",
+        lead_equivalent_mm: "",
+        result_status: "sin_informacion",
+        source_document: "",
+        notes: "",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -356,6 +391,12 @@ export function BlindajeApp() {
     const [materialForm, setMaterialForm] = useState(EMPTY_MATERIAL_FORM);
     const [savingMaterial, setSavingMaterial] = useState(false);
     const [materialError, setMaterialError] = useState<string | null>(null);
+
+        const [doorsList, setDoorsList] = useState<BlindajeDoor[]>([]);
+        const [loadingDoors, setLoadingDoors] = useState(false);
+        const [doorForm, setDoorForm] = useState(EMPTY_DOOR_FORM);
+        const [savingDoor, setSavingDoor] = useState(false);
+        const [doorError, setDoorError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -420,6 +461,14 @@ export function BlindajeApp() {
         .finally(() => setLoadingBarriers(false));
     }
 
+    function loadDoors(projectId: number) {
+            setLoadingDoors(true);
+            fetch("/api/blindaje/doors?project_id=" + projectId)
+                .then((r) => (r.ok ? r.json() : { doors: [] }))
+                .then((data) => setDoorsList(data.doors ?? []))
+                .finally(() => setLoadingDoors(false));
+    }
+
   function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
         setFacilityTypeDraft(p.facility_type);
@@ -439,6 +488,9 @@ export function BlindajeApp() {
       setBarrierForm(EMPTY_BARRIER_FORM);
       setBarrierError(null);
       loadBarriers(p.id);
+          setDoorForm(EMPTY_DOOR_FORM);
+          setDoorError(null);
+          loadDoors(p.id);
   }
 
   async function saveFacilityType() {
@@ -489,6 +541,10 @@ export function BlindajeApp() {
   function updateMaterialField(key: string, value: string) {
       setMaterialForm((f) => ({ ...f, [key]: value }));
   }
+
+    function updateDoorField(key: string, value: string) {
+            setDoorForm((f) => ({ ...f, [key]: value }));
+    }
     
     async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -747,6 +803,47 @@ export function BlindajeApp() {
           setSavingMaterial(false);
       }
   }
+
+    async function createDoor(e: FormEvent) {
+            e.preventDefault();
+            if (!selectedProject) return;
+            if (!doorForm.code.trim() || !doorForm.name.trim()) {
+                        setDoorError("El codigo y el nombre de la puerta son obligatorios.");
+                        return;
+            }
+            setSavingDoor(true);
+            setDoorError(null);
+            try {
+                        const res = await fetch("/api/blindaje/doors", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                                            project_id: selectedProject.id,
+                                                            barrier_id: doorForm.barrier_id || null,
+                                                            code: doorForm.code,
+                                                            name: doorForm.name,
+                                                            location: doorForm.location,
+                                                            width_cm: doorForm.width_cm,
+                                                            height_cm: doorForm.height_cm,
+                                                            material: doorForm.material,
+                                                            thickness_cm: doorForm.thickness_cm,
+                                                            lead_equivalent_mm: doorForm.lead_equivalent_mm,
+                                                            result_status: doorForm.result_status,
+                                                            source_document: doorForm.source_document,
+                                                            notes: doorForm.notes,
+                                        }),
+                        });
+                        const data = await res.json();
+                        if (!res.ok || !data.ok) {
+                                        setDoorError(data.error || "No se pudo guardar la puerta.");
+                                        return;
+                        }
+                        setDoorForm(EMPTY_DOOR_FORM);
+                        loadDoors(selectedProject.id);
+            } finally {
+                        setSavingDoor(false);
+            }
+    }
     
     function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -1536,6 +1633,125 @@ const materialRows = materialsList.map((m) =>
         loadingMaterials ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando materiales...") : materialsTable,
         materialFormEl
         );
+
+    const doorBarrierSelect = h(
+            "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+            "Barrera asociada",
+            h(
+                        "select",
+                {
+                                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                                value: doorForm.barrier_id,
+                                onChange: (e: any) => updateDoorField("barrier_id", e.target.value),
+                },
+                        [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+                                        barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+                                    )
+                    )
+        );
+
+    const doorResultStatusSelect = h(
+            "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+            "Estado (S39, S60)",
+            h(
+                        "select",
+                {
+                                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                                value: doorForm.result_status,
+                                onChange: (e: any) => updateDoorField("result_status", e.target.value),
+                },
+                        RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+                    )
+        );
+
+    const doorRows = doorsList.map((d) =>
+            h(
+                        "tr",
+                { key: d.id, className: "border-b border-border" },
+                        h("td", { className: "px-3 py-2 text-sm" }, d.code),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.name),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.location || "-"),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.material || "-"),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.thickness_cm ? String(d.thickness_cm) + " cm" : "-"),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.lead_equivalent_mm ? String(d.lead_equivalent_mm) + " mm Pb" : "-"),
+                        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, d.result_status || "sin_informacion")
+                    )
+        );
+
+    const doorsTable = h(
+            "div",
+        { className: "rounded-lg border border-border" },
+            h(
+                        "table",
+                { className: "w-full text-left" },
+                        h(
+                                        "thead",
+                                        null,
+                                        h(
+                                                            "tr",
+                                            { className: "border-b border-border text-xs text-muted-foreground" },
+                                                            h("th", { className: "px-3 py-2" }, "Codigo"),
+                                                            h("th", { className: "px-3 py-2" }, "Nombre"),
+                                                            h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                                                            h("th", { className: "px-3 py-2" }, "Material"),
+                                                            h("th", { className: "px-3 py-2" }, "Espesor"),
+                                                            h("th", { className: "px-3 py-2" }, "Equiv. Pb"),
+                                                            h("th", { className: "px-3 py-2" }, "Estado")
+                                                        )
+                                    ),
+                        h("tbody", null, doorRows)
+                    )
+        );
+
+    const doorFormEl = selectedProject
+        ? h(
+                    "form",
+            { onSubmit: createDoor, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+                    field("Codigo de la puerta *", doorForm.code, (v) => updateDoorField("code", v)),
+                    field("Nombre de la puerta *", doorForm.name, (v) => updateDoorField("name", v)),
+                    doorBarrierSelect,
+                    field("Ubicacion", doorForm.location, (v) => updateDoorField("location", v)),
+                    field("Ancho (cm)", doorForm.width_cm, (v) => updateDoorField("width_cm", v)),
+                    field("Alto (cm)", doorForm.height_cm, (v) => updateDoorField("height_cm", v)),
+                    field("Material", doorForm.material, (v) => updateDoorField("material", v)),
+                    field("Espesor (cm)", doorForm.thickness_cm, (v) => updateDoorField("thickness_cm", v)),
+                    field("Equivalencia en plomo (mm)", doorForm.lead_equivalent_mm, (v) => updateDoorField("lead_equivalent_mm", v)),
+                    doorResultStatusSelect,
+                    field("Fuente documental (norma, pagina)", doorForm.source_document, (v) => updateDoorField("source_document", v)),
+                    field("Notas", doorForm.notes, (v) => updateDoorField("notes", v)),
+                    doorError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, doorError) : null,
+                    h(
+                                    "div",
+                        { className: "md:col-span-3" },
+                                    h(
+                                                        "button",
+                                        {
+                                                                type: "submit",
+                                                                disabled: savingDoor,
+                                                                className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                                        },
+                                                        savingDoor ? "Guardando..." : "Agregar puerta"
+                                                    )
+                                )
+                )
+            : null;
+
+    const paso8Panel = selectedProject
+        ? h(
+                    "div",
+            { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+                    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 8 - Puertas (" + selectedProject.name + ")"),
+                    h(
+                                    "div",
+                        { className: "text-xs text-muted-foreground" },
+                                    "Cada puerta registra ubicacion, dimensiones, material, espesor y equivalencia en plomo, con su barrera asociada y fuente documental (S27, S33)."
+                                ),
+                    loadingDoors ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando puertas...") : doorsTable,
+                    doorFormEl
+                )
+            : null;
     
     const nextPhases = h(
     "div",
@@ -1557,6 +1773,7 @@ const materialRows = materialsList.map((m) =>
                   paso6Panel,
           paso7Panel,
           materialsPanel,
+              paso8Panel,
         nextPhases
       );
 }
