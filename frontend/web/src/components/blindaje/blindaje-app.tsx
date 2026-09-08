@@ -283,6 +283,32 @@ const EMPTY_BARRIER_FORM = {
     result_status: "sin_informacion",
 };
 
+type BlindajeMaterial = {
+    id: number;
+    name: string;
+    density: number | null;
+    density_unit: string | null;
+    hvl: number | null;
+    tvl: number | null;
+    method: string | null;
+    application_range: string | null;
+    source_document: string | null;
+    source_page: string | null;
+    created_at: string;
+};
+
+const EMPTY_MATERIAL_FORM = {
+    name: "",
+    density: "",
+    density_unit: "g/cm3",
+    hvl: "",
+    tvl: "",
+    method: "",
+    application_range: "",
+    source_document: "",
+    source_page: "",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -325,7 +351,13 @@ export function BlindajeApp() {
     const [savingBarrier, setSavingBarrier] = useState(false);
     const [barrierError, setBarrierError] = useState<string | null>(null);
 
-  function load() {
+  const [materialsList, setMaterialsList] = useState<BlindajeMaterial[]>([]);
+    const [loadingMaterials, setLoadingMaterials] = useState(false);
+    const [materialForm, setMaterialForm] = useState(EMPTY_MATERIAL_FORM);
+    const [savingMaterial, setSavingMaterial] = useState(false);
+    const [materialError, setMaterialError] = useState<string | null>(null);
+    
+    function load() {
         setLoading(true);
         fetch("/api/blindaje")
           .then((r) => (r.ok ? r.json() : { projects: [] }))
@@ -335,11 +367,20 @@ export function BlindajeApp() {
 
   useEffect(() => {
         load();
+      loadMaterials();
   }, []);
 
   const selectedProject = projects.find((p) => p.id === selectedProjectId) || null;
 
-  function loadEquipment(projectId: number) {
+  function loadMaterials() {
+      setLoadingMaterials(true);
+      fetch("/api/blindaje/materials")
+          .then((r) => (r.ok ? r.json() : { materials: [] }))
+          .then((data) => setMaterialsList(data.materials ?? []))
+          .finally(() => setLoadingMaterials(false));
+  }
+    
+    function loadEquipment(projectId: number) {
         setLoadingEquipment(true);
         fetch("/api/blindaje/equipment?project_id=" + projectId)
           .then((r) => (r.ok ? r.json() : { equipment: [] }))
@@ -445,7 +486,11 @@ export function BlindajeApp() {
         setBarrierForm((f) => ({ ...f, [key]: value }));
     }
 
-  async function createProject(e: FormEvent) {
+  function updateMaterialField(key: string, value: string) {
+      setMaterialForm((f) => ({ ...f, [key]: value }));
+  }
+    
+    async function createProject(e: FormEvent) {
         e.preventDefault();
         if (!form.name.trim()) {
                 setError("El nombre del proyecto es obligatorio.");
@@ -663,7 +708,47 @@ export function BlindajeApp() {
         }
     }
 
-  function sourceFieldInputs(facilityType: string) {
+  async function createMaterial(e: FormEvent) {
+      e.preventDefault();
+      if (!materialForm.name.trim()) {
+          setMaterialError("El nombre del material es obligatorio.");
+          return;
+      }
+      if (!materialForm.source_document.trim()) {
+          setMaterialError("La fuente documental del material es obligatoria (S33, S55).");
+          return;
+      }
+      setSavingMaterial(true);
+      setMaterialError(null);
+      try {
+          const res = await fetch("/api/blindaje/materials", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                  name: materialForm.name,
+                  density: materialForm.density,
+                  density_unit: materialForm.density_unit,
+                  hvl: materialForm.hvl,
+                  tvl: materialForm.tvl,
+                  method: materialForm.method,
+                  application_range: materialForm.application_range,
+                  source_document: materialForm.source_document,
+                  source_page: materialForm.source_page,
+              }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+              setMaterialError(data.error || "No se pudo guardar el material.");
+              return;
+          }
+          setMaterialForm(EMPTY_MATERIAL_FORM);
+          loadMaterials();
+      } finally {
+          setSavingMaterial(false);
+      }
+  }
+    
+    function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
         const labels = SOURCE_FIELD_LABELS[facilityType] || {};
         const inputs: any[] = [];
@@ -1376,10 +1461,86 @@ export function BlindajeApp() {
             )
         : null;
     
-const nextPhases = h(
+const materialRows = materialsList.map((m) =>
+    h(
+        "tr",
+        { key: m.id, className: "border-b border-border" },
+        h("td", { className: "px-3 py-2 text-sm" }, m.name),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.density ? String(m.density) + " " + (m.density_unit || "") : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.hvl ? String(m.hvl) + " cm" : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.tvl ? String(m.tvl) + " cm" : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.source_document ? m.source_document + (m.source_page ? " (p. " + m.source_page + ")" : "") : "-")
+        )
+                                       );
+    
+    const materialsTable = h(
+        "div",
+        { className: "rounded-lg border border-border" },
+        h(
+            "table",
+            { className: "w-full text-left" },
+            h(
+                "thead",
+                null,
+                h(
+                    "tr",
+                    { className: "border-b border-border text-xs text-muted-foreground" },
+                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                    h("th", { className: "px-3 py-2" }, "Densidad"),
+                    h("th", { className: "px-3 py-2" }, "HVL"),
+                    h("th", { className: "px-3 py-2" }, "TVL"),
+                    h("th", { className: "px-3 py-2" }, "Fuente documental")
+                    )
+                ),
+            h("tbody", null, materialRows)
+            )
+        );
+    
+    const materialFormEl = h(
+        "form",
+        { onSubmit: createMaterial, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+        field("Nombre del material *", materialForm.name, (v) => updateMaterialField("name", v)),
+        field("Densidad", materialForm.density, (v) => updateMaterialField("density", v)),
+        field("Unidad de densidad", materialForm.density_unit, (v) => updateMaterialField("density_unit", v)),
+        field("HVL (cm)", materialForm.hvl, (v) => updateMaterialField("hvl", v)),
+        field("TVL (cm)", materialForm.tvl, (v) => updateMaterialField("tvl", v)),
+        field("Metodo", materialForm.method, (v) => updateMaterialField("method", v)),
+        field("Rango de aplicacion (energia)", materialForm.application_range, (v) => updateMaterialField("application_range", v)),
+        field("Fuente documental (norma) *", materialForm.source_document, (v) => updateMaterialField("source_document", v)),
+        field("Pagina / seccion de la fuente", materialForm.source_page, (v) => updateMaterialField("source_page", v)),
+        materialError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, materialError) : null,
+        h(
+            "div",
+            { className: "md:col-span-3" },
+            h(
+                "button",
+                {
+                    type: "submit",
+                    disabled: savingMaterial,
+                    className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                },
+                savingMaterial ? "Guardando..." : "Agregar material"
+                )
+            )
+        );
+    
+    const materialsPanel = h(
+        "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+        h("div", { className: "text-sm font-medium text-foreground" }, "Materiales - Base de datos compartida (S22)"),
+        h(
+            "div",
+            { className: "text-xs text-muted-foreground" },
+            "Biblioteca comun de materiales de blindaje (hormigon, plomo, acero, etc). No esta asociada a un proyecto; cada registro exige su fuente documental (S33, S55, S61)."
+            ),
+        loadingMaterials ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando materiales...") : materialsTable,
+        materialFormEl
+        );
+    
+    const nextPhases = h(
     "div",
     { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-    "Proximas fases (en desarrollo): materiales, motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+    "Proximas fases (en desarrollo): motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
       );
 
       return h(
@@ -1395,6 +1556,7 @@ const nextPhases = h(
         paso5Panel,
                   paso6Panel,
           paso7Panel,
+          materialsPanel,
         nextPhases
       );
 }
