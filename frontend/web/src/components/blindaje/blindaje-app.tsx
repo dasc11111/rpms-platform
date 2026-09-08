@@ -1272,7 +1272,7 @@ export function BlindajeApp() {
                 onChange: (e: any) => updateBarrierField("pir_id", e.target.value),
             },
             [h("option", { key: "", value: "" }, "Sin PIR asociado")].concat(
-                pirList.map((pir) => h("option", { key: pir.id, value: String(pir.id) }, pir.code + " - " + pir.name))
+                pirList.map((pir) => h("option", { key: String(pir.id), value: String(pir.id) }, pir.code + " - " + pir.name))
                 )
             )
         );
