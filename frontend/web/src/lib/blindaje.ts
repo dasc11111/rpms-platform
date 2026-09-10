@@ -393,3 +393,38 @@ export async function listBlindajePenetrations(projectId: number) {
   const { rows } = await sql`SELECT * FROM blindaje_penetrations WHERE project_id = ${projectId} ORDER BY code ASC`;
   return rows;
 }
+
+
+let mazesEnsured = false;
+
+export async function ensureBlindajeMazesTable() {
+  if (mazesEnsured) return;
+  await sql`
+  CREATE TABLE IF NOT EXISTS blindaje_mazes (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES blindaje_projects(id) ON DELETE CASCADE,
+  barrier_id INTEGER REFERENCES blindaje_barriers(id) ON DELETE SET NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  location TEXT,
+  leg_count NUMERIC,
+  last_leg_length_m NUMERIC,
+  maze_width_cm NUMERIC,
+  maze_height_cm NUMERIC,
+  wall_material TEXT,
+  result_value NUMERIC,
+  result_unit TEXT,
+  result_status TEXT,
+  source_document TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  mazesEnsured = true;
+}
+
+export async function listBlindajeMazes(projectId: number) {
+  await ensureBlindajeMazesTable();
+  const { rows } = await sql`SELECT * FROM blindaje_mazes WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
