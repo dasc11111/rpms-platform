@@ -423,6 +423,40 @@ const EMPTY_PENETRATION_FORM = {
     source_document: "",
     notes: "",
 };
+type BlindajeMaze = {
+    id: number;
+    project_id: number;
+    barrier_id: number | null;
+    code: string;
+    name: string;
+    location: string | null;
+    leg_count: number | null;
+    last_leg_length_m: number | null;
+    maze_width_cm: number | null;
+    maze_height_cm: number | null;
+    wall_material: string | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    source_document: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+const EMPTY_MAZE_FORM = {
+    barrier_id: "",
+    code: "",
+    name: "",
+    location: "",
+    leg_count: "",
+    last_leg_length_m: "",
+    maze_width_cm: "",
+    maze_height_cm: "",
+    wall_material: "",
+    result_status: "sin_informacion",
+    source_document: "",
+    notes: "",
+};
 
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
@@ -488,6 +522,11 @@ const [penetrationsList, setPenetrationsList] = useState<BlindajePenetration[]>(
     const [penetrationForm, setPenetrationForm] = useState(EMPTY_PENETRATION_FORM);
     const [savingPenetration, setSavingPenetration] = useState(false);
     const [penetrationError, setPenetrationError] = useState<string | null>(null);
+    const [mazesList, setMazesList] = useState<BlindajeMaze[]>([]);
+    const [loadingMazes, setLoadingMazes] = useState(false);
+    const [mazeForm, setMazeForm] = useState(EMPTY_MAZE_FORM);
+    const [savingMaze, setSavingMaze] = useState(false);
+    const [mazeError, setMazeError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -574,6 +613,13 @@ function loadPenetrations(projectId: number) {
     .then((data) => setPenetrationsList(data.penetrations ?? []))
     .finally(() => setLoadingPenetrations(false));
 }
+    function loadMazes(projectId: number) {
+        setLoadingMazes(true);
+        fetch("/api/blindaje/mazes?project_id=" + projectId)
+        .then((r) => (r.ok ? r.json() : { mazes: [] }))
+        .then((data) => setMazesList(data.mazes ?? []))
+        .finally(() => setLoadingMazes(false));
+    }
     
     function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
@@ -603,6 +649,9 @@ setWindowForm(EMPTY_WINDOW_FORM);
 setPenetrationForm(EMPTY_PENETRATION_FORM);
     setPenetrationError(null);
     loadPenetrations(p.id);
+        setMazeForm(EMPTY_MAZE_FORM);
+        setMazeError(null);
+        loadMazes(p.id);
     }
 
   async function saveFacilityType() {
@@ -664,6 +713,9 @@ setPenetrationForm(EMPTY_PENETRATION_FORM);
 function updatePenetrationField(key: string, value: string) {
     setPenetrationForm((f) => ({ ...f, [key]: value }));
 }
+      function updateMazeField(key: string, value: string) {
+          setMazeForm((f) => ({ ...f, [key]: value }));
+      }
     
     async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -1046,6 +1098,46 @@ async function createPenetration(e: FormEvent) {
         setSavingPenetration(false);
     }
 }
+      async function createMaze(e: FormEvent) {
+          e.preventDefault();
+          if (!selectedProject) return;
+          if (!mazeForm.code.trim() || !mazeForm.name.trim()) {
+              setMazeError("El codigo y el nombre del laberinto son obligatorios.");
+              return;
+          }
+          setSavingMaze(true);
+          setMazeError(null);
+          try {
+              const res = await fetch("/api/blindaje/mazes", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                      project_id: selectedProject.id,
+                      barrier_id: mazeForm.barrier_id || null,
+                      code: mazeForm.code,
+                      name: mazeForm.name,
+                      location: mazeForm.location,
+                      leg_count: mazeForm.leg_count,
+                      last_leg_length_m: mazeForm.last_leg_length_m,
+                      maze_width_cm: mazeForm.maze_width_cm,
+                      maze_height_cm: mazeForm.maze_height_cm,
+                      wall_material: mazeForm.wall_material,
+                      result_status: mazeForm.result_status,
+                      source_document: mazeForm.source_document,
+                      notes: mazeForm.notes,
+                  }),
+              });
+              const data = await res.json();
+              if (!res.ok || !data.ok) {
+                  setMazeError(data.error || "No se pudo guardar el laberinto.");
+                  return;
+              }
+              setMazeForm(EMPTY_MAZE_FORM);
+              loadMazes(selectedProject.id);
+          } finally {
+              setSavingMaze(false);
+          }
+      }
     
     function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -2216,6 +2308,124 @@ const penetrationBarrierSelect = h(
         penetrationFormEl
         )
         : null;
+const mazeBarrierSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Barrera asociada",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: mazeForm.barrier_id,
+            onChange: (e: any) => updateMazeField("barrier_id", e.target.value),
+        },
+        [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+            barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+            )
+        )
+    );
+
+const mazeResultStatusSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Estado (S39, S60)",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: mazeForm.result_status,
+            onChange: (e: any) => updateMazeField("result_status", e.target.value),
+        },
+        RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+        )
+    );
+
+const mazeRows = mazesList.map((m) =>
+    h(
+        "tr",
+        { key: m.id, className: "border-b border-border" },
+        h("td", { className: "px-3 py-2 text-sm" }, m.code),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.name),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.location || "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.leg_count ? String(m.leg_count) : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.last_leg_length_m ? String(m.last_leg_length_m) + " m" : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.wall_material || "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, m.result_status || "sin_informacion")
+        )
+    );
+
+const mazesTable = h(
+    "div",
+    { className: "rounded-lg border border-border" },
+    h(
+        "table",
+        { className: "w-full text-left" },
+        h(
+            "thead",
+            null,
+            h(
+                "tr",
+                { className: "border-b border-border text-xs text-muted-foreground" },
+                h("th", { className: "px-3 py-2" }, "Codigo"),
+                h("th", { className: "px-3 py-2" }, "Nombre"),
+                h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                h("th", { className: "px-3 py-2" }, "N de tramos"),
+                h("th", { className: "px-3 py-2" }, "Largo ultimo tramo"),
+                h("th", { className: "px-3 py-2" }, "Material de muros"),
+                h("th", { className: "px-3 py-2" }, "Estado")
+                )
+            ),
+        h("tbody", null, mazeRows)
+        )
+    );
+
+const mazeFormEl = selectedProject
+? h(
+    "form",
+    { onSubmit: createMaze, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+    field("Codigo del laberinto *", mazeForm.code, (v) => updateMazeField("code", v)),
+    field("Nombre del laberinto *", mazeForm.name, (v) => updateMazeField("name", v)),
+    mazeBarrierSelect,
+    field("Ubicacion", mazeForm.location, (v) => updateMazeField("location", v)),
+    field("Numero de tramos (legs)", mazeForm.leg_count, (v) => updateMazeField("leg_count", v)),
+    field("Largo del ultimo tramo (m)", mazeForm.last_leg_length_m, (v) => updateMazeField("last_leg_length_m", v)),
+    field("Ancho del laberinto (cm)", mazeForm.maze_width_cm, (v) => updateMazeField("maze_width_cm", v)),
+    field("Alto del laberinto (cm)", mazeForm.maze_height_cm, (v) => updateMazeField("maze_height_cm", v)),
+    field("Material de los muros", mazeForm.wall_material, (v) => updateMazeField("wall_material", v)),
+    mazeResultStatusSelect,
+    field("Fuente documental (norma, pagina)", mazeForm.source_document, (v) => updateMazeField("source_document", v)),
+    field("Notas", mazeForm.notes, (v) => updateMazeField("notes", v)),
+    mazeError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, mazeError) : null,
+    h(
+        "div",
+        { className: "md:col-span-3" },
+        h(
+            "button",
+            {
+                type: "submit",
+                disabled: savingMaze,
+                className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+            },
+            savingMaze ? "Guardando..." : "Agregar laberinto"
+            )
+        )
+    )
+    : null;
+
+const paso11Panel = selectedProject
+? h(
+    "div",
+    { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+    h("div", { className: "text-sm font-medium text-foreground" }, "Paso 11 - Laberintos (" + selectedProject.name + ")"),
+    h(
+        "div",
+        { className: "text-xs text-muted-foreground" },
+        "Cada laberinto registra numero de tramos, largo del ultimo tramo (dimension critica para radiacion dispersa), dimensiones y material de los muros, con su barrera asociada y fuente documental (S30, S33)."
+        ),
+    loadingMazes ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando laberintos...") : mazesTable,
+    mazeFormEl
+    )
+    : null;
     
     const nextPhases = h(
     "div",
@@ -2240,6 +2450,7 @@ const penetrationBarrierSelect = h(
               paso8Panel,
 paso9Panel,
           paso10Panel,
+          paso11Panel,
           nextPhases
       );
 }
