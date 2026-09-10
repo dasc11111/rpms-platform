@@ -463,3 +463,37 @@ export async function listBlindajeSlabs(projectId: number) {
     const { rows } = await sql`SELECT * FROM blindaje_slabs WHERE project_id = ${projectId} ORDER BY code ASC`;
     return rows;
 }
+
+
+let occupancyPointsEnsured = false;
+
+export async function ensureBlindajeOccupancyPointsTable() {
+  if (occupancyPointsEnsured) return;
+  await sql`
+  CREATE TABLE IF NOT EXISTS blindaje_occupancy_points (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES blindaje_projects(id) ON DELETE CASCADE,
+  barrier_id INTEGER REFERENCES blindaje_barriers(id) ON DELETE SET NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  location TEXT,
+  occupancy_type TEXT,
+  occupancy_factor_t NUMERIC,
+  distance_m NUMERIC,
+  beam_component TEXT,
+  result_value NUMERIC,
+  result_unit TEXT,
+  result_status TEXT,
+  source_document TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  occupancyPointsEnsured = true;
+}
+
+export async function listBlindajeOccupancyPoints(projectId: number) {
+  await ensureBlindajeOccupancyPointsTable();
+  const { rows } = await sql`SELECT * FROM blindaje_occupancy_points WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
