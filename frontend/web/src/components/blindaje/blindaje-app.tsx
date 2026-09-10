@@ -380,6 +380,49 @@ const EMPTY_WINDOW_FORM = {
     source_document: "",
     notes: "",
 };
+type BlindajePenetration = {
+    id: number;
+    project_id: number;
+    barrier_id: number | null;
+    code: string;
+    name: string;
+    location: string | null;
+    penetration_type: string | null;
+    diameter_cm: number | null;
+    width_cm: number | null;
+    height_cm: number | null;
+    fill_material: string | null;
+    offset_cm: number | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    source_document: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+const PENETRATION_TYPES: { value: string; label: string }[] = [
+    { value: "ducto", label: "Ducto / conduit" },
+    { value: "tuberia", label: "Tuberia" },
+    { value: "bandeja_cables", label: "Bandeja de cables" },
+    { value: "otro", label: "Otro" },
+    ];
+
+const EMPTY_PENETRATION_FORM = {
+    barrier_id: "",
+    code: "",
+    name: "",
+    location: "",
+    penetration_type: "ducto",
+    diameter_cm: "",
+    width_cm: "",
+    height_cm: "",
+    fill_material: "",
+    offset_cm: "",
+    result_status: "sin_informacion",
+    source_document: "",
+    notes: "",
+};
 
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
@@ -440,6 +483,11 @@ const [windowsList, setWindowsList] = useState<BlindajeWindow[]>([]);
     const [windowForm, setWindowForm] = useState(EMPTY_WINDOW_FORM);
     const [savingWindow, setSavingWindow] = useState(false);
     const [windowError, setWindowError] = useState<string | null>(null);
+const [penetrationsList, setPenetrationsList] = useState<BlindajePenetration[]>([]);
+    const [loadingPenetrations, setLoadingPenetrations] = useState(false);
+    const [penetrationForm, setPenetrationForm] = useState(EMPTY_PENETRATION_FORM);
+    const [savingPenetration, setSavingPenetration] = useState(false);
+    const [penetrationError, setPenetrationError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -519,6 +567,13 @@ function loadWindows(projectId: number) {
         .then((data) => setWindowsList(data.windows ?? []))
         .finally(() => setLoadingWindows(false));
 }
+function loadPenetrations(projectId: number) {
+    setLoadingPenetrations(true);
+    fetch("/api/blindaje/penetrations?project_id=" + projectId)
+    .then((r) => (r.ok ? r.json() : { penetrations: [] }))
+    .then((data) => setPenetrationsList(data.penetrations ?? []))
+    .finally(() => setLoadingPenetrations(false));
+}
     
     function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
@@ -545,6 +600,9 @@ function loadWindows(projectId: number) {
 setWindowForm(EMPTY_WINDOW_FORM);
     setWindowError(null);
     loadWindows(p.id);
+setPenetrationForm(EMPTY_PENETRATION_FORM);
+    setPenetrationError(null);
+    loadPenetrations(p.id);
     }
 
   async function saveFacilityType() {
@@ -603,6 +661,9 @@ setWindowForm(EMPTY_WINDOW_FORM);
     function updateWindowField(key: string, value: string) {
         setWindowForm((f) => ({ ...f, [key]: value }));
     }
+function updatePenetrationField(key: string, value: string) {
+    setPenetrationForm((f) => ({ ...f, [key]: value }));
+}
     
     async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -944,6 +1005,47 @@ setWindowForm(EMPTY_WINDOW_FORM);
             setSavingWindow(false);
         }
     }
+async function createPenetration(e: FormEvent) {
+    e.preventDefault();
+    if (!selectedProject) return;
+    if (!penetrationForm.code.trim() || !penetrationForm.name.trim()) {
+        setPenetrationError("El codigo y el nombre de la penetracion son obligatorios.");
+        return;
+    }
+    setSavingPenetration(true);
+    setPenetrationError(null);
+    try {
+        const res = await fetch("/api/blindaje/penetrations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                project_id: selectedProject.id,
+                barrier_id: penetrationForm.barrier_id || null,
+                code: penetrationForm.code,
+                name: penetrationForm.name,
+                location: penetrationForm.location,
+                penetration_type: penetrationForm.penetration_type,
+                diameter_cm: penetrationForm.diameter_cm,
+                width_cm: penetrationForm.width_cm,
+                height_cm: penetrationForm.height_cm,
+                fill_material: penetrationForm.fill_material,
+                offset_cm: penetrationForm.offset_cm,
+                result_status: penetrationForm.result_status,
+                source_document: penetrationForm.source_document,
+                notes: penetrationForm.notes,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+            setPenetrationError(data.error || "No se pudo guardar la penetracion.");
+            return;
+        }
+        setPenetrationForm(EMPTY_PENETRATION_FORM);
+        loadPenetrations(selectedProject.id);
+    } finally {
+        setSavingPenetration(false);
+    }
+}
     
     function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -1974,6 +2076,146 @@ const materialRows = materialsList.map((m) =>
             windowFormEl
             )
         : null;
+const penetrationBarrierSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Barrera asociada",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: penetrationForm.barrier_id,
+            onChange: (e: any) => updatePenetrationField("barrier_id", e.target.value),
+        },
+        [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+            barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+            )
+        )
+    );
+
+    const penetrationTypeSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de penetracion",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: penetrationForm.penetration_type,
+                onChange: (e: any) => updatePenetrationField("penetration_type", e.target.value),
+            },
+            PENETRATION_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+
+    const penetrationResultStatusSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Estado (S39, S60)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: penetrationForm.result_status,
+                onChange: (e: any) => updatePenetrationField("result_status", e.target.value),
+            },
+            RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+
+    const penetrationRows = penetrationsList.map((p) =>
+        h(
+            "tr",
+            { key: p.id, className: "border-b border-border" },
+            h("td", { className: "px-3 py-2 text-sm" }, p.code),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.name),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.location || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.penetration_type || "-"),
+            h(
+                "td",
+                { className: "px-3 py-2 text-sm text-muted-foreground" },
+                p.diameter_cm ? String(p.diameter_cm) + " cm (diam.)" : p.width_cm ? String(p.width_cm) + "x" + (p.height_cm || "-") + " cm" : "-"
+                ),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.fill_material || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.offset_cm ? String(p.offset_cm) + " cm" : "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, p.result_status || "sin_informacion")
+            )
+        );
+
+    const penetrationsTable = h(
+        "div",
+        { className: "rounded-lg border border-border" },
+        h(
+            "table",
+            { className: "w-full text-left" },
+            h(
+                "thead",
+                null,
+                h(
+                    "tr",
+                    { className: "border-b border-border text-xs text-muted-foreground" },
+                    h("th", { className: "px-3 py-2" }, "Codigo"),
+                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                    h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                    h("th", { className: "px-3 py-2" }, "Tipo"),
+                    h("th", { className: "px-3 py-2" }, "Dimension"),
+                    h("th", { className: "px-3 py-2" }, "Material de relleno"),
+                    h("th", { className: "px-3 py-2" }, "Desplazamiento"),
+                    h("th", { className: "px-3 py-2" }, "Estado")
+                    )
+                ),
+            h("tbody", null, penetrationRows)
+            )
+        );
+
+    const penetrationFormEl = selectedProject
+    ? h(
+        "form",
+        { onSubmit: createPenetration, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+        field("Codigo de la penetracion *", penetrationForm.code, (v) => updatePenetrationField("code", v)),
+        field("Nombre de la penetracion *", penetrationForm.name, (v) => updatePenetrationField("name", v)),
+        penetrationBarrierSelect,
+        field("Ubicacion", penetrationForm.location, (v) => updatePenetrationField("location", v)),
+        penetrationTypeSelect,
+        field("Diametro (cm, si es circular)", penetrationForm.diameter_cm, (v) => updatePenetrationField("diameter_cm", v)),
+        field("Ancho (cm, si es rectangular)", penetrationForm.width_cm, (v) => updatePenetrationField("width_cm", v)),
+        field("Alto (cm, si es rectangular)", penetrationForm.height_cm, (v) => updatePenetrationField("height_cm", v)),
+        field("Material de relleno / sellado", penetrationForm.fill_material, (v) => updatePenetrationField("fill_material", v)),
+        field("Desplazamiento respecto a linea recta (cm)", penetrationForm.offset_cm, (v) => updatePenetrationField("offset_cm", v)),
+        penetrationResultStatusSelect,
+        field("Fuente documental (norma, pagina)", penetrationForm.source_document, (v) => updatePenetrationField("source_document", v)),
+        field("Notas", penetrationForm.notes, (v) => updatePenetrationField("notes", v)),
+        penetrationError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, penetrationError) : null,
+        h(
+            "div",
+            { className: "md:col-span-3" },
+            h(
+                "button",
+                {
+                    type: "submit",
+                    disabled: savingPenetration,
+                    className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                },
+                savingPenetration ? "Guardando..." : "Agregar penetracion"
+                )
+            )
+        )
+        : null;
+
+    const paso10Panel = selectedProject
+    ? h(
+        "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+        h("div", { className: "text-sm font-medium text-foreground" }, "Paso 10 - Penetraciones (" + selectedProject.name + ")"),
+        h(
+            "div",
+            { className: "text-xs text-muted-foreground" },
+            "Cada penetracion (ducto, tuberia, bandeja de cables) registra ubicacion, tipo, dimensiones, material de relleno y desplazamiento respecto a la linea recta para evitar streaming directo de radiacion, con su barrera asociada y fuente documental (S29, S33)."
+            ),
+        loadingPenetrations ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando penetraciones...") : penetrationsTable,
+        penetrationFormEl
+        )
+        : null;
     
     const nextPhases = h(
     "div",
@@ -1997,6 +2239,7 @@ const materialRows = materialsList.map((m) =>
           materialsPanel,
               paso8Panel,
 paso9Panel,
+          paso10Panel,
           nextPhases
       );
 }
