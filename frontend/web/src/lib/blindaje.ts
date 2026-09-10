@@ -428,3 +428,38 @@ export async function listBlindajeMazes(projectId: number) {
   const { rows } = await sql`SELECT * FROM blindaje_mazes WHERE project_id = ${projectId} ORDER BY code ASC`;
   return rows;
 }
+
+
+let slabsEnsured = false;
+
+export async function ensureBlindajeSlabsTable() {
+    if (slabsEnsured) return;
+    await sql`
+        CREATE TABLE IF NOT EXISTS blindaje_slabs (
+              id SERIAL PRIMARY KEY,
+                    project_id INTEGER NOT NULL REFERENCES blindaje_projects(id) ON DELETE CASCADE,
+                          barrier_id INTEGER REFERENCES blindaje_barriers(id) ON DELETE SET NULL,
+                                code TEXT NOT NULL,
+                                      name TEXT NOT NULL,
+                                            location TEXT,
+                                                  slab_type TEXT,
+                                                        thickness_cm NUMERIC,
+                                                              material TEXT,
+                                                                    occupancy_above TEXT,
+                                                                          distance_property_line_m NUMERIC,
+                                                                                result_value NUMERIC,
+                                                                                      result_unit TEXT,
+                                                                                            result_status TEXT,
+                                                                                                  source_document TEXT,
+                                                                                                        notes TEXT,
+                                                                                                              created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                                                                                                                  );
+                                                                                                                    `;
+    slabsEnsured = true;
+}
+
+export async function listBlindajeSlabs(projectId: number) {
+    await ensureBlindajeSlabsTable();
+    const { rows } = await sql`SELECT * FROM blindaje_slabs WHERE project_id = ${projectId} ORDER BY code ASC`;
+    return rows;
+}
