@@ -504,6 +504,51 @@ const EMPTY_SLAB_FORM = {
     notes: "",
 };
 
+type BlindajeOccupancyPoint = {
+    id: number;
+    project_id: number;
+    barrier_id: number | null;
+    code: string;
+    name: string;
+    location: string | null;
+    occupancy_type: string | null;
+    occupancy_factor_t: number | null;
+    distance_m: number | null;
+    beam_component: string | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    source_document: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+const OCCUPANCY_TYPE_OPTIONS: { value: string; label: string }[] = [
+    { value: "toe", label: "Trabajador ocupacionalmente expuesto (TOE)" },
+    { value: "publico", label: "Publico general" },
+    { value: "paciente_acompanante", label: "Paciente / acompanante" },
+    ];
+
+const BEAM_COMPONENT_OPTIONS: { value: string; label: string }[] = [
+    { value: "primario", label: "Haz primario" },
+    { value: "dispersa", label: "Radiacion dispersa (secundaria)" },
+    { value: "fuga", label: "Radiacion de fuga" },
+    ];
+
+const EMPTY_OCCUPANCY_POINT_FORM = {
+    barrier_id: "",
+    code: "",
+    name: "",
+    location: "",
+    occupancy_type: "toe",
+    occupancy_factor_t: "",
+    distance_m: "",
+    beam_component: "primario",
+    result_status: "sin_informacion",
+    source_document: "",
+    notes: "",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -578,6 +623,11 @@ const [penetrationsList, setPenetrationsList] = useState<BlindajePenetration[]>(
     const [slabForm, setSlabForm] = useState(EMPTY_SLAB_FORM);
     const [savingSlab, setSavingSlab] = useState(false);
     const [slabError, setSlabError] = useState<string | null>(null);
+    const [occupancyPointsList, setOccupancyPointsList] = useState<BlindajeOccupancyPoint[]>([]);
+    const [loadingOccupancyPoints, setLoadingOccupancyPoints] = useState(false);
+    const [occupancyPointForm, setOccupancyPointForm] = useState(EMPTY_OCCUPANCY_POINT_FORM);
+    const [savingOccupancyPoint, setSavingOccupancyPoint] = useState(false);
+    const [occupancyPointError, setOccupancyPointError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -679,6 +729,14 @@ function loadPenetrations(projectId: number) {
         .finally(() => setLoadingSlabs(false));
     }
     
+    function loadOccupancyPoints(projectId: number) {
+        setLoadingOccupancyPoints(true);
+        fetch("/api/blindaje/occupancy-points?project_id=" + projectId)
+            .then((r) => (r.ok ? r.json() : { occupancy_points: [] }))
+            .then((data) => setOccupancyPointsList(data.occupancy_points ?? []))
+            .finally(() => setLoadingOccupancyPoints(false));
+    }
+    
     function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
         setFacilityTypeDraft(p.facility_type);
@@ -713,6 +771,9 @@ setPenetrationForm(EMPTY_PENETRATION_FORM);
         setSlabForm(EMPTY_SLAB_FORM);
         setSlabError(null);
         loadSlabs(p.id);
+        setOccupancyPointForm(EMPTY_OCCUPANCY_POINT_FORM);
+        setOccupancyPointError(null);
+        loadOccupancyPoints(p.id);
     }
 
   async function saveFacilityType() {
@@ -779,6 +840,10 @@ function updatePenetrationField(key: string, value: string) {
       }
     function updateSlabField(key: string, value: string) {
               setSlabForm((f) => ({ ...f, [key]: value }));
+    }
+    
+    function updateOccupancyPointField(key: string, value: string) {
+        setOccupancyPointForm((f) => ({ ...f, [key]: value }));
     }
     
     async function createProject(e: FormEvent) {
@@ -1240,6 +1305,46 @@ async function createPenetration(e: FormEvent) {
             loadSlabs(selectedProject.id);
         } finally {
             setSavingSlab(false);
+        }
+    }
+    
+    async function createOccupancyPoint(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!occupancyPointForm.code.trim() || !occupancyPointForm.name.trim()) {
+            setOccupancyPointError("El codigo y el nombre del punto de ocupacion son obligatorios.");
+            return;
+        }
+        setSavingOccupancyPoint(true);
+        setOccupancyPointError(null);
+        try {
+            const res = await fetch("/api/blindaje/occupancy-points", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: selectedProject.id,
+                    barrier_id: occupancyPointForm.barrier_id || null,
+                    code: occupancyPointForm.code,
+                    name: occupancyPointForm.name,
+                    location: occupancyPointForm.location,
+                    occupancy_type: occupancyPointForm.occupancy_type,
+                    occupancy_factor_t: occupancyPointForm.occupancy_factor_t,
+                    distance_m: occupancyPointForm.distance_m,
+                    beam_component: occupancyPointForm.beam_component,
+                    result_status: occupancyPointForm.result_status,
+                    source_document: occupancyPointForm.source_document,
+                    notes: occupancyPointForm.notes,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                setOccupancyPointError(data.error || "No se pudo guardar el punto de ocupacion.");
+                return;
+            }
+            setOccupancyPointForm(EMPTY_OCCUPANCY_POINT_FORM);
+            loadOccupancyPoints(selectedProject.id);
+        } finally {
+            setSavingOccupancyPoint(false);
         }
     }
     
@@ -2680,7 +2785,157 @@ const paso12Panel = selectedProject
         )
     : null;
 
-const nextPhases = h(
+const occupancyPointBarrierSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Barrera asociada",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: occupancyPointForm.barrier_id,
+            onChange: (e: any) => updateOccupancyPointField("barrier_id", e.target.value),
+        },
+        [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+            barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+            )
+        )
+    );
+    
+    const occupancyTypeSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Tipo de ocupacion",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: occupancyPointForm.occupancy_type,
+                onChange: (e: any) => updateOccupancyPointField("occupancy_type", e.target.value),
+            },
+            OCCUPANCY_TYPE_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+    
+    const beamComponentSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Componente del haz",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: occupancyPointForm.beam_component,
+                onChange: (e: any) => updateOccupancyPointField("beam_component", e.target.value),
+            },
+            BEAM_COMPONENT_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+    
+    const occupancyPointResultStatusSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Estado (S39, S60)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: occupancyPointForm.result_status,
+                onChange: (e: any) => updateOccupancyPointField("result_status", e.target.value),
+            },
+            RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+    
+    const occupancyPointRows = occupancyPointsList.map((o) =>
+        h(
+            "tr",
+            { key: o.id, className: "border-b border-border" },
+            h("td", { className: "px-3 py-2 text-sm" }, o.code),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.name),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.location || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.occupancy_type || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.occupancy_factor_t ? String(o.occupancy_factor_t) : "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.distance_m ? String(o.distance_m) + " m" : "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.beam_component || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, o.result_status || "sin_informacion")
+            )
+                                                       );
+    
+    const occupancyPointsTable = h(
+        "div",
+        { className: "rounded-lg border border-border" },
+        h(
+            "table",
+            { className: "w-full text-left" },
+            h(
+                "thead",
+                null,
+                h(
+                    "tr",
+                    { className: "border-b border-border text-xs text-muted-foreground" },
+                    h("th", { className: "px-3 py-2" }, "Codigo"),
+                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                    h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                    h("th", { className: "px-3 py-2" }, "Tipo de ocupacion"),
+                    h("th", { className: "px-3 py-2" }, "Factor T"),
+                    h("th", { className: "px-3 py-2" }, "Distancia"),
+                    h("th", { className: "px-3 py-2" }, "Componente"),
+                    h("th", { className: "px-3 py-2" }, "Estado")
+                    )
+                ),
+            h("tbody", null, occupancyPointRows)
+            )
+        );
+    
+    const occupancyPointFormEl = selectedProject
+        ? h(
+            "form",
+            { onSubmit: createOccupancyPoint, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+            field("Codigo del punto *", occupancyPointForm.code, (v) => updateOccupancyPointField("code", v)),
+            field("Nombre del punto *", occupancyPointForm.name, (v) => updateOccupancyPointField("name", v)),
+            occupancyPointBarrierSelect,
+            field("Ubicacion", occupancyPointForm.location, (v) => updateOccupancyPointField("location", v)),
+            occupancyTypeSelect,
+            field("Factor de ocupacion (T)", occupancyPointForm.occupancy_factor_t, (v) => updateOccupancyPointField("occupancy_factor_t", v)),
+            field("Distancia fuente-punto (m)", occupancyPointForm.distance_m, (v) => updateOccupancyPointField("distance_m", v)),
+            beamComponentSelect,
+            occupancyPointResultStatusSelect,
+            field("Fuente documental (norma, pagina)", occupancyPointForm.source_document, (v) => updateOccupancyPointField("source_document", v)),
+            field("Notas", occupancyPointForm.notes, (v) => updateOccupancyPointField("notes", v)),
+            occupancyPointError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, occupancyPointError) : null,
+            h(
+                "div",
+                { className: "md:col-span-3" },
+                h(
+                    "button",
+                    {
+                        type: "submit",
+                        disabled: savingOccupancyPoint,
+                        className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                    },
+                    savingOccupancyPoint ? "Guardando..." : "Agregar punto de ocupacion"
+                    )
+                )
+            )
+        : null;
+    
+    const paso13Panel = selectedProject
+        ? h(
+            "div",
+            { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+            h("div", { className: "text-sm font-medium text-foreground" }, "Paso 13 - Puntos de ocupacion / Receptores de dosis (" + selectedProject.name + ")"),
+            h(
+                "div",
+                { className: "text-xs text-muted-foreground" },
+                "Cada punto de ocupacion registra el tipo de ocupante, el factor de ocupacion (T), la distancia a la fuente y el componente del haz (primario, dispersa o fuga) relevante para el calculo de dosis en ese receptor, con su barrera asociada y fuente documental (S32, S33)."
+                ),
+            loadingOccupancyPoints ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando puntos de ocupacion...") : occupancyPointsTable,
+            occupancyPointFormEl
+            )
+        : null;
+    
+    const nextPhases = h(
     "div",
     { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
     "Proximas fases (en desarrollo): motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
@@ -2705,6 +2960,7 @@ paso9Panel,
           paso10Panel,
           paso11Panel,
           paso12Panel,
+          paso13Panel,
           nextPhases
       );
 }
