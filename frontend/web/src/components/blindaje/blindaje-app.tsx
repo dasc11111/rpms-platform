@@ -344,6 +344,43 @@ const EMPTY_DOOR_FORM = {
         notes: "",
 };
 
+type BlindajeWindow = {
+    id: number;
+    project_id: number;
+    barrier_id: number | null;
+    code: string;
+    name: string;
+    location: string | null;
+    width_cm: number | null;
+    height_cm: number | null;
+    material: string | null;
+    thickness_cm: number | null;
+    lead_equivalent_mm: number | null;
+    energy: string | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    source_document: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+const EMPTY_WINDOW_FORM = {
+    barrier_id: "",
+    code: "",
+    name: "",
+    location: "",
+    width_cm: "",
+    height_cm: "",
+    material: "",
+    thickness_cm: "",
+    lead_equivalent_mm: "",
+    energy: "",
+    result_status: "sin_informacion",
+    source_document: "",
+    notes: "",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -397,6 +434,12 @@ export function BlindajeApp() {
         const [doorForm, setDoorForm] = useState(EMPTY_DOOR_FORM);
         const [savingDoor, setSavingDoor] = useState(false);
         const [doorError, setDoorError] = useState<string | null>(null);
+    
+const [windowsList, setWindowsList] = useState<BlindajeWindow[]>([]);
+    const [loadingWindows, setLoadingWindows] = useState(false);
+    const [windowForm, setWindowForm] = useState(EMPTY_WINDOW_FORM);
+    const [savingWindow, setSavingWindow] = useState(false);
+    const [windowError, setWindowError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -469,7 +512,15 @@ export function BlindajeApp() {
                 .finally(() => setLoadingDoors(false));
     }
 
-  function selectProject(p: BlindajeProject) {
+function loadWindows(projectId: number) {
+    setLoadingWindows(true);
+    fetch("/api/blindaje/windows?project_id=" + projectId)
+        .then((r) => (r.ok ? r.json() : { windows: [] }))
+        .then((data) => setWindowsList(data.windows ?? []))
+        .finally(() => setLoadingWindows(false));
+}
+    
+    function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
         setFacilityTypeDraft(p.facility_type);
         setFacilityTypeError(null);
@@ -491,7 +542,10 @@ export function BlindajeApp() {
           setDoorForm(EMPTY_DOOR_FORM);
           setDoorError(null);
           loadDoors(p.id);
-  }
+setWindowForm(EMPTY_WINDOW_FORM);
+    setWindowError(null);
+    loadWindows(p.id);
+    }
 
   async function saveFacilityType() {
         if (!selectedProject) return;
@@ -544,6 +598,10 @@ export function BlindajeApp() {
 
     function updateDoorField(key: string, value: string) {
             setDoorForm((f) => ({ ...f, [key]: value }));
+    }
+    
+    function updateWindowField(key: string, value: string) {
+        setWindowForm((f) => ({ ...f, [key]: value }));
     }
     
     async function createProject(e: FormEvent) {
@@ -843,6 +901,48 @@ export function BlindajeApp() {
             } finally {
                         setSavingDoor(false);
             }
+    }
+    
+    async function createWindow(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!windowForm.code.trim() || !windowForm.name.trim()) {
+            setWindowError("El codigo y el nombre de la ventana son obligatorios.");
+            return;
+        }
+        setSavingWindow(true);
+        setWindowError(null);
+        try {
+            const res = await fetch("/api/blindaje/windows", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: selectedProject.id,
+                    barrier_id: windowForm.barrier_id || null,
+                    code: windowForm.code,
+                    name: windowForm.name,
+                    location: windowForm.location,
+                    width_cm: windowForm.width_cm,
+                    height_cm: windowForm.height_cm,
+                    material: windowForm.material,
+                    thickness_cm: windowForm.thickness_cm,
+                    lead_equivalent_mm: windowForm.lead_equivalent_mm,
+                    energy: windowForm.energy,
+                    result_status: windowForm.result_status,
+                    source_document: windowForm.source_document,
+                    notes: windowForm.notes,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                setWindowError(data.error || "No se pudo guardar la ventana.");
+                return;
+            }
+            setWindowForm(EMPTY_WINDOW_FORM);
+            loadWindows(selectedProject.id);
+        } finally {
+            setSavingWindow(false);
+        }
     }
     
     function sourceFieldInputs(facilityType: string) {
@@ -1753,6 +1853,128 @@ const materialRows = materialsList.map((m) =>
                 )
             : null;
     
+    const windowBarrierSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Barrera asociada",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: windowForm.barrier_id,
+                onChange: (e: any) => updateWindowField("barrier_id", e.target.value),
+            },
+            [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+                barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+                )
+            )
+        );
+    
+    const windowResultStatusSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Estado (S39, S60)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: windowForm.result_status,
+                onChange: (e: any) => updateWindowField("result_status", e.target.value),
+            },
+            RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+            )
+        );
+    
+    const windowRows = windowsList.map((w) =>
+        h(
+            "tr",
+            { key: w.id, className: "border-b border-border" },
+            h("td", { className: "px-3 py-2 text-sm" }, w.code),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.name),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.location || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.material || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.thickness_cm ? String(w.thickness_cm) + " cm" : "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.lead_equivalent_mm ? String(w.lead_equivalent_mm) + " mm Pb" : "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.energy || "-"),
+            h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, w.result_status || "sin_informacion")
+            )
+                                       );
+    
+    const windowsTable = h(
+        "div",
+        { className: "rounded-lg border border-border" },
+        h(
+            "table",
+            { className: "w-full text-left" },
+            h(
+                "thead",
+                null,
+                h(
+                    "tr",
+                    { className: "border-b border-border text-xs text-muted-foreground" },
+                    h("th", { className: "px-3 py-2" }, "Codigo"),
+                    h("th", { className: "px-3 py-2" }, "Nombre"),
+                    h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                    h("th", { className: "px-3 py-2" }, "Material"),
+                    h("th", { className: "px-3 py-2" }, "Espesor"),
+                    h("th", { className: "px-3 py-2" }, "Equiv. Pb"),
+                    h("th", { className: "px-3 py-2" }, "Energia"),
+                    h("th", { className: "px-3 py-2" }, "Estado")
+                    )
+                ),
+            h("tbody", null, windowRows)
+            )
+        );
+    
+    const windowFormEl = selectedProject
+        ? h(
+            "form",
+            { onSubmit: createWindow, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+            field("Codigo de la ventana *", windowForm.code, (v) => updateWindowField("code", v)),
+            field("Nombre de la ventana *", windowForm.name, (v) => updateWindowField("name", v)),
+            windowBarrierSelect,
+            field("Ubicacion", windowForm.location, (v) => updateWindowField("location", v)),
+            field("Ancho (cm)", windowForm.width_cm, (v) => updateWindowField("width_cm", v)),
+            field("Alto (cm)", windowForm.height_cm, (v) => updateWindowField("height_cm", v)),
+            field("Material", windowForm.material, (v) => updateWindowField("material", v)),
+            field("Espesor (cm)", windowForm.thickness_cm, (v) => updateWindowField("thickness_cm", v)),
+            field("Equivalencia en plomo (mm)", windowForm.lead_equivalent_mm, (v) => updateWindowField("lead_equivalent_mm", v)),
+            field("Energia de diseno", windowForm.energy, (v) => updateWindowField("energy", v)),
+            windowResultStatusSelect,
+            field("Fuente documental (norma, pagina)", windowForm.source_document, (v) => updateWindowField("source_document", v)),
+            field("Notas", windowForm.notes, (v) => updateWindowField("notes", v)),
+            windowError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, windowError) : null,
+            h(
+                "div",
+                { className: "md:col-span-3" },
+                h(
+                    "button",
+                    {
+                        type: "submit",
+                        disabled: savingWindow,
+                        className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                    },
+                    savingWindow ? "Guardando..." : "Agregar ventana"
+                    )
+                )
+            )
+        : null;
+    
+    const paso9Panel = selectedProject
+        ? h(
+            "div",
+            { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+            h("div", { className: "text-sm font-medium text-foreground" }, "Paso 9 - Ventanas de observacion (" + selectedProject.name + ")"),
+            h(
+                "div",
+                { className: "text-xs text-muted-foreground" },
+                "Cada ventana registra ubicacion, dimensiones, material, espesor, equivalencia en plomo y energia de diseno, con su barrera asociada y fuente documental (S28, S33)."
+                ),
+            loadingWindows ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando ventanas...") : windowsTable,
+            windowFormEl
+            )
+        : null;
+    
     const nextPhases = h(
     "div",
     { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
@@ -1774,6 +1996,7 @@ const materialRows = materialsList.map((m) =>
           paso7Panel,
           materialsPanel,
               paso8Panel,
-        nextPhases
+paso9Panel,
+          nextPhases
       );
 }
