@@ -458,6 +458,52 @@ const EMPTY_MAZE_FORM = {
     notes: "",
 };
 
+type BlindajeSlab = {
+    id: number;
+    project_id: number;
+    barrier_id: number | null;
+    code: string;
+    name: string;
+    location: string | null;
+    slab_type: string | null;
+    thickness_cm: number | null;
+    material: string | null;
+    occupancy_above: string | null;
+    distance_property_line_m: number | null;
+    result_value: number | null;
+    result_unit: string | null;
+    result_status: string | null;
+    source_document: string | null;
+    notes: string | null;
+    created_at: string;
+};
+
+const SLAB_TYPES: { value: string; label: string }[] = [
+    { value: "techo", label: "Techo / Losa superior" },
+    { value: "piso", label: "Piso / Losa inferior" },
+    ];
+
+const OCCUPANCY_ABOVE_OPTIONS: { value: string; label: string }[] = [
+    { value: "sin_ocupacion", label: "Sin ocupacion (azotea tecnica)" },
+    { value: "ocupacional", label: "Ocupacional (POE)" },
+    { value: "publico", label: "Publico" },
+    ];
+
+const EMPTY_SLAB_FORM = {
+    barrier_id: "",
+    code: "",
+    name: "",
+    location: "",
+    slab_type: "techo",
+    thickness_cm: "",
+    material: "",
+    occupancy_above: "sin_ocupacion",
+    distance_property_line_m: "",
+    result_status: "sin_informacion",
+    source_document: "",
+    notes: "",
+};
+
 export function BlindajeApp() {
     const [projects, setProjects] = useState<BlindajeProject[]>([]);
     const [loading, setLoading] = useState(false);
@@ -527,6 +573,11 @@ const [penetrationsList, setPenetrationsList] = useState<BlindajePenetration[]>(
     const [mazeForm, setMazeForm] = useState(EMPTY_MAZE_FORM);
     const [savingMaze, setSavingMaze] = useState(false);
     const [mazeError, setMazeError] = useState<string | null>(null);
+    const [slabsList, setSlabsList] = useState<BlindajeSlab[]>([]);
+    const [loadingSlabs, setLoadingSlabs] = useState(false);
+    const [slabForm, setSlabForm] = useState(EMPTY_SLAB_FORM);
+    const [savingSlab, setSavingSlab] = useState(false);
+    const [slabError, setSlabError] = useState<string | null>(null);
     
     function load() {
         setLoading(true);
@@ -620,6 +671,13 @@ function loadPenetrations(projectId: number) {
         .then((data) => setMazesList(data.mazes ?? []))
         .finally(() => setLoadingMazes(false));
     }
+    function loadSlabs(projectId: number) {
+        setLoadingSlabs(true);
+        fetch("/api/blindaje/slabs?project_id=" + projectId)
+        .then((r) => (r.ok ? r.json() : { slabs: [] }))
+        .then((data) => setSlabsList(data.slabs ?? []))
+        .finally(() => setLoadingSlabs(false));
+    }
     
     function selectProject(p: BlindajeProject) {
         setSelectedProjectId(p.id);
@@ -652,6 +710,9 @@ setPenetrationForm(EMPTY_PENETRATION_FORM);
         setMazeForm(EMPTY_MAZE_FORM);
         setMazeError(null);
         loadMazes(p.id);
+        setSlabForm(EMPTY_SLAB_FORM);
+        setSlabError(null);
+        loadSlabs(p.id);
     }
 
   async function saveFacilityType() {
@@ -716,6 +777,9 @@ function updatePenetrationField(key: string, value: string) {
       function updateMazeField(key: string, value: string) {
           setMazeForm((f) => ({ ...f, [key]: value }));
       }
+    function updateSlabField(key: string, value: string) {
+              setSlabForm((f) => ({ ...f, [key]: value }));
+    }
     
     async function createProject(e: FormEvent) {
         e.preventDefault();
@@ -1138,6 +1202,46 @@ async function createPenetration(e: FormEvent) {
               setSavingMaze(false);
           }
       }
+    async function createSlab(e: FormEvent) {
+        e.preventDefault();
+        if (!selectedProject) return;
+        if (!slabForm.code.trim() || !slabForm.name.trim()) {
+            setSlabError("El codigo y el nombre de la losa son obligatorios.");
+            return;
+        }
+        setSavingSlab(true);
+        setSlabError(null);
+        try {
+            const res = await fetch("/api/blindaje/slabs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    project_id: selectedProject.id,
+                    barrier_id: slabForm.barrier_id || null,
+                    code: slabForm.code,
+                    name: slabForm.name,
+                    location: slabForm.location,
+                    slab_type: slabForm.slab_type,
+                    thickness_cm: slabForm.thickness_cm,
+                    material: slabForm.material,
+                    occupancy_above: slabForm.occupancy_above,
+                    distance_property_line_m: slabForm.distance_property_line_m,
+                    result_status: slabForm.result_status,
+                    source_document: slabForm.source_document,
+                    notes: slabForm.notes,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                setSlabError(data.error || "No se pudo guardar la losa.");
+                return;
+            }
+            setSlabForm(EMPTY_SLAB_FORM);
+            loadSlabs(selectedProject.id);
+        } finally {
+            setSavingSlab(false);
+        }
+    }
     
     function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
@@ -2427,7 +2531,156 @@ const paso11Panel = selectedProject
     )
     : null;
     
-    const nextPhases = h(
+    const slabBarrierSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Barrera asociada",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: slabForm.barrier_id,
+                onChange: (e: any) => updateSlabField("barrier_id", e.target.value),
+            },
+            [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
+                barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
+                )
+            )
+        );
+
+const slabTypeSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Tipo de losa",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: slabForm.slab_type,
+            onChange: (e: any) => updateSlabField("slab_type", e.target.value),
+        },
+        SLAB_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+        )
+    );
+
+const slabOccupancySelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Ocupacion del lado opuesto",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: slabForm.occupancy_above,
+            onChange: (e: any) => updateSlabField("occupancy_above", e.target.value),
+        },
+        OCCUPANCY_ABOVE_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+        )
+    );
+
+const slabResultStatusSelect = h(
+    "label",
+    { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+    "Estado (S39, S60)",
+    h(
+        "select",
+        {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: slabForm.result_status,
+            onChange: (e: any) => updateSlabField("result_status", e.target.value),
+        },
+        RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
+        )
+    );
+
+const slabRows = slabsList.map((s) =>
+    h(
+        "tr",
+        { key: s.id, className: "border-b border-border" },
+        h("td", { className: "px-3 py-2 text-sm" }, s.code),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.name),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.location || "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.slab_type || "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.thickness_cm ? String(s.thickness_cm) + " cm" : "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.occupancy_above || "-"),
+        h("td", { className: "px-3 py-2 text-sm text-muted-foreground" }, s.result_status || "sin_informacion")
+        )
+                               );
+
+const slabsTable = h(
+    "div",
+    { className: "rounded-lg border border-border" },
+    h(
+        "table",
+        { className: "w-full text-left" },
+        h(
+            "thead",
+            null,
+            h(
+                "tr",
+                { className: "border-b border-border text-xs text-muted-foreground" },
+                h("th", { className: "px-3 py-2" }, "Codigo"),
+                h("th", { className: "px-3 py-2" }, "Nombre"),
+                h("th", { className: "px-3 py-2" }, "Ubicacion"),
+                h("th", { className: "px-3 py-2" }, "Tipo"),
+                h("th", { className: "px-3 py-2" }, "Espesor"),
+                h("th", { className: "px-3 py-2" }, "Ocupacion lado opuesto"),
+                h("th", { className: "px-3 py-2" }, "Estado")
+                )
+            ),
+        h("tbody", null, slabRows)
+        )
+    );
+
+const slabFormEl = selectedProject
+    ? h(
+        "form",
+        { onSubmit: createSlab, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
+        field("Codigo de la losa *", slabForm.code, (v) => updateSlabField("code", v)),
+        field("Nombre de la losa *", slabForm.name, (v) => updateSlabField("name", v)),
+        slabBarrierSelect,
+        field("Ubicacion", slabForm.location, (v) => updateSlabField("location", v)),
+        slabTypeSelect,
+        field("Espesor (cm)", slabForm.thickness_cm, (v) => updateSlabField("thickness_cm", v)),
+        field("Material", slabForm.material, (v) => updateSlabField("material", v)),
+        slabOccupancySelect,
+        field("Distancia al limite del predio (m)", slabForm.distance_property_line_m, (v) => updateSlabField("distance_property_line_m", v)),
+        slabResultStatusSelect,
+        field("Fuente documental (norma, pagina)", slabForm.source_document, (v) => updateSlabField("source_document", v)),
+        field("Notas", slabForm.notes, (v) => updateSlabField("notes", v)),
+        slabError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, slabError) : null,
+        h(
+            "div",
+            { className: "md:col-span-3" },
+            h(
+                "button",
+                {
+                    type: "submit",
+                    disabled: savingSlab,
+                    className: "rounded-md border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50",
+                },
+                savingSlab ? "Guardando..." : "Agregar losa"
+                )
+            )
+        )
+    : null;
+
+const paso12Panel = selectedProject
+    ? h(
+        "div",
+        { className: "flex flex-col gap-3 rounded-lg border border-border bg-surface p-4" },
+        h("div", { className: "text-sm font-medium text-foreground" }, "Paso 12 - Losas de techo y piso / Skyshine (" + selectedProject.name + ")"),
+        h(
+            "div",
+            { className: "text-xs text-muted-foreground" },
+            "Cada losa (techo o piso) registra espesor, material y ocupacion del lado opuesto, incluyendo distancia al limite del predio para el analisis de radiacion dispersa hacia el cielo (skyshine), con su barrera asociada y fuente documental (S31, S33)."
+            ),
+        loadingSlabs ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando losas...") : slabsTable,
+        slabFormEl
+        )
+    : null;
+
+const nextPhases = h(
     "div",
     { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
     "Proximas fases (en desarrollo): motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
@@ -2451,6 +2704,7 @@ const paso11Panel = selectedProject
 paso9Panel,
           paso10Panel,
           paso11Panel,
+          paso12Panel,
           nextPhases
       );
 }
