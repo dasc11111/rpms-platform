@@ -357,3 +357,39 @@ export async function listBlindajeWindows(projectId: number) {
     const { rows } = await sql`SELECT * FROM blindaje_windows WHERE project_id = ${projectId} ORDER BY code ASC`;
     return rows;
 }
+
+
+let penetrationsEnsured = false;
+
+export async function ensureBlindajePenetrationsTable() {
+  if (penetrationsEnsured) return;
+  await sql`
+  CREATE TABLE IF NOT EXISTS blindaje_penetrations (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES blindaje_projects(id) ON DELETE CASCADE,
+  barrier_id INTEGER REFERENCES blindaje_barriers(id) ON DELETE SET NULL,
+  code TEXT NOT NULL,
+  name TEXT NOT NULL,
+  location TEXT,
+  penetration_type TEXT,
+  diameter_cm NUMERIC,
+  width_cm NUMERIC,
+  height_cm NUMERIC,
+  fill_material TEXT,
+  offset_cm NUMERIC,
+  result_value NUMERIC,
+  result_unit TEXT,
+  result_status TEXT,
+  source_document TEXT,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  `;
+  penetrationsEnsured = true;
+}
+
+export async function listBlindajePenetrations(projectId: number) {
+  await ensureBlindajePenetrationsTable();
+  const { rows } = await sql`SELECT * FROM blindaje_penetrations WHERE project_id = ${projectId} ORDER BY code ASC`;
+  return rows;
+}
