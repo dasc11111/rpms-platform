@@ -622,3 +622,45 @@ export function ejecutarCasosDeRegresion() {
  */
 export const DISCLAIMER_LEGAL =
     "Los resultados corresponden a una herramienta de apoyo para el diseno y evaluacion de proteccion radiologica. La responsabilidad profesional del estudio, su revision y su presentacion ante la autoridad competente corresponde al profesional responsable.";
+
+// ============================================================================
+// 10. INTEGRACION CON NCRP REPORT No. 147 (ver ncrp147-shielding-references.ts)
+// ============================================================================
+// Instruccion del usuario (12/09/2026): "Todo se debe alimentar de NCRP 147
+// o NCRP 151 dependiendo de la practica." Para PET/PET-CT (medicina
+// nuclear), esta version del motor adopta la siguiente convencion,
+// documentada y auditable:
+//   - El factor de ocupacion T de cada punto de interes DEBE tomarse del
+//     catalogo NCRP 147 (FACTORES_OCUPACION_NCRP147 en
+//     ncrp147-shielding-references.ts), ya que ese factor depende del tipo
+//     de area adyacente y no de la modalidad que genera la radiacion.
+//   - El criterio P (limite/objetivo semanal) recomendado por defecto para
+//     PET/PET-CT pasa a ser el de NCRP 147 (OBJETIVOS_DISENO_P_NCRP147),
+//     replicando el mismo valor numerico que ya usa AAPM TG-108
+//     (0.02 mGy/semana no controlada = 20 uSv/semana; 0.1 mGy/semana
+//     controlada = 100 uSv/semana), PERO dejando explicito que NCRP 147 lo
+//     expresa en kerma en aire y AAPM TG-108 en dosis efectiva (ver
+//     advertenciaUnidadesP() en ncrp147-shielding-references.ts). Se usa el
+//     valor numerico de NCRP 147 como el "P" de las funciones de
+//     transmision de este archivo (Eq. 4-8 y 10-12), dejando registrada la
+//     fuente exacta usada en cada calculo.
+//   - Este criterio reemplaza el estado anterior de "solo catalogo de
+//     referencia, no aplicado por defecto" (ver CRITERIOS_P_REFERENCIA_AAPM
+//     arriba), que queda conservado unicamente para trazabilidad historica.
+//   - NCRP 151 se aplicara cuando se implemente la Fase de aceleradores /
+//     radioterapia de megavoltaje (ver NCRP151_PENDIENTE).
+
+/**
+ * Valor de P recomendado por defecto para PET/PET-CT, expresado en las
+ * mismas unidades que usan las funciones de este archivo (uSv/semana),
+ * tomando el valor numerico de NCRP 147 (kerma en aire, ver advertencia de
+ * unidades) como fuente primaria por instruccion explicita del usuario.
+ */
+export const P_RECOMENDADO_NO_CONTROLADA_USV_SEMANA = 20; // NCRP147: 0.02 mGy/semana
+export const P_RECOMENDADO_CONTROLADA_USV_SEMANA = 100; // NCRP147: 0.1 mGy/semana
+export const FUENTE_P_RECOMENDADO = citaTG108(
+      "n/a",
+      "Valor numerico tomado de NCRP 147 Seccion 1.4 (ver ncrp147-shielding-references.ts, OBJETIVOS_DISENO_P_NCRP147); coincide numericamente con el P de AAPM TG-108 Seccion 'Regulatory limits'",
+      "ALTA",
+      "Kerma en aire (NCRP147) vs dosis efectiva (AAPM TG-108): ver advertenciaUnidadesP() en ncrp147-shielding-references.ts para la distincion dimensional completa."
+    );
