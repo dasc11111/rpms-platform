@@ -1,6 +1,8 @@
 "use client";
 
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
+import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION } from "@/lib/ncrp147-shielding-references";
+import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR } from "@/lib/ncrp151-shielding-references";
 
 type BlindajeProject = {
     id: number;
@@ -2802,6 +2804,48 @@ const occupancyPointBarrierSelect = h(
         )
     );
     
+        const occupancyReferenceOptions = !selectedProject
+                    ? []
+                    : selectedProject.facility_type === "diagnostico"
+                ? FACTORES_OCUPACION_NCRP147.map((f) => ({
+                        codigo: f.codigo,
+                        label: f.ubicacionEs + " - T=" + String(f.factorT) + " (NCRP 147, Tabla 4.1)",
+                        factorT: f.factorT,
+                        cita: "NCRP 147, Tabla 4.1 y Seccion 4.1.3, pag. " + FUENTE_TABLA_4_1_OCUPACION.paginaAprox + ". Codigo: " + f.codigo,
+                }))
+                : selectedProject.facility_type === "medicina_nuclear"
+                ? MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR.map((m) => ({
+                        codigo: m.codigoOrigenNCRP151,
+                        label: m.ambiente + " - T=" + String(m.factorT) + " (NCRP 151, adaptado de Tabla B.1)",
+                        factorT: m.factorT,
+                        cita: "NCRP 151, Apendice B, Tabla B.1 (adaptado a medicina nuclear), pag. 160. " + m.justificacion,
+                }))
+                : [];
+    
+        const occupancyReferenceSelect = h(
+                "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+                "Factor T de tabla oficial NCRP (S24, S33)",
+                    h(
+                        "select",
+                    {
+                            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                            value: "",
+                            onChange: (e: any) => {
+                                    const codigo = e.target.value;
+                                    const opt = occupancyReferenceOptions.find((o: any) => o.codigo === codigo);
+                                    if (opt) {
+                                            updateOccupancyPointField("occupancy_factor_t", String(opt.factorT));
+                                            updateOccupancyPointField("source_document", opt.cita);
+                                    }
+                            },
+                    },
+                        [h("option", { key: "", value: "" }, occupancyReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad (pendiente de extraccion)")].concat(
+                                occupancyReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                                )
+                        )
+                );
+    
     const occupancyTypeSelect = h(
         "label",
         { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
@@ -2896,6 +2940,7 @@ const occupancyPointBarrierSelect = h(
             field("Nombre del punto *", occupancyPointForm.name, (v) => updateOccupancyPointField("name", v)),
             occupancyPointBarrierSelect,
             field("Ubicacion", occupancyPointForm.location, (v) => updateOccupancyPointField("location", v)),
+            occupancyReferenceSelect,
             occupancyTypeSelect,
             field("Factor de ocupacion (T)", occupancyPointForm.occupancy_factor_t, (v) => updateOccupancyPointField("occupancy_factor_t", v)),
             field("Distancia fuente-punto (m)", occupancyPointForm.distance_m, (v) => updateOccupancyPointField("distance_m", v)),
