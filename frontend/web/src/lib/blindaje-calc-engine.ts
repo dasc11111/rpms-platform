@@ -670,9 +670,16 @@ export const DISCLAIMER_LEGAL =
  */
 export const P_RECOMENDADO_NO_CONTROLADA_USV_SEMANA = 20; // NCRP151: 20 uSv/semana (Seccion 7.1.9)
 export const P_RECOMENDADO_CONTROLADA_USV_SEMANA = 100; // NCRP151: 0.1 mSv/semana = 100 uSv/semana (Secciones 7.1.8 y 7.1.13)
-export const FUENTE_P_RECOMENDADO = citaTG108(
-      "n/a",
-      "Valor numerico tomado de NCRP 151 (ver ncrp151-shielding-references.ts, OBJETIVOS_DISENO_P_NCRP151, Secciones 7.1.8, 7.1.9 y 7.1.13); coincide numericamente con el P de AAPM TG-108 Seccion 'Regulatory limits'",
-      "ALTA",
-      "NCRP 151 y AAPM TG-108 expresan P en la misma magnitud fisica (dosis equivalente/efectiva, Sv). A diferencia de NCRP 147 (kerma en aire), no se requiere aqui la advertencia de conversion de unidades; ver advertenciaUnidadesP151() en ncrp151-shielding-references.ts para el detalle completo."
-    );
+export const FUENTE_P_RECOMENDADO: FuenteCita = {
+      documento:
+              "NCRP Report No. 151: Structural Shielding Design and Evaluation for Megavoltage X- and Gamma-Ray Radiotherapy Facilities",
+      autores: "National Council on Radiation Protection and Measurements (NCRP)",
+      publicacion: "NCRP, Bethesda, MD, 31 de diciembre de 2005",
+      anio: 2005,
+      paginaAprox: "121, 125, 137",
+      tablaOEcuacion: "Ejemplos, Secciones 7.1.8, 7.1.9 y 7.1.13",
+      nivelJerarquia: "Nivel 2",
+      nivelConfianza: "ALTA",
+      notas:
+              "Valor tomado de NCRP 151 (ver ncrp151-shielding-references.ts, OBJETIVOS_DISENO_P_NCRP151). Coincide numericamente con el P de AAPM TG-108 Seccion 'Regulatory limits', pero se cita aqui la fuente primaria segun instruccion del usuario (13/09/2026). NCRP 151 y AAPM TG-108 expresan P en la misma magnitud fisica (dosis equivalente/efectiva, Sv); a diferencia de NCRP 147 (kerma en aire), no se requiere aqui la advertencia de conversion de unidades. Ver advertenciaUnidadesP151() en ncrp151-shielding-references.ts.",
+};
