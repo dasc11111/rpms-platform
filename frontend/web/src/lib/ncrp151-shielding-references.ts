@@ -256,11 +256,20 @@ export const MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR: MapeoOcupacionMedicinaNuc
   },
   ];
 
+// 4. NCRP 151 PARA ACELERADORES / RADIOTERAPIA DE MEGAVOLTAJE
 // ============================================================================
-// 4. NCRP 151 PARA ACELERADORES / RADIOTERAPIA DE MEGAVOLTAJE - PENDIENTE
-// ============================================================================
+// ACTUALIZACION (13/09/2026): las Tablas B.2 a B.7 (TVL de barrera primaria,
+// propiedades de materiales, fraccion de dispersion del paciente, TVL de
+// dispersion y de fuga) y las ecuaciones 2.1, 2.2, 2.3, 2.7 y 2.8 del
+// Capitulo 2 fueron extraidas y transcritas en un archivo dedicado:
+// ./ncrp151-acelerador-barreras-references.ts
+// Esto resuelve el placeholder que existia previamente en esta constante.
+// Lo que SIGUE pendiente (no incluido en ese archivo): puertas, laberintos y
+// neutrones (Seccion 2.4.2 en adelante: metodo de Kersey, rayos gamma de
+// captura, Tablas B.8a/b/c de albedo y B.9 de rendimiento de fotoneutrones).
+// Ver NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE en ese mismo archivo.
 export const NCRP151_TVL_Y_BARRERAS_PENDIENTE = {
-    estado: "PENDIENTE_DE_EXTRACCION" as const,
-    advertencia:
-          "Las Tablas B.2 en adelante (TVL de barrera primaria por energia y material) y los metodos de calculo de barreras/laberintos del Capitulo 2 y 7 de NCRP 151 fueron observados durante esta sesion (con formulas visibles: Bpri, Rw, Rh, TVL1, TVLe, etc.) pero NO fueron extraidos ni transcritos de forma sistematica y validada para esta implementacion. NO se fabrica ningun valor de esas tablas aqui. Su extraccion formal queda pendiente para cuando se aborde la Fase de aceleradores/radioterapia de megavoltaje, respetando el orden de fases del Prompt Maestro.",
+  estado: "RESUELTO_PARCIALMENTE" as const,
+  advertencia:
+    "Las Tablas B.2 a B.7 (barreras primaria y secundaria) y las Ecuaciones 2.1, 2.2, 2.3, 2.7 y 2.8 ya fueron extraidas: ver ./ncrp151-acelerador-barreras-references.ts. Lo que sigue pendiente es el diseno de puertas/laberintos y el calculo de neutrones (Seccion 2.4.2 en adelante, Tablas B.8 y B.9), documentado como NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE en ese mismo archivo.",
 };
