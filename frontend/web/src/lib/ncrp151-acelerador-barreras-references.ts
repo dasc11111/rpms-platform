@@ -651,19 +651,26 @@ export const FUERZA_FUENTE_NEUTRONES_NCRP151: FilaFuenteNeutronesNCRP151[] = [
 // ncrp151-laberintos-puertas-references.ts
 // ============================================================================
 export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
-  estado: "PARCIALMENTE_RESUELTO_VER_ARCHIVO_SEPARADO" as const,
+  estado: "CASI_TOTALMENTE_RESUELTO_VER_ARCHIVO_SEPARADO" as const,
   advertencia:
     "El diseno de puertas y laberintos (Seccion 2.4, pag. 34-51) y las barreras " +
     "laminadas (Seccion 2.2.3, pag. 27-31) fueron extraidos y transcritos en el " +
     "archivo ncrp151-laberintos-puertas-references.ts (sesion 14/09/2026). Ese " +
     "archivo implementa las Ecuaciones 2.5, 2.6, 2.9 a 2.14, 2.17 y 2.20 a 2.22, " +
     "ademas de la Tabla 2.1 (comparacion de tecnicas de puerta/laberinto) y la " +
-    "Tabla 3.1 (factor de uso por angulo de portico, Seccion 3.1.2). " +
-    "Las Ecuaciones 2.15, 2.16, 2.18 y 2.19 (metodo de Kersey y Kersey " +
-    "modificado, aceleradores de alta energia mayores a 10 MV) quedan " +
-    "explicitamente marcadas como PENDIENTE_DE_VERIFICACION en ese archivo por " +
-    "corrupcion severa de OCR: no se fabrica ninguna formula. Las Secciones " +
-    "2.4.4 (disenos alternativos de puerta) y 2.4.5 (puerta con blindaje " +
-    "directo) tambien quedan pendientes de transcripcion sistematica para una " +
-    "fase posterior. No se fabrica ningun valor ni formula aqui.",
+    "Tabla 3.1 (factor de uso por angulo de portico, Seccion 3.1.2). Las " +
+    "Ecuaciones 2.15, 2.16 y 2.18 (metodo de Kersey), que inicialmente quedaron " +
+    "marcadas como PENDIENTE_DE_VERIFICACION por corrupcion severa de OCR, fueron " +
+    "reconstruidas exitosamente el 14/09/2026 (confianza MEDIA_ALTA) a partir de " +
+    "una segunda lectura de 'NCRP 151 espanol.md' que preservo mejor el contexto " +
+    "de las variables; ver calcularDosisGammaCapturaEnPuerta, " +
+    "calcularFluenciaNeutronesUbicacionA y calcularDosisNeutronesKersey en ese " +
+    "archivo. Unicamente la Ecuacion 2.19 (metodo de Kersey modificado, " +
+    "aceleradores de alta energia mayores a 10 MV) permanece " +
+    "PENDIENTE_DE_VERIFICACION: se confirmo parcialmente su estructura (suma de " +
+    "dos exponenciales, factor (S0/S1)^1.9) pero no sus coeficientes numericos " +
+    "exactos; no se fabrica ninguna formula. Las Secciones 2.4.4 (disenos " +
+    "alternativos de puerta) y 2.4.5 (puerta con blindaje directo) tambien " +
+    "quedan pendientes de transcripcion sistematica para una fase posterior. No " +
+    "se fabrica ningun valor ni formula aqui.",
 };
