@@ -646,10 +646,24 @@ export const FUERZA_FUENTE_NEUTRONES_NCRP151: FilaFuenteNeutronesNCRP151[] = [
 ];
 
 // ============================================================================
-// 9. PENDIENTE EXPLICITO: LABERINTOS Y RAYOS GAMMA DE CAPTURA (Seccion 2.4)
+// 9. LABERINTOS, PUERTAS Y RAYOS GAMMA DE CAPTURA (Seccion 2.4, pag. 34-51) Y
+// BARRERAS LAMINADAS (Seccion 2.2.3, pag. 27-31) - VER ARCHIVO SEPARADO
+// ncrp151-laberintos-puertas-references.ts
 // ============================================================================
 export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
-  estado: "PENDIENTE_DE_EXTRACCION" as const,
+  estado: "PARCIALMENTE_RESUELTO_VER_ARCHIVO_SEPARADO" as const,
   advertencia:
-    "El diseno de puertas y laberintos (Seccion 2.4: aceleradores de baja energia <=10 MV y de alta energia >10 MV con produccion de neutrones, metodo de Kersey y Kersey modificado, rayos gamma de captura de neutrones, Ecuaciones 2.9 a 2.22) fue localizado en el documento pero NO fue extraido ni transcrito de forma sistematica en esta sesion. Las Tablas B.8a-f (albedo de reflexion) y B.9 (fuerza de fuente de neutrones) SI fueron incorporadas (ver arriba), ya que son datos tabulares independientes de la geometria del laberinto. Lo que falta son las ecuaciones que combinan esos datos con la geometria del laberinto (longitud de tramos, area de la puerta, etc.), la cual aun no esta modelada en el wizard. No se fabrica ningun valor ni formula de laberintos aqui. Su extraccion queda pendiente para una fase posterior, respetando el orden de fases del Prompt Maestro.",
+    "El diseno de puertas y laberintos (Seccion 2.4, pag. 34-51) y las barreras " +
+    "laminadas (Seccion 2.2.3, pag. 27-31) fueron extraidos y transcritos en el " +
+    "archivo ncrp151-laberintos-puertas-references.ts (sesion 14/09/2026). Ese " +
+    "archivo implementa las Ecuaciones 2.5, 2.6, 2.9 a 2.14, 2.17 y 2.20 a 2.22, " +
+    "ademas de la Tabla 2.1 (comparacion de tecnicas de puerta/laberinto) y la " +
+    "Tabla 3.1 (factor de uso por angulo de portico, Seccion 3.1.2). " +
+    "Las Ecuaciones 2.15, 2.16, 2.18 y 2.19 (metodo de Kersey y Kersey " +
+    "modificado, aceleradores de alta energia mayores a 10 MV) quedan " +
+    "explicitamente marcadas como PENDIENTE_DE_VERIFICACION en ese archivo por " +
+    "corrupcion severa de OCR: no se fabrica ninguna formula. Las Secciones " +
+    "2.4.4 (disenos alternativos de puerta) y 2.4.5 (puerta con blindaje " +
+    "directo) tambien quedan pendientes de transcripcion sistematica para una " +
+    "fase posterior. No se fabrica ningun valor ni formula aqui.",
 };
