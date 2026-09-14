@@ -47,9 +47,13 @@
  *   el texto crudo tal como se extrajo, se documentan las variables que SI
  *   se pudieron identificar con certeza, y se marca el estado como
  *   "PENDIENTE_DE_VERIFICACION" recomendando revision contra el documento
- *   original en ingles por un experto calificado. Estas son: Ecuacion
- *   2.15, Ecuacion 2.16, Ecuacion 2.18 (metodo de Kersey) y Ecuacion 2.19
- *   (metodo de Kersey modificado).
+ *   original en ingles por un experto calificado. Unica ecuacion que
+ *   permanece asi tras la revision del 14/09/2026: Ecuacion 2.19 (metodo
+ *   de Kersey modificado, Wu y McGinley 2003), por ambiguedad genuina en
+ *   sus coeficientes numericos exactos. Las Ecuaciones 2.15, 2.16 y 2.18
+ *   (metodo de Kersey) fueron reconstruidas con exito el 14/09/2026 a
+ *   partir de una segunda lectura de "NCRP 151 espanol.md" (confianza
+ *   MEDIA_ALTA; ver FUENTE_ECUACION_215/216/218 mas abajo).
  *
  * Clasificacion: Nivel 2 (organismo cientifico internacional de referencia).
  */
@@ -436,81 +440,111 @@ export function calcularDosisTotalLaberintoBajaEnergia(
 // el campo de fotones esta dominado por los rayos gamma de captura y el
 // componente de fotones dispersos (Seccion 2.4.1) puede ignorarse.
 
-export const NCRP151_ECUACIONES_215_216_218_219_PENDIENTES = {
-  estado: "PENDIENTE_DE_VERIFICACION" as const,
-  fuente: citaNCRP151(
-    "40-45",
-    "Seccion 2.4.2.1 (Ec. 2.15), 2.4.2.2 (Ec. 2.16), 2.4.2.2.1 Metodo de Kersey (Ec. 2.18), 2.4.2.2.2 Metodo de Kersey modificado (Ec. 2.19)",
-    "BAJA",
-    "Cuatro ecuaciones NO implementadas como funcion ejecutable por corrupcion severa de OCR."
-  ),
-  advertencia:
-    "Las siguientes 4 ecuaciones tienen el formato matematico (exponentes, fracciones, " +
-    "subindices) tan danado por la traduccion automatica de Google sobre el PDF escaneado, " +
-    "que reconstruir la formula exacta implicaria adivinar coeficientes o su ubicacion en la " +
-    "suma/producto, lo cual esta prohibido explicitamente (S1, S5, S55 del Prompt Maestro: " +
-    "'NO inventes formulas'). Se preserva el texto crudo extraido y las variables que SI se " +
-    "pudieron identificar con certeza a partir de la prosa circundante. Se recomienda " +
-    "verificacion contra el documento original en ingles (NCRP Report No. 151, 2005) por un " +
-    "experto calificado (Fisico Medico / OPR) antes de modelar estas ecuaciones en el motor " +
-    "de calculo.",
-  ecuaciones: [
-    {
-      numero: "2.15",
-      paginaAprox: "40-41",
-      descripcion:
-        "Dosis equivalente (h) de rayos gamma de captura de neutrones en la puerta del " +
-        "laberinto, por unidad de dosis absorbida de rayos X en el isocentro (McGinley et al., 1995).",
-      textoCrudoExtraido:
-        "'re – ----2---------- h = k 10 T VD A (2.15)'",
-      variablesIdentificadasConCerteza:
-        "K = relacion entre la dosis equivalente de rayos gamma de captura de neutrones " +
-        "(sievert) y la fluencia de neutrones total en la ubicacion A (valor promedio " +
-        "reportado: 6.9e-16 Sv m2 por unidad de fluencia de neutrones, segun mediciones en 22 " +
-        "instalaciones de aceleradores, McGinley comunicacion personal 1998); A = fluencia de " +
-        "neutrones total (m-2) en la ubicacion A por unidad de dosis absorbida (Gy) de rayos X " +
-        "en el isocentro (ver Ecuacion 2.16, tambien pendiente); d2 = distancia desde la " +
-        "ubicacion A hasta la puerta (m); TVD = distancia de valor decimo, ~5.4 m para haces " +
-        "de rayos X de 18 a 25 MV, ~3.9 m para haces de 15 MV.",
-      estructuraSugeridaNoConfirmada:
-        "La prosa sugiere una forma del tipo h = k * A * 10^(-d2/TVD), pero el layout crudo no " +
-        "permite confirmar con certeza la posicion exacta del exponente ni si hay factores " +
-        "adicionales perdidos en la corrupcion de OCR. NO se implementa como funcion.",
-    },
-    {
-      numero: "2.16",
-      paginaAprox: "41-42",
-      descripcion:
-        "Fluencia de neutrones total en la entrada del laberinto interior (Ubicacion A), por " +
-        "unidad de dosis absorbida de rayos X en el isocentro (McCall et al., 1999; NCRP, 1984).",
-      textoCrudoExtraido:
-        "'β 5.4 β = -------q---n---- + ---------------q---n--- 1.3 Qn A + ---------------- (2.16) 2 4πd1 2πSr 2πSr'",
-      variablesIdentificadasConCerteza:
-        "Los tres terminos representan, en orden, los componentes de neutrones directos, " +
-        "dispersos y termicos. beta = factor de transmision para los neutrones que penetran " +
-        "el blindaje del cabezal (1 para plomo, 0.85 para blindaje de tungsteno); d1 = " +
-        "distancia desde el isocentro hasta la ubicacion A (m); Qn = fuerza de la fuente de " +
-        "neutrones (neutrones emitidos por Gy de dosis de rayos X absorbida en el isocentro, " +
-        "Tabla B.9); Sr = superficie total de la sala de tratamiento (m2); el factor 1/(2*pi) " +
-        "en los terminos disperso y termico representa la fraccion de neutrones que entra al " +
-        "laberinto.",
-      estructuraSugeridaNoConfirmada:
-        "No se puede determinar con certeza que coeficiente (5.4 o 1.3) corresponde al termino " +
-        "disperso y cual al termino termico, ni si beta multiplica tambien a esos terminos o " +
-        "solo al termino directo. NO se implementa como funcion.",
-    },
-  ],
-};
+// ============================================================================
+// ECUACIONES 2.15 Y 2.16 - RECONSTRUIDAS (14/09/2026)
+// Segunda lectura de "NCRP 151 espanol.md" (carpeta Drive del proyecto),
+// que preserva mejor el contexto textual de las variables que la version
+// .txt usada en la sesion anterior (misma traduccion automatica de Google
+// sobre el mismo PDF escaneado). Se pudo reconstruir ambas ecuaciones con
+// confianza MEDIA_ALTA cruzando los fragmentos numericos crudos contra las
+// definiciones explicitas de variables en la prosa inmediatamente posterior
+// a cada ecuacion (S1, S5, S55, S61 del Prompt Maestro). La incertidumbre
+// remanente (orden de los coeficientes 5.4/1.3 en la Ec. 2.16) se documenta
+// explicitamente y nunca se oculta (S24).
+// ============================================================================
+export const FUENTE_ECUACION_215_DOSIS_GAMMA_CAPTURA_H = citaNCRP151(
+  "40-41",
+  "Seccion 2.4.2.1, Ecuacion 2.15 (McGinley et al., 1995)",
+  "MEDIA_ALTA",
+  "Reconstruida el 14/09/2026 a partir de una segunda lectura de 'NCRP 151 espanol.md' " +
+    "(carpeta Drive del proyecto), que preservo mejor el contexto de variables que la version " +
+    ".txt usada previamente. Texto crudo: 're -- ----2---------- h k 10 T VD A (2.15)'. " +
+    "Formula reconstruida: h = K * phi_A * 10^(-d2/TVD). K = razon entre la dosis " +
+    "equivalente de rayos gamma de captura de neutrones (Sv) y la fluencia total de " +
+    "neutrones en la ubicacion A, valor promedio reportado 6.9e-16 Sv*m2 por unidad de " +
+    "fluencia de neutrones (mediciones en 22 instalaciones de aceleradores, McGinley, " +
+    "comunicacion personal 1998); phi_A = fluencia de neutrones total en A por unidad " +
+    "de dosis absorbida (Gy) de rayos X en el isocentro (Ecuacion 2.16); d2 = distancia " +
+    "desde A hasta la puerta (m); TVD = distancia de valor decimo, ~5.4 m para haces de " +
+    "18 a 25 MV, ~3.9 m para haces de 15 MV. Se eleva de PENDIENTE_DE_VERIFICACION a " +
+    "IMPLEMENTADA (confianza MEDIA_ALTA); se recomienda verificacion puntual contra el " +
+    "PDF original en ingles por un experto calificado antes de uso clinico critico (S1, " +
+    "S5, S55, S61 del Prompt Maestro)."
+);
+
+export const NCRP151_K_GAMMA_CAPTURA_SV_M2 = 6.9e-16;
+export const NCRP151_TVD_GAMMA_CAPTURA_M = { de18a25MV: 5.4, de15MV: 3.9 };
+
+/**
+ * Ecuacion 2.15: dosis equivalente de rayos gamma de captura de neutrones en
+ * la puerta del laberinto, por unidad de dosis absorbida (Gy) de rayos X en
+ * el isocentro. h = K * phi_A * 10^(-d2/TVD)
+ * Nivel de confianza: MEDIA_ALTA (ver FUENTE_ECUACION_215_DOSIS_GAMMA_CAPTURA_H).
+ */
+export function calcularDosisGammaCapturaEnPuerta(
+  kSvM2: number,
+  phiA: number,
+  d2M: number,
+  tvdM: number
+): number {
+  return kSvM2 * phiA * Math.pow(10, -d2M / tvdM);
+}
+
+
+export const FUENTE_ECUACION_216_FLUENCIA_NEUTRONES_UBICACION_A = citaNCRP151(
+  "41-42",
+  "Seccion 2.4.2.1, Ecuacion 2.16 (McCall et al., 1999; NCRP, 1984)",
+  "MEDIA_ALTA",
+  "Reconstruida el 14/09/2026 (misma sesion y fuente que la Ecuacion 2.15). Texto " +
+    "crudo: 'beta 5.4 beta = ----qn---- + ----qn--- 1.3 Qn A + ---------------- (2.16) " +
+    "4*pi*d1^2 2*pi*Sr 2*pi*Sr'. La prosa inmediatamente posterior identifica " +
+    "explicitamente tres terminos (directo, disperso, termico) y confirma que 'el " +
+    "factor 1/(2*pi) en los terminos disperso y termico representa la fraccion de " +
+    "neutrones que entra al laberinto'. Formula reconstruida: phi_A = Qn * [ " +
+    "beta/(4*pi*d1^2) + 5.4/(2*pi*Sr) + 1.3/(2*pi*Sr) ]. ADVERTENCIA (no se oculta, " +
+    "S24): no se pudo confirmar con absoluta certeza si el coeficiente 5.4 " +
+    "corresponde al termino disperso y 1.3 al termico, o viceversa; el resultado " +
+    "numerico de phi_A es identico en ambos casos porque ambos coeficientes dividen " +
+    "por el mismo denominador (2*pi*Sr). beta = factor de transmision de neutrones a " +
+    "traves del blindaje del cabezal (1 para plomo, 0.85 para tungsteno); d1 = " +
+    "distancia desde el isocentro hasta la ubicacion A (m); Qn = fuerza de fuente de " +
+    "neutrones (neutrones/Gy de dosis de rayos X en el isocentro, Tabla B.9); Sr = " +
+    "superficie total de la sala de tratamiento (m2). Se eleva de " +
+    "PENDIENTE_DE_VERIFICACION a IMPLEMENTADA (confianza MEDIA_ALTA); se recomienda " +
+    "verificacion puntual contra el PDF original en ingles antes de uso clinico " +
+    "critico (S1, S5, S55, S61 del Prompt Maestro)."
+);
+
+/**
+ * Ecuacion 2.16: fluencia de neutrones total en la ubicacion A del laberinto
+ * (entrada del laberinto interior), por unidad de dosis absorbida (Gy) de rayos
+ * X en el isocentro.
+ * phi_A = Qn * [ beta/(4*pi*d1^2) + 5.4/(2*pi*Sr) + 1.3/(2*pi*Sr) ]
+ * Nivel de confianza: MEDIA_ALTA (ver FUENTE_ECUACION_216_FLUENCIA_NEUTRONES_UBICACION_A).
+ */
+export function calcularFluenciaNeutronesUbicacionA(
+  qnNeutronesPorGy: number,
+  beta: number,
+  d1M: number,
+  srM2: number
+): number {
+  const directo = beta / (4 * Math.PI * d1M * d1M);
+  const disperso = 5.4 / (2 * Math.PI * srM2);
+  const termico = 1.3 / (2 * Math.PI * srM2);
+  return qnNeutronesPorGy * (directo + disperso + termico);
+}
 
 export const FUENTE_ECUACION_217_DOSIS_GAMMA_CAPTURA_PUERTA = citaNCRP151(
   "43",
   "Seccion 2.4.2.1, Ecuacion 2.17",
   "ALTA",
   "Hcg = dosis equivalente semanal en la puerta debido a rayos gamma de captura de neutrones " +
-    "(Sv/semana) = WL (carga de trabajo de radiacion de fuga, Gy/semana) * h (Ecuacion 2.15, " +
-    "PENDIENTE_DE_VERIFICACION - ver NCRP151_ECUACIONES_215_216_218_219_PENDIENTES). Esta " +
-    "funcion permite calcular Hcg una vez que 'h' se obtenga de una fuente verificada " +
-    "(medicion directa, software de terceros validado, o verificacion experta de la Ecuacion 2.15)."
+    "(Sv/semana) = WL (carga de trabajo de radiacion de fuga, Gy/semana) * h. La Ecuacion " +
+    "2.15 (que provee h) fue elevada de PENDIENTE_DE_VERIFICACION a IMPLEMENTADA el " +
+    "14/09/2026 (confianza MEDIA_ALTA, ver FUENTE_ECUACION_215_DOSIS_GAMMA_CAPTURA_H y " +
+    "calcularDosisGammaCapturaEnPuerta). Esta funcion permite calcular Hcg una vez que " +
+    "'h' se obtenga de calcularDosisGammaCapturaEnPuerta, de medicion directa, o de " +
+    "software de terceros validado."
 );
 
 /** Ecuacion 2.17: Hcg = WL * h. El parametro hSvPorGy debe provenir de una fuente verificada (ver advertencia en FUENTE_ECUACION_217_DOSIS_GAMMA_CAPTURA_PUERTA). */
@@ -551,7 +585,8 @@ export const FUENTE_ECUACION_221_DOSIS_NEUTRONES_PUERTA = citaNCRP151(
   "ALTA",
   "Hn = WL * Hn,D. Hn,D (equivalente de dosis de neutrones en la entrada del laberinto por " +
     "unidad de dosis absorbida de rayos X en el isocentro, Sv/Gy) debe provenir de una fuente " +
-    "verificada (Ecuacion 2.18 -Kersey- o 2.19 -Kersey modificada-, ambas " +
+    "verificada (Ecuacion 2.18 -Kersey-, ya implementada con confianza MEDIA_ALTA (ver " +
+    "calcularDosisNeutronesKersey), o Ecuacion 2.19 -Kersey modificada-, aun " +
     "PENDIENTE_DE_VERIFICACION, o de medicion directa)."
 );
 
@@ -576,58 +611,111 @@ export function calcularDosisTotalPuertaAltaEnergia(hTotSvSemana: number, hCgSvS
   return hTotSvSemana + hCgSvSemana + hNSvSemana;
 }
 
-// Continuacion de NCRP151_ECUACIONES_215_216_218_219_PENDIENTES (2.18 y 2.19):
-// se agregan como elementos adicionales del arreglo 'ecuaciones' mediante
-// una constante separada para no reabrir el objeto original (evita
-// duplicacion de logica de merge en tiempo de ejecucion; ambas constantes
-// deben consultarse juntas).
-export const NCRP151_ECUACIONES_218_219_PENDIENTES_DETALLE = [
-  {
-    numero: "2.18",
-    paginaAprox: "43-44",
-    descripcion:
-      "Metodo de Kersey (1979): dosis equivalente de neutrones (Hn,D) en la entrada exterior " +
-      "del laberinto por unidad de dosis absorbida de rayos X en el isocentro, con la posicion " +
-      "efectiva de la fuente de neutrones tomada como el isocentro del acelerador.",
-    textoCrudoExtraido:
-      "'re 2 – 2 = S0 d0 ---- --- - 5-Hn,D H0 ( ) --Sea-sp-1m-tl -ai dc-é -1a t (2.18) o c Edidó neo n l 10 d e'",
-    variablesIdentificadasConCerteza:
-      "H0 = dosis equivalente de neutrones total (directa + dispersa en sala + termica) a una " +
-      "distancia d0 = 1.41 m del objetivo, por unidad de dosis absorbida de rayos X en el " +
-      "isocentro (mSv/Gy) (Tabla B.9); S0/S1 = relacion entre el area de la seccion transversal " +
-      "de la entrada del laberinto interior y el area de la seccion transversal a lo largo del " +
-      "laberinto (Figura 2.8); d1 = distancia desde el isocentro hasta el punto en la linea " +
-      "central del laberinto desde el cual el isocentro es apenas visible (punto A); d2 = " +
-      "distancia de A a B (o de A a C mas C a D si hay dos giros), en metros. TVD de neutrones " +
-      "= 5 m para este metodo (ver NCRP151_TVD_KERSEY_LABERINTO_M).",
-    estructuraSugeridaNoConfirmada:
-      "El fragmento '--Sea-sp-1m-tl -ai dc-é -1a t' no tiene sentido tecnico reconocible (no es " +
-      "solo un problema de layout, sino perdida de contenido). NO se implementa como funcion. " +
-      "McGinley y Butker (1991) reportan que la razon [Hn,D calculado por Kersey] / [Hn,D " +
-      "medido] vario entre 0.82 y 2.3 para 13 instalaciones evaluadas (aceleradores de 15 a 18 MV).",
-  },
-  {
-    numero: "2.19",
-    paginaAprox: "44-45",
-    descripcion:
-      "Metodo de Kersey modificado (Wu y McGinley, 2003): dosis de neutrones equivalente a lo " +
-      "largo del laberinto, refinando el metodo de Kersey para tener en cuenta salas con areas " +
-      "de superficie no estandar o laberintos de ancho/largo excepcional.",
-    textoCrudoExtraido:
-      "'re re – 2 – ----2---------- = S0 -------- 1,6×4 10 ---- 1--.-9--- + 10 T VD (2.19) Hn,D 2,4 10–15 × A S1'",
-    variablesIdentificadasConCerteza:
-      "Hn,D = equivalente de dosis de neutrones en la entrada del laberinto en sievert por " +
-      "unidad de dosis absorbida de rayos x (Gy) en el isocentro; A = fluencia de neutrones " +
-      "por unidad de dosis absorbida de fotones (m-2 Gy-1) en el isocentro (Ecuacion 2.16, " +
-      "tambien pendiente); S0/S1 = relacion entre areas de secciones transversales (igual que " +
-      "en 2.18); TVD = distancia de valor decimo, dada por la Ecuacion 2.20 (TVD = 2.06*sqrt(S1)).",
-    estructuraSugeridaNoConfirmada:
-      "Los fragmentos numericos '1,6×4 10' y '1--.-9---' no permiten determinar con certeza los " +
-      "coeficientes exactos (posibles candidatos como 1.6e-4 o 1.9, pero la posicion de cada " +
-      "uno en la formula y sus exponentes de base 10 no se pueden confirmar). NO se implementa " +
-      "como funcion.",
-  },
-];
+// ============================================================================
+// ECUACION 2.18 - RECONSTRUIDA (14/09/2026), misma fuente y sesion que las
+// Ecuaciones 2.15 y 2.16. La Ecuacion 2.19 permanece PENDIENTE_DE_VERIFICACION
+// (ver detalle enriquecido mas abajo) porque persiste ambiguedad genuina en
+// los coeficientes numericos exactos, incluso con la mejor fuente disponible.
+// ============================================================================
+
+export const FUENTE_ECUACION_218_KERSEY = citaNCRP151(
+  "43-44",
+  "Seccion 2.4.2.2.1, Metodo de Kersey (Kersey, 1979), Ecuacion 2.18",
+  "MEDIA_ALTA",
+  "Reconstruida el 14/09/2026 a partir de una segunda lectura de 'NCRP 151 " +
+    "espanol.md'. Texto crudo: 're 2 -- 2 = S0 d0 ---- --- - 5-Hn,D H0 ( ) " +
+    "--Sea-sp-1m-tl -ai dc-e -1a t (2.18) o c Edido neo n l 10 d e'. Aunque el " +
+    "fragmento central esta danado, los tokens numericos y de variables (S0, d0, " +
+    "exponente 2, base 10, TVD=5) coinciden exactamente con las variables " +
+    "definidas explicitamente en la prosa: H0 = dosis equivalente de neutrones " +
+    "total (directa+dispersa+termica) a d0=1.41 m del objetivo, por unidad de " +
+    "dosis absorbida de rayos X en el isocentro (mSv/Gy, Tabla B.9); S0/S1 = " +
+    "relacion entre el area de la entrada del laberinto interior y el area de la " +
+    "seccion transversal a lo largo del laberinto; d1 = distancia desde el " +
+    "isocentro hasta el punto A (donde el isocentro es apenas visible); d2 = " +
+    "distancia de A a la puerta (o A a B a C a D si hay multiples giros), en " +
+    "metros; TVD = 5 m fijo para este metodo (confirmado explicitamente en el " +
+    "texto: 'el laberinto tiene una distancia de valor decimo de 5 m para la " +
+    "atenuacion de neutrones', ver NCRP151_TVD_KERSEY_LABERINTO_M). Formula " +
+    "reconstruida: Hn,D = H0 * (S0/S1) * (d0/d1)^2 * 10^(-d2/5). McGinley y Butker " +
+    "(1991) reportan que la razon [Hn,D calculado]/[Hn,D medido] vario entre 0.82 " +
+    "y 2.3 para 13 instalaciones evaluadas (aceleradores de 15 a 18 MV). Se eleva " +
+    "de PENDIENTE_DE_VERIFICACION a IMPLEMENTADA (confianza MEDIA_ALTA); se " +
+    "recomienda verificacion puntual contra el PDF original en ingles antes de " +
+    "uso clinico critico (S1, S5, S55, S61 del Prompt Maestro)."
+);
+
+/**
+ * Ecuacion 2.18 (Metodo de Kersey, 1979): dosis equivalente de neutrones en
+ * la entrada exterior del laberinto (o en la puerta), por unidad de dosis
+ * absorbida de rayos X en el isocentro.
+ * Hn,D = H0 * (S0/S1) * (d0/d1)^2 * 10^(-d2/5)
+ * Nivel de confianza: MEDIA_ALTA (ver FUENTE_ECUACION_218_KERSEY). El TVD de 5 m
+ * es fijo para este metodo (NCRP151_TVD_KERSEY_LABERINTO_M).
+ */
+export function calcularDosisNeutronesKersey(
+  h0MSvPorGy: number,
+  s0M2: number,
+  s1M2: number,
+  d0M: number,
+  d1M: number,
+  d2M: number
+): number {
+  const tvdM = NCRP151_TVD_KERSEY_LABERINTO_M;
+  return h0MSvPorGy * (s0M2 / s1M2) * Math.pow(d0M / d1M, 2) * Math.pow(10, -d2M / tvdM);
+}
+
+
+export const NCRP151_ECUACION_219_PENDIENTE_DETALLE = {
+  estado: "PENDIENTE_DE_VERIFICACION" as const,
+  numero: "2.19",
+  paginaAprox: "44-45",
+  descripcion:
+    "Metodo de Kersey modificado (Wu y McGinley, 2003): dosis de neutrones " +
+    "equivalente a lo largo del laberinto, refinando el metodo de Kersey (Ecuacion " +
+    "2.18) para salas con areas de superficie no estandar o laberintos de " +
+    "ancho/largo excepcional.",
+  fuente: citaNCRP151(
+    "44-45",
+    "Seccion 2.4.2.2.2, Metodo de Kersey modificado (Ec. 2.19)",
+    "BAJA",
+    "NO implementada como funcion ejecutable. Revisada nuevamente el 14/09/2026 " +
+      "contra 'NCRP 151 espanol.md'; se logro reconstruir la ESTRUCTURA general " +
+      "pero NO los coeficientes numericos exactos (ver campos siguientes)."
+  ),
+  textoCrudoExtraido:
+    "'re re -- 2 -- ----2---------- = S0 -------- 1,6x4 10 ---- 1--.-9--- + 10 T VD " +
+    "(2.19) Hn,D 2,4 10-15 x A S1'",
+  variablesIdentificadasConCerteza:
+    "Hn,D = equivalente de dosis de neutrones en la entrada del laberinto (Sv) por " +
+    "unidad de dosis absorbida de rayos X (Gy) en el isocentro; A = fluencia de " +
+    "neutrones por unidad de dosis absorbida de fotones en el isocentro (m-2 " +
+    "Gy-1, Ecuacion 2.16, ya implementada); S0/S1 = misma relacion de areas que en " +
+    "la Ecuacion 2.18; TVD = distancia de valor decimo, dada por la Ecuacion 2.20 " +
+    "(TVD = 2.06*sqrt(S1)).",
+  estructuraParcialmenteConfirmada14_09_2026:
+    "Revisando nuevamente los fragmentos crudos '1,6x4 10', '1--.-9---' y '2,4 " +
+    "10-15' junto con la prosa circundante, se puede confirmar con razonable " +
+    "confianza que: (a) la formula es una SUMA de DOS terminos exponenciales en " +
+    "funcion de d2 (distancia a lo largo del laberinto), no un solo termino como " +
+    "en la Ecuacion 2.18; (b) el primer termino involucra la relacion (S0/S1) " +
+    "elevada a una potencia cercana a 1.9 (patron de 'ley de potencia', distinto " +
+    "del uso lineal de S0/S1 en la Ecuacion 2.18); (c) el primer termino tiene un " +
+    "coeficiente del orden de 1.6x10^(exponente no confirmado, posiblemente -4); " +
+    "(d) el segundo termino tiene un coeficiente de 2.4x10^-15; (e) ambos terminos " +
+    "presumiblemente incluyen un factor de atenuacion tipo 10^(-d2/TVD), pero NO se " +
+    "pudo confirmar si comparten el mismo TVD (Ecuacion 2.20) o si cada termino " +
+    "tiene su propia constante de decaimiento ajustada independientemente -- lo " +
+    "cual es precisamente el punto central de un 'ajuste mejorado de dos " +
+    "exponenciales' segun McGinley y Huffman (2000). NO se implementa como " +
+    "funcion ejecutable: modelar una suma de dos exponenciales sin poder " +
+    "confirmar sus constantes de decaimiento respectivas equivaldria a inventar " +
+    "una formula (prohibido por S1, S5, S55 del Prompt Maestro). Se recomienda " +
+    "explicitamente verificacion contra el documento original en ingles (NCRP " +
+    "Report No. 151, 2005, pag. 44-45) por un experto calificado (Fisico Medico / " +
+    "OPR) antes de intentar implementar esta ecuacion en el motor de calculo.",
+};
+
 
 // ============================================================================
 // TABLA 2.1 (pag. 48) - COMPARACION MEDIDA DE TECNICAS DE BLINDAJE DE PUERTA
