@@ -1,0 +1,767 @@
+/**
+ * REFERENCIAS NORMATIVAS - NCRP Report No. 151
+ * "Structural Shielding Design and Evaluation for Megavoltage X- and
+ * Gamma-Ray Radiotherapy Facilities"
+ * National Council on Radiation Protection and Measurements (NCRP),
+ * 31 de diciembre de 2005.
+ *
+ * ALCANCE DE ESTE ARCHIVO: Ecuaciones y tablas de diseno de PUERTAS Y
+ * LABERINTOS (Seccion 2.4, pag. 34-51) y de BARRERAS LAMINADAS (Seccion
+ * 2.2.3, pag. 27-31) para salas de aceleradores lineales de radioterapia.
+ * Complementa a ncrp151-acelerador-barreras-references.ts (barreras
+ * primarias/secundarias "planas" y Tablas B.1-B.9) y a
+ * ncrp151-shielding-references.ts (factores T y objetivos P). Tambien
+ * incluye la Tabla 2.1 (comparacion medida de tecnicas de blindaje de
+ * puerta) y la Tabla 3.1 (distribucion del factor de uso por angulo de
+ * portico), de la Seccion 3.1.2.
+ *
+ * ============================================================================
+ * FUENTE Y METODO DE VERIFICACION (anti-fabricacion, S1/S5/S24/S55/S61 del
+ * Prompt Maestro)
+ * ============================================================================
+ * Documento releido directamente en la carpeta Drive del proyecto:
+ * "NCRP 151 español.txt" (traduccion automatica de Google, "Machine
+ * Translated by Google"). Texto releido integramente en esta sesion
+ * (14/09/2026) para la Seccion 2.2.3 (pag. 27-31), Seccion 2.4 (pag.
+ * 34-51) y Seccion 3.1.2 (pag. 54-55), con extraccion de texto completa
+ * (no solo fragmentos) para minimizar el riesgo de mezclar filas/columnas
+ * o perder el contexto de definicion de simbolos.
+ *
+ * ADVERTENCIA CRITICA SOBRE CORRUPCION DE OCR EN ECUACIONES DE NEUTRONES:
+ * La traduccion automatica (Google Translate sobre un PDF escaneado)
+ * destruye severamente el formato matematico (exponentes, fracciones,
+ * subindices) de varias ecuaciones de neutrones. Criterio explicito
+ * aplicado (S1, S5, S55: "NO inventes formulas"):
+ *
+ * - Ecuaciones cuyos simbolos SI son reconstruibles con confianza
+ *   razonable a partir de la definicion textual explicita de cada
+ *   variable (aunque el layout visual este roto): SE IMPLEMENTAN como
+ *   funcion ejecutable, marcadas nivelConfianza "MEDIA" o "ALTA", con un
+ *   comentario que muestra el texto crudo extraido junto a la formula
+ *   reconstruida, para que cualquier persona pueda auditar la
+ *   reconstruccion.
+ * - Ecuaciones cuyo texto crudo contiene fragmentos sin sentido tecnico
+ *   (palabras sueltas intercaladas, numeros partidos de forma ambigua,
+ *   coeficientes que no se pueden asignar con certeza a un termino
+ *   especifico de una suma): NO se implementan como funcion. Se preserva
+ *   el texto crudo tal como se extrajo, se documentan las variables que SI
+ *   se pudieron identificar con certeza, y se marca el estado como
+ *   "PENDIENTE_DE_VERIFICACION" recomendando revision contra el documento
+ *   original en ingles por un experto calificado. Estas son: Ecuacion
+ *   2.15, Ecuacion 2.16, Ecuacion 2.18 (metodo de Kersey) y Ecuacion 2.19
+ *   (metodo de Kersey modificado).
+ *
+ * Clasificacion: Nivel 2 (organismo cientifico internacional de referencia).
+ */
+
+import type { FuenteCita, NivelConfianza } from "./blindaje-calc-engine";
+
+const BASE_FUENTE_NCRP151 = {
+  documento:
+    "NCRP Report No. 151: Structural Shielding Design and Evaluation for Megavoltage X- and Gamma-Ray Radiotherapy Facilities",
+  autores: "National Council on Radiation Protection and Measurements (NCRP)",
+  publicacion: "NCRP, Bethesda, MD, 31 de diciembre de 2005",
+  anio: 2005,
+  nivelJerarquia: "Nivel 2" as const,
+};
+
+function citaNCRP151(
+  paginaAprox: string,
+  tablaOSeccion: string,
+  nivelConfianza: NivelConfianza = "ALTA",
+  notas?: string
+): FuenteCita {
+  return { ...BASE_FUENTE_NCRP151, paginaAprox, tablaOEcuacion: tablaOSeccion, nivelConfianza, notas };
+}
+
+// ============================================================================
+// SECCION 2.2.3 - BARRERAS LAMINADAS (pag. 27-31)
+// ============================================================================
+// Texto fuente (contexto): se usa cuando la barrera primaria no es
+// hormigon homogeneo, sino una combinacion de hormigon con acero o plomo.
+// Para energias de aceleracion >10 MV, la lamina metalica puede convertirse
+// en fuente de fotoneutrones si el diseno compuesto no se calcula
+// correctamente (McGinley et al., 1988; McGinley, 1992a; 1992b).
+
+export const FUENTE_ECUACION_25_BARRERA_LAMINADA = citaNCRP151(
+  "30",
+  "Seccion 2.2.3, Ecuacion 2.5 (McGinley, 1992a)",
+  "MEDIA",
+  "Texto crudo extraido (formato matematico danado por la traduccion automatica): " +
+    "'t1 – ... – ...t...2... = ...Do... R... Fmax... TVLx 10 TVLn (2.5) hn ...10... t tm 2 2 + + 0,3'. " +
+    "Reconstruccion a partir de las definiciones explicitas de variables dadas inmediatamente " +
+    "despues de la ecuacion en el texto: Hn = equivalente de dosis de neutrones por semana " +
+    "(uSv/semana); Do = dosis de rayos X absorbida por semana en el isocentro (cGy/semana); " +
+    "R = coeficiente de produccion de neutrones (uSv cGy-1 m-2); Fmax = area de campo maxima " +
+    "en el isocentro (m2); tm = espesor de la losa de metal (m); t1 = espesor de la primera " +
+    "losa de concreto (m); t2 = espesor de la segunda losa de concreto (m); TVLx = TVL en " +
+    "hormigon para el haz de rayos X primario (m); TVLn = TVL en hormigon para neutrones (m); " +
+    "0.3 = distancia de la superficie exterior de la barrera al punto de ocupacion (m). " +
+    "Nota al pie 7 del documento: el denominador (tm/2 + t2 + 0.3) se entiende dividido por " +
+    "1 m para que quede sin unidades. Formula reconstruida: " +
+    "Hn = [Do * R * Fmax / (tm/2 + t2 + 0.3)^2] * 10^(-t1/TVLx) * 10^(-t2/TVLn). " +
+    "REQUIERE VERIFICACION de un experto calificado contra el documento original en ingles " +
+    "antes de uso clinico, dado el dano de OCR en el layout de la ecuacion original."
+);
+
+export interface ParametrosBarreraLaminada {
+  doCGySemana: number; // dosis de rayos X absorbida por semana en el isocentro (cGy/semana)
+  rMicroSvCGyM2: number; // coeficiente de produccion de neutrones (uSv cGy-1 m-2), Tabla informativa mas abajo
+  fMaxM2: number; // area de campo maxima en el isocentro (m2)
+  tmM: number; // espesor de la losa de metal (m)
+  t1M: number; // espesor de la primera losa de concreto (m)
+  t2M: number; // espesor de la segunda losa de concreto (m)
+  tvlXM: number; // TVL en hormigon para el haz de rayos X primario (m)
+  tvlNM: number; // TVL en hormigon para neutrones (m)
+}
+
+/**
+ * Ecuacion 2.5 (reconstruida, nivelConfianza MEDIA - ver
+ * FUENTE_ECUACION_25_BARRERA_LAMINADA para el texto crudo y el detalle de
+ * la reconstruccion). Estima el equivalente de dosis de neutrones por
+ * semana (uSv/semana) mas alla de una barrera laminada (metal entre dos
+ * losas de hormigon) cuando el colimador esta abierto al tamano maximo.
+ */
+export function calcularDosisNeutronesBarreraLaminada(p: ParametrosBarreraLaminada): number {
+  const denom = p.tmM / 2 + p.t2M + 0.3;
+  const factorGeometrico = (p.doCGySemana * p.rMicroSvCGyM2 * p.fMaxM2) / (denom * denom);
+  const atenuacionRX = Math.pow(10, -p.t1M / p.tvlXM);
+  const atenuacionN = Math.pow(10, -p.t2M / p.tvlNM);
+  return factorGeometrico * atenuacionRX * atenuacionN;
+}
+
+export const FUENTE_TVLN_HORMIGON_BARRERA_LAMINADA = citaNCRP151(
+  "30",
+  "Seccion 2.2.3, parrafo y nota al pie 8 tras la Ecuacion 2.5",
+  "ALTA",
+  "Kase et al. (2003) midieron TVLn = 45 g/cm2 en hormigon ordinario para el espectro de baja " +
+    "energia de neutrones producidos por aceleradores medicos (incluye implicitamente la dosis " +
+    "equivalente de rayos gamma de captura de neutrones). Con densidad 2.3 g/cm3: 45/2.3 = " +
+    "19.6 cm, redondeado a 25 cm como estimacion conservadora y segura, valida tanto para " +
+    "hormigon ordinario como pesado (el contenido de hidrogeno no varia significativamente " +
+    "entre ambos, Tabla B.3)."
+);
+
+export const TVL_NEUTRONES_HORMIGON_BARRERA_LAMINADA_CM = 25;
+
+export interface CoeficienteProduccionNeutronesMcGinley1992 {
+  material: "plomo" | "acero";
+  energiaMV: number;
+  rMicroSvCGyM2: number;
+}
+
+export const FUENTE_COEFICIENTES_R_MCGINLEY_1992 = citaNCRP151(
+  "30",
+  "Seccion 2.2.3, parrafo tras la Ecuacion 2.5 (McGinley, 1992a)",
+  "ALTA",
+  "Coeficientes R medidos por McGinley (1992a) para aceleradores de 18 MV (plomo y acero) y " +
+    "15 MV (plomo)."
+);
+
+export const COEFICIENTES_PRODUCCION_NEUTRONES_MCGINLEY_1992: CoeficienteProduccionNeutronesMcGinley1992[] = [
+  { material: "plomo", energiaMV: 18, rMicroSvCGyM2: 19 },
+  { material: "acero", energiaMV: 18, rMicroSvCGyM2: 1.7 },
+  { material: "plomo", energiaMV: 15, rMicroSvCGyM2: 3.5 },
+];
+
+export const FUENTE_ECUACION_26_DOSIS_TOTAL_LAMINADA = citaNCRP151(
+  "31",
+  "Seccion 2.2.3, Ecuacion 2.6",
+  "ALTA",
+  "Texto fuente: McGinley y Butker (1994) concluyeron, a partir de mediciones con laminados de " +
+    "acero y hormigon a 15 y 18 MV, que si el componente de dosis equivalente de rayos X " +
+    "transmitidos calculado (Htr) se multiplica por 2.7, se obtiene una estimacion conservadora " +
+    "y segura del equivalente de dosis de fotones (Hphtr). Htr se obtiene de la Ecuacion 2.1 " +
+    "reemplazando P por Htr. Si HTot > P, el calculo se repite reduciendo Htr hasta lograr el " +
+    "objetivo de diseno de blindaje."
+);
+
+export interface ResultadoDosisTotalBarreraLaminada {
+  hPhtrSvSemana: number;
+  hNSvSemana: number;
+  hTotSvSemana: number;
+}
+
+/**
+ * Ecuacion 2.6: dosis equivalente total mas alla de una barrera laminada.
+ * HTot = Hphtr + Hn, con Hphtr = 2.7 * Htr.
+ * @param htrSvSemana Componente de dosis equivalente de rayos X transmitidos (Sv/semana), de la Ecuacion 2.1.
+ * @param hnMicroSvSemana Componente de dosis equivalente de neutrones (uSv/semana), de calcularDosisNeutronesBarreraLaminada.
+ */
+export function calcularDosisTotalBarreraLaminada(
+  htrSvSemana: number,
+  hnMicroSvSemana: number
+): ResultadoDosisTotalBarreraLaminada {
+  const hPhtrSvSemana = 2.7 * htrSvSemana;
+  const hNSvSemana = hnMicroSvSemana / 1e6; // conversion explicita uSv -> Sv, S24: nunca ocultar
+  return {
+    hPhtrSvSemana,
+    hNSvSemana,
+    hTotSvSemana: hPhtrSvSemana + hNSvSemana,
+  };
+}
+
+// ============================================================================
+// SECCION 2.4 - PUERTAS Y LABERINTOS (pag. 34-51)
+// ============================================================================
+// El diseno del laberinto se trata en dos apartados: aceleradores de baja
+// energia (<=10 MV, Seccion 2.4.1) y de alta energia (>10 MV, Seccion
+// 2.4.2), por las diferencias en tipos de radiacion secundaria producida.
+// La geometria general (Pared G, Area A0/A1/Az, distancias dh/dr/dz/dzz,
+// puntos A/B/C/D del laberinto) se define en la Figura 2.7 (baja energia) y
+// Figura 2.8 (alta energia) del documento fuente.
+
+// ----------------------------------------------------------------------------
+// 2.4.1 Aceleradores de baja energia (<=10 MV)
+// ----------------------------------------------------------------------------
+
+export const FUENTE_ECUACION_29_DISPERSION_PARED_G = citaNCRP151(
+  "35-36",
+  "Seccion 2.4.1, Ecuacion 2.9 (modificacion de NCRP 1977 por Numark y Kase, 1985)",
+  "MEDIA",
+  "HS = equivalente de dosis por semana en la puerta del laberinto debido a la dispersion del " +
+    "haz principal desde la Pared G. Variables: W = carga de trabajo (Gy/semana); UG = factor " +
+    "de uso para la Pared G; alfa0 = coeficiente de reflexion en la primera superficie de " +
+    "dispersion A0 (Tablas B.8a-f); A0 = area del haz en la primera superficie de dispersion " +
+    "(m2); alfaZ = coeficiente de reflexion para la segunda reflexion (superficie Az, " +
+    "tipicamente con energia ficticia de 0.5 MeV); Az = area de la secc. transversal de la " +
+    "entrada interior del laberinto proyectada sobre la pared del laberinto (m2); dh = " +
+    "distancia perpendicular desde el objetivo hasta la primera superficie de reflexion " +
+    "(= dpp + 1 m); dr = distancia desde el centro del haz en el primer reflejo hasta el " +
+    "punto b en la linea media del laberinto (m); dz = distancia en linea central a lo largo " +
+    "del laberinto desde el punto b hasta la puerta (m). " +
+    "Validez segun McGinley (2002): relacion altura/ancho del laberinto entre 1 y 2; " +
+    "dz/sqrt(altura*ancho) entre 2 y 6 (concordancia dentro de un factor de 2 aun fuera de " +
+    "este rango, para laberintos relativamente cortos)."
+);
+
+export interface ParametrosDispersionParedG {
+  wGySemana: number;
+  uG: number;
+  alfa0: number;
+  a0M2: number;
+  alfaZ: number;
+  azM2: number;
+  dhM: number;
+  drM: number;
+  dzM: number;
+}
+
+/** Ecuacion 2.9: HS = (W * UG * alfa0 * A0 * alfaZ * Az) / (dh * dr * dz)^2 */
+export function calcularDispersionParedGLaberinto(p: ParametrosDispersionParedG): number {
+  const numerador = p.wGySemana * p.uG * p.alfa0 * p.a0M2 * p.alfaZ * p.azM2;
+  const denominador = Math.pow(p.dhM * p.drM * p.dzM, 2);
+  return numerador / denominador;
+}
+
+export const FUENTE_ECUACION_210_FUGA_DISPERSA_CABEZA = citaNCRP151(
+  "37",
+  "Seccion 2.4.1, Ecuacion 2.10 (McGinley y James, 1997)",
+  "MEDIA",
+  "HLS = equivalente de dosis por semana en la puerta debido a radiacion de fuga en cabeza que " +
+    "golpea la Pared G y sufre una sola dispersion. Variables: Lf = relacion de radiacion de " +
+    "fuga frontal a 1 m del objetivo (tomada como 1/1000 = 0.1%, IEC 2002); WL = carga de " +
+    "trabajo para radiacion de fuga (Gy/semana, puede diferir de W, Seccion 3.2.2); UG = " +
+    "factor de uso para la Pared G; alfa1 = coeficiente de reflexion para la dispersion de la " +
+    "radiacion de fuga de la Pared G; A1 = area de la Pared G visible desde la puerta del " +
+    "laberinto (m2); dsec = distancia desde el objetivo hasta la linea central del laberinto " +
+    "en la Pared G (m); dzz = distancia de la linea central a lo largo del laberinto (m). " +
+    "Nelson y LaRiviere (1984) basan alfa1 en una energia efectiva de 1.4 MeV para haces de " +
+    "6 MV nominal (valores para 6 MV y 15 MV en Tabla B.8a)."
+);
+
+export interface ParametrosFugaDispersaCabeza {
+  lf?: number; // por defecto 1/1000 (0.1%, IEC 2002)
+  wlGySemana: number;
+  uG: number;
+  alfa1: number;
+  a1M2: number;
+  dsecM: number;
+  dzzM: number;
+}
+
+/** Ecuacion 2.10: HLS = (Lf * WL * UG * alfa1 * A1) / (dsec * dzz)^2 */
+export function calcularFugaDispersaCabezaLaberinto(p: ParametrosFugaDispersaCabeza): number {
+  const lf = p.lf ?? 1 / 1000;
+  const numerador = lf * p.wlGySemana * p.uG * p.alfa1 * p.a1M2;
+  const denominador = Math.pow(p.dsecM * p.dzzM, 2);
+  return numerador / denominador;
+}
+
+export const FUENTE_ECUACION_211_DISPERSION_PACIENTE_LABERINTO = citaNCRP151(
+  "38",
+  "Seccion 2.4.1, Ecuacion 2.11 (McGinley y James, 1997)",
+  "MEDIA",
+  "Hps = equivalente de dosis por semana en la puerta debido a la radiacion dispersada por el " +
+    "paciente. Variables: a(theta) = fraccion de dispersion del paciente en angulo theta " +
+    "(Tabla B.4); W = carga de trabajo de la viga principal (Gy/semana); UG = factor de uso " +
+    "de la Pared G; F = area de campo a media profundidad del paciente a 1 m (cm2), 400 = " +
+    "referencia 20x20 cm; alfa1 = coeficiente de reflexion de la Pared G para la radiacion " +
+    "dispersa del paciente; A1 = area de la Pared G visible desde la entrada exterior del " +
+    "laberinto (m2); dsca = distancia desde el objetivo hasta el paciente (m); dsec = " +
+    "distancia desde el paciente hasta la Pared G en la linea central del laberinto (m); " +
+    "dzz = distancia en linea central a lo largo del laberinto desde A1 hasta la puerta (m). " +
+    "Cuando la energia de punto final es >10 MV, esta radiacion se ignora habitualmente frente " +
+    "a la fuga y los rayos gamma de captura de neutrones (Seccion 2.4.2)."
+);
+
+export interface ParametrosDispersionPacienteLaberinto {
+  wGySemana: number;
+  uG: number;
+  aTheta: number; // fraccion de dispersion (Tabla B.4)
+  fCm2?: number; // por defecto 400 (20x20 cm a 1 m)
+  alfa1: number;
+  a1M2: number;
+  dscaM: number;
+  dsecM: number;
+  dzzM: number;
+}
+
+/** Ecuacion 2.11: Hps = (W * UG * a(theta) * F/400 * alfa1 * A1) / (dsca * dsec * dzz)^2 */
+export function calcularDispersionPacienteLaberinto(p: ParametrosDispersionPacienteLaberinto): number {
+  const fCm2 = p.fCm2 ?? 400;
+  const numerador = p.wGySemana * p.uG * p.aTheta * (fCm2 / 400) * p.alfa1 * p.a1M2;
+  const denominador = Math.pow(p.dscaM * p.dsecM * p.dzzM, 2);
+  return numerador / denominador;
+}
+
+export const FUENTE_ECUACION_212_FUGA_TRANSMITIDA_LABERINTO = citaNCRP151(
+  "38-39",
+  "Seccion 2.4.1, Ecuacion 2.12",
+  "ALTA",
+  "HLT = equivalente de dosis por semana en la puerta debido a radiacion de fuga transmitida " +
+    "a traves de la pared interior del laberinto (Pared Z). Lf = 1e-3 (conservador, IEC); " +
+    "WL = carga de trabajo para radiacion de fuga (Gy/semana); UG = factor de uso para la " +
+    "orientacion del portico G; B = factor de transmision para la Pared Z a lo largo del " +
+    "camino oblicuo trazado por dL; dL = distancia desde el objetivo hasta el centro de la " +
+    "puerta del laberinto a traves de la pared interior del laberinto (m)."
+);
+
+export interface ParametrosFugaTransmitidaLaberinto {
+  lf?: number;
+  wlGySemana: number;
+  uG: number;
+  b: number; // factor de transmision de la pared Z en el camino oblicuo dL
+  dLM: number;
+}
+
+/** Ecuacion 2.12: HLT = (Lf * WL * UG * B) / dL^2 */
+export function calcularFugaTransmitidaLaberinto(p: ParametrosFugaTransmitidaLaberinto): number {
+  const lf = p.lf ?? 1 / 1000;
+  return (lf * p.wlGySemana * p.uG * p.b) / (p.dLM * p.dLM);
+}
+
+export const FUENTE_ECUACION_213_DOSIS_TOTAL_PARED_G = citaNCRP151(
+  "39",
+  "Seccion 2.4.1, Ecuacion 2.13",
+  "MEDIA",
+  "HG = dosis equivalente total en la puerta del laberinto con el haz dirigido a la Pared G. " +
+    "Texto fuente (orden alterado por la traduccion automatica): 'HG f HS HL+S + H+ ps HLT'. " +
+    "Reconstruccion a partir del parrafo siguiente, que indica que f (fraccion del haz " +
+    "principal transmitido a traves del paciente, ~0.25 para 6-10 MV con campo 40x40 cm2 y " +
+    "maniqui 40x40x40 cm3, McGinley y James 1997) se aplica a los componentes que involucran " +
+    "el haz dispersado tras atravesar/rodear al paciente antes de llegar a la Pared G (HS y " +
+    "HLS): HG = f*(HS + HLS) + Hps + HLT. NOTA: el texto no aisla de forma inequivoca a que " +
+    "termino(s) se aplica f; esta reconstruccion es la interpretacion mas consistente con la " +
+    "definicion textual de f, pero se recomienda verificacion experta antes de uso clinico."
+);
+
+/** Ecuacion 2.13 (reconstruida, ver FUENTE_ECUACION_213_DOSIS_TOTAL_PARED_G). */
+export function calcularDosisTotalParedG(
+  f: number,
+  hs: number,
+  hls: number,
+  hps: number,
+  hlt: number
+): number {
+  return f * (hs + hls) + hps + hlt;
+}
+
+export const FUENTE_ECUACION_214_DOSIS_TOTAL_LABERINTO_BAJA_ENERGIA = citaNCRP151(
+  "39",
+  "Seccion 2.4.1, Ecuacion 2.14 (McGinley, 2002)",
+  "ALTA",
+  "Cuando los factores de uso para las 4 direcciones principales del haz (0/90/180/270 grados) " +
+    "se toman como un cuarto cada uno, la dosis total equivalente en la puerta del laberinto " +
+    "no es simplemente 4*HG, sino que se estima en 2.64*HG (factor de calidad = 1 para " +
+    "fotones de aceleradores de baja energia, <=10 MV). Advertencia explicita del documento: " +
+    "esta ecuacion debe usarse con precaucion si el diseno de la sala difiere de la Figura 2.7 " +
+    "(condiciones de validez: 2 <= dz/sqrt(altura_laberinto * ancho_laberinto) <= 6, y " +
+    "1 <= altura_laberinto/ancho_laberinto <= 2), o si la distribucion de factores de uso del " +
+    "portico no es aproximadamente uniforme (p. ej., procedimientos de TBI)."
+);
+
+export interface ResultadoDosisLaberintoBajaEnergia {
+  hTotSvSemana: number;
+  advertenciaValidezGeometria?: string;
+}
+
+/**
+ * Ecuacion 2.14: HTot = 2.64 * HG, con verificacion opcional de las
+ * condiciones de validez geometrica indicadas por McGinley (2002) / NCRP (1977).
+ */
+export function calcularDosisTotalLaberintoBajaEnergia(
+  hg: number,
+  geometria?: { dzM: number; alturaLaberintoM: number; anchoLaberintoM: number }
+): ResultadoDosisLaberintoBajaEnergia {
+  const hTotSvSemana = 2.64 * hg;
+  if (!geometria) return { hTotSvSemana };
+  const { dzM, alturaLaberintoM, anchoLaberintoM } = geometria;
+  const relacionAlturaAncho = alturaLaberintoM / anchoLaberintoM;
+  const relacionDz = dzM / Math.sqrt(alturaLaberintoM * anchoLaberintoM);
+  const advertencias: string[] = [];
+  if (relacionAlturaAncho < 1 || relacionAlturaAncho > 2) {
+    advertencias.push(
+      `relacion altura/ancho del laberinto (${relacionAlturaAncho.toFixed(2)}) fuera del rango [1,2] recomendado por McGinley (2002).`
+    );
+  }
+  if (relacionDz < 2 || relacionDz > 6) {
+    advertencias.push(
+      `dz / sqrt(altura*ancho) (${relacionDz.toFixed(2)}) fuera del rango [2,6] recomendado por NCRP (1977) / McGinley (2002). El texto fuente indica que la concordancia se mantiene dentro de un factor de 2 para la mayoria de los casos aun fuera de este rango, pero se recomienda verificacion adicional.`
+    );
+  }
+  return {
+    hTotSvSemana,
+    advertenciaValidezGeometria: advertencias.length > 0 ? advertencias.join(" ") : undefined,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// 2.4.2 Aceleradores de alta energia (>10 MV)
+// ----------------------------------------------------------------------------
+// Para energias >10 MV se deben considerar ademas los fotoneutrones y los
+// rayos gamma de captura de neutrones (energia media 3.6 MeV en hormigon,
+// Tochilin y LaRiviere, 1979; puede llegar a 10 MeV en laberintos muy
+// cortos, NCRP 1984). Cuando la distancia de A a B (Figura 2.8) es >2.5 m,
+// el campo de fotones esta dominado por los rayos gamma de captura y el
+// componente de fotones dispersos (Seccion 2.4.1) puede ignorarse.
+
+export const NCRP151_ECUACIONES_215_216_218_219_PENDIENTES = {
+  estado: "PENDIENTE_DE_VERIFICACION" as const,
+  fuente: citaNCRP151(
+    "40-45",
+    "Seccion 2.4.2.1 (Ec. 2.15), 2.4.2.2 (Ec. 2.16), 2.4.2.2.1 Metodo de Kersey (Ec. 2.18), 2.4.2.2.2 Metodo de Kersey modificado (Ec. 2.19)",
+    "BAJA",
+    "Cuatro ecuaciones NO implementadas como funcion ejecutable por corrupcion severa de OCR."
+  ),
+  advertencia:
+    "Las siguientes 4 ecuaciones tienen el formato matematico (exponentes, fracciones, " +
+    "subindices) tan danado por la traduccion automatica de Google sobre el PDF escaneado, " +
+    "que reconstruir la formula exacta implicaria adivinar coeficientes o su ubicacion en la " +
+    "suma/producto, lo cual esta prohibido explicitamente (S1, S5, S55 del Prompt Maestro: " +
+    "'NO inventes formulas'). Se preserva el texto crudo extraido y las variables que SI se " +
+    "pudieron identificar con certeza a partir de la prosa circundante. Se recomienda " +
+    "verificacion contra el documento original en ingles (NCRP Report No. 151, 2005) por un " +
+    "experto calificado (Fisico Medico / OPR) antes de modelar estas ecuaciones en el motor " +
+    "de calculo.",
+  ecuaciones: [
+    {
+      numero: "2.15",
+      paginaAprox: "40-41",
+      descripcion:
+        "Dosis equivalente (h) de rayos gamma de captura de neutrones en la puerta del " +
+        "laberinto, por unidad de dosis absorbida de rayos X en el isocentro (McGinley et al., 1995).",
+      textoCrudoExtraido:
+        "'re – ----2---------- h = k 10 T VD A (2.15)'",
+      variablesIdentificadasConCerteza:
+        "K = relacion entre la dosis equivalente de rayos gamma de captura de neutrones " +
+        "(sievert) y la fluencia de neutrones total en la ubicacion A (valor promedio " +
+        "reportado: 6.9e-16 Sv m2 por unidad de fluencia de neutrones, segun mediciones en 22 " +
+        "instalaciones de aceleradores, McGinley comunicacion personal 1998); A = fluencia de " +
+        "neutrones total (m-2) en la ubicacion A por unidad de dosis absorbida (Gy) de rayos X " +
+        "en el isocentro (ver Ecuacion 2.16, tambien pendiente); d2 = distancia desde la " +
+        "ubicacion A hasta la puerta (m); TVD = distancia de valor decimo, ~5.4 m para haces " +
+        "de rayos X de 18 a 25 MV, ~3.9 m para haces de 15 MV.",
+      estructuraSugeridaNoConfirmada:
+        "La prosa sugiere una forma del tipo h = k * A * 10^(-d2/TVD), pero el layout crudo no " +
+        "permite confirmar con certeza la posicion exacta del exponente ni si hay factores " +
+        "adicionales perdidos en la corrupcion de OCR. NO se implementa como funcion.",
+    },
+    {
+      numero: "2.16",
+      paginaAprox: "41-42",
+      descripcion:
+        "Fluencia de neutrones total en la entrada del laberinto interior (Ubicacion A), por " +
+        "unidad de dosis absorbida de rayos X en el isocentro (McCall et al., 1999; NCRP, 1984).",
+      textoCrudoExtraido:
+        "'β 5.4 β = -------q---n---- + ---------------q---n--- 1.3 Qn A + ---------------- (2.16) 2 4πd1 2πSr 2πSr'",
+      variablesIdentificadasConCerteza:
+        "Los tres terminos representan, en orden, los componentes de neutrones directos, " +
+        "dispersos y termicos. beta = factor de transmision para los neutrones que penetran " +
+        "el blindaje del cabezal (1 para plomo, 0.85 para blindaje de tungsteno); d1 = " +
+        "distancia desde el isocentro hasta la ubicacion A (m); Qn = fuerza de la fuente de " +
+        "neutrones (neutrones emitidos por Gy de dosis de rayos X absorbida en el isocentro, " +
+        "Tabla B.9); Sr = superficie total de la sala de tratamiento (m2); el factor 1/(2*pi) " +
+        "en los terminos disperso y termico representa la fraccion de neutrones que entra al " +
+        "laberinto.",
+      estructuraSugeridaNoConfirmada:
+        "No se puede determinar con certeza que coeficiente (5.4 o 1.3) corresponde al termino " +
+        "disperso y cual al termino termico, ni si beta multiplica tambien a esos terminos o " +
+        "solo al termino directo. NO se implementa como funcion.",
+    },
+  ],
+};
+
+export const FUENTE_ECUACION_217_DOSIS_GAMMA_CAPTURA_PUERTA = citaNCRP151(
+  "43",
+  "Seccion 2.4.2.1, Ecuacion 2.17",
+  "ALTA",
+  "Hcg = dosis equivalente semanal en la puerta debido a rayos gamma de captura de neutrones " +
+    "(Sv/semana) = WL (carga de trabajo de radiacion de fuga, Gy/semana) * h (Ecuacion 2.15, " +
+    "PENDIENTE_DE_VERIFICACION - ver NCRP151_ECUACIONES_215_216_218_219_PENDIENTES). Esta " +
+    "funcion permite calcular Hcg una vez que 'h' se obtenga de una fuente verificada " +
+    "(medicion directa, software de terceros validado, o verificacion experta de la Ecuacion 2.15)."
+);
+
+/** Ecuacion 2.17: Hcg = WL * h. El parametro hSvPorGy debe provenir de una fuente verificada (ver advertencia en FUENTE_ECUACION_217_DOSIS_GAMMA_CAPTURA_PUERTA). */
+export function calcularDosisGammaCapturaPuerta(wlGySemana: number, hSvPorGy: number): number {
+  return wlGySemana * hSvPorGy;
+}
+
+export const NCRP151_TVD_KERSEY_LABERINTO_M = 5;
+export const FUENTE_TVD_KERSEY = citaNCRP151(
+  "43-44",
+  "Seccion 2.4.2.2.1, Metodo de Kersey, parrafo tras la Ecuacion 2.18",
+  "ALTA",
+  "Para el metodo de Kersey (1979), el laberinto tiene una distancia de valor decimo (TVD) de " +
+    "5 m para la atenuacion de neutrones en el laberinto. McGinley y Butker (1991) encontraron " +
+    "que la TVD real para los neutrones del laberinto era ~16% menor que 5 m en 13 " +
+    "instalaciones evaluadas (aceleradores de 15 a 18 MV); por lo tanto 5 m es un valor " +
+    "prudentemente seguro. Tambien encontraron que un segundo giro en el laberinto reduce el " +
+    "nivel de neutrones en un factor de al menos 3 respecto del valor de la ecuacion de Kersey."
+);
+
+export const FUENTE_ECUACION_220_TVD_LABERINTO = citaNCRP151(
+  "45",
+  "Seccion 2.4.2.2.2, Ecuacion 2.20 (Wu y McGinley, 2003)",
+  "MEDIA",
+  "Texto crudo: 'TVD 2=.06 S1 (2.20)'. El parrafo inmediatamente anterior indica " +
+    "explicitamente que la TVD 'varia como la raiz cuadrada del area de la seccion transversal " +
+    "a lo largo del laberinto S1 (m2)'. Reconstruccion: TVD = 2.06 * sqrt(S1), con TVD en metros."
+);
+
+/** Ecuacion 2.20: TVD = 2.06 * sqrt(S1) */
+export function calcularTVDLaberintoAltaEnergia(s1M2: number): number {
+  return 2.06 * Math.sqrt(s1M2);
+}
+
+export const FUENTE_ECUACION_221_DOSIS_NEUTRONES_PUERTA = citaNCRP151(
+  "45",
+  "Seccion 2.4.2.2.2, Ecuacion 2.21",
+  "ALTA",
+  "Hn = WL * Hn,D. Hn,D (equivalente de dosis de neutrones en la entrada del laberinto por " +
+    "unidad de dosis absorbida de rayos X en el isocentro, Sv/Gy) debe provenir de una fuente " +
+    "verificada (Ecuacion 2.18 -Kersey- o 2.19 -Kersey modificada-, ambas " +
+    "PENDIENTE_DE_VERIFICACION, o de medicion directa)."
+);
+
+/** Ecuacion 2.21: Hn = WL * Hn,D. hnDSvPorGy debe provenir de una fuente verificada. */
+export function calcularDosisNeutronesPuertaSemanal(wlGySemana: number, hnDSvPorGy: number): number {
+  return wlGySemana * hnDSvPorGy;
+}
+
+export const FUENTE_ECUACION_222_DOSIS_TOTAL_PUERTA_ALTA_ENERGIA = citaNCRP151(
+  "45",
+  "Seccion 2.4.2.3, Ecuacion 2.22",
+  "ALTA",
+  "Hw = HTot (Ecuacion 2.14, fuga y dispersion) + Hcg (Ecuacion 2.17, rayos gamma de captura) " +
+    "+ Hn (Ecuacion 2.21, neutrones). El texto fuente indica que para la mayoria de los " +
+    "laberintos con energias >10 MV, HTot es un orden de magnitud menor que Hcg + Hn y por lo " +
+    "tanto casi siempre insignificante en la practica; sin embargo esta funcion NO omite el " +
+    "termino (S24: nunca ocultar un componente de la dosis)."
+);
+
+/** Ecuacion 2.22: Hw = HTot + Hcg + Hn */
+export function calcularDosisTotalPuertaAltaEnergia(hTotSvSemana: number, hCgSvSemana: number, hNSvSemana: number): number {
+  return hTotSvSemana + hCgSvSemana + hNSvSemana;
+}
+
+// Continuacion de NCRP151_ECUACIONES_215_216_218_219_PENDIENTES (2.18 y 2.19):
+// se agregan como elementos adicionales del arreglo 'ecuaciones' mediante
+// una constante separada para no reabrir el objeto original (evita
+// duplicacion de logica de merge en tiempo de ejecucion; ambas constantes
+// deben consultarse juntas).
+export const NCRP151_ECUACIONES_218_219_PENDIENTES_DETALLE = [
+  {
+    numero: "2.18",
+    paginaAprox: "43-44",
+    descripcion:
+      "Metodo de Kersey (1979): dosis equivalente de neutrones (Hn,D) en la entrada exterior " +
+      "del laberinto por unidad de dosis absorbida de rayos X en el isocentro, con la posicion " +
+      "efectiva de la fuente de neutrones tomada como el isocentro del acelerador.",
+    textoCrudoExtraido:
+      "'re 2 – 2 = S0 d0 ---- --- - 5-Hn,D H0 ( ) --Sea-sp-1m-tl -ai dc-é -1a t (2.18) o c Edidó neo n l 10 d e'",
+    variablesIdentificadasConCerteza:
+      "H0 = dosis equivalente de neutrones total (directa + dispersa en sala + termica) a una " +
+      "distancia d0 = 1.41 m del objetivo, por unidad de dosis absorbida de rayos X en el " +
+      "isocentro (mSv/Gy) (Tabla B.9); S0/S1 = relacion entre el area de la seccion transversal " +
+      "de la entrada del laberinto interior y el area de la seccion transversal a lo largo del " +
+      "laberinto (Figura 2.8); d1 = distancia desde el isocentro hasta el punto en la linea " +
+      "central del laberinto desde el cual el isocentro es apenas visible (punto A); d2 = " +
+      "distancia de A a B (o de A a C mas C a D si hay dos giros), en metros. TVD de neutrones " +
+      "= 5 m para este metodo (ver NCRP151_TVD_KERSEY_LABERINTO_M).",
+    estructuraSugeridaNoConfirmada:
+      "El fragmento '--Sea-sp-1m-tl -ai dc-é -1a t' no tiene sentido tecnico reconocible (no es " +
+      "solo un problema de layout, sino perdida de contenido). NO se implementa como funcion. " +
+      "McGinley y Butker (1991) reportan que la razon [Hn,D calculado por Kersey] / [Hn,D " +
+      "medido] vario entre 0.82 y 2.3 para 13 instalaciones evaluadas (aceleradores de 15 a 18 MV).",
+  },
+  {
+    numero: "2.19",
+    paginaAprox: "44-45",
+    descripcion:
+      "Metodo de Kersey modificado (Wu y McGinley, 2003): dosis de neutrones equivalente a lo " +
+      "largo del laberinto, refinando el metodo de Kersey para tener en cuenta salas con areas " +
+      "de superficie no estandar o laberintos de ancho/largo excepcional.",
+    textoCrudoExtraido:
+      "'re re – 2 – ----2---------- = S0 -------- 1,6×4 10 ---- 1--.-9--- + 10 T VD (2.19) Hn,D 2,4 10–15 × A S1'",
+    variablesIdentificadasConCerteza:
+      "Hn,D = equivalente de dosis de neutrones en la entrada del laberinto en sievert por " +
+      "unidad de dosis absorbida de rayos x (Gy) en el isocentro; A = fluencia de neutrones " +
+      "por unidad de dosis absorbida de fotones (m-2 Gy-1) en el isocentro (Ecuacion 2.16, " +
+      "tambien pendiente); S0/S1 = relacion entre areas de secciones transversales (igual que " +
+      "en 2.18); TVD = distancia de valor decimo, dada por la Ecuacion 2.20 (TVD = 2.06*sqrt(S1)).",
+    estructuraSugeridaNoConfirmada:
+      "Los fragmentos numericos '1,6×4 10' y '1--.-9---' no permiten determinar con certeza los " +
+      "coeficientes exactos (posibles candidatos como 1.6e-4 o 1.9, pero la posicion de cada " +
+      "uno en la formula y sus exponentes de base 10 no se pueden confirmar). NO se implementa " +
+      "como funcion.",
+  },
+];
+
+// ============================================================================
+// TABLA 2.1 (pag. 48) - COMPARACION MEDIDA DE TECNICAS DE BLINDAJE DE PUERTA
+// DE LABERINTO (McGinley y Miner, 1995)
+// ============================================================================
+// Condiciones de medicion: acelerador nominal de 18 MV, longitud de laberinto
+// (d2) = 6.5 m, tasa de dosis absorbida de rayos X en el isocentro de
+// 6.67e-2 Gy/s (4 Gy/min). Unidades de la tabla: Sv/h por unidad de tasa de
+// dosis absorbida (Gy/h) de rayos X en el isocentro (Sv/Gy).
+// Nota (a): tasas de dosis equivalente de neutrones medidas con rem-meter
+// calibrado con fuente de neutrones de 252Cf moderada por agua pesada.
+
+export const FUENTE_TABLA_21_COMPARACION_PUERTAS = citaNCRP151(
+  "48",
+  "Tabla 2.1 (McGinley y Miner, 1995)",
+  "ALTA",
+  "Acelerador nominal 18 MV, longitud de laberinto d2 = 6.5 m, tasa de dosis en isocentro " +
+    "6.67e-2 Gy/s (4 Gy/min)."
+);
+
+export interface FilaComparacionPuertaLaberinto {
+  tipoLaberintoYPuerta: string;
+  capturaGammaSvGy: number;
+  neutronesSvGy: number;
+  totalSvGy: number;
+  descripcionTecnica?: string;
+}
+
+export const COMPARACION_TECNICAS_PUERTA_LABERINTO_TABLA21: FilaComparacionPuertaLaberinto[] = [
+  { tipoLaberintoYPuerta: "Convencional", capturaGammaSvGy: 5.8e-7, neutronesSvGy: 17.4e-7, totalSvGy: 23.3e-7 },
+  {
+    tipoLaberintoYPuerta: "Apertura interior reducida",
+    capturaGammaSvGy: 2.6e-7,
+    neutronesSvGy: 5.8e-7,
+    totalSvGy: 8.4e-7,
+    descripcionTecnica: "Abertura interior del laberinto reducida a (1.22 x 2.13) m2, con hormigon de 45.7 cm de espesor rodeando la abertura.",
+  },
+  {
+    tipoLaberintoYPuerta: "Puerta interior de boro",
+    capturaGammaSvGy: 1.9e-7,
+    neutronesSvGy: 4.8e-7,
+    totalSvGy: 6.7e-7,
+    descripcionTecnica: "Panel de 7 mm de espesor con 8.9% en peso de boro (Boraflex) en la entrada interior del laberinto.",
+  },
+  {
+    tipoLaberintoYPuerta: "Puerta interior BPE",
+    capturaGammaSvGy: 1.0e-7,
+    neutronesSvGy: 1.5e-7,
+    totalSvGy: 2.6e-7,
+    descripcionTecnica: "Puerta de polietileno de 5 cm de espesor (5% de boro) en la entrada interior del laberinto. Tecnica con mayor reduccion; solo requirio una lamina de plomo relativamente delgada (~1 cm) en la puerta exterior del laberinto.",
+  },
+];
+
+// ============================================================================
+// TABLA 3.1 (pag. 55) - DISTRIBUCION DEL FACTOR DE USO DE ALTA ENERGIA (MODO
+// DE RAYOS X DUAL) EN INTERVALOS DE ANGULO DE PORTICO DE 90 Y 45 GRADOS
+// ============================================================================
+// Fuente de los datos: Rodgers, J.E. (2001), comunicacion personal
+// (Universidad de Georgetown, Washington). Nuevo analisis no publicado de
+// los datos de la encuesta en Kleck y Elsalim (1994).
+// NOTA: se transcriben literalmente los porcentajes del documento. La suma
+// de los valores de 90 grados (31.0 + 21.3*2 + 26.3 = 99.9) y de 45 grados
+// (25.6 + 5.8*2 + 15.9*2 + 4.0*2 + 23 = 100.0) no da exactamente 100% en el
+// caso de 90 grados por redondeo en la fuente original; no se ajusta el
+// valor para forzar la suma a 100 (S24: no ocultar ni corregir datos de la
+// fuente sin indicarlo explicitamente).
+
+export const FUENTE_TABLA_31_FACTOR_USO_ANGULO = citaNCRP151(
+  "55",
+  "Tabla 3.1",
+  "ALTA",
+  "Rodgers, J.E. (2001), comunicacion personal (Universidad de Georgetown, Washington). " +
+    "Nuevo analisis no publicado de los datos de encuesta en Kleck y Elsalim (1994). La suma " +
+    "de los valores del intervalo de 90 grados en el documento fuente es 99.9% (no 100.0%) " +
+    "por redondeo; se preserva tal como aparece en la fuente."
+);
+
+export interface FactorUsoAnguloPortico {
+  centroIntervaloGrados: number;
+  anchoIntervaloGrados: 90 | 45;
+  usoPorcentaje: number;
+  etiqueta: string;
+}
+
+export const FACTOR_USO_ANGULO_PORTICO_TABLA31: FactorUsoAnguloPortico[] = [
+  // Intervalo de 90 grados
+  { centroIntervaloGrados: 0, anchoIntervaloGrados: 90, usoPorcentaje: 31.0, etiqueta: "0 grados (abajo)" },
+  { centroIntervaloGrados: 90, anchoIntervaloGrados: 90, usoPorcentaje: 21.3, etiqueta: "90 grados" },
+  { centroIntervaloGrados: 270, anchoIntervaloGrados: 90, usoPorcentaje: 21.3, etiqueta: "270 grados" },
+  { centroIntervaloGrados: 180, anchoIntervaloGrados: 90, usoPorcentaje: 26.3, etiqueta: "180 grados (arriba)" },
+  // Intervalo de 45 grados
+  { centroIntervaloGrados: 0, anchoIntervaloGrados: 45, usoPorcentaje: 25.6, etiqueta: "0 grados (abajo)" },
+  { centroIntervaloGrados: 45, anchoIntervaloGrados: 45, usoPorcentaje: 5.8, etiqueta: "45 grados" },
+  { centroIntervaloGrados: 315, anchoIntervaloGrados: 45, usoPorcentaje: 5.8, etiqueta: "315 grados" },
+  { centroIntervaloGrados: 90, anchoIntervaloGrados: 45, usoPorcentaje: 15.9, etiqueta: "90 grados" },
+  { centroIntervaloGrados: 270, anchoIntervaloGrados: 45, usoPorcentaje: 15.9, etiqueta: "270 grados" },
+  { centroIntervaloGrados: 135, anchoIntervaloGrados: 45, usoPorcentaje: 4.0, etiqueta: "135 grados" },
+  { centroIntervaloGrados: 225, anchoIntervaloGrados: 45, usoPorcentaje: 4.0, etiqueta: "225 grados" },
+  { centroIntervaloGrados: 180, anchoIntervaloGrados: 45, usoPorcentaje: 23.0, etiqueta: "180 grados (arriba)" },
+];
+
+// ============================================================================
+// SECCION 2.4.3 - PROTECCION DE LA PUERTA: TVL DE REFERENCIA PARA EL
+// BLINDAJE DE LA PUERTA DEL LABERINTO (pag. 46)
+// ============================================================================
+
+export const FUENTE_TVL_PROTECCION_PUERTA = citaNCRP151(
+  "46",
+  "Seccion 2.4.3",
+  "ALTA",
+  "Energia promedio de los rayos gamma de captura de neutrones = 3.6 MeV (Tochilin y " +
+    "LaRiviere, 1979), puede alcanzar 10 MeV en laberintos muy cortos (NCRP, 1984). Energia " +
+    "de neutrones promedio en la entrada del laberinto ~100 keV."
+);
+
+export const TVL_PLOMO_GAMMA_CAPTURA_PUERTA_CM = 6.1;
+export const TVL_POLIETILENO_NEUTRONES_100KEV_PUERTA_CM = 4.5;
+export const TVL_BPE_5PORCIENTO_BORO_NEUTRONES_2MEV_CM = 3.8;
+export const TVL_BPE_5PORCIENTO_BORO_NEUTRONES_TERMICOS_CM = 1.2;
+export const TVL_BPE_RECOMENDADO_CONSERVADOR_DISENO_PUERTA_CM = 4.5;
+
+// ============================================================================
+// PENDIENTE PARA UNA FASE POSTERIOR (fuera del alcance de esta sesion)
+// ============================================================================
+export const NCRP151_LABERINTOS_SECCIONES_244_245_PENDIENTES = {
+  estado: "PENDIENTE_DE_EXTRACCION" as const,
+  advertencia:
+    "Las Secciones 2.4.4 (disenos alternativos de puertas y laberintos: reduccion de la " +
+    "abertura interior, puerta ligera con boro, puerta BPE - datos numericos ya cubiertos " +
+    "parcialmente por COMPARACION_TECNICAS_PUERTA_LABERINTO_TABLA21) y 2.4.5 (puerta con " +
+    "blindaje directo, sin laberinto: problemas de diseno, rayos gamma de captura con puertas " +
+    "de blindaje directo, diseno de cuarto alternativo) contienen informacion cualitativa y " +
+    "algunos valores numericos adicionales (p. ej. TVL en hormigon ~38 cm para rayos gamma de " +
+    "captura asumiendo 7.2 MeV, en la Seccion 2.4.5.2) que NO fueron transcritos de forma " +
+    "sistematica en esta sesion. Se deja pendiente para una fase posterior, respetando el " +
+    "orden de fases del Prompt Maestro. No se fabrica ningun valor de estas secciones aqui.",
+};
