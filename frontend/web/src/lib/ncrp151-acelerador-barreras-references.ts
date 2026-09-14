@@ -11,6 +11,14 @@
  * factores de ocupacion T y objetivos de diseno P) y resuelve el
  * placeholder NCRP151_TVL_Y_BARRERAS_PENDIENTE dejado alli.
  *
+ * ACTUALIZACION (consolidacion, 14/09/2026): se agrego la Tabla B.1
+ * (factores de ocupacion, uso original radioterapia) y las Tablas B.8a-f
+ * (albedo de reflexion) y B.9 (fuerza de fuente de neutrones), que habian
+ * sido extraidas por separado en un archivo duplicado
+ * (ncrp151-radioterapia-tvl-references.ts) para evitar mantener datos de
+ * NCRP151 repetidos en dos archivos. Ese archivo duplicado ahora solo
+ * contiene un puntero a este archivo.
+ *
  * ============================================================================
  * FUENTE Y METODO DE VERIFICACION (anti-fabricacion, S61 del Prompt Maestro)
  * ============================================================================
@@ -47,6 +55,32 @@ const BASE_FUENTE_NCRP151 = {
 function citaNCRP151(paginaAprox: string, tablaOSeccion: string, nivelConfianza: NivelConfianza = "ALTA", notas?: string): FuenteCita {
   return { ...BASE_FUENTE_NCRP151, paginaAprox, tablaOEcuacion: tablaOSeccion, nivelConfianza, notas };
 }
+
+// ============================================================================
+// TABLA B.1 (pag. 160) - FACTORES DE OCUPACION SUGERIDOS PARA RADIOTERAPIA
+// (uso ORIGINAL del documento. Agregado durante consolidacion desde
+// ncrp151-radioterapia-tvl-references.ts. No confundir con la adaptacion a
+// medicina nuclear / PET-CT de ncrp151-shielding-references.ts, que usa
+// estos mismos valores numericos para ubicaciones distintas.)
+// ============================================================================
+
+export interface FactorOcupacionNCRP151Radioterapia {
+  codigo: string;
+  ubicacionEs: string;
+  factorT: number;
+  notas?: string;
+}
+
+export const FUENTE_TABLA_B1_RADIOTERAPIA = citaNCRP151("160", "Apendice B, Tabla B.1");
+
+export const FACTORES_OCUPACION_NCRP151_RADIOTERAPIA: FactorOcupacionNCRP151Radioterapia[] = [
+  { codigo: "T1_OCUPACION_TOTAL", ubicacionEs: "Areas de ocupacion total: oficinas administrativas, salas de planificacion de tratamiento, salas de control de tratamiento, estaciones de enfermeria, recepcion, salas de espera atendidas, espacio ocupado en edificio cercano", factorT: 1 },
+  { codigo: "T2_SALA_ADYACENTE", ubicacionEs: "Sala de tratamiento adyacente, sala de examen de pacientes adyacente a la boveda blindada", factorT: 0.5 },
+  { codigo: "T3_PASILLOS_EMPLEADOS", ubicacionEs: "Pasillos, salones para empleados, banos para el personal", factorT: 0.2 },
+  { codigo: "T4_PUERTAS_BOVEDA", ubicacionEs: "Puertas de boveda de tratamiento", factorT: 0.125, notas: "El area justo afuera de la puerta puede tener un factor de ocupacion menor que el del espacio de trabajo desde el cual se abre (NCRP151, pag. 160)." },
+  { codigo: "T5_BANOS_PUBLICOS", ubicacionEs: "Banos publicos, salas de venta desatendidas, areas de almacenamiento, areas al aire libre con asientos, salas de espera desatendidas, areas de espera de pacientes, aticos, armarios de conserjeria", factorT: 0.05 },
+  { codigo: "T6_TRANSITO_EXTERIOR", ubicacionEs: "Areas al aire libre con solo transito transitorio de peatones o vehiculos, estacionamientos desatendidos, areas de descenso de vehiculos desatendidos, escaleras, ascensores desatendidos", factorT: 0.025 },
+];
 
 // ============================================================================
 // 1. TABLA B.2 - TVL DE BARRERA PRIMARIA (hormigon, acero, plomo)
@@ -487,10 +521,135 @@ export function combinarBarreraSecundariaDosFuentes(
 }
 
 // ============================================================================
-// 9. PENDIENTE EXPLICITO: PUERTAS, LABERINTOS Y NEUTRONES (Seccion 2.4, 7.1.10-7.1.17)
+// TABLAS B.8a-f (pag. 168-171) - ALBEDO DE DOSIS DIFERENCIAL (COEFICIENTE DE
+// REFLEXION DE LA PARED). Agregado durante consolidacion desde
+// ncrp151-radioterapia-tvl-references.ts. Valores x1e-3. Angulos de
+// reflexion medidos desde la normal a la pared.
+// ============================================================================
+
+export type MaterialReflexionNCRP151 = "hormigon" | "hierro" | "plomo";
+
+export interface FilaAlbedoReflexion {
+  material: MaterialReflexionNCRP151;
+  anguloIncidenciaGrados: 0 | 45;
+  energiaEtiqueta: string;
+  refl0: number;
+  refl30: number;
+  refl45: number;
+  refl60: number;
+  refl75: number;
+}
+
+export const FUENTE_TABLA_B8 = citaNCRP151("168-171", "Apendice B, Tablas B.8a a B.8f", "MEDIA", "El propio NCRP151 advierte incertidumbres del orden de +/-50% en estos valores de albedo debido tanto a los calculos Monte Carlo como a las interpolaciones graficas usadas para construir la tabla.");
+
+export const ALBEDO_REFLEXION_NCRP151: FilaAlbedoReflexion[] = [
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "30MV", refl0: 3.0, refl30: 2.7, refl45: 2.6, refl60: 2.2, refl75: 1.5 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "24MV", refl0: 3.2, refl30: 3.2, refl45: 2.8, refl60: 2.3, refl75: 1.5 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "18MV", refl0: 3.4, refl30: 3.4, refl45: 3.0, refl60: 2.5, refl75: 1.6 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "10MV", refl0: 4.3, refl30: 4.1, refl45: 3.8, refl60: 3.1, refl75: 2.1 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "6MV", refl0: 5.3, refl30: 5.2, refl45: 4.7, refl60: 4.0, refl75: 2.7 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "4MV", refl0: 6.7, refl30: 6.4, refl45: 5.8, refl60: 4.9, refl75: 3.1 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "Co-60", refl0: 7.0, refl30: 6.5, refl45: 6.0, refl60: 5.5, refl75: 3.8 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "0.5MeV", refl0: 19.0, refl30: 17.0, refl45: 15.0, refl60: 13.0, refl75: 8.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 0, energiaEtiqueta: "0.25MeV", refl0: 32.0, refl30: 28.0, refl45: 25.0, refl60: 22.0, refl75: 13.0 },
+];
+
+export const ALBEDO_REFLEXION_45DEG_HORMIGON_NCRP151: FilaAlbedoReflexion[] = [
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "30MV", refl0: 4.8, refl30: 5.0, refl45: 4.9, refl60: 4.0, refl75: 3.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "24MV", refl0: 3.7, refl30: 3.9, refl45: 3.9, refl60: 3.7, refl75: 3.4 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "18MV", refl0: 4.5, refl30: 4.6, refl45: 4.6, refl60: 4.3, refl75: 4.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "10MV", refl0: 5.1, refl30: 5.7, refl45: 5.8, refl60: 6.0, refl75: 6.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "6MV", refl0: 6.4, refl30: 7.1, refl45: 7.3, refl60: 7.7, refl75: 8.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "4MV", refl0: 7.6, refl30: 8.5, refl45: 9.0, refl60: 9.2, refl75: 9.5 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "Co-60", refl0: 9.0, refl30: 10.2, refl45: 11.0, refl60: 11.5, refl75: 12.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "0.5MeV", refl0: 22.0, refl30: 22.5, refl45: 22.0, refl60: 20.0, refl75: 18.0 },
+  { material: "hormigon", anguloIncidenciaGrados: 45, energiaEtiqueta: "0.25MeV", refl0: 36.0, refl30: 34.5, refl45: 31.0, refl60: 25.0, refl75: 18.0 },
+];
+
+export const ALBEDO_REFLEXION_HIERRO_NCRP151: FilaAlbedoReflexion[] = [
+  { material: "hierro", anguloIncidenciaGrados: 0, energiaEtiqueta: "30MV", refl0: 5.5, refl30: 4.7, refl45: 4.4, refl60: 3.8, refl75: 2.3 },
+  { material: "hierro", anguloIncidenciaGrados: 0, energiaEtiqueta: "18MV", refl0: 5.1, refl30: 4.5, refl45: 4.3, refl60: 3.8, refl75: 2.4 },
+  { material: "hierro", anguloIncidenciaGrados: 0, energiaEtiqueta: "10MV", refl0: 5.0, refl30: 4.5, refl45: 4.3, refl60: 3.9, refl75: 2.5 },
+  { material: "hierro", anguloIncidenciaGrados: 0, energiaEtiqueta: "6MV", refl0: 5.5, refl30: 4.9, refl45: 4.7, refl60: 4.2, refl75: 2.8 },
+  { material: "hierro", anguloIncidenciaGrados: 0, energiaEtiqueta: "4MV", refl0: 6.0, refl30: 5.4, refl45: 5.1, refl60: 4.8, refl75: 3.1 },
+  { material: "hierro", anguloIncidenciaGrados: 45, energiaEtiqueta: "30MV", refl0: 6.6, refl30: 6.5, refl45: 6.3, refl60: 5.5, refl75: 4.6 },
+  { material: "hierro", anguloIncidenciaGrados: 45, energiaEtiqueta: "18MV", refl0: 6.5, refl30: 6.4, refl45: 6.2, refl60: 6.0, refl75: 5.6 },
+  { material: "hierro", anguloIncidenciaGrados: 45, energiaEtiqueta: "10MV", refl0: 6.1, refl30: 6.8, refl45: 7.1, refl60: 7.2, refl75: 7.2 },
+  { material: "hierro", anguloIncidenciaGrados: 45, energiaEtiqueta: "6MV", refl0: 6.0, refl30: 7.0, refl45: 8.5, refl60: 9.0, refl75: 9.5 },
+  { material: "hierro", anguloIncidenciaGrados: 45, energiaEtiqueta: "4MV", refl0: 7.1, refl30: 8.1, refl45: 10.0, refl60: 10.6, refl75: 11.5 },
+];
+
+export const ALBEDO_REFLEXION_PLOMO_NCRP151: FilaAlbedoReflexion[] = [
+  { material: "plomo", anguloIncidenciaGrados: 0, energiaEtiqueta: "30MV", refl0: 3.5, refl30: 3.0, refl45: 2.7, refl60: 2.4, refl75: 1.5 },
+  { material: "plomo", anguloIncidenciaGrados: 0, energiaEtiqueta: "18MV", refl0: 3.9, refl30: 3.4, refl45: 3.2, refl60: 2.8, refl75: 1.8 },
+  { material: "plomo", anguloIncidenciaGrados: 0, energiaEtiqueta: "10MV", refl0: 4.5, refl30: 3.9, refl45: 3.6, refl60: 3.2, refl75: 2.2 },
+  { material: "plomo", anguloIncidenciaGrados: 0, energiaEtiqueta: "6MV", refl0: 5.0, refl30: 4.5, refl45: 4.2, refl60: 3.8, refl75: 2.6 },
+  { material: "plomo", anguloIncidenciaGrados: 0, energiaEtiqueta: "4MV", refl0: 5.9, refl30: 5.2, refl45: 4.7, refl60: 4.2, refl75: 3.0 },
+  { material: "plomo", anguloIncidenciaGrados: 45, energiaEtiqueta: "30MV", refl0: 4.1, refl30: 4.2, refl45: 4.1, refl60: 3.7, refl75: 3.2 },
+  { material: "plomo", anguloIncidenciaGrados: 45, energiaEtiqueta: "18MV", refl0: 4.9, refl30: 5.0, refl45: 5.0, refl60: 4.8, refl75: 4.5 },
+  { material: "plomo", anguloIncidenciaGrados: 45, energiaEtiqueta: "10MV", refl0: 5.4, refl30: 5.8, refl45: 6.0, refl60: 5.9, refl75: 5.8 },
+  { material: "plomo", anguloIncidenciaGrados: 45, energiaEtiqueta: "6MV", refl0: 6.5, refl30: 6.8, refl45: 7.0, refl60: 7.3, refl75: 7.8 },
+  { material: "plomo", anguloIncidenciaGrados: 45, energiaEtiqueta: "4MV", refl0: 6.5, refl30: 7.6, refl45: 8.3, refl60: 8.6, refl75: 9.0 },
+];
+
+// ============================================================================
+// TABLA B.9 (pag. 172-173) - FUERZA DE FUENTE DE NEUTRONES (Qn, en unidades
+// de 1e12 neutrones por gray de dosis absorbida de rayos X en el isocentro)
+// y dosis equivalente de neutrones (H0, mSv/Gy) a 1.41 m del objetivo, por
+// modelo de acelerador (McGinley, 2002; Followill et al., 2003). Agregado
+// durante consolidacion desde ncrp151-radioterapia-tvl-references.ts.
+//
+// ADVERTENCIA DE CALIDAD DE FUENTE: esta tabla se extrajo de una version
+// traducida automaticamente (Google Translate) de un documento escaneado.
+// Algunos nombres de modelo comercial pueden estar corrompidos por errores
+// de OCR/traduccion. Antes de usar el nombre de un modelo especifico para
+// un caso real, verificar contra el articulo original en ingles. Los
+// valores numericos Qn/H0 se transcriben tal cual del texto disponible.
+// ============================================================================
+
+export interface FilaFuenteNeutronesNCRP151 {
+  vendedor: string;
+  modelo: string;
+  energiaNominalMV: number;
+  qnX1e12: number;
+  h0MSvGy?: number;
+  referencia: string;
+  notas?: string;
+}
+
+export const FUENTE_TABLA_B9 = citaNCRP151("172-173", "Apendice B, Tabla B.9", "MEDIA", "Ver advertencia de calidad de fuente en el comentario de esta seccion.");
+
+export const FUERZA_FUENTE_NEUTRONES_NCRP151: FilaFuenteNeutronesNCRP151[] = [
+  { vendedor: "Varian", modelo: "1800", energiaNominalMV: 18, qnX1e12: 1.22, h0MSvGy: 1.02, referencia: "McGinley (2002)" },
+  { vendedor: "Varian", modelo: "1800", energiaNominalMV: 15, qnX1e12: 0.76, h0MSvGy: 0.79, referencia: "McGinley (2002)" },
+  { vendedor: "Varian", modelo: "1800", energiaNominalMV: 10, qnX1e12: 0.06, h0MSvGy: 0.04, referencia: "McGinley (2002)" },
+  { vendedor: "Varian", modelo: "2100C", energiaNominalMV: 18, qnX1e12: 0.96, referencia: "Followill et al. (2003)" },
+  { vendedor: "Varian", modelo: "2100C", energiaNominalMV: 18, qnX1e12: 0.87, referencia: "Followill et al. (2003)", notas: "Segunda unidad del mismo modelo y energia." },
+  { vendedor: "Varian", modelo: "2300CD", energiaNominalMV: 18, qnX1e12: 0.95, referencia: "Followill et al. (2003)" },
+  { vendedor: "Varian", modelo: "2500", energiaNominalMV: 24, qnX1e12: 0.77, referencia: "Followill et al. (2003)" },
+  { vendedor: "Siemens", modelo: "KD", energiaNominalMV: 20, qnX1e12: 0.92, h0MSvGy: 1.1, referencia: "McGinley (2002)" },
+  { vendedor: "Siemens", modelo: "MD", energiaNominalMV: 15, qnX1e12: 0.2, h0MSvGy: 0.17, referencia: "McGinley (2002) / Followill et al. (2003)" },
+  { vendedor: "Siemens", modelo: "MD2", energiaNominalMV: 10, qnX1e12: 0.08, referencia: "Followill et al. (2003)" },
+  { vendedor: "Siemens", modelo: "KD", energiaNominalMV: 18, qnX1e12: 0.88, referencia: "Followill et al. (2003)" },
+  { vendedor: "Siemens", modelo: "Primus", energiaNominalMV: 15, qnX1e12: 0.12, referencia: "Followill et al. (2003)" },
+  { vendedor: "Siemens", modelo: "Primus", energiaNominalMV: 15, qnX1e12: 0.21, referencia: "Followill et al. (2003)", notas: "Segunda unidad del mismo modelo y energia." },
+  { vendedor: "Siemens", modelo: "MODELO NO IDENTIFICABLE CON CERTEZA (OCR corrupto, ver advertencia)", energiaNominalMV: 10, qnX1e12: 0.02, referencia: "Followill et al. (2003)", notas: "El nombre de modelo en el texto fuente aparecia como una frase sin sentido tecnico; se omite el nombre y se conserva solo el valor numerico con esta advertencia explicita." },
+  { vendedor: "Philips/Elekta", modelo: "SL25", energiaNominalMV: 25, qnX1e12: 2.37, h0MSvGy: 2.0, referencia: "McGinley (2002)" },
+  { vendedor: "Philips/Elekta", modelo: "SL20", energiaNominalMV: 20, qnX1e12: 0.69, h0MSvGy: 0.44, referencia: "McGinley (2002)" },
+  { vendedor: "Philips/Elekta", modelo: "SL20 o SL25", energiaNominalMV: 18, qnX1e12: 0.46, referencia: "Followill et al. (2003)" },
+  { vendedor: "Philips/Elekta", modelo: "SL25", energiaNominalMV: 25, qnX1e12: 1.44, referencia: "Followill et al. (2003)" },
+  { vendedor: "GE", modelo: "Saturne41", energiaNominalMV: 12, qnX1e12: 0.24, h0MSvGy: 0.09, referencia: "McGinley (2002)" },
+  { vendedor: "GE", modelo: "Saturne41", energiaNominalMV: 15, qnX1e12: 0.47, h0MSvGy: 0.32, referencia: "McGinley (2002)" },
+  { vendedor: "GE", modelo: "Saturne43", energiaNominalMV: 18, qnX1e12: 1.50, h0MSvGy: 0.55, referencia: "McGinley (2002)" },
+  { vendedor: "GE", modelo: "Saturne43", energiaNominalMV: 18, qnX1e12: 1.32, referencia: "Followill et al. (2003)" },
+  { vendedor: "GE", modelo: "Saturne43", energiaNominalMV: 25, qnX1e12: 2.4, h0MSvGy: 1.38, referencia: "McGinley (2002)" },
+];
+
+// ============================================================================
+// 9. PENDIENTE EXPLICITO: LABERINTOS Y RAYOS GAMMA DE CAPTURA (Seccion 2.4)
 // ============================================================================
 export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
   estado: "PENDIENTE_DE_EXTRACCION" as const,
   advertencia:
-    "El diseno de puertas y laberintos (Seccion 2.4: aceleradores de baja energia <=10 MV y de alta energia >10 MV con produccion de neutrones, metodo de Kersey y Kersey modificado, rayos gamma de captura de neutrones, Tablas B.8a/b/c de albedo y B.9 de rendimiento de fotoneutrones) fue localizado en el documento pero NO fue extraido ni transcrito de forma sistematica en esta sesion. Esta implementacion cubre unicamente barreras primarias y secundarias (Tablas B.2 a B.7, Ecuaciones 2.1, 2.2, 2.3, 2.7 y 2.8). No se fabrica ningun valor de las tablas de laberintos/neutrones aqui. Su extraccion queda pendiente para una fase posterior, respetando el orden de fases del Prompt Maestro.",
+    "El diseno de puertas y laberintos (Seccion 2.4: aceleradores de baja energia <=10 MV y de alta energia >10 MV con produccion de neutrones, metodo de Kersey y Kersey modificado, rayos gamma de captura de neutrones, Ecuaciones 2.9 a 2.22) fue localizado en el documento pero NO fue extraido ni transcrito de forma sistematica en esta sesion. Las Tablas B.8a-f (albedo de reflexion) y B.9 (fuerza de fuente de neutrones) SI fueron incorporadas (ver arriba), ya que son datos tabulares independientes de la geometria del laberinto. Lo que falta son las ecuaciones que combinan esos datos con la geometria del laberinto (longitud de tramos, area de la puerta, etc.), la cual aun no esta modelada en el wizard. No se fabrica ningun valor ni formula de laberintos aqui. Su extraccion queda pendiente para una fase posterior, respetando el orden de fases del Prompt Maestro.",
 };
