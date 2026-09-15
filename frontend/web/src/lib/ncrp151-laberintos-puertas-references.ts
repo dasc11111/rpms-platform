@@ -620,9 +620,10 @@ export function calcularDosisTotalPuertaAltaEnergia(hTotSvSemana: number, hCgSvS
 
 // ============================================================================
 // ECUACION 2.18 - RECONSTRUIDA (14/09/2026), misma fuente y sesion que las
-// Ecuaciones 2.15 y 2.16. La Ecuacion 2.19 permanece PENDIENTE_DE_VERIFICACION
-// (ver detalle enriquecido mas abajo) porque persiste ambiguedad genuina en
-// los coeficientes numericos exactos, incluso con la mejor fuente disponible.
+// Ecuaciones 2.15 y 2.16. La Ecuacion 2.19 (metodo de Kersey modificado) fue
+// resuelta el 15/09/2026 consultando directamente el PDF original (ver
+// FUENTE_ECUACION_219_DOSIS_NEUTRONES_KERSEY_MODIFICADO mas abajo); ninguna
+// ecuacion de este archivo permanece PENDIENTE_DE_VERIFICACION.
 // ============================================================================
 
 export const FUENTE_ECUACION_218_KERSEY = citaNCRP151(
