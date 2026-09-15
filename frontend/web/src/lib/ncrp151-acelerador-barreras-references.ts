@@ -669,8 +669,11 @@ export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
     "aceleradores de alta energia mayores a 10 MV) permanece " +
     "PENDIENTE_DE_VERIFICACION: se confirmo parcialmente su estructura (suma de " +
     "dos exponenciales, factor (S0/S1)^1.9) pero no sus coeficientes numericos " +
-    "exactos; no se fabrica ninguna formula. Las Secciones 2.4.4 (disenos " +
-    "alternativos de puerta) y 2.4.5 (puerta con blindaje directo) tambien " +
-    "quedan pendientes de transcripcion sistematica para una fase posterior. No " +
-    "se fabrica ningun valor ni formula aqui.",
+    "exactos; no se fabrica ninguna formula. Las Secciones 2.4.4 (disenos alternativos de puerta y laberinto) y 2.4.5 (puerta " +
+    "con blindaje directo) fueron transcritas el 14/09/2026 en el archivo separado " +
+    "ncrp151-laberintos-puertas-references.ts (constantes " +
+    "TECNICAS_ALTERNATIVAS_PUERTA_LABERINTO_MCGINLEY_MINER_1995 y " +
+    "FUENTE_DISENO_CUARTO_ALTERNATIVO_PUERTA_DIRECTA, entre otras), a partir de texto " +
+    "prosaico explicito (no de tablas ni ecuaciones con OCR ambiguo), por lo que no " +
+    "requirieron el tratamiento PENDIENTE_DE_VERIFICACION.,
 };
