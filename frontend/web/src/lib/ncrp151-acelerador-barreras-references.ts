@@ -665,11 +665,12 @@ export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
     "una segunda lectura de 'NCRP 151 espanol.md' que preservo mejor el contexto " +
     "de las variables; ver calcularDosisGammaCapturaEnPuerta, " +
     "calcularFluenciaNeutronesUbicacionA y calcularDosisNeutronesKersey en ese " +
-    "archivo. Unicamente la Ecuacion 2.19 (metodo de Kersey modificado, " +
-    "aceleradores de alta energia mayores a 10 MV) permanece " +
-    "PENDIENTE_DE_VERIFICACION: se confirmo parcialmente su estructura (suma de " +
-    "dos exponenciales, factor (S0/S1)^1.9) pero no sus coeficientes numericos " +
-    "exactos; no se fabrica ninguna formula. Las Secciones 2.4.4 (disenos alternativos de puerta y laberinto) y 2.4.5 (puerta " +
+    "archivo. La Ecuacion 2.19 (metodo de Kersey modificado, " +
+    "aceleradores de alta energia mayores a 10 MV) fue resuelta el 15/09/2026 " +
+    "mediante lectura directa del documento original 'NCRP 151 espanol.pdf' " +
+    "(pagina 45) en el archivo separado ncrp151-laberintos-puertas-references.ts " +
+    "(ver calcularDosisNeutronesKerseyModificado, confianza ALTA); no se fabrica " +
+    "ninguna formula. Las Secciones 2.4.4 (disenos alternativos de puerta y laberinto) y 2.4.5 (puerta " +
     "con blindaje directo) fueron transcritas el 14/09/2026 en el archivo separado " +
     "ncrp151-laberintos-puertas-references.ts (constantes " +
     "TECNICAS_ALTERNATIVAS_PUERTA_LABERINTO_MCGINLEY_MINER_1995 y " +
