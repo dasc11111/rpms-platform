@@ -838,18 +838,268 @@ export const TVL_BPE_5PORCIENTO_BORO_NEUTRONES_TERMICOS_CM = 1.2;
 export const TVL_BPE_RECOMENDADO_CONSERVADOR_DISENO_PUERTA_CM = 4.5;
 
 // ============================================================================
-// PENDIENTE PARA UNA FASE POSTERIOR (fuera del alcance de esta sesion)
+// SECCION 2.4.4 - DISENOS ALTERNATIVOS DE PUERTAS Y LABERINTOS (pag. 46-48)
 // ============================================================================
-export const NCRP151_LABERINTOS_SECCIONES_244_245_PENDIENTES = {
-  estado: "PENDIENTE_DE_EXTRACCION" as const,
-  advertencia:
-    "Las Secciones 2.4.4 (disenos alternativos de puertas y laberintos: reduccion de la " +
-    "abertura interior, puerta ligera con boro, puerta BPE - datos numericos ya cubiertos " +
-    "parcialmente por COMPARACION_TECNICAS_PUERTA_LABERINTO_TABLA21) y 2.4.5 (puerta con " +
-    "blindaje directo, sin laberinto: problemas de diseno, rayos gamma de captura con puertas " +
-    "de blindaje directo, diseno de cuarto alternativo) contienen informacion cualitativa y " +
-    "algunos valores numericos adicionales (p. ej. TVL en hormigon ~38 cm para rayos gamma de " +
-    "captura asumiendo 7.2 MeV, en la Seccion 2.4.5.2) que NO fueron transcritos de forma " +
-    "sistematica en esta sesion. Se deja pendiente para una fase posterior, respetando el " +
-    "orden de fases del Prompt Maestro. No se fabrica ningun valor de estas secciones aqui.",
-};
+// El procedimiento estandar para el diseno de puertas de laberintos tipicos
+// puede resultar en una puerta pesada y costosa que requiere un abridor
+// motorizado. McGinley y Miner (1995) investigaron tres tecnicas para evitar
+// que los neutrones salgan de la sala de tratamiento y entren en el
+// laberinto, permitiendo reducir o eliminar el blindaje de la puerta.
+
+export const FUENTE_DISENOS_ALTERNATIVOS_PUERTA = citaNCRP151(
+  "46-48",
+  "Seccion 2.4.4 (McGinley y Miner, 1995)",
+  "ALTA",
+  "Tres tecnicas para mantener los neutrones fuera del laberinto y asi reducir o " +
+    "eliminar el blindaje de la puerta."
+);
+
+export type TecnicaAlternativaPuertaLaberinto =
+  | "REDUCCION_ABERTURA_INTERIOR"
+  | "PUERTA_LIGERA_BORO_TERMICO"
+  | "PUERTA_BPE";
+
+export interface DescripcionTecnicaAlternativaPuerta {
+  tecnica: TecnicaAlternativaPuertaLaberinto;
+  descripcion: string;
+}
+
+export const TECNICAS_ALTERNATIVAS_PUERTA_LABERINTO_MCGINLEY_MINER_1995: DescripcionTecnicaAlternativaPuerta[] = [
+  {
+    tecnica: "REDUCCION_ABERTURA_INTERIOR",
+    descripcion:
+      "Reducir el area de la abertura en la entrada interior del laberinto. En el estudio " +
+      "de referencia, la abertura se redujo a (1.22 x 2.13) m2, con hormigon de 45.7 cm de " +
+      "espesor rodeando la abertura (ver tambien COMPARACION_TECNICAS_PUERTA_LABERINTO_TABLA21).",
+  },
+  {
+    tecnica: "PUERTA_LIGERA_BORO_TERMICO",
+    descripcion:
+      "Anadir una puerta ligera que contenga un absorbedor de neutrones termicos (9% de " +
+      "boro en peso) en la entrada interior del laberinto. En el estudio de referencia se " +
+      "empleo un panel de 7 mm de espesor con 8.9% en peso de boro (Boraflex(R)).",
+  },
+  {
+    tecnica: "PUERTA_BPE",
+    descripcion:
+      "Colocar una puerta de BPE (5% de boro) en la entrada interior del laberinto. En el " +
+      "estudio de referencia se empleo una puerta de polietileno de 5 cm de espesor (5% de " +
+      "boro); esta tecnica produjo la mayor reduccion en la dosis equivalente total y solo " +
+      "requirio una lamina de plomo relativamente delgada (~1 cm) en la puerta exterior del " +
+      "laberinto.",
+  },
+];
+
+export const NOTA_EFECTIVIDAD_BPE_VS_POLIETILENO_SIN_BORO =
+  "El polietileno borado (BPE, 5% en peso) es solo un poco menos efectivo que el " +
+  "polietileno sin boro en el blindaje de neutrones rapidos, pero es mucho mas efectivo " +
+  "para los neutrones termicos en comparacion con el polietileno sin boro.";
+
+// ----------------------------------------------------------------------------
+// Disposicion recomendada de blindaje de puerta para laberintos largos
+// (longitud del orden de 8 m o mas): plomo - BPE - plomo.
+// ----------------------------------------------------------------------------
+
+export const FUENTE_DISPOSICION_PLOMO_BPE_PUERTA_LABERINTOS_LARGOS = citaNCRP151(
+  "47",
+  "Seccion 2.4.4",
+  "ALTA",
+  "Aplica a salas de acelerador con longitud de laberinto del orden de 8 m o mas."
+);
+
+export const ESPESOR_PLOMO_INTERIOR_PUERTA_LABERINTO_LARGO_CM_MIN = 0.6;
+export const ESPESOR_PLOMO_INTERIOR_PUERTA_LABERINTO_LARGO_CM_MAX = 1.2;
+export const ESPESOR_BPE_PUERTA_LABERINTO_LARGO_CM_MIN = 2;
+export const ESPESOR_BPE_PUERTA_LABERINTO_LARGO_CM_MAX = 4;
+
+export const DISPOSICION_CAPAS_PUERTA_LABERINTO_LARGO_SUGERIDA = [
+  "plomo (lado de la fuente / interior de la sala)",
+  "BPE",
+  "plomo (lado exterior, frecuentemente innecesario si el laberinto es largo)",
+] as const;
+
+export const NOTA_RAZON_DISPOSICION_PLOMO_BPE_PLOMO =
+  "El plomo en el lado de la fuente del BPE reduce la energia de los neutrones por " +
+  "dispersion inelastica y, por lo tanto, hace que el BPE sea mas efectivo en el blindaje " +
+  "de neutrones. El plomo en el exterior del BPE sirve para atenuar los rayos gamma de " +
+  "captura de neutrones del BPE, con una energia de 478 keV. A menudo el plomo exterior no " +
+  "sera necesario cuando el laberinto sea lo suficientemente largo para atenuar los " +
+  "neutrones lo suficiente antes de que encuentren la puerta (McCall, 1997).";
+
+export const FUENTE_CONFIRMACION_LALONDE_UWAMINO = citaNCRP151(
+  "47-48",
+  "Seccion 2.4.4",
+  "ALTA",
+  "Lalonde (1997) y Uwamino et al. (1986): mediciones confirmatorias en la entrada " +
+    "exterior del laberinto."
+);
+
+export const NOTA_CONFIRMACION_LALONDE_UWAMINO =
+  "Lalonde (1997) y Uwamino et al. (1986) llegaron a conclusiones similares a las de " +
+  "McGinley y Miner (1995), basadas en mediciones realizadas en la entrada exterior del " +
+  "laberinto cuando la entrada interior del laberinto estaba bloqueada con 2.25 cm de " +
+  "polietileno mas un panel de boro de 3 mm de espesor (Lalonde, 1997), o con 11.5 cm de " +
+  "polietileno (Uwamino et al., 1986). Ademas, Lalonde (1997) informo que revestir las " +
+  "paredes del laberinto con un material moderador de neutrones, como el polietileno, era " +
+  "menos eficaz en las instalaciones de los aceleradores.";
+
+// ============================================================================
+// SECCION 2.4.5 - PUERTA CON BLINDAJE DIRECTO (SIN LABERINTO) (pag. 48-51)
+// ============================================================================
+// Alternativa al diseno con laberinto: en algunos casos se opta por ahorrar
+// el espacio necesario para un laberinto y utilizar una puerta de proteccion
+// directa pesada (McGinley, 2001a).
+
+export const FUENTE_PUERTA_BLINDAJE_DIRECTO = citaNCRP151(
+  "48",
+  "Seccion 2.4.5",
+  "ALTA",
+  "La puerta con blindaje directo debe tener el mismo valor de blindaje que la barrera " +
+    "secundaria adyacente."
+);
+
+export const MATERIAL_HABITUAL_PUERTA_BLINDAJE_DIRECTO =
+  "La eleccion habitual de materiales de blindaje es un laminado de plomo y acero " +
+  "(carcasa de la puerta), con la adicion de BPE si hay fotoneutrones presentes. La " +
+  "concentracion de boro en el BPE suele ser del 5% en peso.";
+
+export const PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MIN = 8000;
+export const PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MAX = 9000;
+export const ANCHO_PUERTA_REFERENCIA_LIMITE_PESO_CM = 120; // 4 pies
+
+export const NOTA_ALTERNATIVA_PUERTA_PESADA =
+  "Estas puertas son muy pesadas. La limitacion practica para una puerta de 120 cm " +
+  "(4 pies) de ancho esta en el rango de 8000 a 9000 kg para una puerta batiente. Mas " +
+  "alla de ese peso, es necesario utilizar dos puertas mas estrechas o una puerta " +
+  "corredera. Las puertas corredizas pueden colgarse de un riel o enrollarse sobre un " +
+  "soporte de acero en el piso. Esta eleccion es una decision de ingenieria y diferentes " +
+  "fabricantes tendran opiniones diferentes. Debido al peso, es imperativo planificar el " +
+  "acceso al paciente en caso de falla electrica o del mecanismo de accionamiento (p. ej. " +
+  "una escotilla de escape en otra barrera), e instituir programas de mantenimiento " +
+  "preventivo e inspeccion periodica (ACR, 2000).";
+
+// ----------------------------------------------------------------------------
+// 2.4.5.1 - Problemas de diseno con puertas de blindaje directo (pag. 48-50,
+// Figuras 2.9, 2.10 y 2.11)
+// ----------------------------------------------------------------------------
+
+export const FUENTE_PROBLEMAS_DISENO_PUERTA_BLINDAJE_DIRECTO = citaNCRP151(
+  "48-50",
+  "Seccion 2.4.5.1 (Figuras 2.9, 2.10, 2.11)",
+  "ALTA",
+  "McGinley (2001a) revisa en detalle los problemas practicos de estos enfoques; estas " +
+    "puertas solo deben ser disenadas por personal con mucha experiencia."
+);
+
+export const NOTA_PROBLEMA_GEOMETRICO_PUERTA_BLINDAJE_DIRECTO =
+  "El problema geometrico basico se ilustra en la Figura 2.10: tres rayos de fuga desde " +
+  "el isocentro (marcados A, B y C) atraviesan la puerta en distintos angulos y espesores. " +
+  "El rayo A atraviesa plomo y BPE de espesor reducido. El rayo B atraviesa hormigon " +
+  "reducido (~41 cm / 16 pulgadas) frente al espesor completo de la pared (104 cm / 41 " +
+  "pulgadas). El rayo C se encuentra en el punto donde el espesor inclinado del recorrido " +
+  "alcanza el espesor total de hormigon de la pared (104 cm). Este es un problema general " +
+  "de las puertas con proteccion directa y no se puede resolver unicamente ajustando la " +
+  "posicion del plomo y el BPE dentro de la puerta.";
+
+export const NOTA_DISPOSICION_PREFERIDA_CAPAS_PUERTA_BLINDAJE_DIRECTO =
+  "La disposicion preferida para el blindaje real de la puerta es con el plomo en el lado " +
+  "de la sala del acelerador y el BPE en el exterior.";
+
+export type SolucionProblemaGeometricoPuertaDirecta =
+  | "PUERTA_SOLAPADA_CON_PARED_MAS_GRANDE"
+  | "TOPE_DE_PUERTA_BLINDADO";
+
+export interface DescripcionSolucionGeometricaPuertaDirecta {
+  solucion: SolucionProblemaGeometricoPuertaDirecta;
+  descripcion: string;
+}
+
+export const SOLUCIONES_PROBLEMA_GEOMETRICO_PUERTA_BLINDAJE_DIRECTO: DescripcionSolucionGeometricaPuertaDirecta[] = [
+  {
+    solucion: "PUERTA_SOLAPADA_CON_PARED_MAS_GRANDE",
+    descripcion:
+      "Hacer que la puerta se solape con una pared mucho mas grande. Aumenta " +
+      "significativamente los problemas de peso y accionamiento mecanico, asi como el " +
+      "tiempo de apertura y los gastos, por lo que es una alternativa menos deseable.",
+  },
+  {
+    solucion: "TOPE_DE_PUERTA_BLINDADO",
+    descripcion:
+      "Hacer un tope de puerta blindado (jamba blindada), como se muestra en la Figura " +
+      "2.11. Puede ser necesario agregar plomo y BPE en la superficie de la pared de " +
+      "concreto. Solo es posible proteger el espacio entre la puerta y la pared en el lado " +
+      "de la jamba de la puerta, por lo que es importante colocar la puerta de modo que la " +
+      "radiacion de fuga directa del acelerador golpee el lado del tope en lugar del lado " +
+      "conectado con el operador.",
+  },
+];
+
+export const NOTA_DESDE_EL_PUNTO_DE_VISTA_DEL_BLINDAJE =
+  "Desde el punto de vista del blindaje, ambas soluciones (puerta solapada o tope de " +
+  "puerta blindado) son igualmente buenas; la eleccion puede hacerse por motivos " +
+  "arquitectonicos o de otro tipo.";
+
+// ----------------------------------------------------------------------------
+// 2.4.5.2 - Rayos gamma de captura de neutrones con puertas de blindaje
+// directo (pag. 50-51)
+// ----------------------------------------------------------------------------
+
+export const FUENTE_CAPTURA_GAMMA_PUERTA_BLINDAJE_DIRECTO = citaNCRP151(
+  "50-51",
+  "Seccion 2.4.5.2",
+  "ALTA",
+  "McGinley y Miner (1995): no hay mediciones conocidas de la intensidad de rayos gamma " +
+    "de captura de neutrones dentro de una sala de terapia; los calculos son, en el mejor " +
+    "de los casos, estimaciones."
+);
+
+export const ENERGIA_GAMMA_CAPTURA_BORO_KEV = 480;
+export const ESPESOR_PLOMO_ATENUACION_100X_GAMMA_CAPTURA_BORO_CM = 1.9; // 3/4 pulgada
+
+export const NOTA_GAMMA_CAPTURA_BORO_PUERTA_BLINDAJE_DIRECTO =
+  "Algunos disenadores agregan plomo en el exterior para atenuar los rayos gamma de " +
+  "captura de neutrones del BPE. Los rayos gamma de captura de neutrones del boro tienen " +
+  "solo 480 keV, y 1.9 cm (3/4 de pulgada) de plomo reducen su intensidad en mas de un " +
+  "factor de 100. El plomo en el interior reduce la energia de los neutrones por " +
+  "dispersion inelastica, lo que hace al BPE mas eficaz. Nuevamente, es importante que la " +
+  "radiacion de fuga del acelerador golpee la puerta del lado de la jamba en lugar del " +
+  "lado del operador, ya que ese es el lado mas facil de proteger.";
+
+export const NOTA_RECOMENDACION_CONSERVADORA_BLINDAJE_GAMMA_CAPTURA =
+  "McGinley y Miner (1995) concluyeron que, dado que no hay mediciones conocidas de la " +
+  "intensidad de rayos gamma de captura de neutrones dentro de una sala de terapia y los " +
+  "calculos son, en el mejor de los casos, estimaciones, un enfoque conservador y seguro " +
+  "es calcular el blindaje de la puerta para la radiacion de fuga y luego agregar 1 HVL.";
+
+export const TVL_HORMIGON_GAMMA_CAPTURA_7_2MEV_CM = 38; // ~15 pulgadas
+export const ENERGIA_GAMMA_CAPTURA_CONSERVADORA_HORMIGON_MEV = 7.2;
+
+export const NOTA_NO_NECESARIO_PARA_MUROS_SECUNDARIOS_HORMIGON =
+  "No es necesario tomar la misma precaucion (agregar 1 HVL) para los muros secundarios " +
+  "de hormigon, ya que el blindaje de rayos gamma de captura de neutrones del hormigon " +
+  "sera conservadoramente seguro si se supone que todas las capturas de neutrones dan " +
+  "como resultado rayos gamma de 7.2 MeV. Esto implica un TVL en hormigon de ~38 cm (15 " +
+  "pulgadas), similar al de los rayos X de fuga (Tabla B.7). Por lo tanto, un blindaje " +
+  "adecuado para uno producira una barrera adecuada para el otro.";
+
+// ----------------------------------------------------------------------------
+// 2.4.5.3 - Diseno de cuarto alternativo para puertas con blindaje directo
+// (pag. 51)
+// ----------------------------------------------------------------------------
+
+export const FUENTE_DISENO_CUARTO_ALTERNATIVO_PUERTA_DIRECTA = citaNCRP151(
+  "51",
+  "Seccion 2.4.5.3",
+  "ALTA",
+  "Barish (2005): metodo de diseno de salas con el portico orientado para reducir el " +
+    "grosor de la puerta con blindaje directo."
+);
+
+export const NOTA_DISENO_CUARTO_ALTERNATIVO_BARISH_2005 =
+  "Barish (2005) describe un metodo de diseno de salas en el que la unidad de terapia se " +
+  "coloca con la parte posterior del portico orientada hacia el lado de la puerta de la " +
+  "sala. Se construye una pared corta para atenuar el componente de radiacion de fuga de " +
+  "la radiacion secundaria que llega a la puerta. Se afirma que este enfoque reduce el " +
+  "grosor de la puerta en aproximadamente un 50%, lo que da como resultado reducciones de " +
+  "costos significativas, asi como reducciones en la complejidad de la construccion, el " +
+  "funcionamiento y el mantenimiento.";
