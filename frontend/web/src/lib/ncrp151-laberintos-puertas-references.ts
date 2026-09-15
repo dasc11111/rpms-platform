@@ -47,13 +47,19 @@
  *   el texto crudo tal como se extrajo, se documentan las variables que SI
  *   se pudieron identificar con certeza, y se marca el estado como
  *   "PENDIENTE_DE_VERIFICACION" recomendando revision contra el documento
- *   original en ingles por un experto calificado. Unica ecuacion que
- *   permanece asi tras la revision del 14/09/2026: Ecuacion 2.19 (metodo
- *   de Kersey modificado, Wu y McGinley 2003), por ambiguedad genuina en
- *   sus coeficientes numericos exactos. Las Ecuaciones 2.15, 2.16 y 2.18
+ *   original en ingles por un experto calificado. Las Ecuaciones 2.15, 2.16 y 2.18
  *   (metodo de Kersey) fueron reconstruidas con exito el 14/09/2026 a
  *   partir de una segunda lectura de "NCRP 151 espanol.md" (confianza
- *   MEDIA_ALTA; ver FUENTE_ECUACION_215/216/218 mas abajo).
+ *   MEDIA_ALTA; ver FUENTE_ECUACION_215/216/218 mas abajo). La Ecuacion
+ *   2.19 (metodo de Kersey modificado, Wu y McGinley 2003), que
+ *   inicialmente quedo PENDIENTE_DE_VERIFICACION por ambiguedad genuina
+ *   en sus coeficientes numericos, fue resuelta el 15/09/2026 consultando
+ *   directamente el PDF original "NCRP 151 espanol.pdf" (pagina 45/56 del
+ *   documento), confirmando que el simbolo ambiguo "re2" corresponde a la
+ *   variable "d2" ya definida en la Ecuacion 2.18 (confianza ALTA; ver
+ *   FUENTE_ECUACION_219_DOSIS_NEUTRONES_KERSEY_MODIFICADO mas abajo).
+ *   Ninguna ecuacion de este archivo permanece en estado
+ *   PENDIENTE_DE_VERIFICACION tras esta revision.
  *
  * Clasificacion: Nivel 2 (organismo cientifico internacional de referencia).
  */
@@ -585,9 +591,10 @@ export const FUENTE_ECUACION_221_DOSIS_NEUTRONES_PUERTA = citaNCRP151(
   "ALTA",
   "Hn = WL * Hn,D. Hn,D (equivalente de dosis de neutrones en la entrada del laberinto por " +
     "unidad de dosis absorbida de rayos X en el isocentro, Sv/Gy) debe provenir de una fuente " +
-    "verificada (Ecuacion 2.18 -Kersey-, ya implementada con confianza MEDIA_ALTA (ver " +
-    "calcularDosisNeutronesKersey), o Ecuacion 2.19 -Kersey modificada-, aun " +
-    "PENDIENTE_DE_VERIFICACION, o de medicion directa)."
+    "verificada (Ecuacion 2.18 -Kersey-, o Ecuacion 2.19 -Kersey modificada-, ambas " +
+    "ya implementadas con confianza MEDIA_ALTA y ALTA respectivamente (ver " +
+    "calcularDosisNeutronesKersey y calcularDosisNeutronesKerseyModificado), o " +
+    "de medicion directa)."
 );
 
 /** Ecuacion 2.21: Hn = WL * Hn,D. hnDSvPorGy debe provenir de una fuente verificada. */
