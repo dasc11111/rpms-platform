@@ -666,55 +666,75 @@ export function calcularDosisNeutronesKersey(
 }
 
 
-export const NCRP151_ECUACION_219_PENDIENTE_DETALLE = {
-  estado: "PENDIENTE_DE_VERIFICACION" as const,
-  numero: "2.19",
-  paginaAprox: "44-45",
-  descripcion:
-    "Metodo de Kersey modificado (Wu y McGinley, 2003): dosis de neutrones " +
-    "equivalente a lo largo del laberinto, refinando el metodo de Kersey (Ecuacion " +
-    "2.18) para salas con areas de superficie no estandar o laberintos de " +
-    "ancho/largo excepcional.",
-  fuente: citaNCRP151(
-    "44-45",
-    "Seccion 2.4.2.2.2, Metodo de Kersey modificado (Ec. 2.19)",
-    "BAJA",
-    "NO implementada como funcion ejecutable. Revisada nuevamente el 14/09/2026 " +
-      "contra 'NCRP 151 espanol.md'; se logro reconstruir la ESTRUCTURA general " +
-      "pero NO los coeficientes numericos exactos (ver campos siguientes)."
-  ),
-  textoCrudoExtraido:
-    "'re re -- 2 -- ----2---------- = S0 -------- 1,6x4 10 ---- 1--.-9--- + 10 T VD " +
-    "(2.19) Hn,D 2,4 10-15 x A S1'",
-  variablesIdentificadasConCerteza:
-    "Hn,D = equivalente de dosis de neutrones en la entrada del laberinto (Sv) por " +
-    "unidad de dosis absorbida de rayos X (Gy) en el isocentro; A = fluencia de " +
-    "neutrones por unidad de dosis absorbida de fotones en el isocentro (m-2 " +
-    "Gy-1, Ecuacion 2.16, ya implementada); S0/S1 = misma relacion de areas que en " +
-    "la Ecuacion 2.18; TVD = distancia de valor decimo, dada por la Ecuacion 2.20 " +
-    "(TVD = 2.06*sqrt(S1)).",
-  estructuraParcialmenteConfirmada14_09_2026:
-    "Revisando nuevamente los fragmentos crudos '1,6x4 10', '1--.-9---' y '2,4 " +
-    "10-15' junto con la prosa circundante, se puede confirmar con razonable " +
-    "confianza que: (a) la formula es una SUMA de DOS terminos exponenciales en " +
-    "funcion de d2 (distancia a lo largo del laberinto), no un solo termino como " +
-    "en la Ecuacion 2.18; (b) el primer termino involucra la relacion (S0/S1) " +
-    "elevada a una potencia cercana a 1.9 (patron de 'ley de potencia', distinto " +
-    "del uso lineal de S0/S1 en la Ecuacion 2.18); (c) el primer termino tiene un " +
-    "coeficiente del orden de 1.6x10^(exponente no confirmado, posiblemente -4); " +
-    "(d) el segundo termino tiene un coeficiente de 2.4x10^-15; (e) ambos terminos " +
-    "presumiblemente incluyen un factor de atenuacion tipo 10^(-d2/TVD), pero NO se " +
-    "pudo confirmar si comparten el mismo TVD (Ecuacion 2.20) o si cada termino " +
-    "tiene su propia constante de decaimiento ajustada independientemente -- lo " +
-    "cual es precisamente el punto central de un 'ajuste mejorado de dos " +
-    "exponenciales' segun McGinley y Huffman (2000). NO se implementa como " +
-    "funcion ejecutable: modelar una suma de dos exponenciales sin poder " +
-    "confirmar sus constantes de decaimiento respectivas equivaldria a inventar " +
-    "una formula (prohibido por S1, S5, S55 del Prompt Maestro). Se recomienda " +
-    "explicitamente verificacion contra el documento original en ingles (NCRP " +
-    "Report No. 151, 2005, pag. 44-45) por un experto calificado (Fisico Medico / " +
-    "OPR) antes de intentar implementar esta ecuacion en el motor de calculo.",
-};
+export const FUENTE_ECUACION_219_DOSIS_NEUTRONES_KERSEY_MODIFICADO = citaNCRP151(
+  "45",
+  "Seccion 2.4.2.2.2, Metodo de Kersey modificado (Ec. 2.19)",
+  "ALTA",
+  "Reconstruccion completa lograda el 15/09/2026 mediante lectura directa del PDF " +
+    "original 'NCRP 151 espanol.pdf' (pagina 56 del archivo, pagina impresa 45), en " +
+    "lugar de la version .md previamente revisada (cuyo OCR fragmentaba la ecuacion en " +
+    "una linea desordenada mezclando las Ecuaciones 2.19 a 2.22). El simbolo ambiguo " +
+    "detectado en revisiones anteriores ('re' con subindice 2) se identifico con " +
+    "certeza como 'd2' (distancia en metros desde el punto A -donde el isocentro " +
+    "apenas deja de ser visible- hasta la puerta, pasando por B/C/D segun el numero de " +
+    "curvas del laberinto), la misma variable ya definida y utilizada en la Ecuacion " +
+    "2.18 (metodo de Kersey, ver calcularDosisNeutronesKersey) en la pagina anterior " +
+    "del mismo documento (confirmado visualmente: el parrafo que antecede a la " +
+    "Ecuacion 2.19 la describe explicitamente como un refinamiento del analisis de " +
+    "datos medidos que produjo la Ecuacion 2.18, reutilizando la misma geometria de la " +
+    "Figura 2.8, y la definicion de 'd2' aparece literalmente en el texto de la pagina " +
+    "de la Ecuacion 2.18: 'd2 es la distancia en metros de A a B' o, para laberintos " +
+    "con dos curvas, 'de A a C mas la longitud de C a D'). Se eleva de " +
+    "PENDIENTE_DE_VERIFICACION a IMPLEMENTADA (confianza ALTA); se recomienda de todas " +
+    "formas una verificacion puntual contra el documento original en ingles por un " +
+    "experto calificado antes de uso clinico critico (S1, S5, S55, S61 del Prompt " +
+    "Maestro)."
+);
+
+/** Constante empirica de la Ecuacion 2.19 (Sv por neutron por m2). */
+export const NCRP151_K_NEUTRONES_KERSEY_MODIFICADO_SV_M2 = 2.4e-15;
+
+/** Coeficiente adimensional del primer termino exponencial de la Ecuacion 2.19. */
+export const NCRP151_COEFICIENTE_TERMINO1_KERSEY_MODIFICADO = 1.64;
+
+/**
+ * Distancia caracteristica (HVL corto, en metros) del primer termino exponencial de
+ * la Ecuacion 2.19, leida directamente del PDF original (pagina 45): "1,9" m.
+ */
+export const NCRP151_HVL_CORTO_KERSEY_MODIFICADO_M = 1.9;
+
+/**
+ * Ecuacion 2.19 (metodo de Kersey modificado, Wu y McGinley 2003):
+ * Hn,D = 2.4e-15 * A_phi * sqrt(S0/S1) * (1.64 * 10^(-d2/1.9) + 10^(-d2/TVD))
+ * donde TVD se calcula segun la Ecuacion 2.20 (calcularTVDLaberintoAltaEnergia).
+ *
+ * @param aPhiM2PorGy fluencia de neutrones por unidad de dosis absorbida de fotones
+ *   en el isocentro (m-2 Gy-1), segun la Ecuacion 2.16
+ * @param s0M2 area de la seccion transversal de la entrada interior del laberinto (m2)
+ * @param s1M2 area de la seccion transversal a lo largo del laberinto (m2)
+ * @param d2M distancia en metros desde el punto A (donde el isocentro apenas deja de
+ *   ser visible) hasta la puerta, medida a lo largo de la linea central del laberinto
+ *   (Figura 2.8)
+ * @returns Hn,D: equivalente de dosis de neutrones en la entrada del laberinto, en
+ *   sievert por unidad de dosis absorbida de rayos X (gray) en el isocentro
+ */
+export function calcularDosisNeutronesKerseyModificado(
+  aPhiM2PorGy: number,
+  s0M2: number,
+  s1M2: number,
+  d2M: number
+): number {
+  const k = NCRP151_K_NEUTRONES_KERSEY_MODIFICADO_SV_M2;
+  const coefTermino1 = NCRP151_COEFICIENTE_TERMINO1_KERSEY_MODIFICADO;
+  const hvlCortoM = NCRP151_HVL_CORTO_KERSEY_MODIFICADO_M;
+  const tvdM = calcularTVDLaberintoAltaEnergia(s1M2);
+  return (
+    k *
+    aPhiM2PorGy *
+    Math.sqrt(s0M2 / s1M2) *
+    (coefTermino1 * Math.pow(10, -d2M / hvlCortoM) + Math.pow(10, -d2M / tvdM))
+  );
+}
 
 
 // ============================================================================
