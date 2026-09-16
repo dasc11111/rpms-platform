@@ -191,3 +191,63 @@ export const NCRP151_REFERENCIA = {
       contenidoDisponible: ["FACTORES_OCUPACION_NCRP151 (Tabla B.1, pag. 160)", "OBJETIVOS_DISENO_P_NCRP151 (ejemplos Cap. 7)"],
       contenidoPendiente: ["TVL de barrera primaria/secundaria por energia y material (Tablas B.2 en adelante)", "Modelo de calculo de barreras y laberintos (Capitulo 2 y 7)"],
 };
+
+
+// ============================================================================
+// 4. SELECTOR DE CRITERIO DE DISENO (P) PARA IMAGENOLOGIA DIAGNOSTICA
+// ============================================================================
+// Decision del usuario (16/09/2026): mantener AMBOS conjuntos de valores de
+// criterio de diseno como OPCIONES SELECCIONABLES en la interfaz, en vez de
+// que el sistema elija uno solo por su cuenta. Contexto: el documento
+// maestro (docs/BLINDAJE_MASTER_MATRICES.md) tenia sembrado un valor de
+// "25/2.5 uSv/h" para diagnostico por imagenes que no se pudo verificar
+// releyendo el texto de NCRP 147 (paginas 3-5): el texto real establece
+// P = 0.1 mGy/semana (5 mGy/ano) controlada y P = 0.02 mGy/semana
+// (1 mGy/ano) no controlada, en KERMA EN AIRE (ver OBJETIVOS_DISENO_P_NCRP147
+// arriba, y advertenciaUnidadesP()). En vez de descartar el valor
+// "25/2.5 uSv/h" (que pudo originarse en otra fuente, guia de fabricante,
+// o una simplificacion practica usada previamente en el proyecto), se deja
+// disponible como opcion alternativa, marcada con su nivel de confianza
+// real y con el motivo de la advertencia, para que el usuario elija en cada
+// proyecto cual criterio aplicar. No se fabrica un origen para el valor
+// alternativo: su fuente_documento se deja explicitamente como
+// "ORIGEN_NO_VERIFICADO".
+export type OrigenCriterioDiseno = "NCRP147_VERIFICADO" | "ORIGEN_NO_VERIFICADO";
+
+export interface OpcionCriterioDisenoDiagnostico {
+  codigo: string;
+  etiquetaEs: string;
+  origen: OrigenCriterioDiseno;
+  areaControladaValor: number;
+  areaNoControladaValor: number;
+  unidad: string;
+  nivelConfianza: NivelConfianza;
+  notas: string;
+}
+
+export const OPCIONES_CRITERIO_DISENO_DIAGNOSTICO: OpcionCriterioDisenoDiagnostico[] = [
+  {
+    codigo: "NCRP147_KERMA_AIRE",
+    etiquetaEs: "NCRP 147 (verificado): P = 0,1 / 0,02 mGy·semana⁻¹ (kerma en aire)",
+    origen: "NCRP147_VERIFICADO",
+    areaControladaValor: 0.1,
+    areaNoControladaValor: 0.02,
+    unidad: "mGy/semana (kerma en aire)",
+    nivelConfianza: "ALTA",
+    notas: "Copiado textualmente de NCRP 147, Seccion 1.4.1 (pag. 3-4) y 1.4.2 (pag. 4-5). Equivalente anual: 5 mGy/ano controlada, 1 mGy/ano no controlada.",
+  },
+  {
+    codigo: "LEGADO_25_2_5_USVH",
+    etiquetaEs: "Criterio alternativo (origen no verificado): 25 / 2,5 uSv/h",
+    origen: "ORIGEN_NO_VERIFICADO",
+    areaControladaValor: 25,
+    areaNoControladaValor: 2.5,
+    unidad: "uSv/h (tasa de dosis)",
+    nivelConfianza: "BAJA",
+    notas: "Valor sembrado originalmente en docs/BLINDAJE_MASTER_MATRICES.md sin haberse podido localizar en el texto de NCRP 147 tras relectura directa (16/09/2026). Se conserva como opcion seleccionable por decision explicita del usuario, no como valor verificado. Si se identifica su fuente real (otra norma, guia de fabricante, o simplificacion practica), debe actualizarse este registro con la cita correspondiente.",
+  },
+];
+
+export function obtenerOpcionCriterioDiseno(codigo: string): OpcionCriterioDisenoDiagnostico | undefined {
+  return OPCIONES_CRITERIO_DISENO_DIAGNOSTICO.find((o) => o.codigo === codigo);
+}
