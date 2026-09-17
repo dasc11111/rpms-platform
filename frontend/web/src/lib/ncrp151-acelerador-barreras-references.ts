@@ -676,5 +676,5 @@ export const NCRP151_LABERINTOS_Y_NEUTRONES_PENDIENTE = {
     "TECNICAS_ALTERNATIVAS_PUERTA_LABERINTO_MCGINLEY_MINER_1995 y " +
     "FUENTE_DISENO_CUARTO_ALTERNATIVO_PUERTA_DIRECTA, entre otras), a partir de texto " +
     "prosaico explicito (no de tablas ni ecuaciones con OCR ambiguo), por lo que no " +
-    "requirieron el tratamiento PENDIENTE_DE_VERIFICACION.,
+    "requirieron el tratamiento PENDIENTE_DE_VERIFICACION.",
 };
