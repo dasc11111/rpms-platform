@@ -3,6 +3,7 @@
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
 import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION } from "@/lib/ncrp147-shielding-references";
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR } from "@/lib/ncrp151-shielding-references";
+import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 
 type BlindajeProject = {
     id: number;
@@ -71,7 +72,8 @@ type BlindajePir = {
 
 const FACILITY_TYPES: { value: string; label: string }[] = [
   { value: "diagnostico", label: "Radiologia Diagnostica" },
-  { value: "medicina_nuclear", label: "Medicina Nuclear" },
+  { value: "medicina_nuclear", label: "Medicina Nuclear (Gammacamara / SPECT)" },
+  { value: "medicina_nuclear_pet_ct", label: "Medicina Nuclear - PET / PET-CT (AAPM TG-108)" },
   { value: "radioterapia", label: "Radioterapia / Acelerador" },
   { value: "braquiterapia", label: "Braquiterapia" },
   ];
@@ -86,6 +88,8 @@ const EQUIPMENT_TYPES: Record<string, { value: string; label: string }[]> = {
     medicina_nuclear: [
       { value: "gamma_camara", label: "Gamma Camara" },
       { value: "spect", label: "SPECT" },
+        ],
+    medicina_nuclear_pet_ct: [
       { value: "pet", label: "PET" },
       { value: "pet_ct", label: "PET/CT" },
         ],
@@ -103,6 +107,7 @@ const EQUIPMENT_TYPES: Record<string, { value: string; label: string }[]> = {
 const SOURCE_TYPE_BY_FACILITY: Record<string, { value: string; label: string }> = {
     diagnostico: { value: "tubo_rayos_x", label: "Tubo de rayos X" },
     medicina_nuclear: { value: "radionucleido_no_sellado", label: "Radionuclido no sellado" },
+    medicina_nuclear_pet_ct: { value: "radionucleido_pet_movil", label: "Radionuclido emisor de positrones (paciente como fuente movil, AAPM TG-108)" },
     radioterapia: { value: "haz_acelerador", label: "Haz de fotones/electrones" },
     braquiterapia: { value: "fuente_sellada", label: "Fuente sellada" },
 };
@@ -110,6 +115,7 @@ const SOURCE_TYPE_BY_FACILITY: Record<string, { value: string; label: string }> 
 const SOURCE_FIELDS_BY_FACILITY: Record<string, string[]> = {
     diagnostico: ["energy", "dose_rate", "geometry"],
     medicina_nuclear: ["radionuclide", "activity", "geometry"],
+    medicina_nuclear_pet_ct: ["radionuclide", "activity", "geometry"],
     radioterapia: ["energy", "dose_rate", "geometry"],
     braquiterapia: ["radionuclide", "activity", "geometry"],
 };
@@ -117,6 +123,7 @@ const SOURCE_FIELDS_BY_FACILITY: Record<string, string[]> = {
 const SOURCE_FIELD_LABELS: Record<string, Record<string, string>> = {
     diagnostico: { energy: "Energia (kVp)", dose_rate: "Carga / corriente (mA o mGy por mAs)", geometry: "Distancia foco-piel / geometria" },
     medicina_nuclear: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria (captacion, distancia)" },
+    medicina_nuclear_pet_ct: { radionuclide: "Radionuclido emisor de positrones (Tabla I/II AAPM TG-108)", activity: "Actividad administrada (A0)", geometry: "Geometria (distancia a sala de captacion / sala de imagen, Ecs. 1-12 AAPM TG-108)" },
     radioterapia: { energy: "Energia nominal (MV o MeV)", dose_rate: "Tasa de dosis (UM/min)", geometry: "Isocentro / distancia fuente-eje" },
     braquiterapia: { radionuclide: "Radionuclido", activity: "Actividad", geometry: "Geometria de aplicacion" },
 };
@@ -1362,8 +1369,29 @@ async function createPenetration(e: FormEvent) {
                           inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
                           inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
                 } else if (key === "radionuclide") {
-                          inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
-                } else if (key === "energy") {
+if (facilityType === "medicina_nuclear_pet_ct") {
+inputs.push(
+h(
+"label",
+{ className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+labels.radionuclide || "Radionuclido",
+h(
+"select",
+{
+className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+value: sourceForm.radionuclide,
+onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
+},
+[h("option", { key: "", value: "" }, "Seleccione...")].concat(
+RADIONUCLIDOS_PET.map((n) => h("option", { key: n.nuclido, value: n.nuclido }, n.nuclido + " (T1/2 = " + n.semividaMin + " min, " + n.modoDecaimiento + ")"))
+)
+)
+)
+);
+} else {
+inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
+}
+} else if (key === "energy") {
                           inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
                 } else if (key === "geometry") {
                           inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
