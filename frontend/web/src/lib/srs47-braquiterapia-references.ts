@@ -61,6 +61,7 @@
  */
 
 import type { FuenteCita, NivelConfianza } from "./blindaje-calc-engine";
+import { calcularNumeroTVL } from "./ncrp151-acelerador-barreras-references";
 
 const BASE_FUENTE_SRS47 = {
     documento:
@@ -316,3 +317,225 @@ export const REFERENCIAS_INTERNAS_SRS47 = [
   { numero: "[46]", cita: "Aird, Williams, Rembowska - capitulo de Braquiterapia" },
   { numero: "[47]", cita: "NBS Handbook 73" },
   ];
+
+// ============================================================================
+// FUNCIONES EJECUTABLES DE CALCULO (Seccion 8.4, Ecuaciones 33-38) - agregado
+// 17/09/2026 al continuar la Fase 5 del Prompt Maestro. Hasta esta fecha este
+// archivo solo contenia tablas de referencia (ver comentario historico mas
+// arriba: "no re-implementados aqui como funciones de calculo"). Estas
+// funciones se transcriben directamente de las Ecuaciones 33-38 (Seccion 8.4,
+// pag. 102-103) y se validan mas abajo contra el ejemplo numerico completo de
+// la Seccion 8.5 (pag. 104-106, sala HDR de Co-60), reproducido con sus
+// valores de entrada reales (no inventados) leidos directamente del
+// documento "SRS 47.txt" de la carpeta Drive del proyecto.
+//
+// NOTA DE UNIDADES (S24, no ocultar supuestos): el documento fuente mezcla,
+// dentro de una misma formula, valores etiquetados "mSv" (limite de diseno P)
+// con valores etiquetados "mGy" (carga de trabajo W, tasa de kerma D0), pero
+// segun la advertencia de calidad de fuente al inicio de este archivo, el
+// artefacto OCR u->m probablemente afecta a ambos por igual, por lo que la
+// UNIDAD REAL mas probable es uSv/uGy en vez de mSv/mGy. Esto NO afecta el
+// resultado numerico de B (es un cociente entre magnitudes con el mismo
+// factor de escala), por lo que las funciones de abajo se implementan tal
+// como aparecen las formulas en el texto, sin fijar una unidad especifica en
+// el nombre del parametro salvo la que aparece impresa; el llamador debe
+// mantener consistencia de unidades entre P y W/D0.
+// ============================================================================
+
+/**
+ * Ecuacion 33: carga de trabajo (workload) via tasa de kerma en aire de
+ * referencia (RAKR).
+ * W = RAKR x A x t x n
+ * @param rakr Tasa de kerma en aire de referencia de la fuente (Tabla 20)
+ * @param actividadTotalMBq Actividad total de las fuentes (MBq)
+ * @param tiempoTratamientoH Duracion promedio del tratamiento (h)
+ * @param tratamientosPorSemana Numero de tratamientos por semana
+ */
+export function calcularCargaTrabajoBraquiterapiaViaRAKR(
+  rakr: number,
+  actividadTotalMBq: number,
+  tiempoTratamientoH: number,
+  tratamientosPorSemana: number
+): number {
+  return rakr * actividadTotalMBq * tiempoTratamientoH * tratamientosPorSemana;
+}
+
+/**
+ * Ecuacion 34: carga de trabajo (workload) via fuerza de kerma en aire
+ * (formalismo AAPM Informe 21 / Task Group 32).
+ * W = Sk x t x n
+ * @param skUGyM2H Fuerza de kerma en aire de la fuente, en U (uGy*m^2*h^-1)
+ */
+export function calcularCargaTrabajoBraquiterapiaViaKerma(
+  skUGyM2H: number,
+  tiempoTratamientoH: number,
+  tratamientosPorSemana: number
+): number {
+  return skUGyM2H * tiempoTratamientoH * tratamientosPorSemana;
+}
+
+/**
+ * Ecuacion 35: tasa de dosis sin blindaje (a 1 m) via RAKR.
+ * D0 = RAKR x A
+ * @param actividadMBq Actividad de la(s) fuente(s) expuesta(s) simultaneamente (MBq)
+ */
+export function calcularTasaDosisSinBlindajeBraquiterapiaViaRAKR(rakr: number, actividadMBq: number): number {
+  return rakr * actividadMBq;
+}
+
+/**
+ * Ecuacion 36: tasa de dosis sin blindaje via fuerza de kerma en aire.
+ * D0 = Sk (identidad, incluida por trazabilidad explicita con la fuente, S24)
+ */
+export function calcularTasaDosisSinBlindajeBraquiterapiaViaKerma(skUGyM2H: number): number {
+  return skUGyM2H;
+}
+
+/**
+ * Ecuaciones 37/38: factor de transmision de barrera requerido, evaluacion
+ * SEMANAL/promediada (usa la carga de trabajo W ya calculada por Eq. 33 o 34,
+ * y el factor de ocupacion T). El factor de uso U del enfoque de aceleradores
+ * NO aparece aqui: el texto fuente establece explicitamente que en
+ * braquiterapia U = 1 siempre, porque las fuentes no estan colimadas y
+ * emiten en todas direcciones (Seccion 8.4).
+ * B = P * d^2 / (W * T)
+ * @param pDosisSemana Objetivo de diseno de blindaje P (por semana)
+ * @param dM Distancia desde la fuente expuesta hasta el punto protegido (m)
+ * @param wSemana Carga de trabajo W (Eq. 33 o 34), por semana
+ * @param t Factor de ocupacion (fraccion 0-1)
+ */
+export function calcularFactorTransmisionBarreraBraquiterapiaSemanal(
+  pDosisSemana: number,
+  dM: number,
+  wSemana: number,
+  t: number
+): number {
+  return (pDosisSemana * dM * dM) / (wSemana * t);
+}
+
+/**
+ * Variante para verificacion de tasa de dosis instantanea (IDR) con el
+ * numero maximo de fuentes expuestas simultaneamente. Analoga a la Ecuacion
+ * 7 del enfoque de aceleradores (NCRP151): usa D0 (Eq. 35/36) directamente en
+ * el denominador, SIN el factor de ocupacion T, porque el IDR representa el
+ * caso de una persona presente en ese instante exacto (ver ejemplo numerico
+ * de la Seccion 8.5, que omite T al verificar el IDR de 7,5 [uSv corregido]
+ * por hora con las 20 fuentes expuestas).
+ * B_IDR = P_IDR * d^2 / D0
+ */
+export function calcularFactorTransmisionInstantaneaBraquiterapia(
+  pInstantanea: number,
+  dM: number,
+  d0: number
+): number {
+  return (pInstantanea * dM * dM) / d0;
+}
+
+/**
+ * Espesor de barrera a partir del numero de TVL (Eq. 6/Ec. 2.2, generica),
+ * usando el valor UNICO de TVL "por atenuacion grande" de la Tabla 22.
+ * A DIFERENCIA del enfoque de aceleradores (NCRP151, TVL1 + (n-1)*TVLe), el
+ * SRS-47 no tabula un TVL de primera capa distinto para braquiterapia en su
+ * Tabla 22 principal (solo existe la nota al pie de "primer HVL/TVL", no
+ * pareada con confianza - ver HVL_TVL_TABLA22_PRIMER_VALOR_PENDIENTE mas
+ * arriba). Por lo tanto esta funcion NO aplica una capa de endurecimiento de
+ * haz distinta; usa el mismo TVL para todas las capas, tal como lo hace el
+ * propio ejemplo numerico de la Seccion 8.5 (554 = 2.54 x 218; 676 = 3.1 x
+ * 218, ambos con el mismo TVL de 218 mm). Esto se documenta explicitamente
+ * para no ocultar la simplificacion (S24).
+ */
+export function calcularEspesorBarreraBraquiterapia(nTVL: number, tvlMm: number): number {
+  return nTVL * tvlMm;
+}
+// ============================================================================
+// CASOS DE REGRESION - validados contra el ejemplo numerico COMPLETO de la
+// Seccion 8.5 (pag. 104-106), leido directamente del documento fuente el
+// 17/09/2026 (no se fabrican los valores de entrada). Sala HDR de Co-60 con
+// 15 fuentes de 18,5 GBq c/u (barrera semanal) y 20 fuentes (verificacion de
+// IDR con el numero maximo de fuentes), y sub-ejemplo comparativo con una
+// unica fuente de Ir-192 de 370 GBq.
+// ============================================================================
+
+export const CASO_REGRESION_BRAQUITERAPIA_CO60_SEMANAL = {
+  rakr: 0.308,
+  actividadTotalMBq: 15 * 18.5 * 1000, // 15 fuentes x 18,5 GBq
+  tiempoTratamientoH: 0.1,
+  tratamientosPorSemana: 30,
+  pDosisSemana: 6,
+  dM: 3.5,
+  t: 0.1,
+  tvlHormigonMm: 218,
+  wEsperado: 2.56e5,
+  bEsperado: 2.87e-3,
+  nTVLEsperado: 2.54,
+  espesorEsperadoMm: 554,
+};
+
+export const CASO_REGRESION_BRAQUITERAPIA_CO60_IDR = {
+  rakr: 0.308,
+  actividadTotalMBq: 20 * 18.5 * 1000, // 20 fuentes (peor caso) x 18,5 GBq
+  pInstantanea: 7.5,
+  dM: 3.5,
+  tvlHormigonMm: 218,
+  d0Esperado: 113960,
+  bEsperado: 8.1e-4,
+  nTVLEsperado: 3.1,
+  espesorEsperadoMm: 676,
+};
+
+export const CASO_REGRESION_BRAQUITERAPIA_IR192_SEMANAL = {
+  rakr: 0.111,
+  actividadTotalMBq: 370 * 1000, // 1 fuente de 370 GBq
+  tiempoTratamientoH: 0.167,
+  tratamientosPorSemana: 30,
+  pDosisSemana: 6,
+  dM: 3.5,
+  t: 0.1,
+  tvlHormigonMm: 152,
+  wEsperado: 2.06e5,
+  bEsperado: 3.6e-3,
+  nTVLEsperado: 2.45,
+};
+
+/**
+ * Ejecuta los casos de regresion contra las funciones ejecutables de este
+ * archivo y devuelve, para cada caso, el valor calculado, el esperado (leido
+ * del documento fuente) y si coinciden dentro de una tolerancia relativa del
+ * 1% (redondeos de 3 cifras significativas del propio documento).
+ */
+export function ejecutarCasosDeRegresionBraquiterapia() {
+  function cerca(calculado: number, esperado: number, tolRel = 0.01): boolean {
+    return Math.abs(calculado - esperado) <= tolRel * Math.abs(esperado);
+  }
+
+  const c1 = CASO_REGRESION_BRAQUITERAPIA_CO60_SEMANAL;
+  const w1 = calcularCargaTrabajoBraquiterapiaViaRAKR(c1.rakr, c1.actividadTotalMBq, c1.tiempoTratamientoH, c1.tratamientosPorSemana);
+  const b1 = calcularFactorTransmisionBarreraBraquiterapiaSemanal(c1.pDosisSemana, c1.dM, w1, c1.t);
+  const n1 = calcularNumeroTVL(b1);
+  const espesor1 = calcularEspesorBarreraBraquiterapia(n1, c1.tvlHormigonMm);
+
+  const c2 = CASO_REGRESION_BRAQUITERAPIA_CO60_IDR;
+  const d0_2 = calcularTasaDosisSinBlindajeBraquiterapiaViaRAKR(c2.rakr, c2.actividadTotalMBq);
+  const b2 = calcularFactorTransmisionInstantaneaBraquiterapia(c2.pInstantanea, c2.dM, d0_2);
+  const n2 = calcularNumeroTVL(b2);
+  const espesor2 = calcularEspesorBarreraBraquiterapia(n2, c2.tvlHormigonMm);
+
+  const c3 = CASO_REGRESION_BRAQUITERAPIA_IR192_SEMANAL;
+  const w3 = calcularCargaTrabajoBraquiterapiaViaRAKR(c3.rakr, c3.actividadTotalMBq, c3.tiempoTratamientoH, c3.tratamientosPorSemana);
+  const b3 = calcularFactorTransmisionBarreraBraquiterapiaSemanal(c3.pDosisSemana, c3.dM, w3, c3.t);
+  const n3 = calcularNumeroTVL(b3);
+
+  return [
+    { caso: "CO60_SEMANAL_W", calculado: w1, esperado: c1.wEsperado, ok: cerca(w1, c1.wEsperado) },
+    { caso: "CO60_SEMANAL_B", calculado: b1, esperado: c1.bEsperado, ok: cerca(b1, c1.bEsperado) },
+    { caso: "CO60_SEMANAL_N_TVL", calculado: n1, esperado: c1.nTVLEsperado, ok: cerca(n1, c1.nTVLEsperado) },
+    { caso: "CO60_SEMANAL_ESPESOR_MM", calculado: espesor1, esperado: c1.espesorEsperadoMm, ok: cerca(espesor1, c1.espesorEsperadoMm) },
+    { caso: "CO60_IDR_D0", calculado: d0_2, esperado: c2.d0Esperado, ok: cerca(d0_2, c2.d0Esperado) },
+    { caso: "CO60_IDR_B", calculado: b2, esperado: c2.bEsperado, ok: cerca(b2, c2.bEsperado) },
+    { caso: "CO60_IDR_N_TVL", calculado: n2, esperado: c2.nTVLEsperado, ok: cerca(n2, c2.nTVLEsperado) },
+    { caso: "CO60_IDR_ESPESOR_MM", calculado: espesor2, esperado: c2.espesorEsperadoMm, ok: cerca(espesor2, c2.espesorEsperadoMm) },
+    { caso: "IR192_SEMANAL_W", calculado: w3, esperado: c3.wEsperado, ok: cerca(w3, c3.wEsperado) },
+    { caso: "IR192_SEMANAL_B", calculado: b3, esperado: c3.bEsperado, ok: cerca(b3, c3.bEsperado) },
+    { caso: "IR192_SEMANAL_N_TVL", calculado: n3, esperado: c3.nTVLEsperado, ok: cerca(n3, c3.nTVLEsperado) },
+  ];
+}
