@@ -683,3 +683,239 @@ export const FUENTE_P_RECOMENDADO: FuenteCita = {
       notas:
               "Valor tomado de NCRP 151 (ver ncrp151-shielding-references.ts, OBJETIVOS_DISENO_P_NCRP151). Coincide numericamente con el P de AAPM TG-108 Seccion 'Regulatory limits', pero se cita aqui la fuente primaria segun instruccion del usuario (13/09/2026). NCRP 151 y AAPM TG-108 expresan P en la misma magnitud fisica (dosis equivalente/efectiva, Sv); a diferencia de NCRP 147 (kerma en aire), no se requiere aqui la advertencia de conversion de unidades. Ver advertenciaUnidadesP151() en ncrp151-shielding-references.ts.",
 };
+
+
+// ============================================================================
+// 11. CONTENIDO ADICIONAL FUSIONADO DESDE aapm-tg108-petct-references.ts
+// (fusion por instruccion del usuario, opcion "b": conservar unicamente el
+// contenido UNICO no duplicado en este motor; el archivo
+// aapm-tg108-petct-references.ts queda DEPRECADO tras esta fusion, ver nota
+// en su encabezado). Fecha de fusion: 16/09/2026.
+// ============================================================================
+
+// ---- 11.1 Resolucion de la advertencia de unidad de Tabla V (plomo) ----
+// El archivo fusionado marcaba como PENDIENTE_DE_VERIFICACION si alfa/beta
+// de plomo (Tabla V) estaban en cm^-1 o mm^-1. Esta ambiguedad QUEDA
+// RESUELTA por la validacion cruzada ya existente en este motor (ver
+// validarModeloArcher(), Seccion 8): al usar x=1.0 cm (10 mm de plomo) con
+// alfa/beta en cm^-1, el modelo reproduce el valor publicado de la Tabla IV
+// para 10 mm de plomo dentro de +/-0.001. CONCLUSION: alfa y beta de plomo
+// SI estan en cm^-1, igual que hormigon y hierro (no mm^-1). Confianza: ALTA.
+
+// ---- 11.2 Tabla I - propiedades fisicas adicionales de radionucleidos PET ----
+// (energia maxima del positron, fotones de emision y fotones/decaimiento;
+// no presentes en RADIONUCLIDOS_PET de la Seccion 2, que solo trae datos
+// de la Tabla II).
+export const FUENTE_TABLA_I_PROPIEDADES_FISICAS = citaTG108("4-5", "Tabla I", "ALTA");
+
+export interface PropiedadesFisicasNucleidoPET {
+  nuclido: string;
+  semividaTexto: string;
+  modoDecaimiento: string;
+  energiaMaximaPositronMeV: number | null;
+  fotonesEmisionKeV: number[];
+  fotonesPorDecaimiento: number[];
+  notas?: string;
+}
+
+export const PROPIEDADES_FISICAS_TABLA_I: PropiedadesFisicasNucleidoPET[] = [
+  { nuclido: "C-11", semividaTexto: "20.4 min", modoDecaimiento: "beta+", energiaMaximaPositronMeV: 0.96, fotonesEmisionKeV: [511], fotonesPorDecaimiento: [2.0] },
+  { nuclido: "N-13", semividaTexto: "10.0 min", modoDecaimiento: "beta+", energiaMaximaPositronMeV: 1.19, fotonesEmisionKeV: [511], fotonesPorDecaimiento: [2.0] },
+  { nuclido: "O-15", semividaTexto: "2.0 min", modoDecaimiento: "beta+", energiaMaximaPositronMeV: 1.72, fotonesEmisionKeV: [511], fotonesPorDecaimiento: [2.0] },
+  { nuclido: "F-18", semividaTexto: "109.8 min", modoDecaimiento: "beta+, captura electronica", energiaMaximaPositronMeV: 0.63, fotonesEmisionKeV: [511], fotonesPorDecaimiento: [1.93] },
+  { nuclido: "Cu-64", semividaTexto: "12.7 h", modoDecaimiento: "beta-, beta+, captura electronica", energiaMaximaPositronMeV: 0.65, fotonesEmisionKeV: [511, 1346], fotonesPorDecaimiento: [0.38, 0.005] },
+  { nuclido: "Ga-68", semividaTexto: "68.3 min", modoDecaimiento: "beta+, captura electronica", energiaMaximaPositronMeV: 1.9, fotonesEmisionKeV: [511], fotonesPorDecaimiento: [1.84] },
+  { nuclido: "Rb-82", semividaTexto: "76 s", modoDecaimiento: "beta+, captura electronica", energiaMaximaPositronMeV: 3.35, fotonesEmisionKeV: [511, 776], fotonesPorDecaimiento: [1.90, 0.13] },
+  {
+    nuclido: "I-124",
+    semividaTexto: "4.2 d",
+    modoDecaimiento: "beta+, captura electronica",
+    energiaMaximaPositronMeV: null,
+    fotonesEmisionKeV: [511, 603, 1693],
+    fotonesPorDecaimiento: [0.5, 0.62, 0.3],
+    notas: "PENDIENTE_DE_VERIFICACION: la energia maxima del positron para I-124 no se pudo parear con confianza a su columna exacta en la extraccion de texto (columnas desalineadas por un salto de pagina en la tabla original). Los valores de fotones/decaimiento SI son consistentes con datos nucleares conocidos de I-124 (confianza ALTA).",
+  },
+];
+
+// ---- 11.3 Tabla III - constantes alternativas reportadas para F-18 ----
+export const FUENTE_TABLA_III_CONSTANTES_F18 = citaTG108(
+  "5-6",
+  "Tabla III",
+  "ALTA",
+  "Constantes alternativas de tasa de dosis/exposicion para F-18 reportadas en la literatura citada por el articulo. Solo 0.092 (dosis de paciente, Seccion 2) y 0.143 (dosis equivalente efectiva, usada en RADIONUCLIDOS_PET) se usan por defecto en este motor; el resto se conserva como catalogo de referencia."
+);
+
+export interface ConstanteAlternativaF18 {
+  parametro: string;
+  valor: number;
+  unidad: string;
+  notas?: string;
+}
+
+export const CONSTANTES_ALTERNATIVAS_F18_TABLA_III: ConstanteAlternativaF18[] = [
+  { parametro: "Constante de tasa de exposicion", valor: 15.4, unidad: "R*m^2/(MBq*h)" },
+  { parametro: "Constante de tasa de kerma en aire", valor: 0.134, unidad: "uSv*m^2/(MBq*h)" },
+  { parametro: "Dosis equivalente efectiva (ANSI/ANS-6.1.1, 1991)", valor: 0.143, unidad: "uSv*m^2/(MBq*h)", notas: "Valor usado por defecto en RADIONUCLIDOS_PET (Seccion 2) para F-18." },
+  { parametro: "Constante de dosis en tejido", valor: 0.148, unidad: "uSv*m^2/(MBq*h)", notas: "Dosis a 1 cm^3 de tejido unitario en densidad, en aire." },
+  { parametro: "Dosis equivalente profunda (ANS, 1977)", valor: 0.183, unidad: "uSv*m^2/(MBq*h)", notas: "Dosis a 1 cm de profundidad en slab de tejido de 30 cm expuesto a haz ancho de 511 keV." },
+  { parametro: "Dosis maxima (ANS, 1977)", valor: 0.188, unidad: "uSv*m^2/(MBq*h)", notas: "Dosis maxima en slab de tejido de 30 cm (incluye retrodispersion lateral); profundidad de dosis maxima = 3 mm." },
+];
+
+// ---- 11.4 Limites regulatorios detallados (10 CFR 20) ----
+// Complementa CRITERIOS_P_REFERENCIA_AAPM (Seccion 4) con el limite legal
+// ocupacional pleno y el limite horario, no incluidos alli.
+export const FUENTE_LIMITES_REGULATORIOS_DETALLADOS = citaTG108("8", "Seccion 'Regulatory limits'", "ALTA");
+
+export interface LimiteRegulatorioDetallado {
+  codigo: string;
+  descripcionEs: string;
+  valorAnualMSv?: number;
+  valorSemanalUSv?: number;
+  valorPorHoraUSv?: number;
+}
+
+export const LIMITES_REGULATORIOS_DETALLADOS_TG108: LimiteRegulatorioDetallado[] = [
+  { codigo: "PUBLICO_ANUAL", descripcionEs: "Limite de dosis efectiva en areas no controladas (publico), 10 CFR 20", valorAnualMSv: 1, valorSemanalUSv: 20 },
+  { codigo: "PUBLICO_POR_HORA", descripcionEs: "Limite de dosis efectiva en cualquier hora, areas no controladas", valorPorHoraUSv: 20 },
+  { codigo: "OCUPACIONAL_LEGAL_ANUAL", descripcionEs: "Limite legal de dosis ocupacional en areas controladas (10 CFR 20), limite regulatorio pleno, NO el nivel de diseno ALARA", valorAnualMSv: 50 },
+  { codigo: "OCUPACIONAL_ALARA_ANUAL", descripcionEs: "Objetivo de diseno ALARA tipico para areas controladas (nivel de diseno recomendado, no el limite legal de 50 mSv/ano)", valorAnualMSv: 5, valorSemanalUSv: 100 },
+];
+
+// ---- 11.5 Glosario de parametros (Tabla VI) ----
+export const FUENTE_GLOSARIO_TABLA_VI = citaTG108("8", "Tabla VI", "ALTA");
+
+export const GLOSARIO_PARAMETROS_TABLA_VI: { simbolo: string; descripcionEs: string }[] = [
+  { simbolo: "A0", descripcionEs: "Actividad administrada (MBq)" },
+  { simbolo: "t", descripcionEs: "Tiempo (h)" },
+  { simbolo: "tU", descripcionEs: "Tiempo de captacion/reposo (uptake) (h)" },
+  { simbolo: "tI", descripcionEs: "Tiempo de adquisicion de imagen (h)" },
+  { simbolo: "D(t)", descripcionEs: "Dosis total en el tiempo t (uSv)" },
+  { simbolo: "D0punto", descripcionEs: "Tasa de dosis inicial (uSv/h)" },
+  { simbolo: "T1/2", descripcionEs: "Vida media del radionucleido (h)" },
+  { simbolo: "Rt", descripcionEs: "Factor de reduccion de dosis por decaimiento durante el tiempo t" },
+  { simbolo: "RtU", descripcionEs: "Factor de reduccion de dosis durante el tiempo de captacion tU" },
+  { simbolo: "RtI", descripcionEs: "Factor de reduccion de dosis durante el tiempo de imagen tI" },
+  { simbolo: "Nw", descripcionEs: "Numero de pacientes por semana" },
+  { simbolo: "d", descripcionEs: "Distancia de la fuente a la barrera (m)" },
+  { simbolo: "FU", descripcionEs: "Factor de decaimiento durante el tiempo de captacion (uptake)" },
+  { simbolo: "T", descripcionEs: "Factor de ocupacion" },
+  { simbolo: "P", descripcionEs: "Limite de dosis semanal de diseno (uSv)" },
+  { simbolo: "B", descripcionEs: "Factor de transmision requerido de la barrera" },
+];
+
+// ---- 11.6 Catalogo de ecuaciones TG-108 con formas numericas explicitas ----
+// Complementa las funciones ya implementadas (Secciones 3, 5 y 6) con las
+// formas numericas explicitas publicadas en el articulo (constantes ya
+// sustituidas), utiles para documentacion/UI y verificacion manual.
+export const FUENTE_CATALOGO_ECUACIONES = citaTG108("8-11", "Ecuaciones 1-12", "ALTA");
+
+export interface EcuacionCatalogoTG108 {
+  numero: string;
+  nombreEs: string;
+  formula: string;
+  notas?: string;
+  funcionEnEsteMotor?: string;
+}
+
+export const CATALOGO_ECUACIONES_TG108: EcuacionCatalogoTG108[] = [
+  { numero: "Eq. 1", nombreEs: "Factor de reduccion por decaimiento Rt", formula: "Rt = 1.443*(T1/2/t)*[1-exp(-0.693*t/T1/2)]", funcionEnEsteMotor: "calcularFactorReduccionDecaimiento()" },
+  { numero: "Eq. 2", nombreEs: "Dosis en sala de captacion, un paciente", formula: "D(tU) = 0.092 * A0[MBq] * tU[h] * RtU / d[m]^2" },
+  { numero: "Eq. 3", nombreEs: "Dosis semanal en sala de captacion", formula: "D_semana = 0.092 * Nw * A0[MBq] * tU[h] * RtU / d[m]^2", funcionEnEsteMotor: "calcularDosisSemanalSalaCaptacion()" },
+  { numero: "Eq. 4", nombreEs: "Transmision requerida, forma general (captacion)", formula: "B = 10.9 * P[uSv] * d[m]^2 / (T*Nw*A0[MBq]*tU[h]*RtU)", funcionEnEsteMotor: "calcularTransmisionRequeridaSalaCaptacion()" },
+  { numero: "Eq. 5", nombreEs: "Transmision, area no controlada (P=20 uSv/sem), A0 en MBq", formula: "B = 218 * d^2 / (T*Nw*A0[MBq]*tU*RtU)", notas: "Forma numerica de Eq.4 con P=20 sustituido; equivale a calcularTransmisionRequeridaSalaCaptacion() con pUSvSemana=20." },
+  { numero: "Eq. 6", nombreEs: "Transmision, area no controlada, A0 en mCi", formula: "B = 5.89 * d^2 / (T*Nw*A0[mCi]*tU*RtU)", notas: "Equivalente a Eq.5 en unidades mCi; este motor usa MBq exclusivamente." },
+  { numero: "Eq. 7", nombreEs: "Transmision, area controlada ALARA (P=100 uSv/sem), A0 en MBq", formula: "B = 1090 * d^2 / (T*Nw*A0[MBq]*tU*RtU)", notas: "Forma numerica de Eq.4 con P=100 sustituido." },
+  { numero: "Eq. 8", nombreEs: "Transmision, area controlada ALARA, A0 en mCi", formula: "B = 29.5 * d^2 / (T*Nw*A0[mCi]*tU*RtU)" },
+  { numero: "Eq. 9", nombreEs: "Dosis semanal en sala de imagen", formula: "D_semana = 0.092*Nw*A0*0.85*FU*tI*RtI/d^2", funcionEnEsteMotor: "calcularDosisSemanalSalaImagen()" },
+  { numero: "Eq. 10", nombreEs: "Transmision requerida, forma general (imagen)", formula: "B = 10.9*P[uSv]*d^2/(T*Nw*A0*0.85*FU*tI*RtI)", funcionEnEsteMotor: "calcularTransmisionRequeridaSalaImagen()" },
+  { numero: "Eq. 11", nombreEs: "Transmision, sala de imagen, area no controlada", formula: "B = 256*d^2/(T*Nw*A0*FU*tI*RtI)", notas: "Forma numerica de Eq.10 con P=20 sustituido." },
+  { numero: "Eq. 12", nombreEs: "Transmision, sala de imagen, area controlada ALARA", formula: "B = 1280*d^2/(T*Nw*A0*FU*tI*RtI)", notas: "Forma numerica de Eq.10 con P=100 sustituido." },
+];
+
+// ---- 11.7 Ejemplos documentales adicionales (Examples 3, 6 y 7) ----
+// No implementados como funciones (Ejemplo 3 requiere layout completo de
+// una instalacion; Ejemplo 6 despeja distancia en vez de B; Ejemplo 7 usa
+// una metodologia de tasa de conteo/camara gamma, fuera del alcance de las
+// funciones de dosis/transmision de este motor). Se conservan como
+// referencia documental. Los ejemplos 1, 2, 4 y 5 SI estan implementados
+// como casos de regresion (Seccion 9, ejecutarCasosDeRegresion()).
+export const FUENTE_EJEMPLOS_ADICIONALES = citaTG108("11-15", "Ejemplos 3, 6 y 7", "ALTA");
+
+export const EJEMPLOS_DOCUMENTALES_ADICIONALES_TG108 = [
+  {
+    codigo: "EJEMPLO_3_LAYOUT_COMPLETO",
+    descripcionEs: "Diseno completo de una instalacion PET (Fig. 4): 40 pacientes/semana, 555 MBq de F-18 FDG, tU=1 h, tI=30 min. Ver TABLA_VII_LAYOUT_EJEMPLO_3 y TABLA_VIII_BLINDAJE_EJEMPLO_3 para los valores completos por punto de interes.",
+  },
+  {
+    codigo: "EJEMPLO_6_DISTANCIA_CONSOLA",
+    descripcionEs: "Distancia minima entre la consola de control y el paciente para dosis de operador < 5 mSv/ano (ALARA, P=100 uSv/semana). 40 pacientes/semana, 555 MBq, tU=60 min, tI=30 min.",
+    resultado: "d = 2.32 m.",
+  },
+  {
+    codigo: "EJEMPLO_7_CAMARA_GAMMA_ADYACENTE",
+    descripcionEs: "Blindaje requerido en sala adyacente con camara gamma (Tc-99m) para reducir tasa de fondo por radiacion de aniquilacion de 511 keV de 592000 CPM a 1000 CPM.",
+    resultado: "B = 1000/592000 = 0.0017. Usando la Fig. 1 (transmision de plomo): 3.9 cm de plomo requeridos.",
+  },
+];
+
+// ---- 11.8 Tabla VII / VIII - layout completo del Ejemplo 3 (Fig. 4) ----
+export const FUENTE_TABLA_VII_VIII = citaTG108(
+  "11-12",
+  "Tablas VII y VIII",
+  "ALTA",
+  "Calculo basado en 40 pacientes/semana, 555 MBq por administracion, 1 h de captacion, 30 min de imagen."
+);
+
+export interface PuntoInteresEjemplo3 {
+  sala: string;
+  distanciaCaptacionM: number;
+  distanciaTomografoM: number;
+  dosisObjetivoSemanalUSv: number;
+  factorOcupacion: number;
+  dosisSemanalCaptacionUSv: number;
+  dosisSemanalTomografoUSv: number;
+  dosisSemanalTotalUSv: number;
+  factorTransmisionRequerido: number | null;
+  notas?: string;
+}
+
+export const TABLA_VII_LAYOUT_EJEMPLO_3: PuntoInteresEjemplo3[] = [
+  { sala: "Oficina 1", distanciaCaptacionM: 8, distanciaTomografoM: 3, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 27.1, dosisSemanalTomografoUSv: 70.1, dosisSemanalTotalUSv: 97.2, factorTransmisionRequerido: 0.206 },
+  { sala: "Oficina 2", distanciaCaptacionM: 6, distanciaTomografoM: 3, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 48.7, dosisSemanalTomografoUSv: 70.1, dosisSemanalTotalUSv: 118.8, factorTransmisionRequerido: 0.169 },
+  { sala: "Oficina 3", distanciaCaptacionM: 8, distanciaTomografoM: 7, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 27.1, dosisSemanalTomografoUSv: 12.9, dosisSemanalTotalUSv: 40, factorTransmisionRequerido: 0.500 },
+  { sala: "Oficina 4", distanciaCaptacionM: 8.5, distanciaTomografoM: 9, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 24, dosisSemanalTomografoUSv: 7.8, dosisSemanalTotalUSv: 31.8, factorTransmisionRequerido: 0.629 },
+  { sala: "Oficina 5", distanciaCaptacionM: 8.5, distanciaTomografoM: 11, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 24, dosisSemanalTomografoUSv: 5.2, dosisSemanalTotalUSv: 29.2, factorTransmisionRequerido: 0.685 },
+  { sala: "Oficina 6", distanciaCaptacionM: 9.5, distanciaTomografoM: 13, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 19.2, dosisSemanalTomografoUSv: 3.7, dosisSemanalTotalUSv: 22.9, factorTransmisionRequerido: 0.872 },
+  { sala: "Oficina 7", distanciaCaptacionM: 12, distanciaTomografoM: 15, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 12, dosisSemanalTomografoUSv: 2.8, dosisSemanalTotalUSv: 14.8, factorTransmisionRequerido: null, notas: "No se requiere blindaje adicional (dosis total ya por debajo del objetivo sin barrera)." },
+  { sala: "Oficina 8", distanciaCaptacionM: 7, distanciaTomografoM: 8, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 35.4, dosisSemanalTomografoUSv: 9.9, dosisSemanalTotalUSv: 45.3, factorTransmisionRequerido: 0.442 },
+  { sala: "Oficina 9", distanciaCaptacionM: 9, distanciaTomografoM: 9, dosisObjetivoSemanalUSv: 20, factorOcupacion: 1, dosisSemanalCaptacionUSv: 21.4, dosisSemanalTomografoUSv: 7.8, dosisSemanalTotalUSv: 29.2, factorTransmisionRequerido: 0.685 },
+  { sala: "Pasillo 1", distanciaCaptacionM: 2.5, distanciaTomografoM: 2.5, dosisObjetivoSemanalUSv: 100, factorOcupacion: 0.25, dosisSemanalCaptacionUSv: 277.8, dosisSemanalTomografoUSv: 101, dosisSemanalTotalUSv: 378.8, factorTransmisionRequerido: null, notas: "Factor de ocupacion incluido en el calculo de transmision; no modifica la dosis semanal total mostrada." },
+  { sala: "Pasillo 2", distanciaCaptacionM: 9, distanciaTomografoM: 4, dosisObjetivoSemanalUSv: 20, factorOcupacion: 0.25, dosisSemanalCaptacionUSv: 21.6, dosisSemanalTomografoUSv: 39.6, dosisSemanalTotalUSv: 60.2, factorTransmisionRequerido: null },
+  { sala: "Sala de control PET", distanciaCaptacionM: 9, distanciaTomografoM: 2.5, dosisObjetivoSemanalUSv: 100, factorOcupacion: 1, dosisSemanalCaptacionUSv: 21.4, dosisSemanalTomografoUSv: 101, dosisSemanalTotalUSv: 122.4, factorTransmisionRequerido: 0.817 },
+  { sala: "Camara gamma", distanciaCaptacionM: 3, distanciaTomografoM: 10, dosisObjetivoSemanalUSv: 100, factorOcupacion: 1, dosisSemanalCaptacionUSv: 192.7, dosisSemanalTomografoUSv: 6.3, dosisSemanalTotalUSv: 199, factorTransmisionRequerido: 0.503 },
+];
+
+export interface BlindajeParedEjemplo3 {
+  pared: "N" | "E" | "S" | "O";
+  espesorPlomoSalaCaptacionMm: number;
+  espesorPlomoSalaTomografoMm: number;
+}
+
+export const TABLA_VIII_BLINDAJE_EJEMPLO_3: BlindajeParedEjemplo3[] = [
+  { pared: "N", espesorPlomoSalaCaptacionMm: 0, espesorPlomoSalaTomografoMm: 0 },
+  { pared: "E", espesorPlomoSalaCaptacionMm: 5, espesorPlomoSalaTomografoMm: 3 },
+  { pared: "S", espesorPlomoSalaCaptacionMm: 5, espesorPlomoSalaTomografoMm: 0 },
+  { pared: "O", espesorPlomoSalaCaptacionMm: 2, espesorPlomoSalaTomografoMm: 12.1 },
+];
+
+// ---- 11.9 Consideraciones de diseno adicionales (texto narrativo) ----
+export const CONSIDERACIONES_DISENO_TG108 = {
+  fuente: citaTG108("12-14", "Design considerations / PET-CT installations", "ALTA"),
+  puntos: [
+    "Para una instalacion PET tipica (555 MBq administrados, 60 min de captacion, 40 pacientes/semana), la distancia requerida para mantener la dosis semanal por debajo de 20 uSv sin blindaje adicional es de 9.3 m.",
+    "Losas de piso de 10 cm de hormigon (espesor tipico) proporcionan un factor de reduccion de dosis de 2.5 para radiacion de aniquilacion de 511 keV.",
+    "Para instalaciones PET/CT, el componente CT se disena con los mismos criterios que cualquier instalacion de TC diagnostico; el blindaje de plomo tipico de una sala de TC (ej. 1.6 mm Pb) es insuficiente por si solo para los fotones de 511 keV (factor de transmision de solo 0.81), pero una sala ya blindada para el criterio PET de 1 mSv/ano al publico normalmente NO requiere blindaje adicional por el componente CT salvo en areas controladas a mas de 3 m de la fuente, donde el CT puede pasar a ser el factor limitante.",
+    "El tomografo PET puede requerir un nivel de radiacion ambiental menor a 0.1 mR/h para operar correctamente (especificacion de un fabricante), lo cual puede requerir consideracion de blindaje adicional entre salas adyacentes con fuentes radiactivas.",
+    "Camaras de centelleo (gamma) adyacentes a salas PET pueden sufrir incremento significativo de la tasa de fondo por fotones de 511 keV si el detector queda orientado directamente hacia el paciente PET; se recomienda no ubicar camaras SPECT junto a salas de captacion o imagen PET salvo que el detector pueda orientarse de forma que nunca apunte hacia la fuente durante la adquisicion.",
+  ],
+};
