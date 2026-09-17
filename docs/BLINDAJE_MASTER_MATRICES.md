@@ -67,3 +67,39 @@ Los valores sembrados en `blindaje_regulatory_parameters` (ver `lib/blindaje.ts`
 4. Construir Fase 5-8 (clasificación de modalidades, motor matemático, base de materiales, motor de validación) sobre la base de datos ya creada en este branch (`feature/blindaje-diseno`) — EN PROGRESO. Hito completado (16/09/2026): `aapm-tg108-petct-references.ts` (metodología y datos de AAPM TG-108 para blindaje de PET/PET-CT). Próximo hito concreto: (a) integrar las funciones de cálculo de TG-108 (Ecs. 1-12) como funciones ejecutables en `blindaje-calc-engine.ts` (paralelo a `validarModeloArcher()` ya existente para NCRP151); (b) extender el selector de modalidad de la UI/wizard para incluir "Medicina Nuclear PET/PET-CT" como modalidad propia, distinta de "Medicina Nuclear (gammacámara/SPECT)" ya existente, dado que TG-108 usa una metodología de fuente-paciente-movil que no aplica a otras modalidades de medicina nuclear.
 
 Actualizacion (17/09/2026): hito (b) del "Proximo hito concreto" arriba, COMPLETADO. Se extendio el selector de modalidad de la UI (frontend/web/src/components/blindaje/blindaje-app.tsx, commit aab2e3c) para que "Medicina Nuclear - PET / PET-CT (AAPM TG-108)" (facility_type = "medicina_nuclear_pet_ct") sea un tipo de instalacion propio, separado de "Medicina Nuclear (Gammacamara / SPECT)" (facility_type = "medicina_nuclear"). Cambios especificos: (1) FACILITY_TYPES agrega la nueva opcion; (2) EQUIPMENT_TYPES mueve "pet" y "pet_ct" desde la clave medicina_nuclear a la nueva clave medicina_nuclear_pet_ct (medicina_nuclear queda solo con gamma_camara y spect); (3) SOURCE_TYPE_BY_FACILITY agrega "radionucleido_pet_movil" para la nueva modalidad; (4) SOURCE_FIELDS_BY_FACILITY y SOURCE_FIELD_LABELS agregan entradas propias; (5) el campo Radionuclido del formulario de fuente de radiacion pasa a ser un selector (no texto libre) poblado desde RADIONUCLIDOS_PET (blindaje-calc-engine.ts, Tabla II AAPM TG-108: C-11, N-13, O-15, F-18, Cu-64, Ga-68, Rb-82, I-124) cuando la instalacion es PET/PET-CT, evitando que el usuario escriba un radionuclido no soportado por el motor de calculo. No se modifico el esquema de base de datos (facility_type ya era TEXT sin restriccion CHECK en blindaje_projects, ver ensureBlindajeTables() en lib/blindaje.ts) ni las rutas API (no validan un enum cerrado de facility_type). Verificado build exitoso en Vercel tras el commit. El hito (a) del mismo parrafo (integrar las funciones de calculo de TG-108 como funciones ejecutables) ya estaba completado previamente en blindaje-calc-engine.ts (Secciones 1-11 del archivo). Pendiente (Fase 5-8, continuacion): motor matematico ejecutable y wiring UI-motor para radioterapia/aceleradores (NCRP 151, TVL y barreras, laberintos) y braquiterapia (IAEA SRS-47); diagnostico por imagenes (NCRP 147) aun no tiene motor de calculo ejecutable propio, solo el catalogo de referencias.
+
+## Actualizacion (17/09/2026, continuacion Fase 5 - braquiterapia)
+
+Al continuar la Fase 5 tras la extension del selector PET/PET-CT, se realizo un
+inventario del estado real de los motores de calculo ejecutables por modalidad
+(no asumido, verificado leyendo directamente cada archivo fuente en GitHub):
+
+- NCRP151 aceleradores/radioterapia: `ncrp151-acelerador-barreras-references.ts`
+  y `ncrp151-laberintos-puertas-references.ts` YA contenian funciones ejecutables
+  completas (barrera primaria/secundaria, laberintos, puertas, neutrones, gammas
+  de captura) de una sesion anterior. No requirieron trabajo nuevo en esta sesion.
+- Braquiterapia (IAEA SRS-47): `srs47-braquiterapia-references.ts` solo tenia
+  tablas de datos (Tablas 19-23) sin funciones de calculo ejecutables (asi lo
+  indicaba explicitamente un comentario en el propio archivo). Se completo esto:
+  se agregaron `calcularCargaTrabajoBraquiterapiaViaRAKR`/`ViaKerma` (Ec. 33/34),
+  `calcularTasaDosisSinBlindajeBraquiterapiaViaRAKR`/`ViaKerma` (Ec. 35/36),
+  `calcularFactorTransmisionBarreraBraquiterapiaSemanal` (Ec. 37/38, U=1 fijo),
+  `calcularFactorTransmisionInstantaneaBraquiterapia` (verificacion IDR) y
+  `calcularEspesorBarreraBraquiterapia` (TVL unico de Tabla 22).
+
+Estas funciones se validaron con `ejecutarCasosDeRegresionBraquiterapia()` contra
+el ejemplo numerico COMPLETO de la Seccion 8.5 del SRS-47 (sala HDR de Co-60 con
+15/20 fuentes de 18,5 GBq c/u, y sub-ejemplo con 1 fuente de Ir-192 de 370 GBq),
+releido directamente de "SRS 47.txt" en Drive para extraer los valores de entrada
+reales (P, d, T, RAKR, actividad, tiempo, numero de tratamientos). Los resultados
+calculados reproducen los espesores publicados por el documento (554 mm y 676 mm)
+dentro de menos del 1% de tolerancia, sin fabricar ningun valor de entrada.
+
+Commit: `231f921` (rama `feature/fase23-petct-fase-a-arquitectura`), archivo
+`frontend/web/src/lib/srs47-braquiterapia-references.ts`. No se modificaron DB/API.
+
+Pendiente para continuar la Fase 5-8: (1) wiring de las funciones de braquiterapia
+y de aceleradores en `blindaje-app.tsx` (UI/wizard), similar al patron ya usado
+para el selector de radionuclidos PET/PET-CT; (2) diagnostico por imagenes
+(NCRP147) aun solo tiene catalogo de referencia, sin motor de calculo ejecutable
+propio mas alla del modelo de Archer generico ya presente en `blindaje-calc-engine.ts`.
