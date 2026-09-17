@@ -461,7 +461,7 @@ export function calcularDosisTotalLaberintoBajaEnergia(
 export const FUENTE_ECUACION_215_DOSIS_GAMMA_CAPTURA_H = citaNCRP151(
   "40-41",
   "Seccion 2.4.2.1, Ecuacion 2.15 (McGinley et al., 1995)",
-  "MEDIA_ALTA",
+  "MEDIA",
   "Reconstruida el 14/09/2026 a partir de una segunda lectura de 'NCRP 151 espanol.md' " +
     "(carpeta Drive del proyecto), que preservo mejor el contexto de variables que la version " +
     ".txt usada previamente. Texto crudo: 're -- ----2---------- h k 10 T VD A (2.15)'. " +
@@ -500,7 +500,7 @@ export function calcularDosisGammaCapturaEnPuerta(
 export const FUENTE_ECUACION_216_FLUENCIA_NEUTRONES_UBICACION_A = citaNCRP151(
   "41-42",
   "Seccion 2.4.2.1, Ecuacion 2.16 (McCall et al., 1999; NCRP, 1984)",
-  "MEDIA_ALTA",
+  "MEDIA",
   "Reconstruida el 14/09/2026 (misma sesion y fuente que la Ecuacion 2.15). Texto " +
     "crudo: 'beta 5.4 beta = ----qn---- + ----qn--- 1.3 Qn A + ---------------- (2.16) " +
     "4*pi*d1^2 2*pi*Sr 2*pi*Sr'. La prosa inmediatamente posterior identifica " +
@@ -629,7 +629,7 @@ export function calcularDosisTotalPuertaAltaEnergia(hTotSvSemana: number, hCgSvS
 export const FUENTE_ECUACION_218_KERSEY = citaNCRP151(
   "43-44",
   "Seccion 2.4.2.2.1, Metodo de Kersey (Kersey, 1979), Ecuacion 2.18",
-  "MEDIA_ALTA",
+  "MEDIA",
   "Reconstruida el 14/09/2026 a partir de una segunda lectura de 'NCRP 151 " +
     "espanol.md'. Texto crudo: 're 2 -- 2 = S0 d0 ---- --- - 5-Hn,D H0 ( ) " +
     "--Sea-sp-1m-tl -ai dc-e -1a t (2.18) o c Edido neo n l 10 d e'. Aunque el " +
