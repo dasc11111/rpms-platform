@@ -4,6 +4,8 @@ import { createElement as h, useEffect, useState, type FormEvent } from "react";
 import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION } from "@/lib/ncrp147-shielding-references";
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
+import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
+import { calcularNumeroTVL } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -132,6 +134,7 @@ const WORKLOAD_MODES: { value: string; label: string }[] = [
   { value: "simple", label: "Simple" },
   { value: "detallada", label: "Detallada" },
   { value: "avanzada", label: "Avanzada" },
+  { value: "braquiterapia", label: "Braquiterapia (SRS-47)" },
   ];
 
 const WORKLOAD_SCENARIOS: { value: string; label: string }[] = [
@@ -145,6 +148,7 @@ const WORKLOAD_FIELDS_BY_MODE: Record<string, string[]> = {
     simple: ["workload_value", "workload_unit", "notes"],
     detallada: ["procedures_per_week", "workload_value", "workload_unit", "use_factor", "occupancy_factor", "distance", "notes"],
     avanzada: ["procedures_per_week", "workload_value", "workload_unit", "use_factor", "occupancy_factor", "distance", "scenario", "sensitivity_notes", "notes"],
+    braquiterapia: ["treatment_duration_h", "procedures_per_week", "workload_value", "workload_unit", "notes"],
 };
 
 const WORKLOAD_FIELD_LABELS: Record<string, string> = {
@@ -157,6 +161,7 @@ const WORKLOAD_FIELD_LABELS: Record<string, string> = {
     scenario: "Escenario (S36)",
     sensitivity_notes: "Notas de analisis de sensibilidad (S37)",
     notes: "Notas / supuestos (S59)",
+    treatment_duration_h: "Duracion promedio del tratamiento (t, horas) - SRS-47 Ec. 33/34",
 };
 
 const AREA_CLASSIFICATIONS: { value: string; label: string }[] = [
@@ -290,6 +295,8 @@ const EMPTY_BARRIER_FORM = {
     use_factor: "",
     occupancy_factor: "",
     result_status: "sin_informacion",
+    result_value: "",
+    result_unit: "",
 };
 
 type BlindajeMaterial = {
@@ -1059,6 +1066,8 @@ function updatePenetrationField(key: string, value: string) {
                     use_factor: barrierForm.use_factor,
                     occupancy_factor: barrierForm.occupancy_factor,
                     result_status: barrierForm.result_status,
+                    result_value: barrierForm.result_value,
+                    result_unit: barrierForm.result_unit,
                 }),
             });
             const data = await res.json();
@@ -1073,7 +1082,61 @@ function updatePenetrationField(key: string, value: string) {
         }
     }
 
-  async function createMaterial(e: FormEvent) {
+function calcularBarreraBraquiterapiaClick() {
+    if (!selectedProject) return;
+    setBarrierError(null);
+    if (!barrierForm.pir_id) { setBarrierError("Seleccione un PIR asociado antes de calcular."); return; }
+    const pir = pirList.find((p) => String(p.id) === String(barrierForm.pir_id));
+    if (!pir) { setBarrierError("PIR asociado no encontrado."); return; }
+    if (!pir.distance_m || !pir.occupancy_factor || !pir.design_criterion_value) {
+      setBarrierError("El PIR asociado debe tener distancia, factor de ocupacion y valor de criterio de diseno (P) definidos.");
+      return;
+    }
+    if (sourcesList.length === 0) { setBarrierError("Registre al menos una fuente (actividad total de las fuentes cargadas) antes de calcular."); return; }
+    if (workloadList.length === 0) { setBarrierError("Registre la carga de trabajo (modo Braquiterapia SRS-47, con duracion y tratamientos/semana) antes de calcular."); return; }
+    const source = sourcesList[0];
+    const workload = workloadList[0];
+    const wd = (workload.data || {}) as Record<string, any>;
+    const tH = parseFloat(wd.treatment_duration_h);
+    const nSemana = parseFloat(wd.procedures_per_week);
+    if (!tH || !nSemana) { setBarrierError("La carga de trabajo (modo Braquiterapia) debe indicar Duracion promedio del tratamiento y Procedimientos/sesiones por semana."); return; }
+    const nuclido = NUCLEIDOS_TABLA20.find((n) => n.nucleido === source.radionuclide);
+    if (!nuclido) { setBarrierError("Radionuclido de la fuente no reconocido en la Tabla 20 SRS-47. Seleccione uno de la lista en Fuentes."); return; }
+    if (!source.activity) { setBarrierError("La fuente debe tener actividad total definida."); return; }
+    const unit = (source.activity_unit || "MBq").trim().toLowerCase();
+    let activityMBq = Number(source.activity);
+    if (unit === "gbq") activityMBq = activityMBq * 1000;
+    else if (unit === "ci") activityMBq = activityMBq * 37000;
+    else if (unit === "mci") activityMBq = activityMBq * 37;
+    else if (unit === "kbq") activityMBq = activityMBq / 1000;
+    const material = barrierForm.material;
+    const tvlRow = HVL_TVL_TABLA22.find((r) => r.nucleido === source.radionuclide);
+    if (!tvlRow) { setBarrierError("No hay datos de TVL (Tabla 22 SRS-47) para este radionuclido."); return; }
+    let tvlMm: number | null = null;
+    if (material === "Hormigon") tvlMm = tvlRow.hormigonTvlMm;
+    else if (material === "Plomo") tvlMm = tvlRow.plomoTvlMm;
+    else if (material === "Acero") tvlMm = tvlRow.aceroTvlMm;
+    if (!tvlMm) { setBarrierError("No hay valor de TVL disponible para " + material + " con " + source.radionuclide + " en la Tabla 22 SRS-47. Elija otro material."); return; }
+    const pRaw = Number(pir.design_criterion_value);
+    const pUnit = (pir.design_criterion_unit || "").trim().toLowerCase();
+    let pUGySemana: number | null = null;
+    if (pUnit.indexOf("usv") !== -1 || pUnit.indexOf("ugy") !== -1) pUGySemana = pRaw;
+    else if (pUnit.indexOf("msv") !== -1 || pUnit.indexOf("mgy") !== -1) pUGySemana = pRaw * 1000;
+    if (pUGySemana === null) {
+      setBarrierError("Indique la unidad del criterio de diseno del PIR (design_criterion_unit) en uSv/semana, uGy/semana, mSv/semana o mGy/semana para poder calcular.");
+      return;
+    }
+    const w = calcularCargaTrabajoBraquiterapiaViaRAKR(nuclido.rakrUGyMBqM2H, activityMBq, tH, nSemana);
+    const b = calcularFactorTransmisionBarreraBraquiterapiaSemanal(pUGySemana, Number(pir.distance_m), w, Number(pir.occupancy_factor));
+    const nTVL = calcularNumeroTVL(b);
+    const espesorMm = calcularEspesorBarreraBraquiterapia(nTVL, tvlMm);
+    updateBarrierField("thickness_required_cm", (espesorMm / 10).toFixed(1));
+    updateBarrierField("result_value", b.toExponential(3));
+    updateBarrierField("result_unit", "B (adimensional); n=" + nTVL.toFixed(2) + " TVL; W=" + w.toExponential(3) + " uGy*m2/sem (SRS-47 Ec.33/37, NCRP151 Ec.2.2)");
+    updateBarrierField("result_status", "revisar");
+}
+
+async function createMaterial(e: FormEvent) {
       e.preventDefault();
       if (!materialForm.name.trim()) {
           setMaterialError("El nombre del material es obligatorio.");
@@ -1369,28 +1432,47 @@ async function createPenetration(e: FormEvent) {
                           inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
                           inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
                 } else if (key === "radionuclide") {
-if (facilityType === "medicina_nuclear_pet_ct") {
-inputs.push(
-h(
-"label",
-{ className: "flex flex-col gap-1 text-xs text-muted-foreground" },
-labels.radionuclide || "Radionuclido",
-h(
-"select",
-{
-className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
-value: sourceForm.radionuclide,
-onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
-},
-[h("option", { key: "", value: "" }, "Seleccione...")].concat(
-RADIONUCLIDOS_PET.map((n) => h("option", { key: n.nuclido, value: n.nuclido }, n.nuclido + " (T1/2 = " + n.semividaMin + " min, " + n.modoDecaimiento + ")"))
-)
-)
-)
-);
-} else {
-inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
-}
+      if (facilityType === "medicina_nuclear_pet_ct") {
+        inputs.push(
+          h(
+            "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+            labels.radionuclide || "Radionuclido",
+            h(
+              "select",
+              {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: sourceForm.radionuclide,
+                onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
+              },
+              [h("option", { key: "", value: "" }, "Seleccione...")].concat(
+                RADIONUCLIDOS_PET.map((n) => h("option", { key: n.nuclido, value: n.nuclido }, n.nuclido + " (T1/2 = " + n.semividaMin + " min, " + n.modoDecaimiento + ")"))
+              )
+            )
+          )
+        );
+      } else if (facilityType === "braquiterapia") {
+        inputs.push(
+          h(
+            "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+            labels.radionuclide || "Radionuclido (fuente sellada, Tabla 20 SRS-47)",
+            h(
+              "select",
+              {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: sourceForm.radionuclide,
+                onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
+              },
+              [h("option", { key: "", value: "" }, "Seleccione...")].concat(
+                NUCLEIDOS_TABLA20.map((n) => h("option", { key: n.nucleido, value: n.nucleido }, n.nucleido + " (RAKR = " + n.rakrUGyMBqM2H + " uGy*MBq^-1*m^2*h^-1)"))
+              )
+            )
+          )
+        );
+      } else {
+        inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
+      }
 } else if (key === "energy") {
                           inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
                 } else if (key === "geometry") {
@@ -2040,7 +2122,26 @@ inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide
             )
         );
     
-    const barrierFormEl = selectedProject
+    const barrierMaterialInput = selectedProject && selectedProject.facility_type === "braquiterapia"
+    ? h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Material (Tabla 22 SRS-47)",
+        h(
+          "select",
+          {
+            className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+            value: barrierForm.material,
+            onChange: (e: any) => updateBarrierField("material", e.target.value),
+          },
+          [h("option", { key: "", value: "" }, "Seleccione...")].concat(
+            ["Hormigon", "Plomo", "Acero"].map((m) => h("option", { key: m, value: m }, m))
+          )
+        )
+      )
+    : field("Material", barrierForm.material, (v) => updateBarrierField("material", v));
+
+  const barrierFormEl = selectedProject
         ? h(
             "form",
             { onSubmit: createBarrier, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
@@ -2048,7 +2149,7 @@ inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide
             field("Nombre de la barrera *", barrierForm.name, (v) => updateBarrierField("name", v)),
             barrierTypeSelect,
             barrierPirSelect,
-            field("Material", barrierForm.material, (v) => updateBarrierField("material", v)),
+            barrierMaterialInput,
             field("Densidad (g/cm3)", barrierForm.density, (v) => updateBarrierField("density", v)),
             field("Fuente del material (norma, pagina)", barrierForm.material_source, (v) => updateBarrierField("material_source", v)),
             field("Espesor existente (cm)", barrierForm.thickness_existing_cm, (v) => updateBarrierField("thickness_existing_cm", v)),
@@ -2058,6 +2159,23 @@ inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide
             field("Distancia (m)", barrierForm.distance_m, (v) => updateBarrierField("distance_m", v)),
             field("Factor de uso (U)", barrierForm.use_factor, (v) => updateBarrierField("use_factor", v)),
             field("Factor de ocupacion (T)", barrierForm.occupancy_factor, (v) => updateBarrierField("occupancy_factor", v)),
+            field("Resultado (valor B / dosis)", barrierForm.result_value, (v) => updateBarrierField("result_value", v)),
+            field("Resultado (unidad / detalle)", barrierForm.result_unit, (v) => updateBarrierField("result_unit", v)),
+            (selectedProject.facility_type === "braquiterapia"
+              ? h(
+                  "div",
+                  { className: "md:col-span-3" },
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      onClick: calcularBarreraBraquiterapiaClick,
+                      className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
+                    },
+                    "Calcular (SRS-47, Ec. 33/37)"
+                  )
+                )
+              : null),
             barrierResultStatusSelect,
             barrierError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, barrierError) : null,
             h(
