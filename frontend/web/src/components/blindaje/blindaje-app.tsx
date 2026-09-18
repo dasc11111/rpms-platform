@@ -2417,6 +2417,28 @@ const materialRows = materialsList.map((m) =>
         materialFormEl
         );
 
+    function materialLibraryReferenceSelect(onPick: (name: string) => void) {
+        return h(
+            "label",
+            { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+            "Material desde biblioteca de Materiales (S22)",
+            h(
+                "select",
+                {
+                    className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                    value: "",
+                    onChange: (e: any) => {
+                        const name = e.target.value;
+                        if (name) onPick(name);
+                    },
+                },
+                [h("option", { key: "", value: "" }, materialsList.length ? "Seleccionar de biblioteca..." : "Sin materiales registrados aun (ver seccion Materiales)")].concat(
+                    materialsList.map((m) => h("option", { key: String(m.id), value: m.name }, m.name + (m.density ? " (" + m.density + " " + (m.density_unit || "") + ")" : "")))
+                    )
+                )
+            );
+    }
+    
     const doorBarrierSelect = h(
             "label",
         { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
@@ -2498,7 +2520,8 @@ const materialRows = materialsList.map((m) =>
                     field("Ubicacion", doorForm.location, (v) => updateDoorField("location", v)),
                     field("Ancho (cm)", doorForm.width_cm, (v) => updateDoorField("width_cm", v)),
                     field("Alto (cm)", doorForm.height_cm, (v) => updateDoorField("height_cm", v)),
-                    field("Material", doorForm.material, (v) => updateDoorField("material", v)),
+                    materialLibraryReferenceSelect((name) => updateDoorField("material", name)),
+            field("Material", doorForm.material, (v) => updateDoorField("material", v)),
                     field("Espesor (cm)", doorForm.thickness_cm, (v) => updateDoorField("thickness_cm", v)),
                     field("Equivalencia en plomo (mm)", doorForm.lead_equivalent_mm, (v) => updateDoorField("lead_equivalent_mm", v)),
                     doorResultStatusSelect,
@@ -2619,6 +2642,7 @@ const materialRows = materialsList.map((m) =>
             field("Ubicacion", windowForm.location, (v) => updateWindowField("location", v)),
             field("Ancho (cm)", windowForm.width_cm, (v) => updateWindowField("width_cm", v)),
             field("Alto (cm)", windowForm.height_cm, (v) => updateWindowField("height_cm", v)),
+            materialLibraryReferenceSelect((name) => updateWindowField("material", name)),
             field("Material", windowForm.material, (v) => updateWindowField("material", v)),
             field("Espesor (cm)", windowForm.thickness_cm, (v) => updateWindowField("thickness_cm", v)),
             field("Equivalencia en plomo (mm)", windowForm.lead_equivalent_mm, (v) => updateWindowField("lead_equivalent_mm", v)),
@@ -2761,7 +2785,7 @@ const penetrationBarrierSelect = h(
         field("Diametro (cm, si es circular)", penetrationForm.diameter_cm, (v) => updatePenetrationField("diameter_cm", v)),
         field("Ancho (cm, si es rectangular)", penetrationForm.width_cm, (v) => updatePenetrationField("width_cm", v)),
         field("Alto (cm, si es rectangular)", penetrationForm.height_cm, (v) => updatePenetrationField("height_cm", v)),
-        field("Material de relleno / sellado", penetrationForm.fill_material, (v) => updatePenetrationField("fill_material", v)),
+        field("Material de relleno / sellado (sin catalogo normativo especifico verificado para esta modalidad; campo libre)", penetrationForm.fill_material, (v) => updatePenetrationField("fill_material", v)),
         field("Desplazamiento respecto a linea recta (cm)", penetrationForm.offset_cm, (v) => updatePenetrationField("offset_cm", v)),
         penetrationResultStatusSelect,
         field("Fuente documental (norma, pagina)", penetrationForm.source_document, (v) => updatePenetrationField("source_document", v)),
@@ -2880,6 +2904,7 @@ const mazeFormEl = selectedProject
     field("Largo del ultimo tramo (m)", mazeForm.last_leg_length_m, (v) => updateMazeField("last_leg_length_m", v)),
     field("Ancho del laberinto (cm)", mazeForm.maze_width_cm, (v) => updateMazeField("maze_width_cm", v)),
     field("Alto del laberinto (cm)", mazeForm.maze_height_cm, (v) => updateMazeField("maze_height_cm", v)),
+    materialLibraryReferenceSelect((name) => updateMazeField("wall_material", name)),
     field("Material de los muros", mazeForm.wall_material, (v) => updateMazeField("wall_material", v)),
     mazeResultStatusSelect,
     field("Fuente documental (norma, pagina)", mazeForm.source_document, (v) => updateMazeField("source_document", v)),
@@ -3027,6 +3052,7 @@ const slabFormEl = selectedProject
         field("Ubicacion", slabForm.location, (v) => updateSlabField("location", v)),
         slabTypeSelect,
         field("Espesor (cm)", slabForm.thickness_cm, (v) => updateSlabField("thickness_cm", v)),
+        materialLibraryReferenceSelect((name) => updateSlabField("material", name)),
         field("Material", slabForm.material, (v) => updateSlabField("material", v)),
         slabOccupancySelect,
         field("Distancia al limite del predio (m)", slabForm.distance_property_line_m, (v) => updateSlabField("distance_property_line_m", v)),
