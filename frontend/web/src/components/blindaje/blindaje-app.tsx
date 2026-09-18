@@ -1096,6 +1096,7 @@ function calcularBarreraBraquiterapiaClick() {
     if (workloadList.length === 0) { setBarrierError("Registre la carga de trabajo (modo Braquiterapia SRS-47, con duracion y tratamientos/semana) antes de calcular."); return; }
     const source = sourcesList[0];
     const workload = workloadList[0];
+    if (!source || !workload) { setBarrierError("Fuente o carga de trabajo no disponibles."); return; }
     const wd = (workload.data || {}) as Record<string, any>;
     const tH = parseFloat(wd.treatment_duration_h);
     const nSemana = parseFloat(wd.procedures_per_week);
