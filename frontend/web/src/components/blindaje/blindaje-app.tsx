@@ -5,7 +5,7 @@ import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITER
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA } from "@/lib/ncrp151-acelerador-barreras-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -169,6 +169,19 @@ const AREA_CLASSIFICATIONS: { value: string; label: string }[] = [
     { value: "no_controlada", label: "Area no controlada (Publico)" },
     ];
 
+const DENSITY_UNIT_OPTIONS: { value: string; label: string }[] = [
+    { value: "g/cm3", label: "g/cm3 (gramos por centimetro cubico)" },
+    { value: "kg/m3", label: "kg/m3 (kilogramos por metro cubico)" },
+    ];
+
+const ACTIVITY_UNIT_OPTIONS: { value: string; label: string }[] = [
+    { value: "MBq", label: "MBq (megabecquerel)" },
+    { value: "GBq", label: "GBq (gigabecquerel)" },
+    { value: "kBq", label: "kBq (kilobecquerel)" },
+    { value: "Ci", label: "Ci (curie)" },
+    { value: "mCi", label: "mCi (milicurie)" },
+    ];
+
 const RESULT_STATUS_OPTIONS: { value: string; label: string }[] = [
     { value: "sin_informacion", label: "Sin informacion (S60)" },
     { value: "cumple", label: "Cumple" },
@@ -278,6 +291,8 @@ const BARRIER_TYPES: { value: string; label: string }[] = [
     { value: "neutronica", label: "Barrera neutronica" },
     { value: "captura", label: "Barrera de captura" },
     ];
+
+const BARRIER_MATERIALS_RADIOTERAPIA: string[] = Array.from(new Set(TVL_BARRERA_PRIMARIA_NCRP151.map((t) => t.material)));
 
 const EMPTY_BARRIER_FORM = {
     pir_id: "",
@@ -1428,7 +1443,7 @@ async function createPenetration(e: FormEvent) {
         keys.forEach((key) => {
                 if (key === "activity") {
                           inputs.push(field(labels.activity || "Actividad", sourceForm.activity, (v) => updateSourceField("activity", v)));
-                          inputs.push(field("Unidad de actividad (GBq, mCi, etc.)", sourceForm.activity_unit, (v) => updateSourceField("activity_unit", v)));
+                          inputs.push(h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de actividad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.activity_unit, onChange: (e: any) => updateSourceField("activity_unit", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(ACTIVITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label))))));
                 } else if (key === "dose_rate") {
                           inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
                           inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
@@ -2239,7 +2254,24 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
           )
         )
       )
-    : field("Material", barrierForm.material, (v) => updateBarrierField("material", v));
+    : selectedProject && selectedProject.facility_type === "radioterapia"
+    ? h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Material (" + FUENTE_TABLA_B2_BARRERA_PRIMARIA.tablaOEcuacion + ", pag. " + FUENTE_TABLA_B2_BARRERA_PRIMARIA.paginaAprox + ")",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: barrierForm.material,
+                onChange: (e: any) => updateBarrierField("material", e.target.value),
+            },
+            [h("option", { key: "", value: "" }, "Seleccione...")].concat(
+                BARRIER_MATERIALS_RADIOTERAPIA.map((m) => h("option", { key: m, value: m }, m))
+                )
+            )
+        )
+        : field("Material (sin catalogo normativo verificado para esta modalidad; campo libre)", barrierForm.material, (v) => updateBarrierField("material", v));
 
   const barrierFormEl = selectedProject
         ? h(
@@ -2349,7 +2381,7 @@ const materialRows = materialsList.map((m) =>
         { onSubmit: createMaterial, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
         field("Nombre del material *", materialForm.name, (v) => updateMaterialField("name", v)),
         field("Densidad", materialForm.density, (v) => updateMaterialField("density", v)),
-        field("Unidad de densidad", materialForm.density_unit, (v) => updateMaterialField("density_unit", v)),
+        h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de densidad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: materialForm.density_unit, onChange: (e: any) => updateMaterialField("density_unit", e.target.value) }, DENSITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label)))),
         field("HVL (cm)", materialForm.hvl, (v) => updateMaterialField("hvl", v)),
         field("TVL (cm)", materialForm.tvl, (v) => updateMaterialField("tvl", v)),
         field("Metodo", materialForm.method, (v) => updateMaterialField("method", v)),
