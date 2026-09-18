@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ ok: false, error: "project_id es obligatorio." }, { status: 400 });
     }
     const inputMode = body.input_mode || "simple";
-    if (!["simple", "detallada", "avanzada"].includes(inputMode)) {
+    if (!["simple", "detallada", "avanzada", "braquiterapia"].includes(inputMode)) {
           return NextResponse.json({ ok: false, error: "input_mode invalido." }, { status: 400 });
     }
 
