@@ -36,13 +36,13 @@ const { rows } = await sql`
 INSERT INTO blindaje_barriers (
 project_id, pir_id, code, name, barrier_type, material, density, material_source,
 thickness_existing_cm, thickness_required_cm, thickness_adopted_cm, margin_cm,
-distance_m, use_factor, occupancy_factor, result_status
+        distance_m, use_factor, occupancy_factor, result_value, result_unit, result_status
 ) VALUES (
 ${projectId}, ${body.pir_id || null}, ${body.code}, ${body.name}, ${body.barrier_type || "primaria"},
 ${body.material || null}, ${body.density || null}, ${body.material_source || null},
 ${body.thickness_existing_cm || null}, ${body.thickness_required_cm || null}, ${body.thickness_adopted_cm || null},
 ${body.margin_cm || null}, ${body.distance_m || null}, ${body.use_factor || null}, ${body.occupancy_factor || null},
-${body.result_status || "sin_informacion"}
+        ${body.result_value || null}, ${body.result_unit || null}, ${body.result_status || "sin_informacion"}
 )
 RETURNING *
 `;
