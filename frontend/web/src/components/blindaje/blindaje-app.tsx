@@ -1,11 +1,11 @@
 "use client";
 
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
-import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION } from "@/lib/ncrp147-shielding-references";
-import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR } from "@/lib/ncrp151-shielding-references";
+import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO } from "@/lib/ncrp147-shielding-references";
+import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL } from "@/lib/ncrp151-acelerador-barreras-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -1938,6 +1938,103 @@ async function createPenetration(e: FormEvent) {
                                     RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
                                 )
                 );
+    const pirOccupancyReferenceOptions = !selectedProject
+    ? []
+        : selectedProject.facility_type === "diagnostico"
+    ? FACTORES_OCUPACION_NCRP147.map((f) => ({
+        codigo: f.codigo,
+        label: f.ubicacionEs + " - T=" + String(f.factorT) + " (NCRP 147, Tabla 4.1)",
+        factorT: f.factorT,
+        cita: "NCRP 147, Tabla 4.1 y Seccion 4.1.3, pag. " + FUENTE_TABLA_4_1_OCUPACION.paginaAprox + ". Codigo: " + f.codigo,
+    }))
+        : selectedProject.facility_type === "medicina_nuclear" || selectedProject.facility_type === "medicina_nuclear_pet_ct"
+    ? MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR.map((m) => ({
+        codigo: m.codigoOrigenNCRP151,
+        label: m.ambiente + " - T=" + String(m.factorT) + " (NCRP 151, adaptado de Tabla B.1)",
+        factorT: m.factorT,
+        cita: "NCRP 151, Apendice B, Tabla B.1 (adaptado a medicina nuclear), pag. 160. " + m.justificacion,
+    }))
+        : selectedProject.facility_type === "radioterapia"
+    ? FACTORES_OCUPACION_NCRP151_RADIOTERAPIA.map((f) => ({
+        codigo: f.codigo,
+        label: f.ubicacionEs + " - T=" + String(f.factorT) + " (NCRP 151, Tabla B.1, uso radioterapia)",
+        factorT: f.factorT,
+        cita: "NCRP 151, Apendice B, Tabla B.1 (uso original radioterapia). Codigo: " + f.codigo + (f.notas ? " - " + f.notas : ""),
+    }))
+        : [];
+
+    const pirOccupancyReferenceSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Factor T de tabla oficial NCRP (S24, S33)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: "",
+                onChange: (e: any) => {
+                    const codigo = e.target.value;
+                    const opt = pirOccupancyReferenceOptions.find((o: any) => o.codigo === codigo);
+                    if (opt) {
+                        updatePirField("occupancy_factor", String(opt.factorT));
+                        updatePirField("occupancy_type", opt.label);
+                    }
+                },
+            },
+            [h("option", { key: "", value: "" }, pirOccupancyReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad (pendiente de extraccion)")].concat(
+                pirOccupancyReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                )
+            )
+        );
+
+    const pirCriterionReferenceOptions = !selectedProject
+    ? []
+        : selectedProject.facility_type === "diagnostico"
+    ? OPCIONES_CRITERIO_DISENO_DIAGNOSTICO.map((o) => ({
+        codigo: o.codigo,
+        label: o.etiquetaEs + " - " + String(pirForm.area_type === "controlada" ? o.areaControladaValor : o.areaNoControladaValor) + " " + o.unidad + " (" + o.origen + ", confianza " + o.nivelConfianza + ")",
+        valor: pirForm.area_type === "controlada" ? o.areaControladaValor : o.areaNoControladaValor,
+        unidad: o.unidad,
+        cita: o.etiquetaEs + ". " + o.notas,
+    }))
+        : (selectedProject.facility_type === "medicina_nuclear" || selectedProject.facility_type === "medicina_nuclear_pet_ct" || selectedProject.facility_type === "radioterapia")
+    ? OBJETIVOS_DISENO_P_NCRP151.filter((o) => (pirForm.area_type === "controlada" ? o.areaTipo === "controlada" : o.areaTipo === "no controlada")).map((o) => ({
+        codigo: o.codigo,
+        label: o.descripcion + " - " + String(o.pSvSemana) + " Sv/semana (NCRP 151)",
+        valor: o.pSvSemana,
+        unidad: "Sv/semana",
+        cita: o.fuente,
+    }))
+        : [];
+
+    const pirCriterionReferenceSelect = h(
+        "label",
+        { className: "flex flex-col gap-1 text-xs text-muted-foreground" },
+        "Criterio de diseno (P) de tabla oficial (S33)",
+        h(
+            "select",
+            {
+                className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
+                value: "",
+                onChange: (e: any) => {
+                    const codigo = e.target.value;
+                    const opt = pirCriterionReferenceOptions.find((o: any) => o.codigo === codigo);
+                    if (opt) {
+                        updatePirField("design_criterion_value", String(opt.valor));
+                        updatePirField("design_criterion_unit", opt.unidad);
+                        updatePirField("design_criterion_source", opt.cita);
+                    }
+                },
+            },
+            [h("option", { key: "", value: "" }, pirCriterionReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad/clasificacion (pendiente de extraccion)")].concat(
+                pirCriterionReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                )
+            )
+        );
+    
+    
+    
+    
 
         const pirRows = pirList.map((pir) =>
                     h(
@@ -1990,8 +2087,10 @@ async function createPenetration(e: FormEvent) {
                               field("Coordenadas / ubicacion", pirForm.coordinates, (v) => updatePirField("coordinates", v)),
                               field("Distancia fuente-punto (m)", pirForm.distance_m, (v) => updatePirField("distance_m", v)),
                               areaTypeSelect,
+                pirOccupancyReferenceSelect,
                               field("Ocupacion (descripcion)", pirForm.occupancy_type, (v) => updatePirField("occupancy_type", v)),
                               field("Factor de ocupacion (T)", pirForm.occupancy_factor, (v) => updatePirField("occupancy_factor", v)),
+                pirCriterionReferenceSelect,
                               field("Criterio de diseno (valor)", pirForm.design_criterion_value, (v) => updatePirField("design_criterion_value", v)),
                               field("Criterio de diseno (unidad)", pirForm.design_criterion_unit, (v) => updatePirField("design_criterion_unit", v)),
                               field("Fuente del criterio (norma, pagina) *", pirForm.design_criterion_source, (v) => updatePirField("design_criterion_source", v)),
