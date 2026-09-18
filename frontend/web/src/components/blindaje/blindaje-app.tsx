@@ -2003,7 +2003,7 @@ async function createPenetration(e: FormEvent) {
         label: o.descripcion + " - " + String(o.pSvSemana) + " Sv/semana (NCRP 151)",
         valor: o.pSvSemana,
         unidad: "Sv/semana",
-        cita: o.fuente,
+cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuente.paginaAprox + (o.fuente.notas ? ". " + o.fuente.notas : ""),
     }))
         : [];
 
