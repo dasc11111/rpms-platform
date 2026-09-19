@@ -5,7 +5,7 @@ import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITER
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria } from "@/lib/ncrp151-acelerador-barreras-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria, calcularFactorTransmisionDispersionPaciente, calcularFactorTransmisionFuga, combinarBarreraSecundariaDosFuentes, FRACCION_DISPERSION_PACIENTE_NCRP151, TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151, TVL_FUGA_HORMIGON_NCRP151, obtenerTVLFugaHornigon } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -309,6 +309,8 @@ const EMPTY_BARRIER_FORM = {
     distance_m: "",
     use_factor: "",
     occupancy_factor: "",
+    scatter_angle_grados: "",
+    dsca_m: "",
     result_status: "sin_informacion",
     result_value: "",
     result_unit: "",
@@ -1192,6 +1194,69 @@ function calcularBarreraBraquiterapiaClick() {
         updateBarrierField("result_status", "revisar");
     }
 
+function calcularBarreraSecundariaAceleradorClick() {
+        if (!selectedProject) return;
+        setBarrierError(null);
+        if (barrierForm.barrier_type !== "secundaria") { setBarrierError("Esta calculadora aplica a barrera secundaria (NCRP151 Ec. 2.7, 2.8 y regla de las dos fuentes). Seleccione Tipo de barrera = Secundaria."); return; }
+        if (!barrierForm.pir_id) { setBarrierError("Seleccione un PIR asociado antes de calcular."); return; }
+        const pir = pirList.find((p) => String(p.id) === String(barrierForm.pir_id));
+        if (!pir) { setBarrierError("PIR asociado no encontrado."); return; }
+        if (!pir.distance_m || !pir.occupancy_factor || !pir.design_criterion_value) { setBarrierError("El PIR asociado debe tener distancia, factor de ocupacion y valor de criterio de diseno (P) definidos."); return; }
+        if (sourcesList.length === 0) { setBarrierError("Registre al menos una fuente (energia nominal del haz, Paso 4) antes de calcular."); return; }
+        if (workloadList.length === 0) { setBarrierError("Registre la carga de trabajo (W, en Gy/semana a 1 m del isocentro) antes de calcular."); return; }
+        if (barrierForm.material !== "hormigon") { setBarrierError("Esta calculadora de barrera secundaria solo cubre HORMIGON: la Tabla B.7 NCRP151 (fuga) no reporta datos para plomo ni acero. Seleccione Material = hormigon, o consulte a un Fisico Medico para otros materiales."); return; }
+        if (!barrierForm.scatter_angle_grados) { setBarrierError("Seleccione el angulo de dispersion (Tablas B.4/B.5a NCRP151)."); return; }
+        if (!barrierForm.dsca_m) { setBarrierError("Indique la distancia objetivo-paciente dsca (m), tipicamente ~1 m (DFI/SAD)."); return; }
+        const source = sourcesList[0];
+        const workload = workloadList[0];
+        if (!source || !workload) { setBarrierError("Fuente o carga de trabajo no disponibles."); return; }
+        const wd = (workload.data || {}) as Record<string, any>;
+        const wGySemana = parseFloat(wd.workload_value);
+        if (!wGySemana) { setBarrierError("La carga de trabajo debe tener un valor numerico interpretado como Gy/semana a 1 m (NCRP151 Ec. 2.1)."); return; }
+        const energia = (source.energy || "").trim();
+        if (["6", "10", "18"].indexOf(energia) === -1) { setBarrierError("Esta calculadora de barrera secundaria solo cubre energias 6, 10 y 18 MV: son las unicas que tienen simultaneamente datos de fraccion de dispersion (Tabla B.4) y TVL de dispersion en hormigon (Tabla B.5a) dentro del conjunto de energias seleccionables en Paso 4 (Tabla B.2). Para otras energias, consulte a un Fisico Medico."); return; }
+        const angulo = Number(barrierForm.scatter_angle_grados);
+        const filaFraccion = FRACCION_DISPERSION_PACIENTE_NCRP151.find((f) => f.anguloGrados === angulo);
+        if (!filaFraccion) { setBarrierError("No hay datos de fraccion de dispersion (Tabla B.4 NCRP151) para el angulo " + angulo + " grados."); return; }
+        const aFraccion = energia === "6" ? filaFraccion.a6MV : energia === "10" ? filaFraccion.a10MV : filaFraccion.a18MV;
+        const filaTvlDispersion = TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151.find((f) => f.anguloGrados === angulo);
+        if (!filaTvlDispersion) { setBarrierError("No hay datos de TVL de dispersion en hormigon (Tabla B.5a NCRP151) para el angulo " + angulo + " grados."); return; }
+        const tvlDispersionCm = energia === "6" ? filaTvlDispersion.mv6Cm : energia === "10" ? filaTvlDispersion.mv10Cm : filaTvlDispersion.mv18Cm;
+        const filaFuga = obtenerTVLFugaHornigon(energia);
+        if (!filaFuga) { setBarrierError("No hay datos de TVL de fuga en hormigon (Tabla B.7 NCRP151) para energia '" + energia + "'."); return; }
+        const pRaw = Number(pir.design_criterion_value);
+        const pUnit = (pir.design_criterion_unit || "").trim().toLowerCase();
+        let pSvSemana: number | null = null;
+        if (pUnit.indexOf("usv") !== -1) pSvSemana = pRaw / 1e6;
+        else if (pUnit.indexOf("msv") !== -1) pSvSemana = pRaw / 1000;
+        else if (pUnit.indexOf("sv/semana") !== -1) pSvSemana = pRaw;
+        if (pSvSemana === null) { setBarrierError("Indique la unidad del criterio de diseno del PIR en Sv/semana, mSv/semana o uSv/semana para poder calcular (NCRP151 Ec. 2.7/2.8 usan P en Sv/semana)."); return; }
+        const t = Number(pir.occupancy_factor);
+        const dSecM = Number(pir.distance_m);
+        const dScaM = Number(barrierForm.dsca_m);
+        const dLM = dSecM;
+        const bPs = calcularFactorTransmisionDispersionPaciente(pSvSemana, dScaM, dSecM, aFraccion, wGySemana, t);
+        const nPs = calcularNumeroTVL(bPs);
+        const resultadoPs = calcularEspesorBarrera(nPs, tvlDispersionCm, tvlDispersionCm);
+        const bL = calcularFactorTransmisionFuga(pSvSemana, dLM, wGySemana);
+        const nL = calcularNumeroTVL(bL);
+        const resultadoL = calcularEspesorBarrera(nL, filaFuga.tvl1Cm, filaFuga.tvleCm);
+        const tvlMasPenetranteCm = Math.max(tvlDispersionCm, filaFuga.tvleCm);
+        const hvlCm = 0.301 * tvlMasPenetranteCm;
+        const combinado = combinarBarreraSecundariaDosFuentes(resultadoPs.espesorCm, resultadoL.espesorCm, hvlCm, tvlMasPenetranteCm);
+        if (combinado.espesorFinalCm === null) {
+                    updateBarrierField("result_value", "");
+                    updateBarrierField("result_unit", "SIN RESULTADO NUMERICO: " + combinado.detalle);
+                    updateBarrierField("result_status", "revisar");
+                    setBarrierError(combinado.detalle);
+                    return;
+        }
+        updateBarrierField("thickness_required_cm", combinado.espesorFinalCm.toFixed(1));
+        updateBarrierField("result_value", combinado.espesorFinalCm.toFixed(1));
+        updateBarrierField("result_unit", "Dispersion paciente: Bps=" + bPs.toExponential(3) + ", n=" + nPs.toFixed(2) + " TVL, espesor=" + resultadoPs.espesorCm.toFixed(1) + " cm (Ec.2.7; Tabla B.5a usa un unico TVL como TVL1 y TVLe). Fuga cabezal: BL=" + bL.toExponential(3) + ", n=" + nL.toFixed(2) + " TVL, espesor=" + resultadoL.espesorCm.toFixed(1) + " cm (Ec.2.8, fuga asumida 0.1% segun IEC). Combinacion (regla de las dos fuentes, NCRP151 Sec.2.3): " + combinado.criterio + " - " + combinado.detalle + ". Supuestos: campo F=400 cm2 a 1m (referencia 20x20cm), dsec=dL=distancia del PIR (" + dSecM + " m). Cobertura de datos: solo hormigon y energias 6/10/18 MV (limite de Tablas B.4, B.5a y B.7 NCRP151).");
+        updateBarrierField("result_status", "revisar");
+}
+    
 async function createMaterial(e: FormEvent) {
       e.preventDefault();
       if (!materialForm.name.trim()) {
@@ -2329,25 +2394,50 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             field("Espesor adoptado (cm)", barrierForm.thickness_adopted_cm, (v) => updateBarrierField("thickness_adopted_cm", v)),
             field("Margen (cm)", barrierForm.margin_cm, (v) => updateBarrierField("margin_cm", v)),
             field("Distancia (m)", barrierForm.distance_m, (v) => updateBarrierField("distance_m", v)),
+            selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Angulo de dispersion (grados, Tablas B.4/B.5a NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.scatter_angle_grados, onChange: (e: any) => updateBarrierField("scatter_angle_grados", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat([30, 45, 60, 90, 135].map((a) => h("option", { key: String(a), value: String(a) }, String(a) + " grados"))))) : null,
+            selectedProject.facility_type === "radioterapia" ? field("Distancia objetivo-paciente dsca (m, tipicamente ~1 m, DFI/SAD)", barrierForm.dsca_m, (v) => updateBarrierField("dsca_m", v)) : null,
             field("Factor de uso (U)", barrierForm.use_factor, (v) => updateBarrierField("use_factor", v)),
             field("Factor de ocupacion (T)", barrierForm.occupancy_factor, (v) => updateBarrierField("occupancy_factor", v)),
             field("Resultado (valor B / dosis)", barrierForm.result_value, (v) => updateBarrierField("result_value", v)),
             field("Resultado (unidad / detalle)", barrierForm.result_unit, (v) => updateBarrierField("result_unit", v)),
-(selectedProject.facility_type === "braquiterapia" || selectedProject.facility_type === "radioterapia"
- ? h(
-     "div",
-     { className: "md:col-span-3" },
-     h(
-         "button",
-         {
-             type: "button",
-             onClick: selectedProject.facility_type === "braquiterapia" ? calcularBarreraBraquiterapiaClick : calcularBarreraPrimariaAceleradorClick,
-             className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
-         },
-         selectedProject.facility_type === "braquiterapia" ? "Calcular (SRS-47, Ec. 33/37)" : "Calcular barrera primaria (NCRP151, Ec. 2.1-2.3)"
-         )
-     )
- : null),
+selectedProject.facility_type === "braquiterapia"
+            ? h(
+                    "div",
+                { className: "md:col-span-3" },
+                    h(
+                                "button",
+                        {
+                                        type: "button",
+                                        onClick: calcularBarreraBraquiterapiaClick,
+                                        className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
+                        },
+                                "Calcular (SRS-47, Ec. 33/37)"
+                            )
+                )
+            : selectedProject.facility_type === "radioterapia"
+            ? h(
+                    "div",
+                { className: "md:col-span-3 flex flex-wrap gap-2" },
+                    h(
+                                "button",
+                        {
+                                        type: "button",
+                                        onClick: calcularBarreraPrimariaAceleradorClick,
+                                        className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
+                        },
+                                "Calcular barrera primaria (NCRP151, Ec. 2.1-2.3)"
+                            ),
+                    h(
+                                "button",
+                        {
+                                        type: "button",
+                                        onClick: calcularBarreraSecundariaAceleradorClick,
+                                        className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
+                        },
+                                "Calcular barrera secundaria (NCRP151, Ec. 2.7/2.8)"
+                            )
+                )
+            : null,
             barrierResultStatusSelect,
             barrierError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, barrierError) : null,
             h(
