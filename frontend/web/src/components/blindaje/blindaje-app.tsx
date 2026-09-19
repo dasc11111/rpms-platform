@@ -5,7 +5,7 @@ import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITER
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA } from "@/lib/ncrp151-acelerador-barreras-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -1152,6 +1152,45 @@ function calcularBarreraBraquiterapiaClick() {
     updateBarrierField("result_status", "revisar");
 }
 
+    function calcularBarreraPrimariaAceleradorClick() {
+        if (!selectedProject) return;
+        setBarrierError(null);
+        if (barrierForm.barrier_type !== "primaria") { setBarrierError("Esta calculadora aplica a barrera primaria (NCRP151 Ec. 2.1-2.3). Seleccione Tipo de barrera = Primaria."); return; }
+        if (!barrierForm.pir_id) { setBarrierError("Seleccione un PIR asociado antes de calcular."); return; }
+        const pir = pirList.find((p) => String(p.id) === String(barrierForm.pir_id));
+        if (!pir) { setBarrierError("PIR asociado no encontrado."); return; }
+        if (!pir.distance_m || !pir.occupancy_factor || !pir.design_criterion_value) { setBarrierError("El PIR asociado debe tener distancia, factor de ocupacion y valor de criterio de diseno (P) definidos."); return; }
+        if (sourcesList.length === 0) { setBarrierError("Registre al menos una fuente (energia nominal del haz, Paso 4) antes de calcular."); return; }
+        if (workloadList.length === 0) { setBarrierError("Registre la carga de trabajo (W, en Gy/semana a 1 m del isocentro) antes de calcular."); return; }
+        if (!barrierForm.material) { setBarrierError("Seleccione el material de la barrera antes de calcular."); return; }
+        if (!barrierForm.use_factor) { setBarrierError("Indique el factor de uso (U) de la barrera antes de calcular."); return; }
+        const source = sourcesList[0];
+        const workload = workloadList[0];
+        const wd = (workload.data || {}) as Record<string, any>;
+        const wGySemana = parseFloat(wd.workload_value);
+        if (!wGySemana) { setBarrierError("La carga de trabajo debe tener un valor numerico interpretado como Gy/semana a 1 m (NCRP151 Ec. 2.1)."); return; }
+        const energia = (source.energy || "").trim();
+        const material = barrierForm.material;
+        const tvlRow = obtenerTVLBarreraPrimaria(energia, material as any);
+        if (!tvlRow) { setBarrierError("No hay datos de TVL (Tabla B.2 NCRP151) para energia '" + energia + "' y material '" + material + "'. Verifique que la energia de la fuente (Paso 4) este seleccionada de la lista NCRP151 y que el material coincida."); return; }
+        const pRaw = Number(pir.design_criterion_value);
+        const pUnit = (pir.design_criterion_unit || "").trim().toLowerCase();
+        let pSvSemana: number | null = null;
+        if (pUnit.indexOf("usv") !== -1) pSvSemana = pRaw / 1e6;
+        else if (pUnit.indexOf("msv") !== -1) pSvSemana = pRaw / 1000;
+        else if (pUnit.indexOf("sv/semana") !== -1) pSvSemana = pRaw;
+        if (pSvSemana === null) { setBarrierError("Indique la unidad del criterio de diseno del PIR en Sv/semana, mSv/semana o uSv/semana para poder calcular (NCRP151 Ec. 2.1 usa P en Sv/semana)."); return; }
+        const u = Number(barrierForm.use_factor);
+        const t = Number(pir.occupancy_factor);
+        const b = calcularFactorTransmisionBarreraPrimaria(pSvSemana, Number(pir.distance_m), wGySemana, u, t);
+        const n = calcularNumeroTVL(b);
+        const resultado = calcularEspesorBarrera(n, tvlRow.tvl1Cm, tvlRow.tvleCm);
+        updateBarrierField("thickness_required_cm", resultado.espesorCm.toFixed(1));
+        updateBarrierField("result_value", b.toExponential(3));
+        updateBarrierField("result_unit", "B (adimensional); n=" + n.toFixed(2) + " TVL; W=" + wGySemana.toExponential(3) + " Gy/sem a 1m (NCRP151 Ec.2.1-2.3)" + (resultado.aproximacionNMenorQueUno ? "; ADVERTENCIA: n<1, espesor aproximado, revisar con Fisico Medico" : "") + ". Cubre solo barrera PRIMARIA; barrera secundaria (dispersion Ec.2.7, fuga Ec.2.8) pendiente para una fase posterior.");
+        updateBarrierField("result_status", "revisar");
+    }
+
 async function createMaterial(e: FormEvent) {
       e.preventDefault();
       if (!materialForm.name.trim()) {
@@ -1489,8 +1528,8 @@ async function createPenetration(e: FormEvent) {
       } else {
         inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
       }
-} else if (key === "energy") {
-                          inputs.push(field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
+                } else if (key === "energy") {
+                          inputs.push(facilityType === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, labels.energy || "Energia nominal (MV, Tabla B.2 NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.energy, onChange: (e: any) => updateSourceField("energy", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(Array.from(new Set(TVL_BARRERA_PRIMARIA_NCRP151.map((t) => t.energiaMV))).map((en) => h("option", { key: en, value: en }, en + (en === "Co-60" ? "" : " MV")))))) : field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
                 } else if (key === "geometry") {
                           inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
                 }
@@ -2293,21 +2332,21 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             field("Factor de ocupacion (T)", barrierForm.occupancy_factor, (v) => updateBarrierField("occupancy_factor", v)),
             field("Resultado (valor B / dosis)", barrierForm.result_value, (v) => updateBarrierField("result_value", v)),
             field("Resultado (unidad / detalle)", barrierForm.result_unit, (v) => updateBarrierField("result_unit", v)),
-            (selectedProject.facility_type === "braquiterapia"
-              ? h(
-                  "div",
-                  { className: "md:col-span-3" },
-                  h(
-                    "button",
-                    {
-                      type: "button",
-                      onClick: calcularBarreraBraquiterapiaClick,
-                      className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
-                    },
-                    "Calcular (SRS-47, Ec. 33/37)"
-                  )
-                )
-              : null),
+(selectedProject.facility_type === "braquiterapia" || selectedProject.facility_type === "radioterapia"
+ ? h(
+     "div",
+     { className: "md:col-span-3" },
+     h(
+         "button",
+         {
+             type: "button",
+             onClick: selectedProject.facility_type === "braquiterapia" ? calcularBarreraBraquiterapiaClick : calcularBarreraPrimariaAceleradorClick,
+             className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground",
+         },
+         selectedProject.facility_type === "braquiterapia" ? "Calcular (SRS-47, Ec. 33/37)" : "Calcular barrera primaria (NCRP151, Ec. 2.1-2.3)"
+         )
+     )
+ : null),
             barrierResultStatusSelect,
             barrierError ? h("div", { className: "md:col-span-3 text-xs text-red-500" }, barrierError) : null,
             h(
