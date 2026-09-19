@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
-import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO } from "@/lib/ncrp147-shielding-references";
+import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO, MATERIALES_BARRERA_NCRP147 } from "@/lib/ncrp147-shielding-references";
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
@@ -2271,7 +2271,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
                 )
             )
         )
-        : field("Material (sin catalogo normativo verificado para esta modalidad; campo libre)", barrierForm.material, (v) => updateBarrierField("material", v));
+        : selectedProject && selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Material (" + FUENTE_TABLA_A1_MATERIALES.tablaOEcuacion + ", pag. " + FUENTE_TABLA_A1_MATERIALES.paginaAprox + ")", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.material, onChange: (e: any) => updateBarrierField("material", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(MATERIALES_BARRERA_NCRP147.map((m) => h("option", { key: m, value: m }, m))))) : field("Material (sin catalogo normativo verificado para esta modalidad; campo libre)", barrierForm.material, (v) => updateBarrierField("material", v));
 
   const barrierFormEl = selectedProject
         ? h(
