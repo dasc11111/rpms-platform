@@ -103,3 +103,14 @@ y de aceleradores en `blindaje-app.tsx` (UI/wizard), similar al patron ya usado
 para el selector de radionuclidos PET/PET-CT; (2) diagnostico por imagenes
 (NCRP147) aun solo tiene catalogo de referencia, sin motor de calculo ejecutable
 propio mas alla del modelo de Archer generico ya presente en `blindaje-calc-engine.ts`.
+
+
+## Actualizacion (19/09/2026, continuacion Fase 5-8 - barrera primaria aceleradores)
+
+Se completo el punto (1) pendiente para radioterapia/aceleradores mencionado arriba: se agrego wiring de UI/wizard para el calculo de barrera PRIMARIA (NCRP151, Ecuaciones 2.1-2.3) en `blindaje-app.tsx`, siguiendo el mismo patron ya usado para braquiterapia (boton "Calcular"). Cambios: (1) el campo "Energia nominal" de la fuente de radiacion pasa a ser un selector (no texto libre) poblado desde los valores reales de energiaMV de `TVL_BARRERA_PRIMARIA_NCRP151` (Tabla B.2) cuando la instalacion es radioterapia, evitando errores de coincidencia de texto contra la tabla; (2) nueva funcion `calcularBarreraPrimariaAceleradorClick()` que usa `calcularFactorTransmisionBarreraPrimaria` (Ec. 2.1), `calcularNumeroTVL` (Ec. 2.2) y `calcularEspesorBarrera` (Ec. 2.3), todas ya existentes y verificadas en `ncrp151-acelerador-barreras-references.ts` de una sesion anterior; (3) el boton "Calcular barrera primaria (NCRP151, Ec. 2.1-2.3)" aparece en el Paso 7 cuando facility_type es radioterapia, junto al boton de braquiterapia ya existente (mutuamente excluyentes segun modalidad).
+
+Alcance explicito: esta calculadora cubre UNICAMENTE barrera PRIMARIA. Barrera secundaria (radiacion dispersada por el paciente, Ec. 2.7, y fuga del cabezal, Ec. 2.8) y la "regla de las dos fuentes" para combinarlas quedan pendientes para una fase posterior; las funciones correspondientes (`calcularFactorTransmisionDispersionPaciente`, `calcularFactorTransmisionFuga`, `combinarBarreraSecundariaDosFuentes`) ya existen en `ncrp151-acelerador-barreras-references.ts` pero aun no estan conectadas a la UI.
+
+Verificado en vivo (rama `feature/fase23-petct-fase-a-arquitectura`, proyecto de prueba "Test Paso 13 Medicina Nuclear", facility_type=radioterapia): fuente con energia "6" MV, carga de trabajo 500 Gy/sem, PIR con T=0.5 (NCRP151 Tabla B.1, codigo T2_SALA_ADYACENTE) y P=0.0001 Sv/semana (NCRP151, criterio POE) a 3 m, barrera primaria en hormigon con U=0.5. Resultado calculado: B=7.200e-6, n=5.14 TVL, espesor requerido=173.7 cm, consistente con TVL1=37 cm y TVLe=33 cm de la Tabla B.2 para hormigon a 6 MV. Commits: `db8c70a` (funcion y boton) y `15c0022` (fix de build: guardia de `source`/`workload` posiblemente `undefined`, mismo patron que la funcion de braquiterapia).
+
+Pendiente para continuar Fase 5-8: (1) barrera secundaria para aceleradores (Ecs. 2.7, 2.8 y regla de las dos fuentes); (2) diagnostico por imagenes (NCRP147) sigue sin motor de calculo ejecutable propio.
