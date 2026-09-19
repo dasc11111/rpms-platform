@@ -251,3 +251,32 @@ export const OPCIONES_CRITERIO_DISENO_DIAGNOSTICO: OpcionCriterioDisenoDiagnosti
 export function obtenerOpcionCriterioDiseno(codigo: string): OpcionCriterioDisenoDiagnostico | undefined {
   return OPCIONES_CRITERIO_DISENO_DIAGNOSTICO.find((o) => o.codigo === codigo);
 }
+
+
+// ============================================================================
+// 5. MATERIALES DE BARRERA (Tabla A.1, Apendice A, pag. 118) - lista de
+// materiales para los cuales NCRP 147 entrega parametros de ajuste de
+// transmision (alfa, beta, gamma) para haces primarios de rayos X: plomo,
+// hormigon, tablero de yeso (gypsum wallboard), acero, vidrio plano y
+// madera. Fuente primaria EXCLUSIVAMENTE para IMAGENOLOGIA DIAGNOSTICA CON
+// RAYOS X (facility_type = diagnostico). No se incluyen los coeficientes
+// numericos alfa/beta/gamma (serian necesarios para un motor de calculo
+// completo de espesor por kVp, pendiente de una fase posterior); esta lista
+// solo identifica los NOMBRES de materiales verificados en la norma, para
+// evitar que el campo de material quede en texto libre sin ningun respaldo.
+// ============================================================================
+export const FUENTE_TABLA_A1_MATERIALES = citaNCRP147(
+        "118",
+        "Tabla A.1, Apendice A",
+        "ALTA",
+        "Tabla A.1: 'Fits of transmission for broad primary x-ray beams (for lead, concrete, gypsum wallboard, steel, plate glass, and wood) to Equation A.2'."
+      );
+
+export const MATERIALES_BARRERA_NCRP147: string[] = [
+        "Plomo",
+        "Hormigon",
+        "Tablero de yeso (gypsum wallboard)",
+        "Acero",
+        "Vidrio plano (plate glass)",
+        "Madera",
+      ];
