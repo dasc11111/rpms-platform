@@ -5,7 +5,7 @@ import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITER
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria, calcularFactorTransmisionDispersionPaciente, calcularFactorTransmisionFuga, combinarBarreraSecundariaDosFuentes, FRACCION_DISPERSION_PACIENTE_NCRP151, TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151, TVL_FUGA_HORMIGON_NCRP151, obtenerTVLFugaHornigon } from "@/lib/ncrp151-acelerador-barreras-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria, calcularFactorTransmisionDispersionPaciente, calcularFactorTransmisionFuga, combinarBarreraSecundariaDosFuentes, FRACCION_DISPERSION_PACIENTE_NCRP151, TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151, TVL_FUGA_HORMIGON_NCRP151, obtenerTVLFugaHormigon } from "@/lib/ncrp151-acelerador-barreras-references";
 
 type BlindajeProject = {
     id: number;
@@ -1222,7 +1222,7 @@ function calcularBarreraSecundariaAceleradorClick() {
         const filaTvlDispersion = TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151.find((f) => f.anguloGrados === angulo);
         if (!filaTvlDispersion) { setBarrierError("No hay datos de TVL de dispersion en hormigon (Tabla B.5a NCRP151) para el angulo " + angulo + " grados."); return; }
         const tvlDispersionCm = energia === "6" ? filaTvlDispersion.mv6Cm : energia === "10" ? filaTvlDispersion.mv10Cm : filaTvlDispersion.mv18Cm;
-        const filaFuga = obtenerTVLFugaHornigon(energia);
+        const filaFuga = obtenerTVLFugaHormigon(energia);
         if (!filaFuga) { setBarrierError("No hay datos de TVL de fuga en hormigon (Tabla B.7 NCRP151) para energia '" + energia + "'."); return; }
         const pRaw = Number(pir.design_criterion_value);
         const pUnit = (pir.design_criterion_unit || "").trim().toLowerCase();
