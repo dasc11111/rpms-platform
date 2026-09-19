@@ -1,7 +1,7 @@
 "use client";
 
 import { createElement as h, useEffect, useState, type FormEvent } from "react";
-import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO, MATERIALES_BARRERA_NCRP147 } from "@/lib/ncrp147-shielding-references";
+import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO, MATERIALES_BARRERA_NCRP147 , FUENTE_TABLA_A1_MATERIALES} from "@/lib/ncrp147-shielding-references";
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
