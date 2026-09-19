@@ -2433,7 +2433,7 @@ const materialRows = materialsList.map((m) =>
                     },
                 },
                 [h("option", { key: "", value: "" }, materialsList.length ? "Seleccionar de biblioteca..." : "Sin materiales registrados aun (ver seccion Materiales)")].concat(
-                    materialsList.map((m) => h("option", { key: String(m.id), value: m.name }, m.name + (m.density ? " (" + m.density + " " + (m.density_unit || "") + ")" : "")))
+                    materialsList.map((m) => h("option", { key: String(m.id), value: m.name }, m.name + (m.density ? " - " + m.density + " " + (m.density_unit || "") : "") + (m.source_document ? " [" + m.source_document + (m.source_page ? ", p. " + m.source_page : "") + "]" : "")))
                     )
                 )
             );
@@ -2785,7 +2785,7 @@ const penetrationBarrierSelect = h(
         field("Diametro (cm, si es circular)", penetrationForm.diameter_cm, (v) => updatePenetrationField("diameter_cm", v)),
         field("Ancho (cm, si es rectangular)", penetrationForm.width_cm, (v) => updatePenetrationField("width_cm", v)),
         field("Alto (cm, si es rectangular)", penetrationForm.height_cm, (v) => updatePenetrationField("height_cm", v)),
-        field("Material de relleno / sellado (sin catalogo normativo especifico verificado para esta modalidad; campo libre)", penetrationForm.fill_material, (v) => updatePenetrationField("fill_material", v)),
+        field("Material de relleno / sellado (masilla, lana de plomo, etc. - sin catalogo normativo especifico verificado; campo libre)", penetrationForm.fill_material, (v) => updatePenetrationField("fill_material", v)),
         field("Desplazamiento respecto a linea recta (cm)", penetrationForm.offset_cm, (v) => updatePenetrationField("offset_cm", v)),
         penetrationResultStatusSelect,
         field("Fuente documental (norma, pagina)", penetrationForm.source_document, (v) => updatePenetrationField("source_document", v)),
