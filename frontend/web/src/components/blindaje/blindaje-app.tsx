@@ -6,7 +6,7 @@ import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } 
 import { RADIONUCLIDOS_PET } from "@/lib/blindaje-calc-engine";
 import { DISTRIBUCIONES_CARGA_TRABAJO_NCRP147, TABLA_4_5_KERMA_PRIMARIO_NO_BLINDADO, TABLA_4_7_KERMA_SECUNDARIO_NO_BLINDADO, TABLA_B1_TRANSMISION_PRIMARIA_POR_CARGA, TABLA_C1_TRANSMISION_SECUNDARIA_POR_CARGA, calcularBarreraPrimariaNCRP147, calcularBarreraSecundariaNCRP147, type DistribucionCargaTrabajoNCRP147, type MaterialNCRP147 } from "@/lib/ncrp147-diagnostic-calc-engine";
 import { NUCLEIDOS_TABLA20, HVL_TVL_TABLA22, calcularCargaTrabajoBraquiterapiaViaRAKR, calcularFactorTransmisionBarreraBraquiterapiaSemanal, calcularEspesorBarreraBraquiterapia } from "@/lib/srs47-braquiterapia-references";
-import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria, calcularFactorTransmisionDispersionPaciente, calcularFactorTransmisionFuga, combinarBarreraSecundariaDosFuentes, FRACCION_DISPERSION_PACIENTE_NCRP151, TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151, TVL_FUGA_HORMIGON_NCRP151, obtenerTVLFugaHormigon, FUERZA_FUENTE_NEUTRONES_NCRP151 } from "@/lib/ncrp151-acelerador-barreras-references"; import { calcularDispersionParedGLaberinto, calcularFugaDispersaCabezaLaberinto, calcularFugaTransmitidaLaberinto, calcularDosisTotalParedG, calcularDosisTotalLaberintoBajaEnergia, FACTOR_USO_ANGULO_PORTICO_TABLA31, calcularFluenciaNeutronesUbicacionA, calcularDosisGammaCapturaEnPuerta, calcularDosisGammaCapturaPuerta, calcularDosisNeutronesKerseyModificado, calcularDosisNeutronesPuertaSemanal, calcularDosisTotalPuertaAltaEnergia, NCRP151_K_GAMMA_CAPTURA_SV_M2, NCRP151_TVD_GAMMA_CAPTURA_M, TVL_PLOMO_GAMMA_CAPTURA_PUERTA_CM, TVL_BPE_RECOMENDADO_CONSERVADOR_DISENO_PUERTA_CM } from "@/lib/ncrp151-laberintos-puertas-references";
+import { calcularNumeroTVL, FACTORES_OCUPACION_NCRP151_RADIOTERAPIA, TVL_BARRERA_PRIMARIA_NCRP151, FUENTE_TABLA_B2_BARRERA_PRIMARIA, calcularFactorTransmisionBarreraPrimaria, calcularEspesorBarrera, obtenerTVLBarreraPrimaria, calcularFactorTransmisionDispersionPaciente, calcularFactorTransmisionFuga, combinarBarreraSecundariaDosFuentes, FRACCION_DISPERSION_PACIENTE_NCRP151, TVL_DISPERSION_PACIENTE_HORMIGON_NCRP151, TVL_FUGA_HORMIGON_NCRP151, obtenerTVLFugaHormigon, FUERZA_FUENTE_NEUTRONES_NCRP151 } from "@/lib/ncrp151-acelerador-barreras-references"; import { calcularDispersionParedGLaberinto, calcularFugaDispersaCabezaLaberinto, calcularFugaTransmitidaLaberinto, calcularDosisTotalParedG, calcularDosisTotalLaberintoBajaEnergia, FACTOR_USO_ANGULO_PORTICO_TABLA31, calcularFluenciaNeutronesUbicacionA, calcularDosisGammaCapturaEnPuerta, calcularDosisGammaCapturaPuerta, calcularDosisNeutronesKerseyModificado, calcularDosisNeutronesPuertaSemanal, calcularDosisTotalPuertaAltaEnergia, NCRP151_K_GAMMA_CAPTURA_SV_M2, NCRP151_TVD_GAMMA_CAPTURA_M, TVL_PLOMO_GAMMA_CAPTURA_PUERTA_CM, TVL_BPE_RECOMENDADO_CONSERVADOR_DISENO_PUERTA_CM, PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MIN, PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MAX, ANCHO_PUERTA_REFERENCIA_LIMITE_PESO_CM, ENERGIA_GAMMA_CAPTURA_BORO_KEV, ESPESOR_PLOMO_ATENUACION_100X_GAMMA_CAPTURA_BORO_CM } from "@/lib/ncrp151-laberintos-puertas-references";
 
 type BlindajeProject = {
     id: number;
@@ -3023,7 +3023,17 @@ const mazesTable = h(
         )
     );
 
-const mazeFormEl = selectedProject
+const puertaBlindajeDirectoInfoPanel = h(
+        "div",
+    { className: "flex flex-col gap-2 rounded-md border border-dashed border-border bg-background p-3 text-xs text-muted-foreground" },
+        h("div", { className: "font-medium text-foreground" }, "Alternativa: puerta con blindaje directo, sin laberinto (NCRP151 Sec. 2.4.5, pag. 48-51)"),
+        h("p", null, "Regla de diseno explicita del documento: la puerta con blindaje directo debe tener el mismo valor de blindaje que la barrera secundaria adyacente. Material habitual: laminado de plomo y acero, con BPE (5% boro) si hay fotoneutrones (energia del acelerador >10 MV)."),
+        h("p", null, "Limite practico de peso: " + PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MIN + " a " + PESO_MAXIMO_PRACTICO_PUERTA_BATIENTE_120CM_KG_MAX + " kg para una puerta batiente de " + ANCHO_PUERTA_REFERENCIA_LIMITE_PESO_CM + " cm de ancho; mas alla de ese peso se requieren dos puertas mas estrechas o una puerta corrediza (planifique tambien una via de escape alternativa para el paciente ante una falla del mecanismo)."),
+        h("p", null, "Recomendacion conservadora (McGinley y Miner, 1995): al no existir mediciones conocidas de la intensidad de rayos gamma de captura de neutrones dentro de la sala, calcule el blindaje de la puerta para la radiacion de fuga y luego agregue 1 HVL del material de la puerta. Dato de referencia: los rayos gamma de captura de boro (BPE) tienen " + ENERGIA_GAMMA_CAPTURA_BORO_KEV + " keV; " + ESPESOR_PLOMO_ATENUACION_100X_GAMMA_CAPTURA_BORO_CM + " cm de plomo reducen su intensidad en mas de un factor de 100."),
+        h("p", { className: "text-amber-600" }, "S24/S1/S5: esta version no incluye una calculadora numerica automatica para este caso. La Tabla B.7 de NCRP151 (TVL de fuga) solo reporta valores verificados para hormigon, no para plomo ni acero (el mismo motivo por el que la calculadora de Barrera secundaria del Paso 10 rechaza materiales distintos de hormigon). Inventar un TVL de fuga en plomo/acero violaria el principio de no fabricar valores. Recomendacion: (1) si la puerta se construira en hormigon, use la calculadora de Barrera secundaria (Paso 10, Ecs. 2.7/2.8) y luego agregue el margen de 1 HVL indicado arriba; (2) si se construira en plomo/acero laminado (caso habitual), el espesor final debe ser determinado por un Fisico Medico calificado con TVL de fuga verificados contra el documento original o mediciones directas.")
+    );
+    
+    const mazeFormEl = selectedProject
 ? h(
     "form",
     { onSubmit: createMaze, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
@@ -3068,7 +3078,8 @@ const paso11Panel = selectedProject
         "Cada laberinto registra numero de tramos, largo del ultimo tramo (dimension critica para radiacion dispersa), dimensiones y material de los muros, con su barrera asociada y fuente documental (S30, S33)."
         ),
     loadingMazes ? h("div", { className: "text-sm text-muted-foreground" }, "Cargando laberintos...") : mazesTable,
-    mazeFormEl
+    mazeFormEl,
+        puertaBlindajeDirectoInfoPanel
     )
     : null;
     
