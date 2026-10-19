@@ -1096,5 +1096,56 @@ new_value TEXT
 await sql`CREATE INDEX IF NOT EXISTS idx_instrument_history_instrument ON instrument_history(instrument_id)`;
 
 
+  // --- Modulo D: Gestion de Residuos Radiactivos --------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS waste_records (
+      id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      dedupe_key            TEXT UNIQUE NOT NULL,
+      container_label       TEXT NOT NULL,
+      radionuclide          TEXT NOT NULL,
+      waste_category        TEXT NOT NULL,
+      initial_activity_mbq  NUMERIC NOT NULL CHECK (initial_activity_mbq > 0),
+      initial_activity_date TIMESTAMPTZ NOT NULL,
+      mass_or_volume_kg     NUMERIC,
+      container_count       INTEGER NOT NULL DEFAULT 1,
+      origin_area           TEXT NOT NULL,
+      associated_patient_id TEXT,
+      generated_by          TEXT NOT NULL,
+      notes                 TEXT,
+      state                 TEXT NOT NULL DEFAULT 'en_almacenamiento',
+      disposal_route        TEXT,
+      release_date          TIMESTAMPTZ,
+      released_by           TEXT,
+      release_notes         TEXT,
+      created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_radionuclide ON waste_records(radionuclide)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_state        ON waste_records(state)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_date         ON waste_records(initial_activity_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_origin       ON waste_records(lower(origin_area))`;
+  await sql`
+    CREATE TABLE IF NOT EXISTS waste_field_suggestions (
+      id         SERIAL PRIMARY KEY,
+      field_name TEXT NOT NULL,
+      value      TEXT NOT NULL,
+      count      INTEGER NOT NULL DEFAULT 1,
+      UNIQUE (field_name, value)
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS waste_history (
+      id         SERIAL PRIMARY KEY,
+      record_id  UUID NOT NULL,
+      action     TEXT NOT NULL,
+      changed_by TEXT,
+      snapshot   JSONB,
+      changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_history_record ON waste_history(record_id)`;
+
+
 return NextResponse.json({ ok: true });
 }
