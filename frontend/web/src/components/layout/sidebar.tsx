@@ -16,6 +16,7 @@ const NAV = [
   { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
   { href: "/waste-management", label: "Gestión de Residuos", icon: Recycle },
   { href: "/waste-expert", label: "Residuos (Sistema Experto)", icon: FlaskConical },
+  { href: "/waste-records", label: "Residuos Radiactivos (Módulo D)", icon: Trash2 },
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/transport", label: "Transporte de Material Radiactivo", icon: Truck },
   { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
