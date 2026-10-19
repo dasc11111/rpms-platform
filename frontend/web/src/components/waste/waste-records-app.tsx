@@ -153,7 +153,7 @@ export function WasteRecordsApp() {
       </div>
 
       <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
-        <strong>Nota OPR:</strong> Los criterios de liberacion (>=10 T1/2) son orientativos.
+        <strong>Nota OPR:</strong> Los criterios de liberacion (≥10 T½) son orientativos.
         Verificar contra la autorizacion CCHEN vigente y el procedimiento interno aprobado.
       </div>
 
