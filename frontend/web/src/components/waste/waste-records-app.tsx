@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,11 +18,29 @@ import {
   type WasteDerived,
 } from "@/lib/waste-records";
 
+// ─── CPS ↔ Bq helpers ───────────────────────────────────────────────────────
+const CPS_EFF_DEFAULTS: Record<string, number> = {
+  "I-131": 15, "Tc-99m": 25, "I-123": 22, "Ga-67": 18,
+  "Tl-201": 20, "F-18": 8, "Lu-177": 12, "Y-90": 3,
+};
+function cpsToMbq(cps: number, eff_pct: number): number {
+  if (eff_pct <= 0) return 0;
+  return cps / (eff_pct / 100) / 1_000_000;
+}
+function mbqToBqPerCm2(mbq: number, area_cm2: number): number {
+  return (mbq * 1_000_000) / area_cm2;
+}
+const _wastequeryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
+
 const wasteSchema = z.object({
   container_label: z.string().min(2, "Minimo 2 caracteres"),
   radionuclide: z.enum(RADIONUCLIDES),
   waste_category: z.enum(WASTE_CATEGORIES),
-  initial_activity_mbq: z.coerce.number().positive("Debe ser mayor que 0"),
+  input_mode: z.enum(["mbq", "cps"]).default("mbq"),
+  cps_value: z.coerce.number().positive().optional(),
+  cps_efficiency_pct: z.coerce.number().min(0.1).max(100).default(15),
+  measurement_area_cm2: z.coerce.number().positive().default(100),
+  initial_activity_mbq: z.coerce.number().positive("Debe ser mayor que 0").optional(),
   initial_activity_date: z.string().min(1, "Requerido"),
   mass_or_volume_kg: z.coerce.number().nullable().optional(),
   container_count: z.coerce.number().int().positive().default(1),
@@ -49,13 +67,14 @@ const SEMAPHORE_DOT = {
   rojo: "bg-red-500",
 };
 
-export function WasteRecordsApp() {
+function WasteRecordsAppInner() {
   const [showForm, setShowForm] = useState(false);
   const [filterState, setFilterState] = useState("");
   const [filterRadionuclide, setFilterRadionuclide] = useState("");
   const [releaseModal, setReleaseModal] = useState<WasteRecordEnriched | null>(null);
 
   const qc = useQueryClient();
+  const [inputMode, setInputMode] = useState<"mbq"|"cps">("mbq");
 
   const params = new URLSearchParams();
   if (filterState) params.set("state", filterState);
@@ -74,6 +93,7 @@ export function WasteRecordsApp() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<WasteFormValues>({
     resolver: zodResolver(wasteSchema),
@@ -82,6 +102,19 @@ export function WasteRecordsApp() {
       initial_activity_date: new Date().toISOString().slice(0, 16),
     },
   });
+
+  // CPS preview
+  const _wCps = watch("cps_value");
+  const _wEff = watch("cps_efficiency_pct");
+  const _wArea = watch("measurement_area_cm2");
+  const _wRadio = watch("radionuclide");
+  const cpsEffDefault = _wRadio ? (CPS_EFF_DEFAULTS[_wRadio] ?? 15) : 15;
+  const cpsPreviewMbq = (inputMode === "cps" && _wCps && _wEff)
+    ? cpsToMbq(Number(_wCps), Number(_wEff))
+    : null;
+  const cpsPreviewBqCm2 = cpsPreviewMbq !== null && _wArea
+    ? mbqToBqPerCm2(cpsPreviewMbq, Number(_wArea))
+    : null;
 
   const createMutation = useMutation({
     mutationFn: async (data: WasteFormInput) => {
@@ -101,8 +134,15 @@ export function WasteRecordsApp() {
   });
 
   const onSubmit = (values: WasteFormValues) => {
+    // Derive MBq from cps if in cps mode
+    let mbq = Number(values.initial_activity_mbq ?? 0);
+    if (inputMode === "cps" && values.cps_value && values.cps_efficiency_pct) {
+      mbq = cpsToMbq(Number(values.cps_value), Number(values.cps_efficiency_pct));
+    }
+    if (mbq <= 0) return;
     createMutation.mutate({
       ...values,
+      initial_activity_mbq: mbq,
       mass_or_volume_kg: values.mass_or_volume_kg ?? null,
       associated_patient_id: values.associated_patient_id ?? null,
       notes: values.notes ?? null,
@@ -188,9 +228,46 @@ export function WasteRecordsApp() {
                   {WASTE_CATEGORIES.map((c) => <option key={c} value={c}>{WASTE_CATEGORY_LABELS[c]}</option>)}
                 </select>
               </Field>
-              <Field label="Actividad inicial (MBq) *" error={errors.initial_activity_mbq?.message}>
-                <input type="number" step="0.001" min="0" {...register("initial_activity_mbq")} className={inputCls(!!errors.initial_activity_mbq)} />
-              </Field>
+              {/* Mode toggle */}
+              <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <span className="text-xs font-medium text-muted-foreground">Modo entrada:</span>
+                <button type="button" onClick={() => setInputMode("mbq")}
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${inputMode === "mbq" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                  MBq directo
+                </button>
+                <button type="button" onClick={() => setInputMode("cps")}
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${inputMode === "cps" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                  Cuentas/segundo
+                </button>
+              </div>
+              {inputMode === "mbq" ? (
+                <Field label="Actividad inicial (MBq) *" error={errors.initial_activity_mbq?.message}>
+                  <input type="number" step="0.001" min="0" {...register("initial_activity_mbq")} className={inputCls(!!errors.initial_activity_mbq)} />
+                </Field>
+              ) : (
+                <>
+                  <Field label="Cuentas por segundo (cps) *" error={errors.cps_value?.message}>
+                    <input type="number" step="0.1" min="0" {...register("cps_value")} className={inputCls(!!errors.cps_value)} />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label={`Eficiencia detector (%) — default ${cpsEffDefault}%`} error={errors.cps_efficiency_pct?.message}>
+                      <input type="number" step="0.1" min="0.1" max="100" placeholder={String(cpsEffDefault)} {...register("cps_efficiency_pct")} className={inputCls(!!errors.cps_efficiency_pct)} />
+                    </Field>
+                    <Field label="Area medicion (cm²)" error={errors.measurement_area_cm2?.message}>
+                      <input type="number" step="1" min="1" placeholder="100" {...register("measurement_area_cm2")} className={inputCls(!!errors.measurement_area_cm2)} />
+                    </Field>
+                  </div>
+                  {cpsPreviewMbq !== null && (
+                    <div className="rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-800">
+                      <span className="font-semibold">Conversión: </span>
+                      {Number(_wCps).toFixed(1)} cps → <strong>{cpsPreviewMbq.toExponential(3)} MBq</strong>
+                      {cpsPreviewBqCm2 !== null && (
+                        <> • <strong>{cpsPreviewBqCm2.toFixed(2)} Bq/cm²</strong> ({Number(_wArea || 100)} cm²)</>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
               <Field label="Fecha/hora almacenamiento *" error={errors.initial_activity_date?.message}>
                 <input type="datetime-local" {...register("initial_activity_date")} className={inputCls(!!errors.initial_activity_date)} />
               </Field>
@@ -261,6 +338,7 @@ export function WasteRecordsApp() {
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Categoria</th>
                 <th className="px-3 py-2 text-right font-medium text-muted-foreground">Act. inicial (MBq)</th>
                 <th className="px-3 py-2 text-right font-medium text-muted-foreground">Act. actual (MBq)</th>
+                <th className="px-3 py-2 text-right font-medium text-muted-foreground">Bq/cm² (100cm²)</th>
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Semaforo</th>
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Area</th>
@@ -296,6 +374,7 @@ function WasteRow({ record, onRelease }: { record: WasteRecordEnriched; onReleas
       <td className="px-3 py-2 text-xs text-muted-foreground">{WASTE_CATEGORY_LABELS[record.waste_category]}</td>
       <td className="px-3 py-2 text-right">{record.initial_activity_mbq.toFixed(2)}</td>
       <td className="px-3 py-2 text-right font-medium">{isActive ? d.current_activity_mbq.toFixed(3) : "---"}</td>
+      <td className="px-3 py-2 text-right text-xs text-muted-foreground">{mbqToBqPerCm2(isActive ? d.current_activity_mbq : record.initial_activity_mbq, 100).toFixed(1)}</td>
       <td className="px-3 py-2">
         {isActive ? (
           <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${SEMAPHORE_COLORS[d.semaphore]}`}>
@@ -403,5 +482,14 @@ function StatCard({ label, value, color }: { label: string; value: number; color
       <p className="text-2xl font-bold">{value}</p>
       <p className="mt-0.5 text-xs font-medium opacity-80">{label}</p>
     </div>
+  );
+}
+
+
+export function WasteRecordsApp() {
+  return (
+    <QueryClientProvider client={_wastequeryClient}>
+      <WasteRecordsAppInner />
+    </QueryClientProvider>
   );
 }
