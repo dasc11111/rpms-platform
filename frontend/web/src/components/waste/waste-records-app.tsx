@@ -100,6 +100,8 @@ function WasteRecordsAppInner() {
     defaultValues: {
       container_count: 1,
       initial_activity_date: new Date().toISOString().slice(0, 16),
+      cps_efficiency_pct: 15,
+      measurement_area_cm2: 100,
     },
   });
 
@@ -109,11 +111,11 @@ function WasteRecordsAppInner() {
   const _wArea = watch("measurement_area_cm2");
   const _wRadio = watch("radionuclide");
   const cpsEffDefault = _wRadio ? (CPS_EFF_DEFAULTS[_wRadio] ?? 15) : 15;
-  const cpsPreviewMbq = (inputMode === "cps" && _wCps && _wEff)
-    ? cpsToMbq(Number(_wCps), Number(_wEff))
+  const cpsPreviewMbq = (inputMode === "cps" && _wCps && (_wEff ?? 15) > 0)
+    ? cpsToMbq(Number(_wCps), Number(_wEff ?? 15))
     : null;
-  const cpsPreviewBqCm2 = cpsPreviewMbq !== null && _wArea
-    ? mbqToBqPerCm2(cpsPreviewMbq, Number(_wArea))
+  const cpsPreviewBqCm2 = cpsPreviewMbq !== null
+    ? mbqToBqPerCm2(cpsPreviewMbq, Number(_wArea ?? 100))
     : null;
 
   const createMutation = useMutation({
