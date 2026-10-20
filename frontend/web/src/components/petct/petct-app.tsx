@@ -71,7 +71,7 @@ if (!res.ok) throw new Error("Error al guardar QC");
 return res.json();
 }
 
-async function patchExam(id: number, updates: Partial<PetctExam>) {
+async function patchExam(id: string | number, updates: Partial<PetctExam>) {
 const res = await fetch("/api/petct", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) });
 if (!res.ok) throw new Error("Error al actualizar examen");
 return res.json();
@@ -152,7 +152,7 @@ const qcQ = useQuery({ queryKey: ["petct-qc"], queryFn: fetchQc, enabled: tab ==
 // Mutations
 const createExamM = useMutation({ mutationFn: createExam, onSuccess: () => { qc.invalidateQueries({ queryKey: ["petct-exams"] }); setTab("exams"); setExamForm(emptyExam()); } });
 const createQcM = useMutation({ mutationFn: createQc, onSuccess: () => { qc.invalidateQueries({ queryKey: ["petct-qc"] }); setTab("qc"); setQcForm(emptyQc()); } });
-const patchM = useMutation({ mutationFn: ({ id, updates }: { id: number; updates: Partial<PetctExam> }) => patchExam(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ["petct-exams"] }) });
+const patchM = useMutation({ mutationFn: ({ id, updates }: { id: string | number; updates: Partial<PetctExam> }) => patchExam(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ["petct-exams"] }) });
 
 // Form handlers
 function handleExamSubmit(e: React.FormEvent) {
@@ -236,7 +236,7 @@ return (
 {examsQ.data.data.map(exam => {
 const d = calcPetctDerived(exam);
 return (
-<tr key={exam.id} className="hover:bg-gray-50">
+<tr key={String(exam.id)} className="hover:bg-gray-50">
 <td className="px-4 py-3">
 <div className="font-medium text-gray-900">{exam.patient_id}</div>
 {exam.patient_name && <div className="text-gray-500 text-xs">{exam.patient_name}</div>}
@@ -250,14 +250,14 @@ return (
 <td className="px-4 py-3 font-mono">{exam.uptake_minutes}</td>
 <td className="px-4 py-3 font-mono text-orange-700">{fmt(d.dose_rate_1m_usvh, 2)}</td>
 <td className="px-4 py-3">
-<span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${stateColor(exam.state)}`}>
-{PETCT_EXAM_STATE_LABELS[exam.state] ?? exam.state}
+<span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${stateColor(String(exam.state))}`}>
+{PETCT_EXAM_STATE_LABELS[exam.state as keyof typeof PETCT_EXAM_STATE_LABELS] ?? String(exam.state)}
 </span>
 </td>
 <td className="px-4 py-3">
 <select
-value={exam.state}
-onChange={e => patchM.mutate({ id: exam.id!, updates: { state: e.target.value } })}
+value={String(exam.state)}
+onChange={e => patchM.mutate({ id: exam.id as string | number, updates: { state: e.target.value as PetctExam["state"] } })}
 className="border rounded px-2 py-1 text-xs"
 >
 {PETCT_EXAM_STATES.map(s => <option key={s} value={s}>{PETCT_EXAM_STATE_LABELS[s]}</option>)}
@@ -293,11 +293,11 @@ className="border rounded px-2 py-1 text-xs"
 </thead>
 <tbody className="bg-white divide-y divide-gray-200">
 {qcQ.data.data.map(qcRow => (
-<tr key={qcRow.id} className="hover:bg-gray-50">
+<tr key={String(qcRow.id)} className="hover:bg-gray-50">
 <td className="px-4 py-3">{qcRow.qc_date}</td>
 <td className="px-4 py-3">{qcRow.phantom_type}</td>
 <td className="px-4 py-3"><span className={qcRow.uniformity_pass ? "text-green-700" : "text-red-700"}>{qcRow.uniformity_pass ? "✓ OK" : "✗ FALLA"}</span></td>
-<td className="px-4 py-3 font-mono">{qcRow.count_rate_mcps != null ? qcRow.count_rate_mcps.toFixed(2) : "—"}</td>
+<td className="px-4 py-3 font-mono">{qcRow.count_rate_mcps != null ? Number(qcRow.count_rate_mcps).toFixed(2) : "—"}</td>
 <td className="px-4 py-3"><span className={qcRow.image_quality_pass ? "text-green-700" : "text-red-700"}>{qcRow.image_quality_pass ? "✓ OK" : "✗ FALLA"}</span></td>
 <td className="px-4 py-3">{qcRow.performed_by}</td>
 <td className="px-4 py-3 text-gray-500">{qcRow.comments ?? "—"}</td>
@@ -443,4 +443,4 @@ className="border rounded px-2 py-1 text-xs"
 )}
 </div>
 );
-  }
+                                                                               }
