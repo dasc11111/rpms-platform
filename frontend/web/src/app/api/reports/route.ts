@@ -32,6 +32,9 @@ export async function GET() {
       qcActivimetroVencidas,
       qcGammacamaraVencidas,
       qcSpectVencidas,
+      dosimetersExtraviados,
+      dosimetersOverdue,
+      transportThisMonth,
     ] = await Promise.all([
       // Workers — 'active' and 'suspended' are in scope; 'inactive' is not
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
@@ -140,6 +143,12 @@ export async function GET() {
         WHERE t.frequency_days IS NOT NULL
           AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
       `),
+      // Physical dosimeters extraviados
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeters WHERE status = 'extraviado'`),
+      // Physical dosimeters overdue (assigned, not returned, past estimated return date)
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeters WHERE status = 'asignado' AND actual_return_date IS NULL AND estimated_return_date < CURRENT_DATE`),
+      // Transport shipments this month
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM transport_shipments WHERE EXTRACT(YEAR FROM transport_date) = EXTRACT(YEAR FROM NOW()) AND EXTRACT(MONTH FROM transport_date) = EXTRACT(MONTH FROM NOW())`),
     ]);
 
     // Compliance score
@@ -205,6 +214,17 @@ export async function GET() {
             qcGammacamaraVencidas > 0 ? `Gamma: ${qcGammacamaraVencidas}` : null,
             qcSpectVencidas > 0 ? `SPECT: ${qcSpectVencidas}` : null,
           ].filter(Boolean).join(" · ") || null,
+        },
+        dosimeters: {
+          label: "Dosímetros físicos extraviados",
+          value: dosimetersExtraviados,
+          status: dosimetersExtraviados === 0 ? (dosimetersOverdue === 0 ? "ok" : "warning") : "danger",
+          detail: dosimetersOverdue > 0 ? `${dosimetersOverdue} fuera de plazo devolución` : null,
+        },
+        transport: {
+          label: "Embarques material radiactivo (mes actual)",
+          value: transportThisMonth,
+          status: "ok",
         },
       },
     };
