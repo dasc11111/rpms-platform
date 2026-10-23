@@ -149,10 +149,10 @@ const REPORT_TYPES = [
   {
     id: "equipment",
     name: "Estado de Equipos y Control de Calidad",
-    description: "Equipos, calibraciones, mantenimientos y resultados QC.",
+    description: "Equipos, calibraciones, mantenimientos y fallas abiertas por instrumento.",
     format: "PDF",
     regulation: "DS 133/1984",
-    exportType: undefined as string | undefined,
+    exportType: "equipment",
   },
 ];
 
@@ -272,6 +272,17 @@ function ReportsAppInner() {
                           Próximo
                         </button>
                       )}
+                      {r.id === "equipment" && (
+                        <a
+                          href="/api/instruments/export/pdf"
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Estado de Equipos e Instrumentos en PDF"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
                       {r.id === "compliance" && (
                         <a
                           href="/api/compliance/export/pdf"
@@ -325,7 +336,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          Exportación CSV disponible para todos los módulos. PDF disponible para Registro de Trabajadores (DS 3/1985), Informe Dosimétrico, Cumplimiento Normativo y Resumen Ejecutivo SPRM.
+          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos (DS 133/1984) y Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>
