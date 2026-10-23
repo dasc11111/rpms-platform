@@ -110,14 +110,31 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 disabled:opacity-50"
-        >
-          {loading ? "Generando..." : "Generar y descargar informe PDF"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 disabled:opacity-50"
+          >
+            {loading ? "Generando..." : "PDF (cliente)"}
+          </button>
+          {equipmentId && (
+            <a
+              href={`/api/quality-control/activimetro/export/pdf?equipment_id=${equipmentId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-md border border-blue-600 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+            >
+              PDF (servidor)
+            </a>
+          )}
+        </div>
+        {equipmentId && (
+          <p className="text-xs text-muted-foreground">
+            <strong>PDF (servidor)</strong>: informe profesional landscape A4 generado en servidor — incluye ficha técnica, cumplimiento, todas las pruebas QC, constancia, pureza, exactitud, inspecciones y alertas. Requiere la firma del Físico Médico responsable.
+          </p>
+        )}
 
         {message && <p className="text-sm text-slate-600">{message}</p>}
       </div>
