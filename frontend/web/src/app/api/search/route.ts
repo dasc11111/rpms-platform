@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       title: w.name,
       subtitle: [w.service, w.rut].filter(Boolean).join(" · "),
       href: `/workers?id=${w.id}`,
-      meta: w.status === "activo" ? "Activo" : w.status,
+      meta: w.status === "active" ? "Activo" : w.status === "suspended" ? "Suspendido" : w.status,
     });
   }
 
