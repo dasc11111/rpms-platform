@@ -173,6 +173,22 @@ const REPORT_TYPES = [
     pdfApiHref: "/api/instruments/export/pdf",
   },
   {
+    id: "transport",
+    name: "Registro de Transporte de Material Radiactivo",
+    description: "Embarques de Generadores Mo-99/Tc-99m e I-131 con datos dosimétricos, señalética y OPR.",
+    format: "PDF",
+    regulation: "DS 133/1984",
+    pdfApiHref: "/api/transport/export/pdf",
+  },
+  {
+    id: "dosimeters",
+    name: "Control de Dosímetros Físicos",
+    description: "Inventario de dosímetros con asignación, estado de devolución y alertas por trimestre. DS 3/1985 Art. 11.",
+    format: "PDF",
+    regulation: "DS 3/1985 Art. 11",
+    pdfApiHref: "/api/dosimeters/export/pdf",
+  },
+  {
     id: "qc_petct",
     name: "Informe de Control de Calidad PET/CT",
     description: "Cumplimiento de pruebas PET, CT e interacción PET/CT, alertas activas y acciones recomendadas (Fase P).",
