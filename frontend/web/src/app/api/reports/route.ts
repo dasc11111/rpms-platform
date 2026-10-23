@@ -30,6 +30,8 @@ export async function GET() {
       equipmentProximo,
       qcPetctVencidas,
       qcActivimetroVencidas,
+      qcGammacamaraVencidas,
+      qcSpectVencidas,
     ] = await Promise.all([
       // Workers
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
@@ -100,6 +102,34 @@ export async function GET() {
         WHERE t.frequency_days IS NOT NULL
           AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
       `),
+      // QC Gammacamara overdue (latest per instrument+test_type+test_mode past frequency)
+      safeCount(() => sql`
+        WITH latest AS (
+          SELECT r.instrument_id, r.test_type, r.test_mode, MAX(r.test_date) AS last_test_date
+          FROM qc_gammacamara_tests r
+          WHERE r.instrument_id IS NOT NULL
+          GROUP BY r.instrument_id, r.test_type, r.test_mode
+        )
+        SELECT COUNT(*)::text AS count
+        FROM latest l
+        JOIN qc_gammacamara_tolerances t ON t.test_type = l.test_type AND t.test_mode = l.test_mode AND t.active = true
+        WHERE t.frequency_days IS NOT NULL
+          AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
+      `),
+      // QC SPECT overdue (latest per instrument+test_type past frequency)
+      safeCount(() => sql`
+        WITH latest AS (
+          SELECT r.instrument_id, r.test_type, MAX(r.test_date) AS last_test_date
+          FROM qc_spect_tests r
+          WHERE r.instrument_id IS NOT NULL
+          GROUP BY r.instrument_id, r.test_type
+        )
+        SELECT COUNT(*)::text AS count
+        FROM latest l
+        JOIN qc_spect_tolerances t ON t.test_type = l.test_type AND t.active = true
+        WHERE t.frequency_days IS NOT NULL
+          AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
+      `),
     ]);
 
     // Compliance score
@@ -156,12 +186,15 @@ export async function GET() {
         },
         quality_control: {
           label: "Controles de calidad vencidos",
-          value: qcPetctVencidas + qcActivimetroVencidas,
-          status: (qcPetctVencidas + qcActivimetroVencidas) === 0 ? "ok" :
-                  (qcPetctVencidas + qcActivimetroVencidas) <= 3 ? "warning" : "danger",
-          detail: qcPetctVencidas > 0 && qcActivimetroVencidas > 0
-            ? `PET/CT: ${qcPetctVencidas} · Activímetro: ${qcActivimetroVencidas}`
-            : qcPetctVencidas > 0 ? `PET/CT: ${qcPetctVencidas}` : qcActivimetroVencidas > 0 ? `Activímetro: ${qcActivimetroVencidas}` : null,
+          value: qcPetctVencidas + qcActivimetroVencidas + qcGammacamaraVencidas + qcSpectVencidas,
+          status: (qcPetctVencidas + qcActivimetroVencidas + qcGammacamaraVencidas + qcSpectVencidas) === 0 ? "ok" :
+                  (qcPetctVencidas + qcActivimetroVencidas + qcGammacamaraVencidas + qcSpectVencidas) <= 3 ? "warning" : "danger",
+          detail: [
+            qcPetctVencidas > 0 ? `PET/CT: ${qcPetctVencidas}` : null,
+            qcActivimetroVencidas > 0 ? `Activ.: ${qcActivimetroVencidas}` : null,
+            qcGammacamaraVencidas > 0 ? `Gamma: ${qcGammacamaraVencidas}` : null,
+            qcSpectVencidas > 0 ? `SPECT: ${qcSpectVencidas}` : null,
+          ].filter(Boolean).join(" · ") || null,
         },
       },
     };

@@ -143,9 +143,11 @@ export default async function Dashboard() {
     calibracionesProx90 = Number((calibProxRows[0] as any)?.count ?? 0);
   } catch {}
 
-  // Control de Calidad — pruebas vencidas (PET/CT + Activímetro)
+  // Control de Calidad — pruebas vencidas (PET/CT + Activímetro + Gammacamara + SPECT)
   let qcPetctVencidas = 0;
   let qcActivimetroVencidas = 0;
+  let qcGammacamaraVencidas = 0;
+  let qcSpectVencidas = 0;
   try {
     // PET/CT: contar combinaciones equipo+prueba con última prueba vencida
     const { rows: petctDue } = await sql`
@@ -186,6 +188,42 @@ export default async function Dashboard() {
         AND t.frequency_days IS NOT NULL
     `;
     qcActivimetroVencidas = Number((activDue[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    // Gammacamara: contar combinaciones instrumento+prueba+modo con última prueba vencida
+    const { rows: gammaDue } = await sql`
+      WITH latest AS (
+        SELECT r.instrument_id, r.test_type, r.test_mode, MAX(r.test_date) AS last_test_date
+        FROM qc_gammacamara_tests r
+        WHERE r.instrument_id IS NOT NULL
+        GROUP BY r.instrument_id, r.test_type, r.test_mode
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_gammacamara_tolerances t ON t.test_type = l.test_type AND t.test_mode = l.test_mode AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
+    `;
+    qcGammacamaraVencidas = Number((gammaDue[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    // SPECT: contar combinaciones instrumento+prueba con última prueba vencida
+    const { rows: spectDue } = await sql`
+      WITH latest AS (
+        SELECT r.instrument_id, r.test_type, MAX(r.test_date) AS last_test_date
+        FROM qc_spect_tests r
+        WHERE r.instrument_id IS NOT NULL
+        GROUP BY r.instrument_id, r.test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_spect_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
+    `;
+    qcSpectVencidas = Number((spectDue[0] as any)?.count ?? 0);
   } catch {}
 
   // ── Build real dashboard alerts from DB data ────────────────────────────────
@@ -273,6 +311,26 @@ export default async function Dashboard() {
     });
   }
 
+  if (qcGammacamaraVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-gammacamara-vencidas",
+      severity: qcGammacamaraVencidas > 3 ? "critical" : "high",
+      title: `${qcGammacamaraVencidas} prueba${qcGammacamaraVencidas > 1 ? "s" : ""} de QC Gammacámara vencida${qcGammacamaraVencidas > 1 ? "s" : ""}`,
+      description: "Pruebas de uniformidad, resolución o sensibilidad fuera de frecuencia IAEA TECDOC-602.",
+      href: "/quality-control/gammacamara",
+    });
+  }
+
+  if (qcSpectVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-spect-vencidas",
+      severity: qcSpectVencidas > 3 ? "critical" : "high",
+      title: `${qcSpectVencidas} prueba${qcSpectVencidas > 1 ? "s" : ""} de QC SPECT vencida${qcSpectVencidas > 1 ? "s" : ""}`,
+      description: "Centro de rotación o uniformidad tomográfica SPECT fuera de frecuencia IAEA TECDOC-602.",
+      href: "/quality-control/spect",
+    });
+  }
+
   // ── Build copilot suggestions based on real data ──────────────────────────
   const copilotSuggestions: CopilotSuggestion[] = [];
 
@@ -330,6 +388,24 @@ export default async function Dashboard() {
     });
   }
 
+  if (qcGammacamaraVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-gammacamara-action",
+      title: `Realizar ${qcGammacamaraVencidas} control${qcGammacamaraVencidas > 1 ? "es" : ""} de calidad de gammacámara vencido${qcGammacamaraVencidas > 1 ? "s" : ""}`,
+      action: "Registrar pruebas de uniformidad, resolución y sensibilidad según IAEA TECDOC-602.",
+      href: "/quality-control/gammacamara",
+    });
+  }
+
+  if (qcSpectVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-spect-action",
+      title: `Realizar ${qcSpectVencidas} control${qcSpectVencidas > 1 ? "es" : ""} de calidad SPECT vencido${qcSpectVencidas > 1 ? "s" : ""}`,
+      action: "Verificar centro de rotación y uniformidad tomográfica con el Físico Médico.",
+      href: "/quality-control/spect",
+    });
+  }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -356,6 +432,8 @@ export default async function Dashboard() {
         <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone={incidentesAbiertos > 0 ? "danger" : undefined} />
         <KPICard label="QC PET/CT vencidas" value={qcPetctVencidas} href="/quality-control/petct/compliance" icon={Activity} tone={qcPetctVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
         <KPICard label="QC Activímetro vencidas" value={qcActivimetroVencidas} href="/quality-control/activimetro/dashboard" icon={Activity} tone={qcActivimetroVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC Gammacámara vencidas" value={qcGammacamaraVencidas} href="/quality-control/gammacamara" icon={Activity} tone={qcGammacamaraVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC SPECT vencidas" value={qcSpectVencidas} href="/quality-control/spect" icon={Activity} tone={qcSpectVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
