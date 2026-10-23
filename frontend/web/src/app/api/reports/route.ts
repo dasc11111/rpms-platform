@@ -26,6 +26,8 @@ export async function GET() {
       complianceVencido,
       instruments,
       wastePending,
+      equipmentVencido,
+      equipmentProximo,
     ] = await Promise.all([
       // Workers
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
@@ -55,6 +57,21 @@ export async function GET() {
       `),
       // Waste pending
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE status = 'pending'`),
+      // Radiology equipment with expired authorization (DS 133/1984)
+      safeCount(() => sql`
+        SELECT COUNT(*)::text as count FROM radiology_equipment
+        WHERE status = 'activo'
+          AND authorization_expiry_date IS NOT NULL
+          AND authorization_expiry_date < CURRENT_DATE
+      `),
+      // Radiology equipment with authorization expiring within 90 days
+      safeCount(() => sql`
+        SELECT COUNT(*)::text as count FROM radiology_equipment
+        WHERE status = 'activo'
+          AND authorization_expiry_date IS NOT NULL
+          AND authorization_expiry_date >= CURRENT_DATE
+          AND authorization_expiry_date < CURRENT_DATE + INTERVAL '90 days'
+      `),
     ]);
 
     // Compliance score
@@ -102,6 +119,12 @@ export async function GET() {
           label: "Residuos radiactivos pendientes",
           value: wastePending,
           status: wastePending === 0 ? "ok" : "warning",
+        },
+        equipment: {
+          label: "Equipos con autorización vencida",
+          value: equipmentVencido,
+          status: equipmentVencido > 0 ? "danger" : equipmentProximo > 0 ? "warning" : "ok",
+          detail: equipmentProximo > 0 ? `${equipmentProximo} próxima(s) a vencer` : null,
         },
       },
     };

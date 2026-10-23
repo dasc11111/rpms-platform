@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getInstitutionInfo } from "@/lib/institution-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,7 @@ async function safeCount(fn: () => Promise<{ count: string }[]>): Promise<number
 
 export async function GET() {
   try {
+    const institution = await getInstitutionInfo();
     // Fetch same KPIs as /api/reports
     const [
       workers,
@@ -31,6 +33,7 @@ export async function GET() {
       complianceVencido,
       instruments,
       wastePending,
+      equipmentVencido,
     ] = await Promise.all([
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeter_assignments WHERE returned_at IS NULL AND due_date < CURRENT_DATE`),
@@ -49,6 +52,12 @@ export async function GET() {
           )
       `),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE status = 'pending'`),
+      safeCount(() => sql`
+        SELECT COUNT(*)::text as count FROM radiology_equipment
+        WHERE status = 'activo'
+          AND authorization_expiry_date IS NOT NULL
+          AND authorization_expiry_date < CURRENT_DATE
+      `),
     ]);
 
     const complianceTotal = complianceOk + compliancePendiente + complianceVencido;
@@ -70,12 +79,13 @@ export async function GET() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text("SPRM — Sistema de Protección Radiológica para Medicina Nuclear", 14, 11);
+    doc.text("Resumen Ejecutivo — Protección Radiológica", 14, 11);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text("Resumen Ejecutivo", 14, 18);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${dateStr}`, 14, 24);
+    doc.text(institution.name, 14, 18);
+    doc.setFontSize(7.5);
+    const sumOprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
+    doc.text(`${sumOprLine}Sistema de Protección Radiológica (SPRM)  ·  Generado: ${dateStr}`, 14, 24);
 
     // ── Subtitle ──────────────────────────────────────────────────────────────
     doc.setTextColor(60, 60, 60);
@@ -83,7 +93,7 @@ export async function GET() {
     doc.text("Normativa: DS 133/1984, DS 3/1985 MINSAL, Ley 18.302, NCh 2764 Of. 2003, CCHEN", 14, 34);
 
     // ── Global status banner ───────────────────────────────────────────────────
-    const hasDanger = dosimetryAlerts > 3 || incidentsGrave > 0 || complianceVencido > 0 || instruments > 2;
+    const hasDanger = dosimetryAlerts > 3 || incidentsGrave > 0 || complianceVencido > 0 || instruments > 2 || equipmentVencido > 0;
     const hasWarning = !hasDanger && (dosimetryAlerts > 0 || incidentsOpen > 0 || compliancePendiente > 0 || instruments > 0);
     const [r, g, b] = hasDanger ? [220, 38, 38] : hasWarning ? [202, 138, 4] : [22, 163, 74];
     const statusLabel = hasDanger ? "REQUIERE ATENCIÓN URGENTE" : hasWarning ? "REVISAR ALERTAS" : "SISTEMA EN NORMA";
@@ -115,6 +125,7 @@ export async function GET() {
       ["Cumplimiento normativo", complianceScore !== null ? `${complianceScore}% (${complianceOk}/${complianceTotal})` : "—", complianceVencido > 0 ? "Urgente" : compliancePendiente > 0 ? "Alerta" : "OK"],
       ["Instrumentos sin calibración vigente", String(instruments), instruments === 0 ? "OK" : instruments <= 2 ? "Alerta" : "Urgente"],
       ["Residuos radiactivos pendientes", String(wastePending), wastePending === 0 ? "OK" : "Alerta"],
+      ["Equipos con autorización DS 133 vencida", String(equipmentVencido), equipmentVencido === 0 ? "OK" : "Urgente"],
     ];
 
     autoTable(doc, {

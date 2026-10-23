@@ -55,6 +55,7 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
     compliance: "/compliance",
     instruments: "/instruments",
     waste: "/waste-records",
+    equipment: "/equipment",
   };
 
   return (
@@ -148,11 +149,19 @@ const REPORT_TYPES = [
   },
   {
     id: "equipment",
-    name: "Estado de Equipos y Control de Calidad",
-    description: "Equipos, calibraciones, mantenimientos y fallas abiertas por instrumento.",
-    format: "PDF",
+    name: "Estado de Equipos Radiológicos",
+    description: "Equipos generadores de radiación con estado de autorización DS 133/1984 y mantenimientos.",
+    format: "CSV · PDF",
     regulation: "DS 133/1984",
     exportType: "equipment",
+  },
+  {
+    id: "instruments",
+    name: "Estado de Instrumentos de Medición",
+    description: "Inventario de instrumentos con calibración vigente, vencida y fallas abiertas.",
+    format: "PDF",
+    regulation: "DS 133/1984",
+    exportType: undefined,
   },
 ];
 
@@ -274,10 +283,10 @@ function ReportsAppInner() {
                       )}
                       {r.id === "equipment" && (
                         <a
-                          href="/api/instruments/export/pdf"
+                          href="/api/equipment/export/pdf"
                           download
                           className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Estado de Equipos e Instrumentos en PDF"
+                          title="Descargar Equipos Radiológicos en PDF — DS 133/1984"
                         >
                           <FileText className="h-3 w-3" />
                           PDF
@@ -327,6 +336,17 @@ function ReportsAppInner() {
                           PDF
                         </a>
                       )}
+                      {r.id === "instruments" && (
+                        <a
+                          href="/api/instruments/export/pdf"
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Estado de Instrumentos de Medición en PDF — DS 133/1984"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -336,7 +356,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos (DS 133/1984) y Resumen Ejecutivo SPRM.
+          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>

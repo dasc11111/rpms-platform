@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getInstitutionInfo } from "@/lib/institution-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,7 @@ async function fetchDosimetryData(year?: number): Promise<DosimetryRow[]> {
 
 export async function GET(request: Request) {
   try {
+    const institution = await getInstitutionInfo();
     const { searchParams } = new URL(request.url);
     const yearParam = searchParams.get("year");
     const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear();
@@ -145,12 +147,13 @@ export async function GET(request: Request) {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text("SPRM — Informe Dosimétrico Individual", 14, 11);
-    doc.setFontSize(9.5);
+    doc.text("Informe Dosimétrico Individual", 14, 11);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(`Lecturas trimestrales Hp(10) y Hp(0.07) — Año ${year}`, 14, 18);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${dateStr}`, 14, 24);
+    doc.text(institution.name, 14, 18);
+    doc.setFontSize(7.5);
+    const dosOprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
+    doc.text(`${dosOprLine}Lecturas trimestrales Hp(10)/Hp(0.07) — Año ${year}  ·  Generado: ${dateStr}`, 14, 24);
 
     // ── Regulatory note ────────────────────────────────────────────────────────
     doc.setTextColor(60, 60, 60);

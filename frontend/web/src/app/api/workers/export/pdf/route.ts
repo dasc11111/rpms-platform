@@ -6,6 +6,7 @@
  */
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getInstitutionInfo } from "@/lib/institution-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ function authStatus(days: number | null): string {
 
 export async function GET() {
   try {
+    const institution = await getInstitutionInfo();
     const { rows } = await sql`
       SELECT
         w.rut, w.dv, w.name, w.last_name_1, w.last_name_2, w.first_names,
@@ -119,12 +121,14 @@ export async function GET() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text("SPRM — Registro de Trabajadores Ocupacionalmente Expuestos", 14, 12);
+    doc.text("Registro de Trabajadores Ocupacionalmente Expuestos", 14, 12);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text("DS 3/1985 MINSAL Art. 11 · DS 133/1984 · Reglamento de Protección Radiológica", 14, 19);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${dateStr}  ·  Vigente para el año ${year}`, 14, 25);
+    doc.text(institution.name, 14, 19);
+    doc.setFontSize(7.5);
+    const oprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
+    const cchenLine = institution.cchen_code ? `CCHEN: ${institution.cchen_code}  ·  ` : "";
+    doc.text(`${oprLine}${cchenLine}DS 3/1985 MINSAL Art. 11 · DS 133/1984  ·  Generado: ${dateStr}  ·  Año ${year}`, 14, 25);
 
     // ── Status summary row ───────────────────────────────────────────────────
     doc.setTextColor(60, 60, 60);

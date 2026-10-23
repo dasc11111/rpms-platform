@@ -60,54 +60,7 @@ export interface Alert {
     read: boolean;
 }
 
-const INITIAL_EQUIPMENT: Equipment[] = [
-  {
-        id: '1',
-        inventoryNumber: '2-011796',
-        service: 'Dental',
-        unit: 'Sala Dental',
-        location: 'Dental',
-        equipmentName: 'Equipo de Rayos X Dental',
-        brand: 'Focus',
-        model: 'Focus Intra oral',
-        equipmentSerialNumber: 'F22489',
-        tubeSerialNumber: '15209',
-        resolutionNumber: 'A2004760',
-        resolutionDate: '2024-01-23',
-        authorizationStatus: 'vigente',
-        observations: '',
-        status: 'operativo',
-        createdAt: '2024-01-23',
-        updatedAt: '2024-01-23',
-        lastModifiedBy: 'Sistema',
-        documents: [],
-        history: [],
-        alerts: [],
-  },
-  {
-        id: '2',
-        inventoryNumber: '2-001764',
-        service: 'Dental',
-        unit: 'Box 8',
-        location: 'Rx Dental',
-        equipmentName: 'Equipo de Rayos X Dental',
-        brand: 'Focus',
-        model: 'Focus Intra oral',
-        equipmentSerialNumber: 'F22496',
-        tubeSerialNumber: '15104',
-        resolutionNumber: '2305529684',
-        resolutionDate: '2023-12-15',
-        authorizationStatus: 'vigente',
-        observations: '',
-        status: 'operativo',
-        createdAt: '2023-12-15',
-        updatedAt: '2023-12-15',
-        lastModifiedBy: 'Sistema',
-        documents: [],
-        history: [],
-        alerts: [],
-  },
-  ];
+// Hardcoded seed removed — data is now loaded from /api/equipment
 
 const EMPTY_FILTERS: FilterState = {
     searchTerm: '',
@@ -163,13 +116,25 @@ function applyFilters(equipment: Equipment[], filters: FilterState): Equipment[]
 }
 
 export function EquipmentApp() {
-    const [equipment, setEquipment] = useState<Equipment[]>(INITIAL_EQUIPMENT);
+    const [equipment, setEquipment] = useState<Equipment[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
     const [activeAlerts, setActiveAlerts] = useState<AlertItem[]>([]);
 
   const filteredEquipment = applyFilters(equipment, filters);
+
+  // Load from API on mount
+  useEffect(() => {
+    fetch("/api/equipment")
+      .then((r) => r.json())
+      .then((data: Equipment[]) => {
+        if (Array.isArray(data)) setEquipment(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
         const typeMap: Record<Alert['type'], AlertItem['type']> = {
@@ -213,17 +178,44 @@ export function EquipmentApp() {
         setIsDetailModalOpen(true);
   };
 
-  const handleSaveEquipment = (updatedEquipment: Equipment) => {
-        if (selectedEquipment) {
-                setEquipment(equipment.map((eq) => (eq.id === updatedEquipment.id ? updatedEquipment : eq)));
-        } else {
-                setEquipment([...equipment, { ...updatedEquipment, id: Date.now().toString() }]);
+  const handleSaveEquipment = async (updatedEquipment: Equipment) => {
+    try {
+      if (selectedEquipment) {
+        // Update existing
+        const res = await fetch(`/api/equipment/${updatedEquipment.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedEquipment),
+        });
+        if (res.ok) {
+          const saved: Equipment = await res.json();
+          setEquipment(equipment.map((eq) => (eq.id === saved.id ? saved : eq)));
         }
-        setIsDetailModalOpen(false);
+      } else {
+        // Create new
+        const res = await fetch("/api/equipment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedEquipment),
+        });
+        if (res.ok) {
+          const created: Equipment = await res.json();
+          setEquipment([...equipment, created]);
+        }
+      }
+    } catch (err) {
+      console.error("handleSaveEquipment", err);
+    }
+    setIsDetailModalOpen(false);
   };
 
-  const handleDeleteEquipment = (id: string) => {
-        setEquipment(equipment.filter((eq) => eq.id !== id));
+  const handleDeleteEquipment = async (id: string) => {
+    try {
+      await fetch(`/api/equipment/${id}`, { method: "DELETE" });
+    } catch (err) {
+      console.error("handleDeleteEquipment", err);
+    }
+    setEquipment(equipment.filter((eq) => eq.id !== id));
   };
 
   const handleResolveAlert = (alertId: string) => {
@@ -245,7 +237,11 @@ export function EquipmentApp() {
                                 </div>
                                 <div className="flex justify-between items-center">
                                             <div className="text-sm text-muted-foreground">
-                                                          Total de equipos: <span className="font-semibold text-foreground">{equipment.length}</span>
+                                                          {loading ? (
+                                                            <span>Cargando equipos...</span>
+                                                          ) : (
+                                                            <>Total de equipos: <span className="font-semibold text-foreground">{equipment.length}</span></>
+                                                          )}
                                             </div>
                                             <button
                                                             onClick={handleAddEquipment}

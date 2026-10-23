@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, FlaskConical, Home, Radiation, Radio, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe, Trash2, Truck, UserCog, Users, Wrench, Recycle, ScanLine, CheckSquare } from "lucide-react";
+import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, FlaskConical, Home, Radiation, Radio, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe, Trash2, Truck, UserCog, Users, Wrench, Recycle, ScanLine, CheckSquare, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -21,6 +21,7 @@ const NAV = [
   { href: "/waste-records", label: "Residuos Radiactivos (Módulo D)", icon: Trash2 },
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/transport", label: "Transporte de Material Radiactivo", icon: Truck },
+  { href: "/linac", label: "Linac / CML", icon: Zap },
   { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
   { href: "/blindaje", label: "Blindaje y Diseño", icon: ShieldCheck },
   { href: "/documents", label: "Documentos", icon: FileText },

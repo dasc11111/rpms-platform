@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getInstitutionInfo } from "@/lib/institution-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,7 @@ function calibStatus(days: number | null): string {
 
 export async function GET() {
   try {
+    const institution = await getInstitutionInfo();
     const { rows } = await sql`
       SELECT
         i.id,
@@ -106,12 +108,13 @@ export async function GET() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text("SPRM — Estado de Equipos e Instrumentos de Medición", 14, 12);
+    doc.text("Estado de Equipos e Instrumentos de Medición", 14, 12);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text("Control de Calibraciones y Mantenimiento — DS 133/1984 MINSAL", 14, 19);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${dateStr}`, 14, 25);
+    doc.text(institution.name, 14, 19);
+    doc.setFontSize(7.5);
+    const instrOprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
+    doc.text(`${instrOprLine}Control de Calibraciones y Mantenimiento — DS 133/1984 MINSAL  ·  Generado: ${dateStr}`, 14, 25);
 
     // ── KPI boxes ────────────────────────────────────────────────────────────
     const summaryY = 34;

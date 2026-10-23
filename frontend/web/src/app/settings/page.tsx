@@ -2,16 +2,18 @@ import Link from "next/link";
 import { Bell, Bot, Building2, Shield, User } from "lucide-react";
 
 const SECTIONS = [
-  { icon: User, title: "Perfil", description: "Nombre, cargo y datos de contacto del usuario." },
+  { icon: User, title: "Perfil", description: "Nombre, cargo y datos de contacto del usuario.", href: "/settings/profile" },
   {
     icon: Building2,
     title: "Institución",
     description: "Datos del establecimiento, servicios y sedes registradas.",
+    href: "/settings/institution",
   },
   {
     icon: Bell,
     title: "Notificaciones",
     description: "Alertas de vencimientos, dosis e incidentes por correo y en la plataforma.",
+    href: "/settings/notifications",
   },
   {
     icon: Shield,

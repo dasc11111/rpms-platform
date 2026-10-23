@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureComplianceTables } from "@/lib/compliance";
+import { getInstitutionInfo } from "@/lib/institution-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,7 @@ function statusLabel(s: string): string {
 
 export async function GET() {
   try {
+    const institution = await getInstitutionInfo();
     await ensureComplianceTables();
 
     const { rows } = await sql`
@@ -96,12 +98,13 @@ export async function GET() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text("SPRM — Reporte de Cumplimiento Normativo", 14, 12);
+    doc.text("Reporte de Cumplimiento Normativo", 14, 12);
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text("DS 133/1984  ·  DS 3/1985 MINSAL  ·  Ley 18.302  ·  NCh 2764 Of. 2003  ·  CCHEN", 14, 19);
-    doc.setFontSize(8);
-    doc.text(`Generado: ${dateStr}`, 14, 25);
+    doc.text(institution.name, 14, 19);
+    doc.setFontSize(7.5);
+    const compOprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
+    doc.text(`${compOprLine}DS 133/1984 · DS 3/1985 · Ley 18.302 · NCh 2764 · CCHEN  ·  Generado: ${dateStr}`, 14, 25);
 
     // ── KPI boxes ────────────────────────────────────────────────────────────
     const summaryY = 34;

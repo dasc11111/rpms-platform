@@ -271,6 +271,45 @@ export async function GET(req: NextRequest) {
         return csvResponse(csv, `gestion_residuos_radiactivos_${dateStr}.csv`);
       }
 
+      case "equipment": {
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              inventory_number, name, equipment_type, brand, model, serial_number,
+              location, status,
+              authorization_number, authorization_issue_date, authorization_expiry_date,
+              last_maintenance_date, next_maintenance_date,
+              regulatory_class, tube_voltage_kv, power_kw,
+              notes, created_at
+            FROM radiology_equipment
+            ORDER BY status ASC, equipment_type ASC, name ASC
+            LIMIT 2000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "inventory_number", label: "N° Inventario" },
+          { key: "name", label: "Nombre Equipo" },
+          { key: "equipment_type", label: "Tipo" },
+          { key: "brand", label: "Marca" },
+          { key: "model", label: "Modelo" },
+          { key: "serial_number", label: "N° Serie" },
+          { key: "location", label: "Ubicación" },
+          { key: "status", label: "Estado" },
+          { key: "regulatory_class", label: "Clase Regulatoria" },
+          { key: "authorization_number", label: "N° Autorización DS 133" },
+          { key: "authorization_issue_date", label: "Fecha Emisión Autorización" },
+          { key: "authorization_expiry_date", label: "Vencimiento Autorización" },
+          { key: "tube_voltage_kv", label: "Voltaje tubo (kV)" },
+          { key: "power_kw", label: "Potencia (kW)" },
+          { key: "last_maintenance_date", label: "Último Mantenimiento" },
+          { key: "next_maintenance_date", label: "Próximo Mantenimiento" },
+          { key: "notes", label: "Notas" },
+          { key: "created_at", label: "Fecha Registro" },
+        ]);
+        return csvResponse(csv, `equipos_radiologicos_${dateStr}.csv`);
+      }
+
       case "summary":
       default: {
         // Resumen ejecutivo como CSV
