@@ -90,8 +90,10 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
 
 // ─── Report types ─────────────────────────────────────────────────────────────
 
-// exportType = undefined means not yet available (shows disabled button)
+// exportType = CSV export slug (shows CSV button via /api/reports/export?type=...)
+// pdfApiHref = direct PDF download endpoint
 // pageHref = navigate to a report page (client-side PDF with equipment selection)
+// If none are set, shows "Próximo" disabled button
 const REPORT_TYPES = [
   {
     id: "workers",
@@ -100,6 +102,7 @@ const REPORT_TYPES = [
     format: "CSV · PDF",
     regulation: "DS 3/1985 Art. 11",
     exportType: "workers",
+    pdfApiHref: "/api/workers/export/pdf",
   },
   {
     id: "dosimetry",
@@ -108,6 +111,7 @@ const REPORT_TYPES = [
     format: "CSV · PDF",
     regulation: "DS 3/1985",
     exportType: "dosimetry",
+    pdfApiHref: `/api/dosimetry/export/pdf?year=${new Date().getFullYear()}`,
   },
   {
     id: "compliance",
@@ -116,6 +120,7 @@ const REPORT_TYPES = [
     format: "CSV · PDF",
     regulation: "DS 133/1984 · Ley 18.302",
     exportType: "compliance",
+    pdfApiHref: "/api/compliance/export/pdf",
   },
   {
     id: "i131",
@@ -148,6 +153,7 @@ const REPORT_TYPES = [
     format: "CSV · PDF",
     regulation: "DS 133/1984 · DS 3/1985",
     exportType: "summary",
+    pdfApiHref: "/api/reports/export/pdf",
   },
   {
     id: "equipment",
@@ -156,6 +162,7 @@ const REPORT_TYPES = [
     format: "CSV · PDF",
     regulation: "DS 133/1984",
     exportType: "equipment",
+    pdfApiHref: "/api/equipment/export/pdf",
   },
   {
     id: "instruments",
@@ -163,7 +170,7 @@ const REPORT_TYPES = [
     description: "Inventario de instrumentos con calibración vigente, vencida y fallas abiertas.",
     format: "PDF",
     regulation: "DS 133/1984",
-    exportType: undefined,
+    pdfApiHref: "/api/instruments/export/pdf",
   },
   {
     id: "qc_petct",
@@ -300,7 +307,8 @@ function ReportsAppInner() {
                   </td>
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {r.exportType ? (
+                      {/* CSV download */}
+                      {r.exportType && (
                         <a
                           href={`/api/reports/export?type=${r.exportType}`}
                           download
@@ -310,81 +318,20 @@ function ReportsAppInner() {
                           <Download className="h-3 w-3" />
                           CSV
                         </a>
-                      ) : (r as any).pageHref ? null : (
-                        <button
-                          className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
-                          disabled
-                          title="Disponible próximamente"
-                        >
-                          Próximo
-                        </button>
                       )}
-                      {r.id === "equipment" && (
+                      {/* PDF download via API */}
+                      {(r as any).pdfApiHref && (
                         <a
-                          href="/api/equipment/export/pdf"
+                          href={(r as any).pdfApiHref}
                           download
                           className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Equipos Radiológicos en PDF — DS 133/1984"
+                          title={`Descargar ${r.name} en PDF`}
                         >
                           <FileText className="h-3 w-3" />
                           PDF
                         </a>
                       )}
-                      {r.id === "compliance" && (
-                        <a
-                          href="/api/compliance/export/pdf"
-                          download
-                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Reporte Cumplimiento Normativo en PDF"
-                        >
-                          <FileText className="h-3 w-3" />
-                          PDF
-                        </a>
-                      )}
-                      {r.id === "workers" && (
-                        <a
-                          href="/api/workers/export/pdf"
-                          download
-                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Registro Trabajadores Expuestos en PDF — DS 3/1985 Art. 11"
-                        >
-                          <FileText className="h-3 w-3" />
-                          PDF
-                        </a>
-                      )}
-                      {r.id === "dosimetry" && (
-                        <a
-                          href={`/api/dosimetry/export/pdf?year=${new Date().getFullYear()}`}
-                          download
-                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Informe Dosimétrico en PDF — DS 3/1985 MINSAL"
-                        >
-                          <FileText className="h-3 w-3" />
-                          PDF
-                        </a>
-                      )}
-                      {r.id === "summary" && (
-                        <a
-                          href="/api/reports/export/pdf"
-                          download
-                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Resumen Ejecutivo en PDF"
-                        >
-                          <FileText className="h-3 w-3" />
-                          PDF
-                        </a>
-                      )}
-                      {r.id === "instruments" && (
-                        <a
-                          href="/api/instruments/export/pdf"
-                          download
-                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                          title="Descargar Estado de Instrumentos de Medición en PDF — DS 133/1984"
-                        >
-                          <FileText className="h-3 w-3" />
-                          PDF
-                        </a>
-                      )}
+                      {/* Navigate to report page */}
                       {(r as any).pageHref && (
                         <a
                           href={(r as any).pageHref}
@@ -394,6 +341,16 @@ function ReportsAppInner() {
                           <ExternalLink className="h-3 w-3" />
                           Ver
                         </a>
+                      )}
+                      {/* Disabled fallback if nothing available */}
+                      {!r.exportType && !(r as any).pdfApiHref && !(r as any).pageHref && (
+                        <button
+                          className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
+                          disabled
+                          title="Disponible próximamente"
+                        >
+                          Próximo
+                        </button>
                       )}
                     </div>
                   </td>
