@@ -18,6 +18,9 @@ const NAV_LINKS = [
   { href: "/quality-control/gammacamara/baseline", label: "Baseline" },
   { href: "/quality-control/gammacamara/evidence", label: "Evidencia" },
   { href: "/quality-control/gammacamara/report", label: "Informe PDF" },
+  { href: "/quality-control/gammacamara/alerts", label: "Alertas" },
+  { href: "/quality-control/gammacamara/compliance", label: "Cumplimiento" },
+  { href: "/quality-control/gammacamara/trend", label: "Tendencia" },
 ];
 
 export default async function GammacamaraQcPage() {

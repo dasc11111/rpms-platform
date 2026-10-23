@@ -18,6 +18,9 @@ const NAV_LINKS = [
   { href: "/quality-control/spect/baseline", label: "Baseline" },
   { href: "/quality-control/spect/evidence", label: "Evidencia" },
   { href: "/quality-control/spect/report", label: "Informe PDF" },
+  { href: "/quality-control/spect/alerts", label: "Alertas" },
+  { href: "/quality-control/spect/compliance", label: "Cumplimiento" },
+  { href: "/quality-control/spect/trend", label: "Tendencia" },
 ];
 
 export default async function SpectQcPage() {
