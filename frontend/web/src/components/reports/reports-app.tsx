@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle, Clock, Download, FileText, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Download, ExternalLink, FileText, XCircle } from "lucide-react";
 
 const _qc = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
 
@@ -56,7 +56,7 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
     instruments: "/instruments",
     waste: "/waste-records",
     equipment: "/equipment",
-    quality_control: "/quality-control",
+    quality_control: "/quality-control/petct/compliance",
   };
 
   return (
@@ -91,6 +91,7 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
 // ─── Report types ─────────────────────────────────────────────────────────────
 
 // exportType = undefined means not yet available (shows disabled button)
+// pageHref = navigate to a report page (client-side PDF with equipment selection)
 const REPORT_TYPES = [
   {
     id: "workers",
@@ -163,6 +164,24 @@ const REPORT_TYPES = [
     format: "PDF",
     regulation: "DS 133/1984",
     exportType: undefined,
+  },
+  {
+    id: "qc_petct",
+    name: "Informe de Control de Calidad PET/CT",
+    description: "Cumplimiento de pruebas PET, CT e interacción PET/CT, alertas activas y acciones recomendadas (Fase P).",
+    format: "PDF",
+    regulation: "DS 133/1984 · NCh 2764",
+    exportType: undefined,
+    pageHref: "/quality-control/petct/report",
+  },
+  {
+    id: "qc_activimetro",
+    name: "Informe de Control de Calidad Activímetro",
+    description: "Constancia, exactitud radionúclido, pureza e inspección física del activímetro. Consolidado por equipo.",
+    format: "PDF",
+    regulation: "DS 133/1984",
+    exportType: undefined,
+    pageHref: "/quality-control/activimetro/report",
   },
 ];
 
@@ -273,7 +292,7 @@ function ReportsAppInner() {
                           <Download className="h-3 w-3" />
                           CSV
                         </a>
-                      ) : (
+                      ) : (r as any).pageHref ? null : (
                         <button
                           className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
                           disabled
@@ -348,6 +367,16 @@ function ReportsAppInner() {
                           PDF
                         </a>
                       )}
+                      {(r as any).pageHref && (
+                        <a
+                          href={(r as any).pageHref}
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title={`Ir a ${r.name}`}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Ver
+                        </a>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -357,7 +386,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM.
+          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM. Informes QC PET/CT y Activímetro se generan por equipo en sus módulos respectivos.
         </p>
       </div>
     </div>
