@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FileText } from "lucide-react";
 import { sql } from "@/lib/db";
 import { rutMatchKey } from "@/lib/rut";
 import { CsvImport } from "@/components/import/csv-import";
@@ -91,6 +92,15 @@ export default async function WorkersPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <WorkerFormModal />
         <ExportWorkersButton />
+        <a
+          href="/api/workers/export/pdf"
+          download
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+          title="Descargar Registro de Trabajadores Expuestos — DS 3/1985 MINSAL Art. 11"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          Registro DS 3/1985 (PDF)
+        </a>
       </div>
       <CsvImport
         endpoint="/api/workers"

@@ -48,6 +48,55 @@ export async function GET(req: NextRequest) {
 
   try {
     switch (type) {
+      case "workers": {
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              w.rut,
+              w.dv,
+              COALESCE(
+                NULLIF(TRIM(CONCAT_WS(' ', w.last_name_1, w.last_name_2, w.first_names)), ''),
+                w.name
+              ) AS nombre,
+              w.role,
+              w.service,
+              w.category,
+              w.status,
+              w.authorization_number,
+              w.authorization_issue_date,
+              w.authorization_expiry_date,
+              w.course_pr_completed,
+              w.course_pr_date,
+              COALESCE(
+                (SELECT SUM(hp10) FROM dosimetry_quarterly_readings qr
+                 WHERE qr.worker_id = w.id AND qr.year = EXTRACT(YEAR FROM NOW())),
+                0
+              ) as dosis_anual_msv
+            FROM workers w
+            WHERE w.status IN ('activo', 'suspended')
+            ORDER BY w.service ASC, w.last_name_1 ASC, w.name ASC
+            LIMIT 2000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "rut", label: "RUT" },
+          { key: "dv", label: "DV" },
+          { key: "nombre", label: "Nombre" },
+          { key: "role", label: "Cargo" },
+          { key: "service", label: "Servicio" },
+          { key: "category", label: "Categoría ICRP" },
+          { key: "status", label: "Estado" },
+          { key: "authorization_number", label: "N° Autorización" },
+          { key: "authorization_issue_date", label: "Fecha Emisión" },
+          { key: "authorization_expiry_date", label: "Fecha Vencimiento" },
+          { key: "course_pr_completed", label: "Curso PR" },
+          { key: "course_pr_date", label: "Fecha Curso PR" },
+          { key: "dosis_anual_msv", label: "Dosis Anual (mSv)" },
+        ]);
+        return csvResponse(csv, `registro_trabajadores_expuestos_${dateStr}.csv`);
+      }
+
       case "i131": {
         const rows = await safeQuery(async () => {
           const { rows } = await sql`

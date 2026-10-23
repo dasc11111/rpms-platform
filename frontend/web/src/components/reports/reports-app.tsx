@@ -91,6 +91,14 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
 // exportType = undefined means not yet available (shows disabled button)
 const REPORT_TYPES = [
   {
+    id: "workers",
+    name: "Registro de Trabajadores Expuestos",
+    description: "Nómina oficial con autorización de desempeño, estado y dosis anual. Obligatorio para SEREMI de Salud.",
+    format: "CSV · PDF",
+    regulation: "DS 3/1985 Art. 11",
+    exportType: "workers",
+  },
+  {
     id: "dosimetry",
     name: "Informe Dosimétrico — Lecturas trimestrales",
     description: "Dosis individuales Hp(10) y Hp(0.07) por trabajador y servicio. DS 3/1985 MINSAL.",
@@ -264,6 +272,17 @@ function ReportsAppInner() {
                           Próximo
                         </button>
                       )}
+                      {r.id === "workers" && (
+                        <a
+                          href="/api/workers/export/pdf"
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Registro Trabajadores Expuestos en PDF — DS 3/1985 Art. 11"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
                       {r.id === "dosimetry" && (
                         <a
                           href={`/api/dosimetry/export/pdf?year=${new Date().getFullYear()}`}
@@ -295,7 +314,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          Exportación CSV disponible para todos los módulos. PDF disponible para Informe Dosimétrico (DS 3/1985) y Resumen Ejecutivo SPRM.
+          Exportación CSV disponible para todos los módulos. PDF disponible para Registro de Trabajadores (DS 3/1985), Informe Dosimétrico y Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>
