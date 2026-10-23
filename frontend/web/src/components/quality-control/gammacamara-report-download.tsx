@@ -73,7 +73,7 @@ export default function GammacamaraReportDownload({ equipment }: { equipment: Eq
           </select>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
             onClick={handleDownload}
@@ -97,8 +97,19 @@ export default function GammacamaraReportDownload({ equipment }: { equipment: Eq
               </>
             )}
           </button>
+          <a
+            href={`/api/quality-control/gammacamara/export/pdf${equipmentId ? `?equipment_id=${equipmentId}` : ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded border border-blue-600 bg-blue-50 px-5 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40 flex items-center gap-2"
+          >
+            PDF (servidor)
+          </a>
           {error && <span className="text-xs text-red-600">{error}</span>}
         </div>
+        <p className="text-xs text-muted-foreground">
+          <strong>PDF (servidor)</strong>: informe profesional landscape A4 con ficha técnica, cumplimiento de frecuencias, pruebas QC por tipo, baseline y alertas — IAEA TECDOC-602.
+        </p>
       </div>
 
       <div className="rounded-lg border border-border p-4 bg-surface">
