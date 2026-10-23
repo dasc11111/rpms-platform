@@ -74,16 +74,16 @@ export async function GET() {
 
     // Stats
     const total = rows.length;
-    const activos = rows.filter((r) => r.status === "activo").length;
+    const activos = rows.filter((r) => r.status === "operativo").length;
     const authVencida = rows.filter((r) => {
       const d = daysLeft(r.authorization_expiry_date);
-      return r.status === "activo" && (d !== null && d < 0);
+      return r.status === "operativo" && (d !== null && d < 0);
     }).length;
     const authProx = rows.filter((r) => {
       const d = daysLeft(r.authorization_expiry_date);
-      return r.status === "activo" && d !== null && d >= 0 && d <= 90;
+      return r.status === "operativo" && d !== null && d >= 0 && d <= 90;
     }).length;
-    const sinAuth = rows.filter((r) => r.status === "activo" && !r.authorization_expiry_date).length;
+    const sinAuth = rows.filter((r) => r.status === "operativo" && !r.authorization_expiry_date).length;
 
     const { jsPDF } = await import("jspdf");
     // @ts-ignore
@@ -143,10 +143,10 @@ export async function GET() {
       const days = daysLeft(r.authorization_expiry_date);
       const aStatus = authStatus(days);
       const statusLabels: Record<string, string> = {
-        activo: "Activo",
-        inactivo: "Inactivo",
+        operativo: "Operativo",
+        fuera_de_servicio: "Fuera de servicio",
+        prestamo: "Préstamo",
         baja: "De baja",
-        mantenimiento: "En mantención",
       };
       return [
         r.inventory_number ?? "—",
@@ -205,11 +205,11 @@ export async function GET() {
         }
         if (data.section === "body" && data.column.index === 6) {
           const val = String(data.cell.raw ?? "");
-          if (val === "De baja" || val === "Inactivo") {
+          if (val === "De baja" || val === "Fuera de servicio") {
             doc.setTextColor(220, 38, 38);
-          } else if (val === "En mantención") {
+          } else if (val === "Préstamo") {
             doc.setTextColor(202, 138, 4);
-          } else if (val === "Activo") {
+          } else if (val === "Operativo") {
             doc.setTextColor(22, 163, 74);
           }
         }
