@@ -204,6 +204,15 @@ const REPORT_TYPES = [
     pdfApiHref: "/api/contamination/export/pdf",
   },
   {
+    id: "blindaje",
+    name: "Memoria de Cálculo — Blindaje Radiológico",
+    description: "Memoria de cálculo completa por proyecto: PIR, fuentes, carga de trabajo y barreras con resultados (NCRP 147, NCRP 151, AAPM TG-108, IAEA SRS-47, DS 133/1984).",
+    format: "PDF",
+    regulation: "DS 133/1984 · NCRP 147 · NCRP 151 · AAPM TG-108",
+    exportType: undefined,
+    pageHref: "/blindaje",
+  },
+  {
     id: "qc_petct",
     name: "Informe de Control de Calidad PET/CT",
     description: "Cumplimiento de pruebas PET, CT e interacción PET/CT, alertas activas y acciones recomendadas (Fase P).",

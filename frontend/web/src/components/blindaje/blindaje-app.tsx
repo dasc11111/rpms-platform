@@ -3452,10 +3452,33 @@ const occupancyPointBarrierSelect = h(
             )
         : null;
     
+    const pdfExportPanel = selectedProject
+      ? h(
+          "div",
+          { className: "rounded-lg border border-border p-4 flex flex-col gap-3" },
+          h("div", { className: "text-sm font-medium text-foreground" }, "Memoria de Cálculo — Informe PDF"),
+          h(
+            "p",
+            { className: "text-xs text-muted-foreground" },
+            "Genera la memoria de cálculo completa del proyecto (identificación, fuentes, carga de trabajo, PIR y barreras con resultados detallados). Debe ser revisada y firmada por el OPR y Físico Médico antes de su presentación ante CCHEN o MINSAL."
+          ),
+          h(
+            "a",
+            {
+              href: `/api/blindaje/${selectedProject.id}/export/pdf`,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "inline-flex items-center gap-2 rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground hover:bg-muted w-fit",
+            },
+            "Descargar memoria de cálculo PDF"
+          )
+        )
+      : null;
+
     const nextPhases = h(
     "div",
     { className: "rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground" },
-    "Proximas fases (en desarrollo): motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente), memoria de calculo e informe PDF."
+    "Proximas fases (en desarrollo): motor regulatorio con fuentes citadas (NCRP 147 / NCRP 151 y normativa CCHEN vigente)."
       );
 
       return h(
@@ -3478,6 +3501,7 @@ paso9Panel,
           paso11Panel,
           paso12Panel,
           paso13Panel,
+          pdfExportPanel,
           nextPhases
       );
 }
