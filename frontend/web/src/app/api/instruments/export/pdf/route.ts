@@ -72,7 +72,7 @@ export async function GET() {
       LEFT JOIN calibration_companies cc ON cc.id = lc.company_id
       LEFT JOIN LATERAL (
         SELECT COUNT(*) AS open_count FROM instrument_failures f
-        WHERE f.instrument_id = i.id AND f.status = 'abierto'
+        WHERE f.instrument_id = i.id AND f.status IN ('abierta', 'en_proceso')
       ) fc ON true
       ORDER BY i.status ASC, type_name ASC, i.name ASC
       LIMIT 2000
@@ -154,8 +154,8 @@ export async function GET() {
       const calStatus = calibStatus(days);
       const statusLabel: Record<string, string> = {
         operativo: "Operativo",
-        "fuera_de_servicio": "Fuera de servicio",
-        mantenimiento: "En mantención",
+        fuera_servicio: "Fuera de servicio",
+        en_mantenimiento: "En mantención",
         baja: "De baja",
       };
       return [
