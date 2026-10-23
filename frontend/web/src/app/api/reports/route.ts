@@ -32,7 +32,7 @@ export async function GET() {
       // Dosimetry alerts (instruments not returned or overdue)
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeter_assignments WHERE returned_at IS NULL AND due_date < CURRENT_DATE`),
       // I-131 this month
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM i131_administraciones WHERE admin_year = EXTRACT(YEAR FROM NOW()) AND admin_month = EXTRACT(MONTH FROM NOW())`),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM i131_administrations WHERE admin_year = EXTRACT(YEAR FROM NOW()) AND admin_month = EXTRACT(MONTH FROM NOW())`),
       // Incidents open
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM nm_incidents WHERE status = 'abierto'`),
       // Incidents grave open

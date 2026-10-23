@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
               medico_solicitante,
               diagnostico,
               created_at
-            FROM i131_administraciones
+            FROM i131_administrations
             ORDER BY admin_date DESC, id DESC
             LIMIT 5000
           `;

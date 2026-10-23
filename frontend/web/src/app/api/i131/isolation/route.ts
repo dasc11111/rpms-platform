@@ -58,9 +58,11 @@ export async function GET() {
     cutoffDate.setDate(cutoffDate.getDate() - MAX_DAYS_TRACKING);
     const cutoffStr = cutoffDate.toISOString().slice(0, 10);
 
-    // Ensure table exists (lazy init)
+    // Ensure main i131 table exists (lazy init) — misma tabla que usa el módulo
+    // principal de I-131 (/api/i131/route.ts); el módulo de aislamiento es una
+    // vista de solo lectura sobre los mismos datos. NO se crea una tabla separada.
     await sql`
-      CREATE TABLE IF NOT EXISTS i131_administraciones (
+      CREATE TABLE IF NOT EXISTS i131_administrations (
         id SERIAL PRIMARY KEY,
         admin_year INT,
         admin_month INT,
@@ -83,7 +85,7 @@ export async function GET() {
       SELECT
         id, admin_date, paciente_nombre, paciente_run, ficha_clinica,
         sala, dosis_administrada, tasa_dosis, medico_solicitante, diagnostico
-      FROM i131_administraciones
+      FROM i131_administrations
       WHERE admin_date >= ${cutoffStr}
         AND dosis_administrada IS NOT NULL
         AND dosis_administrada > 0
