@@ -134,7 +134,7 @@ const REPORT_TYPES = [
     id: "summary",
     name: "Resumen Ejecutivo SPRM",
     description: "Consolidado de indicadores de todos los módulos del sistema.",
-    format: "CSV",
+    format: "CSV · PDF",
     regulation: "DS 133/1984 · DS 3/1985",
     exportType: "summary",
   },
@@ -244,25 +244,38 @@ function ReportsAppInner() {
                     <span className="text-xs text-muted-foreground">{r.format}</span>
                   </td>
                   <td className="px-3 py-3 text-right">
-                    {r.exportType ? (
-                      <a
-                        href={`/api/reports/export?type=${r.exportType}`}
-                        download
-                        className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1 text-xs hover:bg-muted"
-                        title={`Descargar ${r.name} en CSV`}
-                      >
-                        <Download className="h-3 w-3" />
-                        CSV
-                      </a>
-                    ) : (
-                      <button
-                        className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
-                        disabled
-                        title="Disponible próximamente"
-                      >
-                        Próximo
-                      </button>
-                    )}
+                    <div className="flex items-center justify-end gap-1">
+                      {r.exportType ? (
+                        <a
+                          href={`/api/reports/export?type=${r.exportType}`}
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1 text-xs hover:bg-muted"
+                          title={`Descargar ${r.name} en CSV`}
+                        >
+                          <Download className="h-3 w-3" />
+                          CSV
+                        </a>
+                      ) : (
+                        <button
+                          className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
+                          disabled
+                          title="Disponible próximamente"
+                        >
+                          Próximo
+                        </button>
+                      )}
+                      {r.id === "summary" && (
+                        <a
+                          href="/api/reports/export/pdf"
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Resumen Ejecutivo en PDF"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -271,7 +284,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          Exportación CSV disponible para todos los módulos. Exportación PDF en próxima versión.
+          Exportación CSV disponible para todos los módulos. PDF disponible para el Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>
