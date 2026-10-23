@@ -33,8 +33,8 @@ export async function GET() {
       qcGammacamaraVencidas,
       qcSpectVencidas,
     ] = await Promise.all([
-      // Workers
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
+      // Workers — 'active' and 'suspended' are in scope; 'inactive' is not
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
       // Dosimetry alerts (instruments not returned or overdue)
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeter_assignments WHERE returned_at IS NULL AND due_date < CURRENT_DATE`),
       // I-131 this month
@@ -64,14 +64,14 @@ export async function GET() {
       // Radiology equipment with expired authorization (DS 133/1984)
       safeCount(() => sql`
         SELECT COUNT(*)::text as count FROM radiology_equipment
-        WHERE status = 'activo'
+        WHERE status = 'operativo'
           AND authorization_expiry_date IS NOT NULL
           AND authorization_expiry_date < CURRENT_DATE
       `),
       // Radiology equipment with authorization expiring within 90 days
       safeCount(() => sql`
         SELECT COUNT(*)::text as count FROM radiology_equipment
-        WHERE status = 'activo'
+        WHERE status = 'operativo'
           AND authorization_expiry_date IS NOT NULL
           AND authorization_expiry_date >= CURRENT_DATE
           AND authorization_expiry_date < CURRENT_DATE + INTERVAL '90 days'
