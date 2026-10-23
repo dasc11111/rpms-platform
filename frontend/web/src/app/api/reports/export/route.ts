@@ -309,6 +309,51 @@ export async function GET(req: NextRequest) {
         return csvResponse(csv, `equipos_radiologicos_${dateStr}.csv`);
       }
 
+      case "contamination": {
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              monitor_date, area, sala, dependencia, punto_medicion,
+              radionuclido, instrumento, superficie, responsable,
+              cps_medida, cps_fondo, factor_eficiencia, area_monitoreada_cm2,
+              actividad_bq_cm2, actividad_bq_m2, pct_limite, clasificacion,
+              semaforo, tasa_dosis_usv_h, estado, motivo,
+              accion_correctiva, observaciones, created_at
+            FROM contamination_records
+            ORDER BY monitor_date DESC, area, sala, id DESC
+            LIMIT 5000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "monitor_date", label: "Fecha Monitoreo" },
+          { key: "area", label: "Área" },
+          { key: "sala", label: "Sala" },
+          { key: "dependencia", label: "Dependencia" },
+          { key: "punto_medicion", label: "Punto de Medición" },
+          { key: "radionuclido", label: "Radionúclido" },
+          { key: "instrumento", label: "Instrumento" },
+          { key: "superficie", label: "Superficie" },
+          { key: "responsable", label: "Responsable" },
+          { key: "cps_medida", label: "CPS Medida" },
+          { key: "cps_fondo", label: "CPS Fondo" },
+          { key: "factor_eficiencia", label: "Factor Eficiencia" },
+          { key: "area_monitoreada_cm2", label: "Área monitoreada (cm²)" },
+          { key: "actividad_bq_cm2", label: "Actividad (Bq/cm²)" },
+          { key: "actividad_bq_m2", label: "Actividad (Bq/m²)" },
+          { key: "pct_limite", label: "% Límite" },
+          { key: "clasificacion", label: "Clasificación" },
+          { key: "semaforo", label: "Semáforo" },
+          { key: "tasa_dosis_usv_h", label: "Tasa dosis (µSv/h)" },
+          { key: "estado", label: "Estado" },
+          { key: "motivo", label: "Motivo" },
+          { key: "accion_correctiva", label: "Acción Correctiva" },
+          { key: "observaciones", label: "Observaciones" },
+          { key: "created_at", label: "Fecha Registro" },
+        ]);
+        return csvResponse(csv, `contaminacion_superficial_${dateStr}.csv`);
+      }
+
       case "summary":
       default: {
         // Resumen ejecutivo como CSV

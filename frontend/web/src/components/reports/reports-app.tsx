@@ -50,6 +50,7 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
   const LINKS: Record<string, string> = {
     workers: "/workers",
     dosimetry: "/dosimetry",
+    dosimeters: "/dosimeters",
     i131: "/i131",
     incidents: "/incidents",
     compliance: "/compliance",
@@ -57,6 +58,8 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
     waste: "/waste-records",
     equipment: "/equipment",
     quality_control: "/quality-control/petct/compliance",
+    transport: "/transport",
+    contamination: "/contamination",
   };
 
   return (
@@ -190,6 +193,15 @@ const REPORT_TYPES = [
     format: "PDF",
     regulation: "DS 3/1985 Art. 11",
     pdfApiHref: "/api/dosimeters/export/pdf",
+  },
+  {
+    id: "contamination",
+    name: "Monitoreo de Contaminación Superficial",
+    description: "Registro de mediciones de contaminación por área, sala y punto. Clasificación por límites DS 133/1984.",
+    format: "CSV · PDF",
+    regulation: "DS 133/1984",
+    exportType: "contamination",
+    pdfApiHref: "/api/contamination/export/pdf",
   },
   {
     id: "qc_petct",
@@ -380,7 +392,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM. Informes QC (PET/CT, Activímetro, Gammacámara, SPECT) se generan por equipo en sus módulos respectivos.
+          PDF disponible para todos los módulos principales. Informes de Control de Calidad (PET/CT, Activímetro, Gammacámara, SPECT) se generan por equipo desde sus módulos respectivos.
         </p>
       </div>
     </div>
