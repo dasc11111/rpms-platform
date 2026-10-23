@@ -17,6 +17,9 @@ const NAV_LINKS = [
   { href: "/quality-control/activimetro/evidence", label: "Evidencia" },
   { href: "/quality-control/activimetro/audit", label: "Bitácora auditoría" },
   { href: "/quality-control/activimetro/report", label: "Informe PDF" },
+  { href: "/quality-control/activimetro/alerts", label: "Alertas" },
+  { href: "/quality-control/activimetro/compliance", label: "Cumplimiento" },
+  { href: "/quality-control/activimetro/trend", label: "Tendencia" },
 ];
 
 export default async function ActivimetroQcPage() {
