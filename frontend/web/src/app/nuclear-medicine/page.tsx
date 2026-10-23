@@ -17,7 +17,11 @@ import {
   ScanLine,
   Orbit,
   Atom,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from "lucide-react";
+import { sql } from "@/lib/db";
 
 type ModuleCard = {
   href: string;
@@ -269,17 +273,168 @@ function ModuleGrid({ items }: { items: ModuleCard[] }) {
   );
 }
 
-export default function NuclearMedicinePage() {
+export const dynamic = "force-dynamic";
+
+// ─── KPI strip types ──────────────────────────────────────────────────────────
+
+type KpiStatus = "ok" | "warning" | "danger" | "neutral";
+
+interface NmKpi {
+  label: string;
+  value: number | string;
+  status: KpiStatus;
+  href?: string;
+  detail?: string;
+}
+
+function NmKpiCard({ kpi }: { kpi: NmKpi }) {
+  const bg: Record<KpiStatus, string> = {
+    ok: "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800",
+    warning: "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800",
+    danger: "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800",
+    neutral: "bg-surface border-border",
+  };
+  const txt: Record<KpiStatus, string> = {
+    ok: "text-green-700 dark:text-green-400",
+    warning: "text-yellow-700 dark:text-yellow-400",
+    danger: "text-red-700 dark:text-red-400",
+    neutral: "text-foreground",
+  };
+  const icon = kpi.status === "ok" ? (
+    <CheckCircle className="h-4 w-4 text-green-500" />
+  ) : kpi.status === "warning" ? (
+    <Clock className="h-4 w-4 text-yellow-500" />
+  ) : kpi.status === "danger" ? (
+    <XCircle className="h-4 w-4 text-red-500" />
+  ) : null;
+
+  const inner = (
+    <div className={`rounded-lg border p-3 ${bg[kpi.status]}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className={`text-[11px] font-medium opacity-80 ${txt[kpi.status]} truncate`}>{kpi.label}</p>
+          <p className={`mt-0.5 text-xl font-bold ${txt[kpi.status]}`}>{kpi.value}</p>
+          {kpi.detail && <p className={`mt-0.5 text-[10px] opacity-70 ${txt[kpi.status]}`}>{kpi.detail}</p>}
+        </div>
+        {icon}
+      </div>
+    </div>
+  );
+
+  if (kpi.href) {
+    return <Link href={kpi.href} className="block hover:opacity-90 transition-opacity">{inner}</Link>;
+  }
+  return inner;
+}
+
+export default async function NuclearMedicinePage() {
+  // ─── Real-time KPIs ─────────────────────────────────────────────────────────
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  let adminHoy = 0;
+  let adminMes = 0;
+  let enSala = 0;
+  let contamAbiertos = 0;
+  let residuosPendientes = 0;
+  let incidentesAbiertos = 0;
+
+  try {
+    const { rows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE admin_date = CURRENT_DATE)::int AS admin_hoy,
+        COUNT(*) FILTER (WHERE admin_year = ${year} AND admin_month = ${month})::int AS admin_mes
+      FROM i131_administrations
+    `;
+    adminHoy = Number((rows[0] as any)?.admin_hoy ?? 0);
+    adminMes = Number((rows[0] as any)?.admin_mes ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM room_release_records WHERE status = 'en_sala'
+    `;
+    enSala = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM contamination_records
+      WHERE estado = 'ABIERTO' AND monitor_date >= CURRENT_DATE - INTERVAL '30 days'
+    `;
+    contamAbiertos = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM radioactive_waste_labels WHERE status = 'pendiente'
+    `;
+    residuosPendientes = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM nm_incidents WHERE status = 'abierto'
+    `;
+    incidentesAbiertos = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  const kpis: NmKpi[] = [
+    {
+      label: "Administraciones hoy",
+      value: adminHoy,
+      status: "neutral",
+      href: "/i131",
+      detail: `${adminMes} este mes`,
+    },
+    {
+      label: "Pacientes en sala",
+      value: enSala,
+      status: enSala > 0 ? "warning" : "ok",
+      href: "/room-release",
+      detail: enSala > 0 ? "Pendientes de liberación" : "Sin hospitalizaciones activas",
+    },
+    {
+      label: "Contam. abiertas (30 d)",
+      value: contamAbiertos,
+      status: contamAbiertos > 0 ? "danger" : "ok",
+      href: "/contamination",
+      detail: contamAbiertos > 0 ? "Requieren acción correctiva" : "Sin eventos abiertos",
+    },
+    {
+      label: "Residuos pendientes",
+      value: residuosPendientes,
+      status: residuosPendientes > 5 ? "warning" : residuosPendientes > 0 ? "neutral" : "ok",
+      href: "/waste-expert",
+      detail: residuosPendientes > 0 ? "Sin liberar / en almacenamiento" : "Sin residuos pendientes",
+    },
+    {
+      label: "Incidentes abiertos",
+      value: incidentesAbiertos,
+      status: incidentesAbiertos > 0 ? "danger" : "ok",
+      href: "/nuclear-medicine/incidents",
+      detail: incidentesAbiertos > 0 ? "Requieren cierre" : "Sin incidentes abiertos",
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-1 flex items-baseline justify-between">
         <h1 className="text-lg font-semibold tracking-tight">Medicina Nuclear</h1>
       </div>
-      <p className="mb-6 max-w-3xl text-xs text-muted-foreground">
+      <p className="mb-4 max-w-3xl text-xs text-muted-foreground">
         Punto de entrada unificado para los modulos de Medicina Nuclear. Los modulos existentes se mantienen
         operativos sin cambios; esta vista los organiza conforme al mapeo realizado en la Fase 0 (auditoria),
         usando ARPANSA RPS 14.2 como referencia tecnica estructural, no como normativa chilena.
       </p>
+
+      {/* KPI strip — real-time operational summary */}
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        {kpis.map((kpi) => (
+          <NmKpiCard key={kpi.label} kpi={kpi} />
+        ))}
+      </div>
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Nucleo operacional (en produccion)</h2>
