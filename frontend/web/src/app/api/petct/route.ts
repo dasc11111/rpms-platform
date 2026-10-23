@@ -3,7 +3,48 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+let tablesReady = false;
+async function ensurePetctTables() {
+  if (tablesReady) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS petct_examinations (
+      id SERIAL PRIMARY KEY,
+      patient_id TEXT NOT NULL,
+      patient_name TEXT,
+      radiopharmaceutical TEXT NOT NULL,
+      radionuclide TEXT NOT NULL,
+      administered_mbq NUMERIC(10,2) NOT NULL,
+      patient_weight_kg NUMERIC(6,2),
+      injection_datetime TIMESTAMPTZ NOT NULL,
+      uptake_minutes INTEGER NOT NULL DEFAULT 60,
+      exam_start TIMESTAMPTZ,
+      exam_end TIMESTAMPTZ,
+      state TEXT NOT NULL DEFAULT 'programado',
+      operator TEXT NOT NULL,
+      prescribing_physician TEXT NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS petct_qc_daily (
+      id SERIAL PRIMARY KEY,
+      qc_date DATE NOT NULL UNIQUE,
+      phantom_type TEXT NOT NULL DEFAULT 'Ge-68/Ga-68',
+      uniformity_pass BOOLEAN NOT NULL DEFAULT TRUE,
+      count_rate_mcps NUMERIC(8,3),
+      image_quality_pass BOOLEAN NOT NULL DEFAULT TRUE,
+      comments TEXT,
+      performed_by TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  tablesReady = true;
+}
+
 export async function GET(req: NextRequest) {
+  await ensurePetctTables();
   const { searchParams } = new URL(req.url);
   const state = searchParams.get("state") ?? "";
   const date = searchParams.get("date") ?? "";
@@ -34,6 +75,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  await ensurePetctTables();
   try {
     const body = await req.json();
     const { type = "exam" } = body;
@@ -81,6 +123,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  await ensurePetctTables();
   try {
     const { id, state, exam_start, exam_end, notes } = await req.json();
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });

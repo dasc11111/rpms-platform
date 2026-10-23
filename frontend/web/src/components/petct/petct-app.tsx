@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+const _qc_petct = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
 import { z } from "zod";
 import {
   PetctExam,
@@ -81,13 +83,11 @@ async function patchExam(id: string | number, updates: Partial<PetctExam>) {
 
 function stateColor(state: string) {
   const map: Record<string, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    preparing: "bg-blue-100 text-blue-800",
-    injected: "bg-purple-100 text-purple-800",
-    uptake: "bg-indigo-100 text-indigo-800",
-    scanning: "bg-teal-100 text-teal-800",
-    completed: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
+    programado: "bg-yellow-100 text-yellow-800",
+    en_espera: "bg-indigo-100 text-indigo-800",
+    en_examen: "bg-teal-100 text-teal-800",
+    completado: "bg-green-100 text-green-800",
+    cancelado: "bg-red-100 text-red-800",
   };
   return map[state] ?? "bg-gray-100 text-gray-800";
 }
@@ -136,7 +136,7 @@ function emptyQc(): QcForm {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function PetctApp() {
+function PetctAppInner() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"exams" | "new-exam" | "qc" | "new-qc">("exams");
   const [filterState, setFilterState] = useState("");
@@ -447,4 +447,12 @@ export function PetctApp() {
       )}
     </div>
   );
-          }
+}
+
+export function PetctApp() {
+  return (
+    <QueryClientProvider client={_qc_petct}>
+      <PetctAppInner />
+    </QueryClientProvider>
+  );
+}
