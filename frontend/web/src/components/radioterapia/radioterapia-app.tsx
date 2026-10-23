@@ -87,16 +87,30 @@ export function RadioterapiaApp() {
             Gestion integral del servicio de radioterapia: bunkers, blindaje, seguridad radiologica, incidentes, auditorias y capacitacion
           </p>
         </div>
-        <select
-          value={facilityId || ""}
-          onChange={(e) => setFacilityId(Number(e.target.value))}
-          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
-        >
-          {facilities.length === 0 && <option value="">Sin instalaciones registradas</option>}
-          {facilities.map((f: any) => (
-            <option key={f.id} value={f.id}>{f.name}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={facilityId || ""}
+            onChange={(e) => setFacilityId(Number(e.target.value))}
+            className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground"
+          >
+            {facilities.length === 0 && <option value="">Sin instalaciones registradas</option>}
+            {facilities.map((f: any) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+          {facilityId && (
+            <a
+              href={`/api/radioterapia/export/pdf?facility_id=${facilityId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+              title="Descargar informe técnico PDF"
+            >
+              <History className="h-4 w-4" />
+              Informe PDF
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1 border-b border-border pb-2">
