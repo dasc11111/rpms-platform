@@ -46,7 +46,7 @@ const STATUS_STYLES: Record<string, string> = {
   pendiente: "bg-yellow-100 text-yellow-800 border-yellow-300",
   vencido: "bg-red-100 text-red-800 border-red-300",
   programado: "bg-blue-100 text-blue-800 border-blue-300",
-  no_aplica: "bg-gray-100 text-gray-600 border-gray-300",
+  no_aplica: "bg-muted text-muted-foreground border-border",
 };
 
 const PRIORITY_DOT: Record<string, string> = {
@@ -59,7 +59,7 @@ const PRIORITY_DOT: Record<string, string> = {
 const URGENCY_BADGE: Record<string, string> = {
   critica: "text-red-600 font-semibold",
   alta: "text-orange-500 font-medium",
-  normal: "text-blue-600",
+  normal: "text-accent",
   ok: "text-green-600",
 };
 
@@ -72,7 +72,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
     green: "bg-green-50 border-green-200 text-green-700",
     yellow: "bg-yellow-50 border-yellow-200 text-yellow-700",
     red: "bg-red-50 border-red-200 text-red-700",
-    blue: "bg-blue-50 border-blue-200 text-blue-700",
+    blue: "bg-blue-50 border-blue-200 text-accent",
     gray: "bg-muted border-border text-foreground",
   };
   return (
@@ -524,7 +524,7 @@ function ComplianceAppInner() {
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="flex items-center gap-1.5">
-                        <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[req.priority] ?? "bg-gray-300"}`} />
+                        <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[req.priority] ?? "bg-muted"}`} />
                         <span className="text-xs">{COMPLIANCE_PRIORITY_LABELS[req.priority as keyof typeof COMPLIANCE_PRIORITY_LABELS] ?? req.priority}</span>
                       </span>
                     </td>

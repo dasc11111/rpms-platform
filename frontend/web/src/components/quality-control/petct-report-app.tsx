@@ -82,7 +82,7 @@ export default function PetCtReportApp({ equipment }: { equipment: Equipment[] }
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Informe PDF PET/CT</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase P (seccion 31 del prompt de mejora). Genera un documento PDF que consolida la
           ficha del equipo, el cumplimiento de frecuencias, los resultados ya calculados de las pruebas
           PET, CT e interaccion PET/CT, y las alertas activas con su accion recomendada. El informe solo
@@ -112,14 +112,14 @@ export default function PetCtReportApp({ equipment }: { equipment: Equipment[] }
             type="button"
             onClick={handleGenerate}
             disabled={loading}
-            className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm w-full"
+            className="px-3 py-1.5 rounded bg-accent text-white text-sm w-full"
           >
             {loading ? "Generando..." : "Generar informe PDF"}
           </button>
         </div>
       </div>
 
-      {message && <p className="text-sm text-gray-600">{message}</p>}
+      {message && <p className="text-sm text-muted-foreground">{message}</p>}
     </div>
   );
 }

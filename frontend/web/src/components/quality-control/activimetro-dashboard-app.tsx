@@ -120,7 +120,7 @@ function KpiCard({
       ? "border-yellow-300 bg-yellow-50"
       : tone === "bad"
       ? "border-red-300 bg-red-50"
-      : "border-slate-300 bg-white";
+      : "border-border bg-surface";
   return (
     <div className={`rounded-lg border p-3 ${toneClass}`}>
       <p className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">{label}</p>
@@ -133,7 +133,7 @@ function KpiCard({
 const ALERT_STYLES: Record<string, string> = {
   overdue: "bg-red-100 text-red-800 border-red-300",
   upcoming: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  sin_registro: "bg-slate-100 text-slate-700 border-slate-300",
+  sin_registro: "bg-muted text-foreground border-border",
 };
 
 const ALERT_LABELS: Record<string, string> = {
@@ -169,7 +169,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold">Tablero de Control - Activimetro</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Resumen consolidado del modulo de Control de Calidad de Activimetros: cobertura de
             equipos, cumplimiento de pruebas, avisos de vencimiento, inspecciones, servicio tecnico,
             evidencia y auditoria. Datos calculados a partir de los registros existentes, sin
@@ -180,13 +180,13 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm h-fit"
+          className="px-3 py-1.5 rounded bg-accent text-white text-sm h-fit"
         >
           {loading ? "Actualizando..." : "Actualizar"}
         </button>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <p className="text-xs text-gray-400">Ultima actualizacion: {data.checkedAt}</p>
+      <p className="text-xs text-muted-foreground">Ultima actualizacion: {data.checkedAt}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard label="Equipos activos" value={kpis.equipmentActive} />
@@ -218,7 +218,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
 
       <div className="border rounded-lg p-4">
         <h2 className="font-semibold text-sm mb-3">Cumplimiento por tipo de prueba</h2>
-        {data.testsByType.length === 0 && <p className="text-xs text-gray-500">Aun no hay pruebas registradas.</p>}
+        {data.testsByType.length === 0 && <p className="text-xs text-muted-foreground">Aun no hay pruebas registradas.</p>}
         {data.testsByType.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -252,7 +252,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border rounded-lg p-4">
           <h2 className="font-semibold text-sm mb-3">Inspecciones fisico-funcionales (ACTIV-01)</h2>
-          {data.inspectionsByResult.length === 0 && <p className="text-xs text-gray-500">Sin inspecciones registradas.</p>}
+          {data.inspectionsByResult.length === 0 && <p className="text-xs text-muted-foreground">Sin inspecciones registradas.</p>}
           <ul className="space-y-1 text-xs">
             {data.inspectionsByResult.map((row) => (
               <li key={row.overall_result} className="flex justify-between border-b last:border-0 py-1">
@@ -264,7 +264,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
         </div>
         <div className="border rounded-lg p-4">
           <h2 className="font-semibold text-sm mb-3">Eventos de servicio tecnico</h2>
-          {data.serviceEventsByStatus.length === 0 && <p className="text-xs text-gray-500">Sin eventos registrados.</p>}
+          {data.serviceEventsByStatus.length === 0 && <p className="text-xs text-muted-foreground">Sin eventos registrados.</p>}
           <ul className="space-y-1 text-xs">
             {data.serviceEventsByStatus.map((row) => (
               <li key={row.status} className="flex justify-between border-b last:border-0 py-1">
@@ -279,7 +279,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       <div className="border rounded-lg p-4">
         <h2 className="font-semibold text-sm mb-3">Avisos de vencimiento y retraso</h2>
         {data.dueAlerts.length === 0 && (
-          <p className="text-xs text-gray-500">No hay avisos pendientes: todas las pruebas estan al dia.</p>
+          <p className="text-xs text-muted-foreground">No hay avisos pendientes: todas las pruebas estan al dia.</p>
         )}
         <div className="space-y-2">
           {data.dueAlerts.map((a, idx) => (
@@ -288,11 +288,11 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
               <span className="font-medium">
                 {a.instrumentName ?? "Equipo"} ({a.instrumentCode ?? "s/codigo"})
               </span>
-              <span className="text-gray-500">{testTypeLabel(a.testType)}</span>
-              {a.lastTestDate && <span className="text-gray-500">Ultima: {a.lastTestDate}</span>}
-              {a.nextDueDate && <span className="text-gray-500">Vence: {a.nextDueDate}</span>}
+              <span className="text-muted-foreground">{testTypeLabel(a.testType)}</span>
+              {a.lastTestDate && <span className="text-muted-foreground">Ultima: {a.lastTestDate}</span>}
+              {a.nextDueDate && <span className="text-muted-foreground">Vence: {a.nextDueDate}</span>}
               {a.daysUntilDue !== null && (
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   {a.daysUntilDue < 0 ? `${Math.abs(a.daysUntilDue)} dias de retraso` : `${a.daysUntilDue} dias restantes`}
                 </span>
               )}
@@ -323,14 +323,14 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                     {eq.baseline_count > 0 ? (
                       <span className="px-1.5 py-0.5 rounded border bg-green-100 text-green-800 border-green-300">Establecido</span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded border bg-slate-100 text-slate-700 border-slate-300">No establecido</span>
+                      <span className="px-1.5 py-0.5 rounded border bg-muted text-foreground border-border">No establecido</span>
                     )}
                   </td>
                 </tr>
               ))}
               {data.equipment.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-2 text-gray-500">
+                  <td colSpan={3} className="py-2 text-muted-foreground">
                     No hay equipos activos registrados.
                   </td>
                 </tr>
@@ -342,18 +342,18 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
 
       <div className="border rounded-lg p-4">
         <h2 className="font-semibold text-sm mb-3">Ultimos movimientos de auditoria</h2>
-        {data.recentAudit.length === 0 && <p className="text-xs text-gray-500">Sin movimientos recientes.</p>}
+        {data.recentAudit.length === 0 && <p className="text-xs text-muted-foreground">Sin movimientos recientes.</p>}
         <div className="space-y-2">
           {data.recentAudit.map((r) => (
             <div key={r.id} className="border rounded p-2 text-xs space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300 font-semibold">
+                <span className="px-1.5 py-0.5 rounded bg-muted text-foreground border border-border font-semibold">
                   {r.entity_type} #{r.entity_id}
                 </span>
-                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">{r.action}</span>
-                <span className="text-gray-500">{new Date(r.changed_at).toLocaleString()}</span>
+                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-accent border border-blue-200">{r.action}</span>
+                <span className="text-muted-foreground">{new Date(r.changed_at).toLocaleString()}</span>
               </div>
-              {r.changed_by && <div className="text-gray-600">Modificado por: {r.changed_by}</div>}
+              {r.changed_by && <div className="text-muted-foreground">Modificado por: {r.changed_by}</div>}
             </div>
           ))}
         </div>

@@ -180,7 +180,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Eventos de Servicio Tecnico - Activimetro</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Registro de intervenciones tecnicas (seccion 30 del prompt maestro) y seguimiento de las pruebas
           de control de calidad que corresponde repetir tras cada intervencion. El sistema solo lista las
           pruebas requeridas segun el catalogo; no decide resultados clinicos ni de mantenimiento.
@@ -206,7 +206,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm"
+          className="px-3 py-1.5 rounded bg-accent text-white text-sm"
         >
           {showForm ? "Cancelar" : "+ Registrar evento de servicio"}
         </button>
@@ -277,13 +277,13 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
             <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
               {loading ? "Guardando..." : "Registrar evento"}
             </button>
-            {message && <span className="text-sm text-gray-400">{message}</span>}
+            {message && <span className="text-sm text-muted-foreground">{message}</span>}
           </div>
         </form>
       )}
 
       <div className="space-y-3">
-        {events.length === 0 && <p className="text-sm text-gray-500">No hay eventos de servicio registrados.</p>}
+        {events.length === 0 && <p className="text-sm text-muted-foreground">No hay eventos de servicio registrados.</p>}
         {events.map((ev) => {
           const eq = equipment.find((e) => e.id === ev.equipment_id);
           const required = ev.tests_required ?? [];
@@ -296,12 +296,12 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
                   {ev.status.toUpperCase()}
                 </span>
                 <span className="font-medium">{ev.service_type}</span>
-                {ev.component_affected && <span className="text-gray-500">({ev.component_affected})</span>}
-                <span className="text-xs text-gray-500">{equipmentLabel(eq)}</span>
-                <span className="text-xs text-gray-500">{new Date(ev.service_date).toLocaleDateString()}</span>
-                {ev.technician && <span className="text-xs text-gray-500">Tecnico: {ev.technician}</span>}
-                {ev.company && <span className="text-xs text-gray-500">Empresa: {ev.company}</span>}
-                {ev.work_order_number && <span className="text-xs text-gray-500">OT: {ev.work_order_number}</span>}
+                {ev.component_affected && <span className="text-muted-foreground">({ev.component_affected})</span>}
+                <span className="text-xs text-muted-foreground">{equipmentLabel(eq)}</span>
+                <span className="text-xs text-muted-foreground">{new Date(ev.service_date).toLocaleDateString()}</span>
+                {ev.technician && <span className="text-xs text-muted-foreground">Tecnico: {ev.technician}</span>}
+                {ev.company && <span className="text-xs text-muted-foreground">Empresa: {ev.company}</span>}
+                {ev.work_order_number && <span className="text-xs text-muted-foreground">OT: {ev.work_order_number}</span>}
                 <select
                   className="ml-auto border rounded px-2 py-1 text-xs text-slate-800"
                   value={ev.status}
@@ -314,10 +314,10 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
                   ))}
                 </select>
               </div>
-              {ev.description && <p className="text-xs text-gray-400">{ev.description}</p>}
+              {ev.description && <p className="text-xs text-muted-foreground">{ev.description}</p>}
               {required.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1">Pruebas de QC requeridas tras el servicio:</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Pruebas de QC requeridas tras el servicio:</p>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
                     {required.map((code) => (
                       <label key={code} className="flex items-center gap-1.5 text-xs">

@@ -158,7 +158,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Baseline del Equipo (Activimetro)</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Valor de referencia por equipo, prueba y parametro (secciones 27-28 del prompt maestro). El
           baseline nunca se sobrescribe: al establecer un nuevo valor, el anterior se conserva con su
           motivo, usuario y fecha de cambio.
@@ -203,10 +203,10 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
           />
         </div>
         <div className="md:col-span-3">
-          <button type="button" onClick={loadBaseline} disabled={loading} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm">
+          <button type="button" onClick={loadBaseline} disabled={loading} className="px-3 py-1.5 rounded bg-accent text-white text-sm">
             {loading ? "Consultando..." : "Consultar baseline"}
           </button>
-          {message && <span className="ml-3 text-sm text-gray-400">{message}</span>}
+          {message && <span className="ml-3 text-sm text-muted-foreground">{message}</span>}
         </div>
       </div>
 
@@ -220,28 +220,28 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
               </button>
             </div>
             {current ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-300">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-muted-foreground">
                 <div>
-                  <span className="text-gray-500">Valor:</span> {current.value ?? "-"} {current.unit ?? ""}
+                  <span className="text-muted-foreground">Valor:</span> {current.value ?? "-"} {current.unit ?? ""}
                 </div>
                 <div>
-                  <span className="text-gray-500">Fecha:</span> {new Date(current.date_established).toLocaleDateString()}
+                  <span className="text-muted-foreground">Fecha:</span> {new Date(current.date_established).toLocaleDateString()}
                 </div>
                 <div>
-                  <span className="text-gray-500">Radionucleido:</span> {current.radionuclide ?? "-"}
+                  <span className="text-muted-foreground">Radionucleido:</span> {current.radionuclide ?? "-"}
                 </div>
                 <div>
-                  <span className="text-gray-500">Geometria:</span> {current.geometry ?? "-"}
+                  <span className="text-muted-foreground">Geometria:</span> {current.geometry ?? "-"}
                 </div>
                 <div>
-                  <span className="text-gray-500">Operador:</span> {current.operator ?? "-"}
+                  <span className="text-muted-foreground">Operador:</span> {current.operator ?? "-"}
                 </div>
                 <div>
-                  <span className="text-gray-500">Fisico responsable:</span> {current.physicist_responsible ?? "-"}
+                  <span className="text-muted-foreground">Fisico responsable:</span> {current.physicist_responsible ?? "-"}
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-gray-500">No hay baseline establecido para esta combinacion.</p>
+              <p className="text-xs text-muted-foreground">No hay baseline establecido para esta combinacion.</p>
             )}
           </div>
 
@@ -290,7 +290,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
 
           <div className="border rounded-lg p-4">
             <h2 className="font-semibold text-sm mb-2">Historico completo</h2>
-            {history.length === 0 && <p className="text-xs text-gray-500">Sin historico.</p>}
+            {history.length === 0 && <p className="text-xs text-muted-foreground">Sin historico.</p>}
             <div className="space-y-2">
               {history.map((h) => (
                 <div key={h.id} className="border rounded p-2 text-xs flex flex-wrap items-center gap-2">
@@ -302,9 +302,9 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
                   <span className="font-medium">
                     {h.value ?? "-"} {h.unit ?? ""}
                   </span>
-                  <span className="text-gray-500">{new Date(h.date_established).toLocaleDateString()}</span>
-                  {h.change_reason && <span className="text-gray-500">Motivo: {h.change_reason}</span>}
-                  {h.changed_by && <span className="text-gray-500">Por: {h.changed_by}</span>}
+                  <span className="text-muted-foreground">{new Date(h.date_established).toLocaleDateString()}</span>
+                  {h.change_reason && <span className="text-muted-foreground">Motivo: {h.change_reason}</span>}
+                  {h.changed_by && <span className="text-muted-foreground">Por: {h.changed_by}</span>}
                 </div>
               ))}
             </div>

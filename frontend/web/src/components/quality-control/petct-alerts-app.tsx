@@ -52,7 +52,7 @@ type AlertsResponse = {
 const SEVERITY_STYLES: Record<AlertSeverity, string> = {
   alta: "bg-red-100 text-red-800 border-red-300",
   media: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  baja: "bg-gray-100 text-gray-600 border-gray-300",
+  baja: "bg-muted text-muted-foreground border-border",
 };
 
 const SEVERITY_LABELS: Record<AlertSeverity, string> = {
@@ -134,7 +134,7 @@ export default function PetCtAlertsApp({ equipment }: { equipment: Equipment[] }
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Alertas PET/CT</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase M/N. Inteligencia de alertas (seccion 29 del prompt de mejora): cruza el estado de
           tolerancia/nivel de accion de cada prueba, el analisis de tendencia (Fase K), la comparacion contra
           el baseline vigente (Fase A/I) y los eventos de servicio tecnico pendientes (Fase A/I). Cada alerta
@@ -179,44 +179,44 @@ export default function PetCtAlertsApp({ equipment }: { equipment: Equipment[] }
       {data && (
         <div className="grid grid-cols-3 gap-3">
           <div className="border rounded-lg p-3 bg-red-50">
-            <div className="text-xs text-gray-500">Severidad alta</div>
+            <div className="text-xs text-muted-foreground">Severidad alta</div>
             <div className="text-2xl font-bold text-red-700">{data.summary.alta}</div>
           </div>
           <div className="border rounded-lg p-3 bg-yellow-50">
-            <div className="text-xs text-gray-500">Severidad media</div>
+            <div className="text-xs text-muted-foreground">Severidad media</div>
             <div className="text-2xl font-bold text-yellow-700">{data.summary.media}</div>
           </div>
-          <div className="border rounded-lg p-3 bg-gray-50">
-            <div className="text-xs text-gray-500">Severidad baja</div>
-            <div className="text-2xl font-bold text-gray-700">{data.summary.baja}</div>
+          <div className="border rounded-lg p-3 bg-muted/40">
+            <div className="text-xs text-muted-foreground">Severidad baja</div>
+            <div className="text-2xl font-bold text-foreground">{data.summary.baja}</div>
           </div>
         </div>
       )}
 
-      {loading && <p className="text-sm text-gray-500">Calculando...</p>}
+      {loading && <p className="text-sm text-muted-foreground">Calculando...</p>}
 
       <div className="space-y-2">
         {!loading && visibleAlerts.length === 0 && (
-          <p className="text-sm text-gray-500">No hay alertas activas para este filtro.</p>
+          <p className="text-sm text-muted-foreground">No hay alertas activas para este filtro.</p>
         )}
         {visibleAlerts.map((a) => (
-          <div key={a.id} className="block border rounded p-3 space-y-2 text-sm hover:bg-gray-50">
+          <div key={a.id} className="block border rounded p-3 space-y-2 text-sm hover:bg-muted/40">
             <a href={a.href} className="block space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <SeverityBadge severity={a.severity} />
                 <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-white">
                   {TYPE_LABELS[a.type] ?? a.type}
                 </span>
-                {a.test_code && <span className="font-mono text-xs text-gray-600">{a.test_code}</span>}
+                {a.test_code && <span className="font-mono text-xs text-muted-foreground">{a.test_code}</span>}
                 <span className="font-medium">{a.title}</span>
               </div>
-              <p className="text-xs text-gray-600">{a.description}</p>
-              <div className="text-xs text-gray-400">{a.equipment_label}</div>
+              <p className="text-xs text-muted-foreground">{a.description}</p>
+              <div className="text-xs text-muted-foreground">{a.equipment_label}</div>
             </a>
             {a.recommended_action && (
               <div className="border-t pt-2 flex flex-wrap items-start gap-2">
                 <UrgencyBadge urgency={a.recommended_action.urgency} />
-                <p className="text-xs text-gray-700 flex-1">{a.recommended_action.action}</p>
+                <p className="text-xs text-foreground flex-1">{a.recommended_action.action}</p>
               </div>
             )}
           </div>

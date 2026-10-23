@@ -71,7 +71,7 @@ const STATUS_STYLES: Record<string, string> = {
   cumple: "bg-green-100 text-green-800 border-green-300",
   no_cumple: "bg-red-100 text-red-800 border-red-300",
   requiere_revision: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  no_aplica: "bg-gray-100 text-gray-600 border-gray-300",
+  no_aplica: "bg-muted text-muted-foreground border-border",
 };
 
 const ACTION_LEVEL_LABELS: Record<string, string> = {
@@ -211,7 +211,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Pruebas PET (PET-01 a PET-06)</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase B. Referencia tecnica: IAEA Human Health Series No. 1. El operador
           registra unicamente los valores medidos; el sistema calcula la razon
           observado/esperado y clasifica el resultado. REVISAR CON FISICO MEDICO cualquier
@@ -236,7 +236,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
           </select>
         </div>
         {selectedEquipment && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {hasTof ? "Este equipo dispone de TOF." : "Este equipo NO dispone de TOF (PET-06 = NO APLICA)."}
           </span>
         )}
@@ -248,7 +248,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
             key={code}
             type="button"
             onClick={() => setTestCode(code)}
-            className={`px-3 py-1.5 rounded text-sm border ${testCode === code ? "bg-gray-800 text-white border-gray-800" : "bg-white text-slate-700 border-slate-300"}`}
+            className={`px-3 py-1.5 rounded text-sm border ${testCode === code ? "bg-foreground text-background border-foreground" : "bg-surface text-foreground border-border"}`}
           >
             {code}
           </button>
@@ -258,7 +258,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
       <div className="text-sm font-medium">{TEST_LABELS[testCode]}</div>
 
       {testCode === "PET-06" && !hasTof ? (
-        <div className="border rounded-lg p-4 bg-gray-50 text-sm text-gray-600">
+        <div className="border rounded-lg p-4 bg-muted/40 text-sm text-muted-foreground">
           El equipo seleccionado no dispone de tecnologia TOF. Esta prueba se marca
           automaticamente como NO APLICA y no se solicita registro de datos (seccion 5.6 y 8
           del prompt de mejora).
@@ -364,7 +364,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
               )}
               {testCode === "PET-UNIF" && (
                 <>
-                  <div className="md:col-span-3 text-xs text-gray-500">
+                  <div className="md:col-span-3 text-xs text-muted-foreground">
                     Ingrese los valores de intensidad/conteo de las ROI de cada uno de los 6 cortes
                     igualmente espaciados, separados por coma (ej: 950,960,945,955). El sistema calcula
                     Cmax, Cmin, uniformidad integral, media y desviacion estandar de cada corte y el
@@ -383,10 +383,10 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
           </div>
 
           <div className="flex items-center gap-3">
-            <button type="submit" disabled={loading || !equipmentId} className="px-4 py-2 rounded bg-blue-600 text-white text-sm">
+            <button type="submit" disabled={loading || !equipmentId} className="px-4 py-2 rounded bg-accent text-white text-sm">
               {loading ? "Calculando..." : "Registrar control (borrador)"}
             </button>
-            {message && <span className="text-sm text-gray-600">{message}</span>}
+            {message && <span className="text-sm text-muted-foreground">{message}</span>}
           </div>
         </form>
       )}
@@ -396,9 +396,9 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Resultado del calculo:</span>
             <StatusBadge status={lastResult.status} />
-            <span className="text-xs text-gray-600">Nivel de accion: {ACTION_LEVEL_LABELS[lastResult.action_level] ?? lastResult.action_level}</span>
+            <span className="text-xs text-muted-foreground">Nivel de accion: {ACTION_LEVEL_LABELS[lastResult.action_level] ?? lastResult.action_level}</span>
           </div>
-          <pre className="text-xs bg-white border rounded p-2 overflow-x-auto">{JSON.stringify(lastResult.calculated, null, 2)}</pre>
+          <pre className="text-xs bg-surface border rounded p-2 overflow-x-auto">{JSON.stringify(lastResult.calculated, null, 2)}</pre>
           <button type="button" onClick={() => handleFinalize(lastResult.id)} className="px-3 py-1.5 rounded bg-green-600 text-white text-sm">
             Finalizar control
           </button>
@@ -408,17 +408,17 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial ({TEST_LABELS[testCode]})</h2>
         <div className="space-y-2">
-          {history.length === 0 && <p className="text-sm text-gray-500">No hay registros para este equipo y prueba.</p>}
+          {history.length === 0 && <p className="text-sm text-muted-foreground">No hay registros para este equipo y prueba.</p>}
           {history.map((rec) => (
             <div key={rec.id} className="border rounded p-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-gray-500">{new Date(rec.performed_at).toLocaleString()}</span>
+              <span className="text-muted-foreground">{new Date(rec.performed_at).toLocaleString()}</span>
               <StatusBadge status={rec.status} />
-              <span className="text-xs text-gray-500">{ACTION_LEVEL_LABELS[rec.action_level] ?? rec.action_level}</span>
-              <span className="text-gray-700">Operador: {rec.operator}</span>
+              <span className="text-xs text-muted-foreground">{ACTION_LEVEL_LABELS[rec.action_level] ?? rec.action_level}</span>
+              <span className="text-foreground">Operador: {rec.operator}</span>
               {rec.is_finalized ? (
                 <>
-                  <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-white">Finalizado por {rec.finalized_by}</span>
-                  <button type="button" onClick={() => handleCorrect(rec)} className="text-xs text-blue-700 underline">
+                  <span className="text-xs px-2 py-0.5 rounded bg-foreground text-background">Finalizado por {rec.finalized_by}</span>
+                  <button type="button" onClick={() => handleCorrect(rec)} className="text-xs text-accent underline">
                     Corregir (crea nueva version)
                   </button>
                 </>
@@ -427,7 +427,7 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
                   Finalizar
                 </button>
               )}
-              {rec.supersedes_id && <span className="text-xs text-gray-400">Corrige al registro #{rec.supersedes_id}</span>}
+              {rec.supersedes_id && <span className="text-xs text-muted-foreground">Corrige al registro #{rec.supersedes_id}</span>}
             </div>
           ))}
         </div>

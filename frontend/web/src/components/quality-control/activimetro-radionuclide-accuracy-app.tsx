@@ -79,7 +79,7 @@ const BADGE_STYLES: Record<string, string> = {
   cumple: "bg-green-100 text-green-800",
   no_cumple: "bg-red-100 text-red-800",
   advertencia: "bg-yellow-100 text-yellow-800",
-  pendiente_revision: "bg-gray-100 text-gray-700",
+  pendiente_revision: "bg-muted text-foreground",
 };
 
 const BADGE_LABELS: Record<string, string> = {
@@ -90,7 +90,7 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 function ResultBadge({ result }: { result: string }) {
-  const style = BADGE_STYLES[result] ?? "bg-gray-100 text-gray-700";
+  const style = BADGE_STYLES[result] ?? "bg-muted text-foreground";
   return (
     <span className={"px-2 py-0.5 rounded text-xs font-semibold " + style}>
       {BADGE_LABELS[result] ?? result}
@@ -233,7 +233,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ACTIV-05 - Exactitud por Radionuclido</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Repite la evaluacion de exactitud (ACTIV-02) para el radionucleido seleccionado del catalogo
           configurable. La correccion por decaimiento entre la calibracion de la fuente de referencia y el
           instante de medicion se calcula automaticamente con la vida media del catalogo.
@@ -338,7 +338,7 @@ export default function ActivimetroRadionuclideAccuracyApp() {
             ))}
           </div>
           {tolerance?.num_readings_required && (
-            <p className="text-xs text-gray-500">Numero minimo de lecturas requerido por protocolo: {tolerance.num_readings_required}</p>
+            <p className="text-xs text-muted-foreground">Numero minimo de lecturas requerido por protocolo: {tolerance.num_readings_required}</p>
           )}
         </div>
 
@@ -373,14 +373,14 @@ export default function ActivimetroRadionuclideAccuracyApp() {
           <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
             {loading ? "Guardando..." : "Registrar prueba"}
           </button>
-          {message && <span className="text-sm text-gray-600">{message}</span>}
+          {message && <span className="text-sm text-muted-foreground">{message}</span>}
         </div>
       </form>
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial de pruebas ACTIV-05</h2>
         <div className="border rounded-lg divide-y">
-          {tests.length === 0 && <div className="p-3 text-sm text-gray-500">Sin pruebas registradas.</div>}
+          {tests.length === 0 && <div className="p-3 text-sm text-muted-foreground">Sin pruebas registradas.</div>}
           {tests.map((t) => (
             <div key={t.id} className="p-3">
               <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -393,13 +393,13 @@ export default function ActivimetroRadionuclideAccuracyApp() {
                 </div>
                 <ResultBadge result={t.result_status} />
               </div>
-              <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-3">
+              <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-3">
                 <span>Media: {t.mean_value != null ? Number(t.mean_value).toFixed(3) : "-"} MBq</span>
                 <span>Ref. corregida: {t.corrected_activity != null ? Number(t.corrected_activity).toFixed(3) : "-"} MBq</span>
                 <span>Diferencia: {t.percent_difference != null ? Number(t.percent_difference).toFixed(2) : "-"}%</span>
                 <span>Tolerancia: {t.tolerance_percent != null ? "+/-" + t.tolerance_percent + "%" : "No configurada"}</span>
               </div>
-              {t.observaciones && <div className="text-xs text-gray-600 mt-1">Observaciones: {t.observaciones}</div>}
+              {t.observaciones && <div className="text-xs text-muted-foreground mt-1">Observaciones: {t.observaciones}</div>}
             </div>
           ))}
         </div>

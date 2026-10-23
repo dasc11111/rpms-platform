@@ -108,7 +108,7 @@ export default function PetCtEquipmentApp() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Ficha Tecnica de Equipo PET/CT</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase A. Cada equipo PET/CT dispone de una ficha propia con sus
           caracteristicas tecnicas (fabricante, detectores, TOF, FOV, versiones de
           software, etc.), base para el resto de los controles de calidad.
@@ -119,7 +119,7 @@ export default function PetCtEquipmentApp() {
         <button
           type="button"
           onClick={() => selectEquipment(null)}
-          className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm"
+          className="px-3 py-1.5 rounded bg-accent text-white text-sm"
         >
           + Nuevo equipo
         </button>
@@ -128,7 +128,7 @@ export default function PetCtEquipmentApp() {
             key={eq.id}
             type="button"
             onClick={() => selectEquipment(eq)}
-            className={`px-3 py-1.5 rounded text-sm border ${selectedId === eq.id ? "bg-gray-800 text-white" : "bg-white"}`}
+            className={`px-3 py-1.5 rounded text-sm border ${selectedId === eq.id ? "bg-foreground text-background" : "bg-surface"}`}
           >
             {eq.manufacturer} {eq.model} ({eq.internal_code ?? "s/codigo"})
           </button>
@@ -183,7 +183,7 @@ export default function PetCtEquipmentApp() {
           <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
             {loading ? "Guardando..." : selectedId ? "Actualizar ficha" : "Crear equipo"}
           </button>
-          {message && <span className="text-sm text-gray-600">{message}</span>}
+          {message && <span className="text-sm text-muted-foreground">{message}</span>}
         </div>
       </form>
     </div>

@@ -63,7 +63,7 @@ type ComplianceResponse = {
 const STATUS_STYLES: Record<string, string> = {
   overdue: "bg-red-100 text-red-800 border-red-300",
   upcoming: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  sin_registro: "bg-gray-100 text-gray-600 border-gray-300",
+  sin_registro: "bg-muted text-muted-foreground border-border",
   ok: "bg-green-100 text-green-800 border-green-300",
 };
 
@@ -131,7 +131,7 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Cumplimiento y catalogo de pruebas PET/CT</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase H. Panel de vencimientos (seccion 25 del prompt de mejora) calculado sobre el
           catalogo configurable (seccion 4) y las pruebas ya finalizadas de cada equipo. Un registro en
           borrador (no finalizado) no se considera evidencia de cumplimiento.
@@ -142,14 +142,14 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
         <button
           type="button"
           onClick={() => setView("vencimientos")}
-          className={`px-3 py-2 text-sm border-b-2 ${view === "vencimientos" ? "border-gray-800 font-semibold" : "border-transparent text-gray-500"}`}
+          className={`px-3 py-2 text-sm border-b-2 ${view === "vencimientos" ? "border-foreground font-semibold" : "border-transparent text-muted-foreground"}`}
         >
           Vencimientos
         </button>
         <button
           type="button"
           onClick={() => setView("catalogo")}
-          className={`px-3 py-2 text-sm border-b-2 ${view === "catalogo" ? "border-gray-800 font-semibold" : "border-transparent text-gray-500"}`}
+          className={`px-3 py-2 text-sm border-b-2 ${view === "catalogo" ? "border-foreground font-semibold" : "border-transparent text-muted-foreground"}`}
         >
           Catalogo de pruebas
         </button>
@@ -178,42 +178,42 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
           {compliance && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="border rounded-lg p-3 bg-red-50">
-                <div className="text-xs text-gray-500">Vencidas</div>
+                <div className="text-xs text-muted-foreground">Vencidas</div>
                 <div className="text-2xl font-bold text-red-700">{compliance.summary.overdue}</div>
               </div>
               <div className="border rounded-lg p-3 bg-yellow-50">
-                <div className="text-xs text-gray-500">Proximas a vencer</div>
+                <div className="text-xs text-muted-foreground">Proximas a vencer</div>
                 <div className="text-2xl font-bold text-yellow-700">{compliance.summary.upcoming}</div>
               </div>
-              <div className="border rounded-lg p-3 bg-gray-50">
-                <div className="text-xs text-gray-500">Sin registro</div>
-                <div className="text-2xl font-bold text-gray-700">{compliance.summary.sin_registro}</div>
+              <div className="border rounded-lg p-3 bg-muted/40">
+                <div className="text-xs text-muted-foreground">Sin registro</div>
+                <div className="text-2xl font-bold text-foreground">{compliance.summary.sin_registro}</div>
               </div>
               <div className="border rounded-lg p-3 bg-green-50">
-                <div className="text-xs text-gray-500">Al dia</div>
+                <div className="text-xs text-muted-foreground">Al dia</div>
                 <div className="text-2xl font-bold text-green-700">{compliance.summary.ok}</div>
               </div>
             </div>
           )}
 
-          {loading && <p className="text-sm text-gray-500">Calculando...</p>}
+          {loading && <p className="text-sm text-muted-foreground">Calculando...</p>}
 
           <div className="space-y-2">
             {compliance?.rows.length === 0 && (
-              <p className="text-sm text-gray-500">No hay pruebas periodicas configuradas para este filtro.</p>
+              <p className="text-sm text-muted-foreground">No hay pruebas periodicas configuradas para este filtro.</p>
             )}
             {compliance?.rows.map((r) => (
               <div key={`${r.equipment_id}-${r.test_code}`} className="border rounded p-3 flex flex-wrap items-center gap-3 text-sm">
                 <StatusBadge status={r.status} />
-                <span className="font-mono text-xs text-gray-600">{r.test_code}</span>
-                <span className="text-gray-700">{r.test_name}</span>
-                <span className="text-xs text-gray-500">{r.equipment_label}</span>
-                <span className="text-xs text-gray-500">Frecuencia: {r.frequency_label}</span>
-                <span className="text-xs text-gray-500">
+                <span className="font-mono text-xs text-muted-foreground">{r.test_code}</span>
+                <span className="text-foreground">{r.test_name}</span>
+                <span className="text-xs text-muted-foreground">{r.equipment_label}</span>
+                <span className="text-xs text-muted-foreground">Frecuencia: {r.frequency_label}</span>
+                <span className="text-xs text-muted-foreground">
                   Ultimo: {r.last_performed_at ? new Date(r.last_performed_at).toLocaleDateString() : "Nunca"}
                 </span>
                 {r.next_due_date && (
-                  <span className="text-xs text-gray-500">Vence: {new Date(r.next_due_date).toLocaleDateString()}</span>
+                  <span className="text-xs text-muted-foreground">Vence: {new Date(r.next_due_date).toLocaleDateString()}</span>
                 )}
               </div>
             ))}
@@ -223,7 +223,7 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
 
       {view === "catalogo" && (
         <div className="space-y-2">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Catalogo configurable de pruebas PET/CT (secciones 4 y 25 del prompt de mejora). Este catalogo
             es de solo lectura desde la interfaz; los ajustes de frecuencia o tolerancia los realiza el
             Fisico Medico directamente en la base de datos para evitar cambios normativos accidentales.
@@ -231,9 +231,9 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
           {catalog.map((entry) => (
             <div key={entry.id} className="border rounded p-3 space-y-1 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs bg-gray-800 text-white px-1.5 py-0.5 rounded">{entry.test_code}</span>
+                <span className="font-mono text-xs bg-foreground text-background px-1.5 py-0.5 rounded">{entry.test_code}</span>
                 <span className="font-medium">{entry.test_name}</span>
-                <span className="text-xs text-gray-500">({entry.modality})</span>
+                <span className="text-xs text-muted-foreground">({entry.modality})</span>
                 {!entry.implemented && (
                   <span className="text-xs px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
                     Pendiente de implementar
@@ -243,11 +243,11 @@ export default function PetCtComplianceApp({ equipment }: { equipment: Equipment
                   <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">Requiere TOF</span>
                 )}
               </div>
-              {entry.objective && <p className="text-xs text-gray-600">{entry.objective}</p>}
-              <div className="text-xs text-gray-500">
+              {entry.objective && <p className="text-xs text-muted-foreground">{entry.objective}</p>}
+              <div className="text-xs text-muted-foreground">
                 Responsable: {entry.responsible_level} · Frecuencia: {frequencyLabels(entry)}
               </div>
-              <div className="text-xs text-gray-400">Referencia: {entry.reference_bibliography}</div>
+              <div className="text-xs text-muted-foreground">Referencia: {entry.reference_bibliography}</div>
             </div>
           ))}
         </div>

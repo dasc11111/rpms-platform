@@ -162,10 +162,10 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
   }, [metrics]);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <div className="mx-auto max-w-[1400px] p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Tendencia y grafico de control PET/CT</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-lg font-semibold">Tendencia y grafico de control PET/CT</h1>
+        <p className="text-xs text-muted-foreground">
           Modulo 4 - Fase K (secciones 16-18 del prompt de mejora). Grafico de control tipo
           Levey-Jennings: media y limites de advertencia (+/-2 DE) y de accion (+/-3 DE) calculados
           sobre el historico de resultados FINALIZADOS del equipo y prueba seleccionados. Complementa,
@@ -173,11 +173,11 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border rounded-lg p-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border border-border rounded-lg p-4">
         <div>
           <label className="text-sm font-medium block mb-1">Equipo</label>
           <select
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border border-border rounded px-2 py-1 text-sm"
             value={equipmentId}
             onChange={(e) => setEquipmentId(e.target.value ? Number(e.target.value) : "")}
           >
@@ -192,7 +192,7 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
         <div>
           <label className="text-sm font-medium block mb-1">Prueba</label>
           <select
-            className="w-full border rounded px-2 py-1 text-sm"
+            className="w-full border border-border rounded px-2 py-1 text-sm"
             value={testCode}
             onChange={(e) => setTestCode(e.target.value)}
           >
@@ -231,7 +231,7 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
             type="button"
             onClick={loadTrend}
             disabled={loading}
-            className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm"
+            className="px-3 py-1.5 rounded bg-accent text-accent-foreground text-sm"
           >
             {loading ? "Consultando..." : "Consultar tendencia"}
           </button>
@@ -242,18 +242,18 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
       {data && (
         <div className="space-y-4">
           {!data.series || data.series.points.length === 0 ? (
-            <p className="text-sm text-gray-500 border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground border border-border rounded-lg p-4">
               No hay registros finalizados de {data.test_code} para el equipo seleccionado. Se
               requieren controles FINALIZADOS (no borradores) para trazar la tendencia.
             </p>
           ) : (
             <>
-              <div className="border rounded-lg p-4 space-y-2">
+              <div className="border border-border rounded-lg p-4 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold text-sm">
                     {data.label} {data.unit ? "(" + data.unit + ")" : ""}
                   </h2>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     n = {data.series.n} | Media = {data.series.mean_value.toFixed(3)} | DE ={" "}
                     {data.series.stddev_value.toFixed(3)}
                   </div>
@@ -318,11 +318,11 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
                 </div>
               </div>
 
-              <div className="border rounded-lg p-4">
+              <div className="border border-border rounded-lg p-4">
                 <h2 className="font-semibold text-sm mb-2">Detalle de puntos</h2>
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-left text-gray-500 border-b">
+                    <tr className="text-left text-muted-foreground border-b border-border">
                       <th className="py-1 pr-2">Fecha</th>
                       <th className="py-1 pr-2">Valor</th>
                       <th className="py-1 pr-2">Estado</th>
@@ -331,7 +331,7 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
                   </thead>
                   <tbody>
                     {data.series.points.map((p) => (
-                      <tr key={p.record_id} className="border-b last:border-0">
+                      <tr key={p.record_id} className="border-b border-border last:border-0">
                         <td className="py-1 pr-2">{new Date(p.performed_at).toLocaleString()}</td>
                         <td className="py-1 pr-2">
                           {p.value.toFixed(3)} {data.unit}
@@ -360,7 +360,7 @@ export default function PetCtTrendApp({ equipment }: { equipment: Equipment[] })
         </div>
       )}
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-muted-foreground">
         Nota: las pruebas evaluadas unicamente por componente (CUMPLE / NO CUMPLE / REQUIERE
         REVISION), como PET-05, CT-05, CT-12 y PET-CLINICO, no tienen un indicador numerico unico y
         por eso no aparecen en el selector de pruebas de este grafico de control.

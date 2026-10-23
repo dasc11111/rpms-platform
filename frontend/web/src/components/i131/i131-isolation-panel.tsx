@@ -56,10 +56,10 @@ const STATUS_CONFIG = {
   },
   vencido: {
     label: "Seguimiento vencido",
-    bg: "bg-gray-50 border-gray-200",
-    text: "text-gray-500",
+    bg: "bg-muted/40 border-border",
+    text: "text-muted-foreground",
     icon: Clock,
-    iconClass: "text-gray-400",
+    iconClass: "text-muted-foreground",
   },
 };
 
@@ -67,7 +67,7 @@ function ActivityBar({ remaining, initial }: { remaining: number; initial: numbe
   const pct = Math.min(100, (remaining / initial) * 100);
   const threshold_pct = Math.min(100, (30 / initial) * 100);
   return (
-    <div className="relative h-3 w-full rounded-full bg-gray-100">
+    <div className="relative h-3 w-full rounded-full bg-muted">
       {/* Threshold marker */}
       <div
         className="absolute top-0 h-full w-0.5 bg-green-500 opacity-50"
@@ -101,7 +101,7 @@ function I131IsolationPanelInner() {
       {/* Info banner */}
       <div className="mb-4 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-        <div className="text-xs text-blue-700">
+        <div className="text-xs text-accent">
           <p className="font-semibold">Criterios de alta DS 3/1985 MINSAL</p>
           <p className="mt-0.5">
             El paciente puede ser dado de alta del aislamiento cuando se cumpla el primer criterio:

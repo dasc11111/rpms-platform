@@ -80,8 +80,8 @@ type PurityTest = {
 const BADGE_STYLES: Record<string, string> = {
   cumple: "bg-green-100 text-green-800",
   no_cumple: "bg-red-100 text-red-800",
-  pendiente_revision: "bg-gray-100 text-gray-700",
-  pendiente: "bg-gray-100 text-gray-700",
+  pendiente_revision: "bg-muted text-foreground",
+  pendiente: "bg-muted text-foreground",
   aprobado: "bg-green-100 text-green-800",
   rechazado: "bg-red-100 text-red-800",
 };
@@ -97,7 +97,7 @@ const BADGE_LABELS: Record<string, string> = {
 
 function StatusBadge({ result }: { result: string | null | undefined }) {
   const key = result ?? "pendiente_revision";
-  const style = BADGE_STYLES[key] ?? "bg-gray-100 text-gray-700";
+  const style = BADGE_STYLES[key] ?? "bg-muted text-foreground";
   return (
     <span className={"px-2 py-0.5 rounded text-xs font-semibold " + style}>
       {BADGE_LABELS[key] ?? key}
@@ -274,7 +274,7 @@ export default function ActivimetroPurityApp() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ACTIV-07 - Pureza radionucleidica de 99mTc</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Prueba guiada de 12 pasos (identificacion, muestra, procedimiento, preparacion,
           configuracion, fondo, mediciones, impurezas, calculo, evaluacion, revision, validacion)
           para evaluar la pureza radionucleidica del eluido de 99mTc.
@@ -451,14 +451,14 @@ export default function ActivimetroPurityApp() {
           <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
             {loading ? "Guardando..." : "Registrar prueba"}
           </button>
-          {message && <span className="text-sm text-gray-600">{message}</span>}
+          {message && <span className="text-sm text-muted-foreground">{message}</span>}
         </div>
       </form>
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial de pruebas ACTIV-07</h2>
         <div className="border rounded-lg divide-y">
-          {tests.length === 0 && <div className="p-3 text-sm text-gray-500">Sin pruebas registradas.</div>}
+          {tests.length === 0 && <div className="p-3 text-sm text-muted-foreground">Sin pruebas registradas.</div>}
           {tests.map((t) => (
             <div key={t.id} className="p-3">
               <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -470,17 +470,17 @@ export default function ActivimetroPurityApp() {
                 </div>
                 <StatusBadge result={t.result_status} />
               </div>
-              <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-3">
+              <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-3">
                 <span>Eluido: {t.eluate_reading != null ? Number(t.eluate_reading).toFixed(3) : "-"} MBq</span>
                 <span>Impureza ({t.impurity_type ?? "-"}): {t.impurity_reading != null ? Number(t.impurity_reading).toFixed(4) : "-"} MBq</span>
                 <span>% impureza: {t.impurity_percent != null ? Number(t.impurity_percent).toFixed(4) + "%" : "-"}</span>
                 <span>Limite: {t.tolerance_percent != null ? t.tolerance_percent + "%" : "No configurado"}</span>
               </div>
-              <div className="mt-1 text-xs text-gray-600 flex flex-wrap gap-3">
+              <div className="mt-1 text-xs text-muted-foreground flex flex-wrap gap-3">
                 <span>Paso 11 (Revision): {t.review_status ? <StatusBadge result={t.review_status} /> : "Pendiente"}</span>
                 <span>Paso 12 (Validacion): {t.validated_by ? "Validado por " + t.validated_by : "Pendiente"}</span>
               </div>
-              {t.observaciones && <div className="text-xs text-gray-600 mt-1">Observaciones: {t.observaciones}</div>}
+              {t.observaciones && <div className="text-xs text-muted-foreground mt-1">Observaciones: {t.observaciones}</div>}
 
               {reviewOpenId === t.id ? (
                 <div className="mt-2 border rounded-md p-3 space-y-2 bg-slate-50 text-slate-800">
@@ -494,7 +494,7 @@ export default function ActivimetroPurityApp() {
                     <input type="text" className="w-full border rounded px-2 py-1 text-sm" placeholder="Validado por (fisico medico)" value={validatedBy} onChange={(e) => setValidatedBy(e.target.value)} />
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" disabled={loading} onClick={() => handleReviewSubmit(t.id)} className="px-3 py-1 rounded bg-blue-600 text-white text-xs">
+                    <button type="button" disabled={loading} onClick={() => handleReviewSubmit(t.id)} className="px-3 py-1 rounded bg-accent text-white text-xs">
                       Guardar revision/validacion
                     </button>
                     <button type="button" onClick={() => setReviewOpenId(null)} className="px-3 py-1 rounded border text-xs">

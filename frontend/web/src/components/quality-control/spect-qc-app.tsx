@@ -198,14 +198,14 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6 print:p-0">
+    <div className="mx-auto max-w-[1400px] p-6 space-y-6 print:p-0">
       <div className="flex items-center gap-3 print:hidden">
-        <Orbit className="w-7 h-7 text-indigo-600" />
+        <Orbit className="w-7 h-7 text-accent" />
         <div>
-          <h1 className="text-xl font-semibold">
+          <h1 className="text-lg font-semibold">
             Control de Calidad - Modulo 3: SPECT
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Referencia tecnica: IAEA TECDOC-602. Pruebas: Centro de Rotacion
             (COR) y Uniformidad Tomografica.
           </p>
@@ -222,7 +222,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
                   ? "bg-red-50 border-red-200 text-red-700"
                   : alert.status === "upcoming"
                   ? "bg-amber-50 border-amber-200 text-amber-700"
-                  : "bg-gray-50 border-gray-200 text-gray-600"
+                  : "bg-muted/40 border-border text-muted-foreground"
               }`}
             >
               {alert.status === "overdue" ? (
@@ -305,9 +305,9 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500">{currentTestConfig.description}</p>
+          <p className="text-xs text-muted-foreground">{currentTestConfig.description}</p>
           <button
-            className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-accent text-accent-foreground px-4 py-2 rounded disabled:opacity-50"
             disabled={!instrumentId || !performedAt || !operator}
             onClick={() => setStep(2)}
           >
@@ -321,7 +321,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
           <h2 className="font-medium">Paso 2: Registro de mediciones</h2>
           {currentTestConfig.usesReadingsArray ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Ingrese la desviacion (px) para cada proyeccion/cabezal (
                 {currentTestConfig.numReadingsRequired} lecturas requeridas).
               </p>
@@ -335,7 +335,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
                     value={r}
                     onChange={(e) => handleReadingChange(i, e.target.value)}
                   />
-                  <span className="text-sm text-gray-400">px</span>
+                  <span className="text-sm text-muted-foreground">px</span>
                 </div>
               ))}
             </div>
@@ -356,13 +356,13 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex gap-2">
             <button
-              className="border px-4 py-2 rounded"
+              className="border border-border px-4 py-2 rounded hover:bg-muted"
               onClick={() => setStep(1)}
             >
               Atras
             </button>
             <button
-              className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-50"
+              className="bg-accent text-accent-foreground px-4 py-2 rounded disabled:opacity-50"
               disabled={loading}
               onClick={handleSubmit}
             >
@@ -395,58 +395,58 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
           })()}
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-gray-500">Prueba:</span>{" "}
+              <span className="text-muted-foreground">Prueba:</span>{" "}
               {TEST_TYPES.find((t) => t.value === result.testType)?.label}
             </div>
             <div>
-              <span className="text-gray-500">Fecha:</span>{" "}
+              <span className="text-muted-foreground">Fecha:</span>{" "}
               {result.performedAt}
             </div>
             <div>
-              <span className="text-gray-500">Operador:</span>{" "}
+              <span className="text-muted-foreground">Operador:</span>{" "}
               {result.operator}
             </div>
             <div>
-              <span className="text-gray-500">Radionuclido:</span>{" "}
+              <span className="text-muted-foreground">Radionuclido:</span>{" "}
               {result.radionuclide}
             </div>
             {result.testType === "centro_rotacion" ? (
               <>
                 <div>
-                  <span className="text-gray-500">Desviacion absoluta:</span>{" "}
+                  <span className="text-muted-foreground">Desviacion absoluta:</span>{" "}
                   {result.absoluteDifference?.toFixed(3)} px
                 </div>
                 <div>
-                  <span className="text-gray-500">Tolerancia:</span> ±
+                  <span className="text-muted-foreground">Tolerancia:</span> ±
                   {result.toleranceAbsolute} px
                 </div>
               </>
             ) : (
               <>
                 <div>
-                  <span className="text-gray-500">Uniformidad:</span>{" "}
+                  <span className="text-muted-foreground">Uniformidad:</span>{" "}
                   {result.percentValue?.toFixed(2)}%
                 </div>
                 <div>
-                  <span className="text-gray-500">Tolerancia:</span>{" "}
+                  <span className="text-muted-foreground">Tolerancia:</span>{" "}
                   {result.tolerancePercent}%
                 </div>
               </>
             )}
           </div>
           <button
-            className="text-sm text-indigo-600 underline print:hidden"
+            className="text-sm text-accent underline print:hidden"
             onClick={() => setShowDetail((v) => !v)}
           >
             {showDetail ? "Ocultar detalle OPR" : "Ver detalle OPR"}
           </button>
           {showDetail && (
-            <p className="text-xs text-gray-500 border-t pt-2">
+            <p className="text-xs text-muted-foreground border-t pt-2">
               {currentTestConfig.description}
             </p>
           )}
           <button
-            className="border px-4 py-2 rounded print:hidden"
+            className="border border-border px-4 py-2 rounded hover:bg-muted print:hidden"
             onClick={resetForm}
           >
             Nueva medicion
@@ -457,7 +457,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
       {history.length > 0 && (
         <div className="space-y-3 print:hidden">
           <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-gray-500" />
+            <History className="w-5 h-5 text-muted-foreground" />
             <h2 className="font-medium">Historial y tendencia</h2>
           </div>
           <QcTrendChart
@@ -477,7 +477,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
           />
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b text-left text-gray-500">
+              <tr className="border-b border-border text-left text-muted-foreground">
                 <th className="py-1">Fecha</th>
                 <th className="py-1">Operador</th>
                 <th className="py-1">Valor</th>
@@ -486,7 +486,7 @@ export function SpectQcApp({ instruments }: { instruments: Instrument[] }) {
             </thead>
             <tbody>
               {history.map((h) => (
-                <tr key={h.id} className="border-b">
+                <tr key={h.id} className="border-b border-border">
                   <td className="py-1">{h.performedAt}</td>
                   <td className="py-1">{h.operator}</td>
                   <td className="py-1">

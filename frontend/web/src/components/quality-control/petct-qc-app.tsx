@@ -194,7 +194,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
           <h1 className="text-xl font-semibold">
             Control de Calidad - Modulo 4: PET/CT
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Referencia tecnica: IAEA Human Health Series No. 1. Pruebas:
             Calibracion Cruzada y Uniformidad de Imagen. No incluye control de
             calidad del componente CT (fuera de alcance de este modulo).
@@ -212,7 +212,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
                   ? "bg-red-50 border-red-200 text-red-700"
                   : alert.status === "upcoming"
                   ? "bg-amber-50 border-amber-200 text-amber-700"
-                  : "bg-gray-50 border-gray-200 text-gray-600"
+                  : "bg-muted/40 border-border text-muted-foreground"
               }`}
             >
               {alert.status === "overdue" ? (
@@ -295,7 +295,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500">{currentTestConfig.description}</p>
+          <p className="text-xs text-muted-foreground">{currentTestConfig.description}</p>
           <button
             className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-50"
             disabled={!instrumentId || !performedAt || !operator}
@@ -311,7 +311,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
           <h2 className="font-medium">Paso 2: Registro de mediciones</h2>
           {currentTestConfig.usesCrossCalibration ? (
             <div className="space-y-2">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Ingrese la concentracion de actividad medida por el PET y la
                 concentracion de referencia calculada a partir del activimetro,
                 ambas en Bq/mL.
@@ -325,7 +325,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
                   value={measuredActivityConcentration}
                   onChange={(e) => setMeasuredActivityConcentration(e.target.value)}
                 />
-                <span className="text-sm text-gray-400">Bq/mL</span>
+                <span className="text-sm text-muted-foreground">Bq/mL</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm w-56">Concentracion de referencia</span>
@@ -336,7 +336,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
                   value={referenceActivityConcentration}
                   onChange={(e) => setReferenceActivityConcentration(e.target.value)}
                 />
-                <span className="text-sm text-gray-400">Bq/mL</span>
+                <span className="text-sm text-muted-foreground">Bq/mL</span>
               </div>
             </div>
           ) : (
@@ -395,40 +395,40 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
           })()}
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-gray-500">Prueba:</span>{" "}
+              <span className="text-muted-foreground">Prueba:</span>{" "}
               {TEST_TYPES.find((t) => t.value === result.testType)?.label}
             </div>
             <div>
-              <span className="text-gray-500">Fecha:</span>{" "}
+              <span className="text-muted-foreground">Fecha:</span>{" "}
               {result.performedAt}
             </div>
             <div>
-              <span className="text-gray-500">Operador:</span>{" "}
+              <span className="text-muted-foreground">Operador:</span>{" "}
               {result.operator}
             </div>
             <div>
-              <span className="text-gray-500">Radionuclido:</span>{" "}
+              <span className="text-muted-foreground">Radionuclido:</span>{" "}
               {result.radionuclide}
             </div>
             {result.testType === "calibracion_cruzada" ? (
               <>
                 <div>
-                  <span className="text-gray-500">Desviacion:</span>{" "}
+                  <span className="text-muted-foreground">Desviacion:</span>{" "}
                   {result.percentValue?.toFixed(2)}%
                 </div>
                 <div>
-                  <span className="text-gray-500">Tolerancia:</span> ±
+                  <span className="text-muted-foreground">Tolerancia:</span> ±
                   {result.tolerancePercent}%
                 </div>
               </>
             ) : (
               <>
                 <div>
-                  <span className="text-gray-500">Uniformidad:</span>{" "}
+                  <span className="text-muted-foreground">Uniformidad:</span>{" "}
                   {result.percentValue?.toFixed(2)}%
                 </div>
                 <div>
-                  <span className="text-gray-500">Tolerancia:</span>{" "}
+                  <span className="text-muted-foreground">Tolerancia:</span>{" "}
                   {result.tolerancePercent}%
                 </div>
               </>
@@ -441,7 +441,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
             {showDetail ? "Ocultar detalle OPR" : "Ver detalle OPR"}
           </button>
           {showDetail && (
-            <p className="text-xs text-gray-500 border-t pt-2">
+            <p className="text-xs text-muted-foreground border-t pt-2">
               {currentTestConfig.description}
             </p>
           )}
@@ -457,7 +457,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
       {history.length > 0 && (
         <div className="space-y-3 print:hidden">
           <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-gray-500" />
+            <History className="w-5 h-5 text-muted-foreground" />
             <h2 className="font-medium">Historial y tendencia</h2>
           </div>
           <QcTrendChart
@@ -471,7 +471,7 @@ export function PetCtQcApp({ instruments }: { instruments: Instrument[] }) {
           />
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b text-left text-gray-500">
+              <tr className="border-b text-left text-muted-foreground">
                 <th className="py-1">Fecha</th>
                 <th className="py-1">Operador</th>
                 <th className="py-1">Valor</th>

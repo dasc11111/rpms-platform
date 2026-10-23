@@ -59,7 +59,7 @@ const BADGE_STYLES: Record<string, string> = {
   CUMPLE: "bg-green-100 text-green-800",
   NO_CUMPLE: "bg-red-100 text-red-800",
   REQUIERE_REVISION: "bg-yellow-100 text-yellow-800",
-  NO_APLICA: "bg-gray-100 text-gray-700",
+  NO_APLICA: "bg-muted text-foreground",
 };
 
 const BADGE_LABELS: Record<string, string> = {
@@ -73,7 +73,7 @@ const DEFAULT_ITEM_STATE: ItemState = { result: "cumple", comments: "" };
 
 function ResultBadge({ result }: { result: string }) {
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${BADGE_STYLES[result] ?? "bg-gray-100 text-gray-700"}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${BADGE_STYLES[result] ?? "bg-muted text-foreground"}`}>
       {BADGE_LABELS[result] ?? result}
     </span>
   );
@@ -195,7 +195,7 @@ export default function ActivimetroInspectionApp() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">ACTIV-01 · Inspeccion Fisica y Funcional</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Checklist de verificacion fisica y funcional del activimetro: integridad, camara de
           medicion, porta-viales/jeringas, pantalla, teclado, conectores, fuente de
           alimentacion, limpieza, identificacion, funcionamiento general y documentacion. El
@@ -299,7 +299,7 @@ export default function ActivimetroInspectionApp() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">Resultado global (calculado):</span>
+          <span className="text-sm text-muted-foreground">Resultado global (calculado):</span>
           <ResultBadge result={previewOverall} />
         </div>
 
@@ -307,14 +307,14 @@ export default function ActivimetroInspectionApp() {
           <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-green-600 text-white text-sm">
             {loading ? "Guardando..." : "Registrar inspeccion"}
           </button>
-          {message && <span className="text-sm text-gray-600">{message}</span>}
+          {message && <span className="text-sm text-muted-foreground">{message}</span>}
         </div>
       </form>
 
       <div>
         <h2 className="text-lg font-semibold mb-2">Historial de inspecciones</h2>
         <div className="border rounded-lg divide-y">
-          {inspections.length === 0 && <div className="p-3 text-sm text-gray-500">Sin inspecciones registradas.</div>}
+          {inspections.length === 0 && <div className="p-3 text-sm text-muted-foreground">Sin inspecciones registradas.</div>}
           {inspections.map((insp) => (
             <div key={insp.id} className="p-3">
               <div className="flex flex-wrap items-center gap-3 justify-between">
@@ -342,12 +342,12 @@ export default function ActivimetroInspectionApp() {
                       <span>{item.item_label}</span>
                       <span className="flex items-center gap-2">
                         <ResultBadge result={item.result.toUpperCase()} />
-                        {item.comments && <span className="text-gray-500">{item.comments}</span>}
+                        {item.comments && <span className="text-muted-foreground">{item.comments}</span>}
                       </span>
                     </div>
                   ))}
                   {insp.observaciones && (
-                    <div className="text-xs text-gray-600 pt-2">Observaciones: {insp.observaciones}</div>
+                    <div className="text-xs text-muted-foreground pt-2">Observaciones: {insp.observaciones}</div>
                   )}
                 </div>
               )}

@@ -59,8 +59,8 @@ const STATUS_STYLES: Record<string, string> = {
   cumple: "bg-green-100 text-green-800 border-green-300",
   no_cumple: "bg-red-100 text-red-800 border-red-300",
   requiere_revision: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  no_aplica: "bg-gray-100 text-gray-700 border-gray-300",
-  pendiente_revision: "bg-gray-100 text-gray-700 border-gray-300",
+  no_aplica: "bg-muted text-foreground border-border",
+  pendiente_revision: "bg-muted text-foreground border-border",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -134,7 +134,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Comparacion PET + CT + Fusion</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Modulo 4 - Fase O (seccion 24 del prompt de mejora). Vista integrada: combina el resultado
           numerico del registro/offset PET/CT (PETCT-01, PETCT-02) con la evidencia grafica registrada
           para el equipo, agrupada por modalidad, para apoyar la revision visual del Fisico Medico. El
@@ -164,19 +164,19 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
             type="button"
             onClick={loadComparison}
             disabled={loading}
-            className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm w-full"
+            className="px-3 py-1.5 rounded bg-accent text-white text-sm w-full"
           >
             {loading ? "Cargando..." : "Comparar"}
           </button>
         </div>
       </div>
 
-      {message && <p className="text-sm text-gray-600">{message}</p>}
+      {message && <p className="text-sm text-muted-foreground">{message}</p>}
 
       {queried && (
         <>
           {selectedEquipment && (
-            <p className="text-sm text-gray-600">Equipo: {equipmentLabel(selectedEquipment)}</p>
+            <p className="text-sm text-muted-foreground">Equipo: {equipmentLabel(selectedEquipment)}</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border rounded-lg p-4 space-y-2">
@@ -185,7 +185,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                 <div className="text-xs space-y-1">
                   <div className="flex items-center gap-2">
                     <StatusBadge status={petct01.status} />
-                    <span className="text-gray-500">
+                    <span className="text-muted-foreground">
                       {petct01.test_date ? new Date(petct01.test_date).toLocaleDateString() : ""}
                     </span>
                   </div>
@@ -193,7 +193,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                   <div>Error en voxels: {fmt(petct01.calculated?.errorVoxels)} (tolerancia: +/-1 voxel)</div>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500">Sin resultado registrado para este equipo.</p>
+                <p className="text-xs text-muted-foreground">Sin resultado registrado para este equipo.</p>
               )}
             </div>
             <div className="border rounded-lg p-4 space-y-2">
@@ -202,7 +202,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                 <div className="text-xs space-y-1">
                   <div className="flex items-center gap-2">
                     <StatusBadge status={petct02.status} />
-                    <span className="text-gray-500">
+                    <span className="text-muted-foreground">
                       {petct02.test_date ? new Date(petct02.test_date).toLocaleDateString() : ""}
                     </span>
                   </div>
@@ -211,7 +211,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                   <div>Deriva vs. baseline: {fmt(petct02.calculated?.deltaFromBaselineMm?.max)} mm</div>
                 </div>
               ) : (
-                <p className="text-xs text-gray-500">Sin resultado registrado para este equipo.</p>
+                <p className="text-xs text-muted-foreground">Sin resultado registrado para este equipo.</p>
               )}
             </div>
           </div>
@@ -223,9 +223,9 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                 const items = evidence.filter((ev) => ev.evidence_type === col.value);
                 return (
                   <div key={col.value} className="border rounded-lg p-3 space-y-2">
-                    <h3 className="text-sm font-semibold text-slate-700">{col.label}</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{col.label}</h3>
                     {items.length === 0 && (
-                      <p className="text-xs text-gray-500">Sin evidencia registrada de este tipo.</p>
+                      <p className="text-xs text-muted-foreground">Sin evidencia registrada de este tipo.</p>
                     )}
                     {items.map((ev) => (
                       <div key={ev.id} className="space-y-1">
@@ -238,11 +238,11 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                             />
                           </a>
                         ) : ev.file_url ? (
-                          <a href={ev.file_url} target="_blank" rel="noreferrer" className="text-blue-600 underline text-xs">
+                          <a href={ev.file_url} target="_blank" rel="noreferrer" className="text-accent underline text-xs">
                             {ev.file_name || ev.file_url}
                           </a>
                         ) : null}
-                        <div className="text-[11px] text-gray-500">
+                        <div className="text-[11px] text-muted-foreground">
                           {new Date(ev.uploaded_at).toLocaleDateString()}
                           {ev.description ? ` - ${ev.description}` : ""}
                         </div>
@@ -262,9 +262,9 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                 <h2 className="font-semibold text-sm mb-2">Otra evidencia registrada para el equipo</h2>
                 <div className="space-y-1">
                   {otherEvidence.map((ev) => (
-                    <div key={ev.id} className="text-xs text-gray-600">
+                    <div key={ev.id} className="text-xs text-muted-foreground">
                       {ev.file_url && (
-                        <a href={ev.file_url} target="_blank" rel="noreferrer" className="text-blue-600 underline mr-2">
+                        <a href={ev.file_url} target="_blank" rel="noreferrer" className="text-accent underline mr-2">
                           {ev.file_name || ev.file_url}
                         </a>
                       )}

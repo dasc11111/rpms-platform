@@ -146,7 +146,7 @@ return (
 <div className="max-w-4xl mx-auto p-6 space-y-6">
 <div>
 <h1 className="text-2xl font-bold">Evidencia Grafica PET/CT</h1>
-<p className="text-sm text-gray-500">
+<p className="text-sm text-muted-foreground">
 Modulo 4 - Fase J (seccion 23 del prompt de mejora). Referencia y metadatos de evidencia
 asociada a un control o al equipo. El archivo se administra en almacenamiento externo;
 aqui solo se guarda su URL de referencia. Use los tipos Imagen PET / Imagen CT / Imagen
@@ -181,7 +181,7 @@ onChange={(e) => setFilterTestId(e.target.value)}
 />
 </div>
 <div className="flex items-end gap-2">
-<button type="button" onClick={loadEvidence} disabled={loading} className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm">
+<button type="button" onClick={loadEvidence} disabled={loading} className="px-3 py-1.5 rounded bg-accent text-white text-sm">
 {loading ? "Consultando..." : "Consultar evidencia"}
 </button>
 <button type="button" onClick={() => setShowForm((v) => !v)} className="px-3 py-1.5 rounded bg-green-600 text-white text-sm">
@@ -190,7 +190,7 @@ onChange={(e) => setFilterTestId(e.target.value)}
 </div>
 </div>
 
-{message && <p className="text-sm text-gray-600">{message}</p>}
+{message && <p className="text-sm text-muted-foreground">{message}</p>}
 
 {showForm && (
 <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3 border rounded-lg p-4">
@@ -265,7 +265,7 @@ onChange={(e) => updateField("uploaded_by", e.target.value)}
 {queried && (
 <div className="border rounded-lg p-4">
 <h2 className="font-semibold text-sm mb-2">Evidencia registrada</h2>
-{records.length === 0 && <p className="text-xs text-gray-500">No hay evidencia para el filtro seleccionado.</p>}
+{records.length === 0 && <p className="text-xs text-muted-foreground">No hay evidencia para el filtro seleccionado.</p>}
 <div className="space-y-2">
 {records.map((r) => {
 const typeLabel = EVIDENCE_TYPES.find((t) => t.value === r.evidence_type)?.label ?? r.evidence_type;
@@ -275,11 +275,11 @@ const isOpen = openPdfId === r.id;
 return (
 <div key={r.id} className="border rounded p-2 text-xs space-y-1">
 <div className="flex flex-wrap items-center gap-2">
-<span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300 font-semibold">
+<span className="px-1.5 py-0.5 rounded bg-muted text-foreground border border-border font-semibold">
 {typeLabel}
 </span>
 {r.file_url && (
-<a href={r.file_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+<a href={r.file_url} target="_blank" rel="noreferrer" className="text-accent underline">
 {r.file_name || r.file_url}
 </a>
 )}
@@ -292,14 +292,14 @@ className="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-ind
 {isOpen ? "Ocultar PDF" : "Ver PDF"}
 </button>
 )}
-<span className="text-gray-500">{new Date(r.uploaded_at).toLocaleString()}</span>
+<span className="text-muted-foreground">{new Date(r.uploaded_at).toLocaleString()}</span>
 </div>
-<div className="text-gray-600">
+<div className="text-muted-foreground">
 {eq && <span className="mr-3">Equipo: {equipmentLabel(eq)}</span>}
 {r.test_id && <span className="mr-3">ID de prueba: {r.test_id}</span>}
 {r.uploaded_by && <span className="mr-3">Registrado por: {r.uploaded_by}</span>}
 </div>
-{r.description && <div className="text-gray-600">{r.description}</div>}
+{r.description && <div className="text-muted-foreground">{r.description}</div>}
 {showPdfButton && isOpen && r.file_url && (
 <div className="pt-2">
 <PetCtPdfViewer fileUrl={r.file_url} title={r.file_name ?? typeLabel} />

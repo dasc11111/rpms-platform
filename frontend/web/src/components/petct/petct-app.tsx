@@ -89,7 +89,7 @@ function stateColor(state: string) {
     completado: "bg-green-100 text-green-800",
     cancelado: "bg-red-100 text-red-800",
   };
-  return map[state] ?? "bg-gray-100 text-gray-800";
+  return map[state] ?? "bg-muted text-foreground";
 }
 
 function fmt(val: number | null | undefined, dec = 1): string {
@@ -182,24 +182,24 @@ function PetctAppInner() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="mx-auto max-w-[1400px] p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">PET/CT — Gestión de Exámenes</h1>
-          <p className="text-sm text-gray-500 mt-1">Registro, dosimetría y control de calidad PET/CT</p>
+          <h1 className="text-lg font-semibold">PET/CT — Gestión de Exámenes</h1>
+          <p className="text-xs text-muted-foreground mt-1">Registro, dosimetría y control de calidad PET/CT</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setTab("new-exam")} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">+ Nuevo Examen</button>
-          <button onClick={() => setTab("new-qc")} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700">+ QC Diario</button>
+          <button onClick={() => setTab("new-exam")} className="px-4 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90">+ Nuevo Examen</button>
+          <button onClick={() => setTab("new-qc")} className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted">+ QC Diario</button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <nav className="flex gap-4">
           {(["exams", "qc"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`pb-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+            <button key={t} onClick={() => setTab(t)} className={`pb-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? "border-accent text-accent" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
               {t === "exams" ? "Exámenes" : "Control de Calidad"}
             </button>
           ))}
@@ -211,39 +211,39 @@ function PetctAppInner() {
         <div className="space-y-4">
           {/* Filters */}
           <div className="flex gap-3 items-center">
-            <select value={filterState} onChange={e => setFilterState(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+            <select value={filterState} onChange={e => setFilterState(e.target.value)} className="border border-border rounded-lg px-3 py-2 text-sm">
               <option value="">Todos los estados</option>
               {PETCT_EXAM_STATES.map(s => <option key={s} value={s}>{PETCT_EXAM_STATE_LABELS[s]}</option>)}
             </select>
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" />
-            {(filterState || filterDate) && <button onClick={() => { setFilterState(""); setFilterDate(""); }} className="text-sm text-gray-500 hover:text-gray-700">Limpiar</button>}
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="border border-border rounded-lg px-3 py-2 text-sm" />
+            {(filterState || filterDate) && <button onClick={() => { setFilterState(""); setFilterDate(""); }} className="text-sm text-muted-foreground hover:text-foreground">Limpiar</button>}
           </div>
 
-          {examsQ.isLoading && <p className="text-gray-500 text-sm">Cargando...</p>}
+          {examsQ.isLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
           {examsQ.isError && <p className="text-red-600 text-sm">Error al cargar exámenes.</p>}
 
           {examsQ.data && (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-muted/40 border-b border-border">
                   <tr>
                     {["Paciente", "Radiofármaco", "MBq administrados", "Inyección", "Captación (min)", "Tasa dosis 1m (µSv/h)", "Estado", "Acciones"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface divide-y divide-border">
                   {examsQ.data.data.map(exam => {
                     const d = calcPetctDerived(exam);
                     return (
-                      <tr key={String(exam.id)} className="hover:bg-gray-50">
+                      <tr key={String(exam.id)} className="hover:bg-muted/30">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{exam.patient_id}</div>
-                          {exam.patient_name && <div className="text-gray-500 text-xs">{exam.patient_name}</div>}
+                          <div className="font-medium text-foreground">{exam.patient_id}</div>
+                          {exam.patient_name && <div className="text-muted-foreground text-xs">{exam.patient_name}</div>}
                         </td>
                         <td className="px-4 py-3">
                           <div>{exam.radiopharmaceutical}</div>
-                          <div className="text-gray-400 text-xs">{exam.radionuclide}</div>
+                          <div className="text-muted-foreground text-xs">{exam.radionuclide}</div>
                         </td>
                         <td className="px-4 py-3 font-mono">{fmt(exam.administered_mbq, 0)} MBq</td>
                         <td className="px-4 py-3">{fmtDate(exam.injection_datetime)}</td>
@@ -258,7 +258,7 @@ function PetctAppInner() {
                           <select
                             value={String(exam.state)}
                             onChange={e => patchM.mutate({ id: exam.id as string | number, updates: { state: e.target.value as PetctExam["state"] } })}
-                            className="border rounded px-2 py-1 text-xs"
+                            className="border border-border rounded px-2 py-1 text-xs"
                           >
                             {PETCT_EXAM_STATES.map(s => <option key={s} value={s}>{PETCT_EXAM_STATE_LABELS[s]}</option>)}
                           </select>
@@ -267,7 +267,7 @@ function PetctAppInner() {
                     );
                   })}
                   {examsQ.data.data.length === 0 && (
-                    <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No hay exámenes registrados</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No hay exámenes registrados</td></tr>
                   )}
                 </tbody>
               </table>
@@ -279,31 +279,31 @@ function PetctAppInner() {
       {/* ── QC LIST ── */}
       {tab === "qc" && (
         <div>
-          {qcQ.isLoading && <p className="text-gray-500 text-sm">Cargando...</p>}
+          {qcQ.isLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
           {qcQ.isError && <p className="text-red-600 text-sm">Error al cargar QC.</p>}
           {qcQ.data && (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="overflow-x-auto rounded-lg border border-border">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-muted/40 border-b border-border">
                   <tr>
                     {["Fecha", "Phantom", "Uniformidad", "Count Rate (Mcps)", "Calidad imagen", "Operador", "Comentarios"].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-surface divide-y divide-border">
                   {qcQ.data.data.map(qcRow => (
-                    <tr key={String(qcRow.id)} className="hover:bg-gray-50">
+                    <tr key={String(qcRow.id)} className="hover:bg-muted/30">
                       <td className="px-4 py-3">{qcRow.qc_date}</td>
                       <td className="px-4 py-3">{qcRow.phantom_type}</td>
                       <td className="px-4 py-3"><span className={qcRow.uniformity_pass ? "text-green-700" : "text-red-700"}>{qcRow.uniformity_pass ? "✓ OK" : "✗ FALLA"}</span></td>
                       <td className="px-4 py-3 font-mono">{qcRow.count_rate_mcps != null ? Number(qcRow.count_rate_mcps).toFixed(2) : "—"}</td>
                       <td className="px-4 py-3"><span className={qcRow.image_quality_pass ? "text-green-700" : "text-red-700"}>{qcRow.image_quality_pass ? "✓ OK" : "✗ FALLA"}</span></td>
                       <td className="px-4 py-3">{qcRow.performed_by}</td>
-                      <td className="px-4 py-3 text-gray-500">{qcRow.comments ?? "—"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{qcRow.comments ?? "—"}</td>
                     </tr>
                   ))}
-                  {qcQ.data.data.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Sin registros de QC</td></tr>}
+                  {qcQ.data.data.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin registros de QC</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -319,28 +319,28 @@ function PetctAppInner() {
             {/* Row 1 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">RUT Paciente *</label>
-                <input type="text" value={examForm.patient_id} onChange={e => setExamForm(f => ({ ...f, patient_id: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" placeholder="12.345.678-9" />
+                <label className="block text-sm font-medium">RUT Paciente *</label>
+                <input type="text" value={examForm.patient_id} onChange={e => setExamForm(f => ({ ...f, patient_id: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" placeholder="12.345.678-9" />
                 {errors.patient_id && <p className="text-red-600 text-xs mt-1">{errors.patient_id}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nombre Paciente</label>
-                <input type="text" value={examForm.patient_name ?? ""} onChange={e => setExamForm(f => ({ ...f, patient_name: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Nombre Paciente</label>
+                <input type="text" value={examForm.patient_name ?? ""} onChange={e => setExamForm(f => ({ ...f, patient_name: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
             {/* Row 2 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Radiofármaco *</label>
-                <select value={examForm.radiopharmaceutical} onChange={e => setExamForm(f => ({ ...f, radiopharmaceutical: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
+                <label className="block text-sm font-medium">Radiofármaco *</label>
+                <select value={examForm.radiopharmaceutical} onChange={e => setExamForm(f => ({ ...f, radiopharmaceutical: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm">
                   <option value="">Seleccionar radiofármaco</option>
                   {(PETCT_RADIOPHARMACEUTICALS as readonly string[]).map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
                 {errors.radiopharmaceutical && <p className="text-red-600 text-xs mt-1">{errors.radiopharmaceutical}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Radionucleido *</label>
-                <select value={examForm.radionuclide} onChange={e => setExamForm(f => ({ ...f, radionuclide: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm">
+                <label className="block text-sm font-medium">Radionucleido *</label>
+                <select value={examForm.radionuclide} onChange={e => setExamForm(f => ({ ...f, radionuclide: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm">
                   <option value="">Seleccionar radionucleido</option>
                   {(PETCT_RADIONUCLIDES as readonly string[]).map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
@@ -350,47 +350,47 @@ function PetctAppInner() {
             {/* Row 3 */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Actividad (MBq) *</label>
-                <input type="number" step="0.1" value={examForm.administered_mbq} onChange={e => setExamForm(f => ({ ...f, administered_mbq: Number(e.target.value) }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Actividad (MBq) *</label>
+                <input type="number" step="0.1" value={examForm.administered_mbq} onChange={e => setExamForm(f => ({ ...f, administered_mbq: Number(e.target.value) }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
                 {errors.administered_mbq && <p className="text-red-600 text-xs mt-1">{errors.administered_mbq}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Peso (kg)</label>
-                <input type="number" step="0.1" value={examForm.patient_weight_kg ?? ""} onChange={e => setExamForm(f => ({ ...f, patient_weight_kg: e.target.value ? Number(e.target.value) : undefined }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Peso (kg)</label>
+                <input type="number" step="0.1" value={examForm.patient_weight_kg ?? ""} onChange={e => setExamForm(f => ({ ...f, patient_weight_kg: e.target.value ? Number(e.target.value) : undefined }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Captación (min) *</label>
-                <input type="number" value={examForm.uptake_minutes} onChange={e => setExamForm(f => ({ ...f, uptake_minutes: Number(e.target.value) }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Captación (min) *</label>
+                <input type="number" value={examForm.uptake_minutes} onChange={e => setExamForm(f => ({ ...f, uptake_minutes: Number(e.target.value) }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
             {/* Row 4 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Fecha/Hora Inyección *</label>
-              <input type="datetime-local" value={examForm.injection_datetime} onChange={e => setExamForm(f => ({ ...f, injection_datetime: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium">Fecha/Hora Inyección *</label>
+              <input type="datetime-local" value={examForm.injection_datetime} onChange={e => setExamForm(f => ({ ...f, injection_datetime: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               {errors.injection_datetime && <p className="text-red-600 text-xs mt-1">{errors.injection_datetime}</p>}
             </div>
             {/* Row 5 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Operador *</label>
-                <input type="text" value={examForm.operator} onChange={e => setExamForm(f => ({ ...f, operator: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Operador *</label>
+                <input type="text" value={examForm.operator} onChange={e => setExamForm(f => ({ ...f, operator: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
                 {errors.operator && <p className="text-red-600 text-xs mt-1">{errors.operator}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Médico Prescriptor *</label>
-                <input type="text" value={examForm.prescribing_physician} onChange={e => setExamForm(f => ({ ...f, prescribing_physician: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Médico Prescriptor *</label>
+                <input type="text" value={examForm.prescribing_physician} onChange={e => setExamForm(f => ({ ...f, prescribing_physician: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
                 {errors.prescribing_physician && <p className="text-red-600 text-xs mt-1">{errors.prescribing_physician}</p>}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Notas</label>
-              <textarea value={examForm.notes ?? ""} onChange={e => setExamForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium">Notas</label>
+              <textarea value={examForm.notes ?? ""} onChange={e => setExamForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-3">
-              <button type="submit" disabled={createExamM.isPending} className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+              <button type="submit" disabled={createExamM.isPending} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
                 {createExamM.isPending ? "Guardando..." : "Registrar Examen"}
               </button>
-              <button type="button" onClick={() => setTab("exams")} className="px-6 py-2 border rounded-lg text-sm font-medium">Cancelar</button>
+              <button type="button" onClick={() => setTab("exams")} className="px-6 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted">Cancelar</button>
             </div>
             {createExamM.isError && <p className="text-red-600 text-sm">Error al guardar el examen.</p>}
           </form>
@@ -404,42 +404,42 @@ function PetctAppInner() {
           <form onSubmit={handleQcSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Fecha *</label>
-                <input type="date" value={qcForm.qc_date} onChange={e => setQcForm(f => ({ ...f, qc_date: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Fecha *</label>
+                <input type="date" value={qcForm.qc_date} onChange={e => setQcForm(f => ({ ...f, qc_date: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Phantom</label>
-                <input type="text" value={qcForm.phantom_type} onChange={e => setQcForm(f => ({ ...f, phantom_type: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium">Phantom</label>
+                <input type="text" value={qcForm.phantom_type} onChange={e => setQcForm(f => ({ ...f, phantom_type: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3 mt-4">
-                <input type="checkbox" id="uniformity" checked={qcForm.uniformity_pass} onChange={e => setQcForm(f => ({ ...f, uniformity_pass: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600" />
-                <label htmlFor="uniformity" className="text-sm font-medium text-gray-700">Uniformidad OK</label>
+                <input type="checkbox" id="uniformity" checked={qcForm.uniformity_pass} onChange={e => setQcForm(f => ({ ...f, uniformity_pass: e.target.checked }))} className="h-4 w-4 rounded border-border" />
+                <label htmlFor="uniformity" className="text-sm font-medium">Uniformidad OK</label>
               </div>
               <div className="flex items-center gap-3 mt-4">
-                <input type="checkbox" id="image_quality" checked={qcForm.image_quality_pass} onChange={e => setQcForm(f => ({ ...f, image_quality_pass: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600" />
-                <label htmlFor="image_quality" className="text-sm font-medium text-gray-700">Calidad imagen OK</label>
+                <input type="checkbox" id="image_quality" checked={qcForm.image_quality_pass} onChange={e => setQcForm(f => ({ ...f, image_quality_pass: e.target.checked }))} className="h-4 w-4 rounded border-border" />
+                <label htmlFor="image_quality" className="text-sm font-medium">Calidad imagen OK</label>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Count Rate (Mcps)</label>
-              <input type="number" step="0.01" value={qcForm.count_rate_mcps ?? ""} onChange={e => setQcForm(f => ({ ...f, count_rate_mcps: e.target.value ? Number(e.target.value) : undefined }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium">Count Rate (Mcps)</label>
+              <input type="number" step="0.01" value={qcForm.count_rate_mcps ?? ""} onChange={e => setQcForm(f => ({ ...f, count_rate_mcps: e.target.value ? Number(e.target.value) : undefined }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Operador *</label>
-              <input type="text" value={qcForm.performed_by} onChange={e => setQcForm(f => ({ ...f, performed_by: e.target.value }))} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium">Operador *</label>
+              <input type="text" value={qcForm.performed_by} onChange={e => setQcForm(f => ({ ...f, performed_by: e.target.value }))} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
               {errors.performed_by && <p className="text-red-600 text-xs mt-1">{errors.performed_by}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Comentarios</label>
-              <textarea value={qcForm.comments ?? ""} onChange={e => setQcForm(f => ({ ...f, comments: e.target.value }))} rows={2} className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+              <label className="block text-sm font-medium">Comentarios</label>
+              <textarea value={qcForm.comments ?? ""} onChange={e => setQcForm(f => ({ ...f, comments: e.target.value }))} rows={2} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-3">
-              <button type="submit" disabled={createQcM.isPending} className="px-6 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
+              <button type="submit" disabled={createQcM.isPending} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
                 {createQcM.isPending ? "Guardando..." : "Guardar QC"}
               </button>
-              <button type="button" onClick={() => setTab("qc")} className="px-6 py-2 border rounded-lg text-sm font-medium">Cancelar</button>
+              <button type="button" onClick={() => setTab("qc")} className="px-6 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted">Cancelar</button>
             </div>
             {createQcM.isError && <p className="text-red-600 text-sm">Error al guardar el QC.</p>}
           </form>

@@ -85,7 +85,7 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800">Informe PDF - Activimetro</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Genera un documento PDF que consolida la ficha del equipo, los avisos de vencimiento y
           retraso, las pruebas de control de calidad ya registradas (ACTIV-01 a ACTIV-07), los
           eventos de servicio tecnico y la evidencia documental asociada. El informe solo
@@ -93,9 +93,9 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
         </p>
       </div>
 
-      <div className="border rounded-lg p-4 bg-white space-y-4">
+      <div className="border rounded-lg p-4 bg-surface space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Equipo</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Equipo</label>
           <select
             className="w-full border rounded-md px-3 py-2 text-sm"
             value={equipmentId}

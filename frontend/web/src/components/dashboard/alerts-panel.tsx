@@ -22,7 +22,7 @@ const TONE: Record<DashboardAlert["severity"], string> = {
   critical: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30",
   high: "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30",
   medium: "text-yellow-500 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20",
-  info: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30",
+  info: "text-accent bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30",
 };
 
 interface Props {
