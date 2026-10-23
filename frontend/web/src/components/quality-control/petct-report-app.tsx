@@ -107,17 +107,34 @@ export default function PetCtReportApp({ equipment }: { equipment: Equipment[] }
             ))}
           </select>
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2 flex-wrap">
           <button
             type="button"
             onClick={handleGenerate}
             disabled={loading}
-            className="px-3 py-1.5 rounded bg-accent text-white text-sm w-full"
+            className="px-3 py-1.5 rounded bg-accent text-white text-sm flex-1"
           >
-            {loading ? "Generando..." : "Generar informe PDF"}
+            {loading ? "Generando..." : "PDF (cliente)"}
           </button>
+          {equipmentId && (
+            <a
+              href={`/api/quality-control/petct/export/pdf?equipment_id=${equipmentId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded border border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 hover:bg-blue-100 text-sm flex-1 text-center"
+            >
+              PDF (servidor)
+            </a>
+          )}
         </div>
       </div>
+      {equipmentId && (
+        <p className="text-xs text-muted-foreground">
+          El botón <strong>PDF (servidor)</strong> descarga el informe generado en el servidor con diseño
+          profesional A4 apaisado — incluye ficha técnica, cumplimiento, pruebas PET/CT, interacción y alertas.
+          El botón <strong>PDF (cliente)</strong> genera el informe directamente en el navegador (modo Fase P anterior).
+        </p>
+      )}
 
       {message && <p className="text-sm text-muted-foreground">{message}</p>}
     </div>
