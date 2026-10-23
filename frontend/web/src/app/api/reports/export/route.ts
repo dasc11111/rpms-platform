@@ -244,8 +244,8 @@ export async function GET(req: NextRequest) {
             SELECT
               record_code, radionuclide, waste_category, state,
               initial_activity_mbq, initial_activity_date,
-              origin_area, generated_by, container_id,
-              disposal_route, disposal_date, status, notes, created_at
+              origin_area, generated_by, container_label,
+              disposal_route, disposal_date, notes, created_at
             FROM waste_records
             ORDER BY initial_activity_date DESC, id DESC
             LIMIT 5000
@@ -256,15 +256,14 @@ export async function GET(req: NextRequest) {
           { key: "record_code", label: "Código" },
           { key: "radionuclide", label: "Radionúclido" },
           { key: "waste_category", label: "Categoría Residuo" },
-          { key: "state", label: "Estado Físico" },
+          { key: "state", label: "Estado" },
           { key: "initial_activity_mbq", label: "Actividad Inicial (MBq)" },
           { key: "initial_activity_date", label: "Fecha Actividad Inicial" },
           { key: "origin_area", label: "Área de Origen" },
           { key: "generated_by", label: "Generado por" },
-          { key: "container_id", label: "Contenedor" },
+          { key: "container_label", label: "Etiqueta Contenedor" },
           { key: "disposal_route", label: "Vía Disposición" },
           { key: "disposal_date", label: "Fecha Disposición" },
-          { key: "status", label: "Estado" },
           { key: "notes", label: "Notas" },
           { key: "created_at", label: "Fecha Registro" },
         ]);
