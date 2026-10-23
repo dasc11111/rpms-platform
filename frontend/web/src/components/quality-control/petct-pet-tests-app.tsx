@@ -117,9 +117,13 @@ export default function PetCtPetTestsApp({ equipment }: { equipment: Equipment[]
       setHistory([]);
       return;
     }
-    const res = await fetch(`/api/quality-control/petct/pet-tests?equipment_id=${equipmentId}&test_code=${testCode}`);
-    const data = await res.json();
-    setHistory(data);
+    try {
+      const res = await fetch(`/api/quality-control/petct/pet-tests?equipment_id=${equipmentId}&test_code=${testCode}`);
+      const data = await res.json();
+      setHistory(Array.isArray(data) ? data : []);
+    } catch {
+      setHistory([]);
+    }
   }
 
   useEffect(() => {

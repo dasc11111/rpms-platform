@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-const _qc_petct = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
+import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import {
   PetctExam,
@@ -43,41 +40,6 @@ const qcSchema = z.object({
 
 type ExamForm = z.infer<typeof examSchema>;
 type QcForm = z.infer<typeof qcSchema>;
-
-// ─── API helpers ─────────────────────────────────────────────────────────────
-
-async function fetchExams(state?: string, date?: string): Promise<{ data: PetctExam[]; total: number }> {
-  const params = new URLSearchParams({ type: "exams", limit: "100" });
-  if (state) params.set("state", state);
-  if (date) params.set("date", date);
-  const res = await fetch(`/api/petct?${params}`);
-  if (!res.ok) throw new Error("Error al cargar exámenes PET/CT");
-  return res.json();
-}
-
-async function fetchQc(): Promise<{ data: PetctQc[]; total: number }> {
-  const res = await fetch("/api/petct?type=qc&limit=30");
-  if (!res.ok) throw new Error("Error al cargar QC");
-  return res.json();
-}
-
-async function createExam(body: ExamForm & { type: "exam" }) {
-  const res = await fetch("/api/petct", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error("Error al crear examen");
-  return res.json();
-}
-
-async function createQc(body: QcForm & { type: "qc" }) {
-  const res = await fetch("/api/petct", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error("Error al guardar QC");
-  return res.json();
-}
-
-async function patchExam(id: string | number, updates: Partial<PetctExam>) {
-  const res = await fetch("/api/petct", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...updates }) });
-  if (!res.ok) throw new Error("Error al actualizar examen");
-  return res.json();
-}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -136,8 +98,7 @@ function emptyQc(): QcForm {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-function PetctAppInner() {
-  const qc = useQueryClient();
+export function PetctApp() {
   const [tab, setTab] = useState<"exams" | "new-exam" | "qc" | "new-qc">("exams");
   const [filterState, setFilterState] = useState("");
   const [filterDate, setFilterDate] = useState("");
@@ -145,17 +106,64 @@ function PetctAppInner() {
   const [qcForm, setQcForm] = useState<QcForm>(emptyQc);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Queries
-  const examsQ = useQuery({ queryKey: ["petct-exams", filterState, filterDate], queryFn: () => fetchExams(filterState, filterDate), enabled: tab === "exams" });
-  const qcQ = useQuery({ queryKey: ["petct-qc"], queryFn: fetchQc, enabled: tab === "qc" });
+  // Exams state
+  const [exams, setExams] = useState<PetctExam[]>([]);
+  const [examsLoading, setExamsLoading] = useState(false);
+  const [examsError, setExamsError] = useState<string | null>(null);
+  const [examSaving, setExamSaving] = useState(false);
+  const [examSaveError, setExamSaveError] = useState<string | null>(null);
 
-  // Mutations
-  const createExamM = useMutation({ mutationFn: createExam, onSuccess: () => { qc.invalidateQueries({ queryKey: ["petct-exams"] }); setTab("exams"); setExamForm(emptyExam()); } });
-  const createQcM = useMutation({ mutationFn: createQc, onSuccess: () => { qc.invalidateQueries({ queryKey: ["petct-qc"] }); setTab("qc"); setQcForm(emptyQc()); } });
-  const patchM = useMutation({ mutationFn: ({ id, updates }: { id: string | number; updates: Partial<PetctExam> }) => patchExam(id, updates), onSuccess: () => qc.invalidateQueries({ queryKey: ["petct-exams"] }) });
+  // QC state
+  const [qcList, setQcList] = useState<PetctQc[]>([]);
+  const [qcLoading, setQcLoading] = useState(false);
+  const [qcError, setQcError] = useState<string | null>(null);
+  const [qcSaving, setQcSaving] = useState(false);
+  const [qcSaveError, setQcSaveError] = useState<string | null>(null);
 
-  // Form handlers
-  function handleExamSubmit(e: React.FormEvent) {
+  const loadExams = useCallback(async () => {
+    setExamsLoading(true);
+    setExamsError(null);
+    try {
+      const params = new URLSearchParams({ type: "exams", limit: "100" });
+      if (filterState) params.set("state", filterState);
+      if (filterDate) params.set("date", filterDate);
+      const res = await fetch(`/api/petct?${params}`);
+      if (!res.ok) throw new Error("Error al cargar exámenes PET/CT");
+      const json = await res.json();
+      setExams(Array.isArray(json.data) ? json.data : []);
+    } catch (err) {
+      setExamsError(err instanceof Error ? err.message : "Error al cargar exámenes");
+      setExams([]);
+    } finally {
+      setExamsLoading(false);
+    }
+  }, [filterState, filterDate]);
+
+  const loadQc = useCallback(async () => {
+    setQcLoading(true);
+    setQcError(null);
+    try {
+      const res = await fetch("/api/petct?type=qc&limit=30");
+      if (!res.ok) throw new Error("Error al cargar QC");
+      const json = await res.json();
+      setQcList(Array.isArray(json.data) ? json.data : []);
+    } catch (err) {
+      setQcError(err instanceof Error ? err.message : "Error al cargar QC");
+      setQcList([]);
+    } finally {
+      setQcLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === "exams") loadExams();
+  }, [tab, loadExams]);
+
+  useEffect(() => {
+    if (tab === "qc") loadQc();
+  }, [tab, loadQc]);
+
+  async function handleExamSubmit(e: React.FormEvent) {
     e.preventDefault();
     const result = examSchema.safeParse(examForm);
     if (!result.success) {
@@ -165,10 +173,26 @@ function PetctAppInner() {
       return;
     }
     setErrors({});
-    createExamM.mutate({ ...result.data, type: "exam" });
+    setExamSaving(true);
+    setExamSaveError(null);
+    try {
+      const res = await fetch("/api/petct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...result.data, type: "exam" }),
+      });
+      if (!res.ok) throw new Error("Error al crear examen");
+      setTab("exams");
+      setExamForm(emptyExam());
+      await loadExams();
+    } catch (err) {
+      setExamSaveError(err instanceof Error ? err.message : "Error al guardar el examen");
+    } finally {
+      setExamSaving(false);
+    }
   }
 
-  function handleQcSubmit(e: React.FormEvent) {
+  async function handleQcSubmit(e: React.FormEvent) {
     e.preventDefault();
     const result = qcSchema.safeParse(qcForm);
     if (!result.success) {
@@ -178,7 +202,37 @@ function PetctAppInner() {
       return;
     }
     setErrors({});
-    createQcM.mutate({ ...result.data, type: "qc" });
+    setQcSaving(true);
+    setQcSaveError(null);
+    try {
+      const res = await fetch("/api/petct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...result.data, type: "qc" }),
+      });
+      if (!res.ok) throw new Error("Error al guardar QC");
+      setTab("qc");
+      setQcForm(emptyQc());
+      await loadQc();
+    } catch (err) {
+      setQcSaveError(err instanceof Error ? err.message : "Error al guardar el QC");
+    } finally {
+      setQcSaving(false);
+    }
+  }
+
+  async function handlePatchExam(id: string | number, updates: Partial<PetctExam>) {
+    try {
+      const res = await fetch("/api/petct", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...updates }),
+      });
+      if (!res.ok) throw new Error("Error al actualizar examen");
+      await loadExams();
+    } catch {
+      // Silent fail for state patch — user can retry
+    }
   }
 
   return (
@@ -219,10 +273,10 @@ function PetctAppInner() {
             {(filterState || filterDate) && <button onClick={() => { setFilterState(""); setFilterDate(""); }} className="text-sm text-muted-foreground hover:text-foreground">Limpiar</button>}
           </div>
 
-          {examsQ.isLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
-          {examsQ.isError && <p className="text-red-600 text-sm">Error al cargar exámenes.</p>}
+          {examsLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
+          {examsError && <p className="text-red-600 text-sm">{examsError}</p>}
 
-          {examsQ.data && (
+          {!examsLoading && (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40 border-b border-border">
@@ -233,7 +287,7 @@ function PetctAppInner() {
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
-                  {examsQ.data.data.map(exam => {
+                  {exams.map(exam => {
                     const d = calcPetctDerived(exam);
                     return (
                       <tr key={String(exam.id)} className="hover:bg-muted/30">
@@ -257,7 +311,7 @@ function PetctAppInner() {
                         <td className="px-4 py-3">
                           <select
                             value={String(exam.state)}
-                            onChange={e => patchM.mutate({ id: exam.id as string | number, updates: { state: e.target.value as PetctExam["state"] } })}
+                            onChange={e => handlePatchExam(exam.id as string | number, { state: e.target.value as PetctExam["state"] })}
                             className="border border-border rounded px-2 py-1 text-xs"
                           >
                             {PETCT_EXAM_STATES.map(s => <option key={s} value={s}>{PETCT_EXAM_STATE_LABELS[s]}</option>)}
@@ -266,7 +320,7 @@ function PetctAppInner() {
                       </tr>
                     );
                   })}
-                  {examsQ.data.data.length === 0 && (
+                  {exams.length === 0 && !examsLoading && (
                     <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No hay exámenes registrados</td></tr>
                   )}
                 </tbody>
@@ -279,9 +333,9 @@ function PetctAppInner() {
       {/* ── QC LIST ── */}
       {tab === "qc" && (
         <div>
-          {qcQ.isLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
-          {qcQ.isError && <p className="text-red-600 text-sm">Error al cargar QC.</p>}
-          {qcQ.data && (
+          {qcLoading && <p className="text-muted-foreground text-sm">Cargando...</p>}
+          {qcError && <p className="text-red-600 text-sm">{qcError}</p>}
+          {!qcLoading && (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40 border-b border-border">
@@ -292,7 +346,7 @@ function PetctAppInner() {
                   </tr>
                 </thead>
                 <tbody className="bg-surface divide-y divide-border">
-                  {qcQ.data.data.map(qcRow => (
+                  {qcList.map(qcRow => (
                     <tr key={String(qcRow.id)} className="hover:bg-muted/30">
                       <td className="px-4 py-3">{qcRow.qc_date}</td>
                       <td className="px-4 py-3">{qcRow.phantom_type}</td>
@@ -303,7 +357,7 @@ function PetctAppInner() {
                       <td className="px-4 py-3 text-muted-foreground">{qcRow.comments ?? "—"}</td>
                     </tr>
                   ))}
-                  {qcQ.data.data.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin registros de QC</td></tr>}
+                  {qcList.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Sin registros de QC</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -387,12 +441,12 @@ function PetctAppInner() {
               <textarea value={examForm.notes ?? ""} onChange={e => setExamForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-3">
-              <button type="submit" disabled={createExamM.isPending} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
-                {createExamM.isPending ? "Guardando..." : "Registrar Examen"}
+              <button type="submit" disabled={examSaving} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
+                {examSaving ? "Guardando..." : "Registrar Examen"}
               </button>
               <button type="button" onClick={() => setTab("exams")} className="px-6 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted">Cancelar</button>
             </div>
-            {createExamM.isError && <p className="text-red-600 text-sm">Error al guardar el examen.</p>}
+            {examSaveError && <p className="text-red-600 text-sm">{examSaveError}</p>}
           </form>
         </div>
       )}
@@ -436,23 +490,15 @@ function PetctAppInner() {
               <textarea value={qcForm.comments ?? ""} onChange={e => setQcForm(f => ({ ...f, comments: e.target.value }))} rows={2} className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div className="flex gap-3">
-              <button type="submit" disabled={createQcM.isPending} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
-                {createQcM.isPending ? "Guardando..." : "Guardar QC"}
+              <button type="submit" disabled={qcSaving} className="px-6 py-2 bg-accent text-accent-foreground rounded-lg text-sm font-medium hover:bg-accent/90 disabled:opacity-50">
+                {qcSaving ? "Guardando..." : "Guardar QC"}
               </button>
               <button type="button" onClick={() => setTab("qc")} className="px-6 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted">Cancelar</button>
             </div>
-            {createQcM.isError && <p className="text-red-600 text-sm">Error al guardar el QC.</p>}
+            {qcSaveError && <p className="text-red-600 text-sm">{qcSaveError}</p>}
           </form>
         </div>
       )}
     </div>
-  );
-}
-
-export function PetctApp() {
-  return (
-    <QueryClientProvider client={_qc_petct}>
-      <PetctAppInner />
-    </QueryClientProvider>
   );
 }
