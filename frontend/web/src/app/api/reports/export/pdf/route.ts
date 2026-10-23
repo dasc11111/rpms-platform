@@ -35,7 +35,7 @@ export async function GET() {
       wastePending,
       equipmentVencido,
     ] = await Promise.all([
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeter_assignments WHERE returned_at IS NULL AND due_date < CURRENT_DATE`),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM i131_administrations WHERE admin_year = EXTRACT(YEAR FROM NOW()) AND admin_month = EXTRACT(MONTH FROM NOW())`),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM nm_incidents WHERE status = 'abierto'`),
@@ -51,10 +51,10 @@ export async function GET() {
             WHERE c.instrument_id = i.id AND c.expiry_date >= CURRENT_DATE
           )
       `),
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE status = 'pending'`),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE state = 'en_almacenamiento'`),
       safeCount(() => sql`
         SELECT COUNT(*)::text as count FROM radiology_equipment
-        WHERE status = 'activo'
+        WHERE status = 'operativo'
           AND authorization_expiry_date IS NOT NULL
           AND authorization_expiry_date < CURRENT_DATE
       `),
