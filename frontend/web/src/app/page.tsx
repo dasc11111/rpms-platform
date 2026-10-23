@@ -87,6 +87,28 @@ export default async function Dashboard() {
     lostCount = notReturned.filter((r) => r.extraviado).length;
   } catch {}
 
+  // Incidentes abiertos (real DB)
+  let incidentesAbiertos = 0;
+  try {
+    const { rows: incRows } = await sql`
+      SELECT COUNT(*)::int as count FROM nm_incidents WHERE status = 'abierto'
+    `;
+    incidentesAbiertos = Number((incRows[0] as any)?.count ?? 0);
+  } catch {}
+
+  // Cumplimiento normativo (real DB)
+  let complianceVencido = 0;
+  let compliancePendiente = 0;
+  try {
+    const { rows: compRows } = await sql`
+      SELECT status, COUNT(*)::int as count FROM compliance_requirements GROUP BY status
+    `;
+    for (const r of compRows as any[]) {
+      if (r.status === "vencido") complianceVencido = Number(r.count ?? 0);
+      if (r.status === "pendiente") compliancePendiente = Number(r.count ?? 0);
+    }
+  } catch {}
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -107,10 +129,10 @@ export default async function Dashboard() {
         <KPICard label="Dosím. extraviados" value={lostCount} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
         <KPICard label="Equipos pendientes" value={5} href="/equipment" icon={Radio} />
         <KPICard label="Equipos fuera servicio" value={2} href="/equipment" icon={Ban} tone="warning" />
-        <KPICard label="Blindajes pendientes" value={1} href="/compliance" icon={ShieldAlert} tone="warning" />
+        <KPICard label="Req. normativos vencidos" value={complianceVencido} href="/compliance" icon={ShieldAlert} tone={complianceVencido > 0 ? "danger" : undefined} />
+        <KPICard label="Req. normativos pendientes" value={compliancePendiente} href="/compliance" icon={FileWarning} tone={compliancePendiente > 0 ? "warning" : undefined} />
         <KPICard label="QA pendientes" value={8} href="/equipment" icon={ClipboardCheck} tone="warning" />
-        <KPICard label="Inspecciones pendientes" value={4} href="/compliance" icon={FileWarning} tone="warning" />
-        <KPICard label="Incidentes abiertos" value={3} href="/incidents" icon={AlertTriangle} tone="danger" />
+        <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone={incidentesAbiertos > 0 ? "danger" : undefined} />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
