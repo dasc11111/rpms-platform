@@ -43,8 +43,16 @@ export async function GET() {
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM compliance_requirements WHERE status = 'pendiente'`),
       // Compliance vencido
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM compliance_requirements WHERE status = 'vencido'`),
-      // Instruments (calibration due)
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM instruments WHERE next_calibration_date < CURRENT_DATE`),
+      // Instruments with overdue calibration (via calibrations join)
+      safeCount(() => sql`
+        SELECT COUNT(*)::text as count FROM instruments i
+        WHERE i.status = 'operativo'
+          AND NOT EXISTS (
+            SELECT 1 FROM calibrations c
+            WHERE c.instrument_id = i.id
+              AND c.expiry_date >= CURRENT_DATE
+          )
+      `),
       // Waste pending
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE status = 'pending'`),
     ]);

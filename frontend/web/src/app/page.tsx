@@ -109,6 +109,29 @@ export default async function Dashboard() {
     }
   } catch {}
 
+  // Instrumentos (real DB)
+  let instrumentosMantenimiento = 0;
+  let instrumentosFueraServicio = 0;
+  let instrumentosCalibVencida = 0;
+  try {
+    const { rows: instrRows } = await sql`
+      SELECT status, COUNT(*)::int as count FROM instruments GROUP BY status
+    `;
+    for (const r of instrRows as any[]) {
+      if (r.status === "en_mantenimiento") instrumentosMantenimiento = Number(r.count ?? 0);
+      if (r.status === "fuera_servicio") instrumentosFueraServicio = Number(r.count ?? 0);
+    }
+    const { rows: calibRows } = await sql`
+      SELECT COUNT(*)::int as count FROM instruments i
+      WHERE i.status = 'operativo'
+        AND NOT EXISTS (
+          SELECT 1 FROM calibrations c
+          WHERE c.instrument_id = i.id AND c.expiry_date >= CURRENT_DATE
+        )
+    `;
+    instrumentosCalibVencida = Number((calibRows[0] as any)?.count ?? 0);
+  } catch {}
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -127,11 +150,11 @@ export default async function Dashboard() {
         <KPICard label="Sin autorización" value={totalSinAutorizacion} href="/workers" icon={XCircle} tone="warning" />
         <KPICard label="Dosím. pend. devolver" value={pendingReturnCount} href="/dosimetry?tab=no-devueltos" icon={Package} tone="warning" />
         <KPICard label="Dosím. extraviados" value={lostCount} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
-        <KPICard label="Equipos pendientes" value={5} href="/equipment" icon={Radio} />
-        <KPICard label="Equipos fuera servicio" value={2} href="/equipment" icon={Ban} tone="warning" />
+        <KPICard label="Instrumentos en mantención" value={instrumentosMantenimiento} href="/instruments" icon={Radio} tone={instrumentosMantenimiento > 0 ? "warning" : undefined} />
+        <KPICard label="Instrumentos fuera servicio" value={instrumentosFueraServicio} href="/instruments" icon={Ban} tone={instrumentosFueraServicio > 0 ? "danger" : undefined} />
         <KPICard label="Req. normativos vencidos" value={complianceVencido} href="/compliance" icon={ShieldAlert} tone={complianceVencido > 0 ? "danger" : undefined} />
         <KPICard label="Req. normativos pendientes" value={compliancePendiente} href="/compliance" icon={FileWarning} tone={compliancePendiente > 0 ? "warning" : undefined} />
-        <KPICard label="QA pendientes" value={8} href="/equipment" icon={ClipboardCheck} tone="warning" />
+        <KPICard label="Calibraciones vencidas" value={instrumentosCalibVencida} href="/instruments" icon={ClipboardCheck} tone={instrumentosCalibVencida > 0 ? "warning" : undefined} />
         <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone={incidentesAbiertos > 0 ? "danger" : undefined} />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
