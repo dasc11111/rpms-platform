@@ -79,7 +79,7 @@ export async function GET() {
           0
         ) as annual_dose
       FROM workers w
-      WHERE w.status IN ('activo', 'suspended')
+      WHERE w.status IN ('active', 'suspended')
       ORDER BY w.service ASC, w.last_name_1 ASC, w.name ASC
       LIMIT 2000
     ` as { rows: WorkerRow[] };
