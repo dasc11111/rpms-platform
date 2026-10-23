@@ -5,8 +5,10 @@
  * Monitoreo de pacientes en aislamiento post-administración de I-131
  * DS 3/1985 MINSAL - Criterio alta: actividad < 30 mCi (1.11 GBq) o tasa dosis < 25 μSv/h a 1m
  */
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle, Clock, ShieldCheck } from "lucide-react";
+
+const _qc = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
 
 interface IsolationRecord {
   id: number;
@@ -80,7 +82,7 @@ function ActivityBar({ remaining, initial }: { remaining: number; initial: numbe
   );
 }
 
-export function I131IsolationPanel() {
+function I131IsolationPanelInner() {
   const { data, isLoading, error } = useQuery<{ data: IsolationRecord[]; stats: IsolationStats }>({
     queryKey: ["i131-isolation"],
     queryFn: async () => {
@@ -226,5 +228,13 @@ export function I131IsolationPanel() {
         debe considerar también la medición directa de tasa de dosis a 1 m. DS 3/1985 MINSAL.
       </p>
     </div>
+  );
+}
+
+export function I131IsolationPanel() {
+  return (
+    <QueryClientProvider client={_qc}>
+      <I131IsolationPanelInner />
+    </QueryClientProvider>
   );
 }
