@@ -183,6 +183,24 @@ const REPORT_TYPES = [
     exportType: undefined,
     pageHref: "/quality-control/activimetro/report",
   },
+  {
+    id: "qc_gammacamara",
+    name: "Informe de Control de Calidad Gammacámara",
+    description: "Uniformidad, resolución espacial, sensibilidad y linealidad de energía. IAEA TECDOC-602.",
+    format: "PDF",
+    regulation: "DS 133/1984 · IAEA TECDOC-602",
+    exportType: undefined,
+    pageHref: "/quality-control/gammacamara/report",
+  },
+  {
+    id: "qc_spect",
+    name: "Informe de Control de Calidad SPECT",
+    description: "Resolución volumétrica, uniformidad tomográfica y corrección de atenuación. IAEA TECDOC-602.",
+    format: "PDF",
+    regulation: "DS 133/1984 · IAEA TECDOC-602",
+    exportType: undefined,
+    pageHref: "/quality-control/spect/report",
+  },
 ];
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
@@ -386,7 +404,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM. Informes QC PET/CT y Activímetro se generan por equipo en sus módulos respectivos.
+          CSV para todos los módulos aplicables. PDF disponible: Trabajadores (DS 3/1985), Dosimétrico, Cumplimiento Normativo, Equipos Radiológicos (DS 133/1984), Instrumentos de Medición y Resumen Ejecutivo SPRM. Informes QC (PET/CT, Activímetro, Gammacámara, SPECT) se generan por equipo en sus módulos respectivos.
         </p>
       </div>
     </div>
