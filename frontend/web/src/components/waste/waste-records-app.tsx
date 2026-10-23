@@ -186,12 +186,26 @@ function WasteRecordsAppInner() {
             Modulo D · Gestion y trazabilidad · DS 133/1984 · CCHEN
           </p>
         </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-        >
-          {showForm ? "Cancelar" : "+ Nuevo registro"}
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/waste-records/export/pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            title="Descargar informe de residuos radiactivos en PDF"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Informe PDF
+          </a>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+          >
+            {showForm ? "Cancelar" : "+ Nuevo registro"}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
