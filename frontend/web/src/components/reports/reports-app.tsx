@@ -110,7 +110,7 @@ const REPORT_TYPES = [
     id: "compliance",
     name: "Reporte de Cumplimiento Normativo",
     description: "Estado de requisitos DS 133/1984, DS 3/1985, Ley 18.302, NCh 2764, CCHEN.",
-    format: "CSV",
+    format: "CSV · PDF",
     regulation: "DS 133/1984 · Ley 18.302",
     exportType: "compliance",
   },
@@ -272,6 +272,17 @@ function ReportsAppInner() {
                           Próximo
                         </button>
                       )}
+                      {r.id === "compliance" && (
+                        <a
+                          href="/api/compliance/export/pdf"
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Reporte Cumplimiento Normativo en PDF"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
                       {r.id === "workers" && (
                         <a
                           href="/api/workers/export/pdf"
@@ -314,7 +325,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          Exportación CSV disponible para todos los módulos. PDF disponible para Registro de Trabajadores (DS 3/1985), Informe Dosimétrico y Resumen Ejecutivo SPRM.
+          Exportación CSV disponible para todos los módulos. PDF disponible para Registro de Trabajadores (DS 3/1985), Informe Dosimétrico, Cumplimiento Normativo y Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>
