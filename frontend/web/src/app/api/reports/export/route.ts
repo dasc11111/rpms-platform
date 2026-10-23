@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
                 0
               ) as dosis_anual_msv
             FROM workers w
-            WHERE w.status IN ('activo', 'suspended')
+            WHERE w.status IN ('active', 'suspended')
             ORDER BY w.service ASC, w.last_name_1 ASC, w.name ASC
             LIMIT 2000
           `;
@@ -335,7 +335,7 @@ export async function GET(req: NextRequest) {
         ]);
 
         const summaryRows: Record<string, unknown>[] = [
-          { seccion: "TRABAJADORES", indicador: "Activos", valor: workers.find((r) => r.status === "activo")?.count ?? 0, unidad: "personas" },
+          { seccion: "TRABAJADORES", indicador: "Activos", valor: workers.find((r) => r.status === "active")?.count ?? 0, unidad: "personas" },
           { seccion: "TRABAJADORES", indicador: "Suspendidos", valor: workers.find((r) => r.status === "suspended")?.count ?? 0, unidad: "personas" },
           { seccion: "INCIDENTES", indicador: "Abiertos", valor: incidents.filter((r) => r.status === "abierto").reduce((s, r) => s + Number(r.count), 0), unidad: "incidentes" },
           { seccion: "INCIDENTES", indicador: "Graves abiertos", valor: incidents.filter((r) => r.status === "abierto" && r.severity === "grave").reduce((s, r) => s + Number(r.count), 0), unidad: "incidentes" },
