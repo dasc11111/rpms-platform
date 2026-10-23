@@ -149,43 +149,45 @@ export default async function Dashboard() {
   let qcGammacamaraVencidas = 0;
   let qcSpectVencidas = 0;
   try {
-    // PET/CT: contar combinaciones equipo+prueba con última prueba vencida
+    // PET/CT: union de las tres tablas reales (pet/ct/joint), filtrar is_finalized
     const { rows: petctDue } = await sql`
-      WITH latest AS (
-        SELECT
-          r.equipment_id,
-          r.test_type,
-          MAX(r.performed_at) AS last_performed
-        FROM qc_petct_records r
-        WHERE r.status = 'final'
-        GROUP BY r.equipment_id, r.test_type
+      WITH all_tests AS (
+        SELECT equipment_id, test_code AS test_type, performed_at
+        FROM qc_petct_pet_tests WHERE is_finalized = true
+        UNION ALL
+        SELECT equipment_id, test_code, performed_at
+        FROM qc_petct_ct_tests WHERE is_finalized = true
+        UNION ALL
+        SELECT equipment_id, test_code, performed_at
+        FROM qc_petct_joint_tests WHERE is_finalized = true
+      ),
+      latest AS (
+        SELECT equipment_id, test_type, MAX(performed_at) AS last_performed
+        FROM all_tests GROUP BY equipment_id, test_type
       )
       SELECT COUNT(*) AS count
       FROM latest l
       JOIN qc_petct_tolerances t ON t.test_type = l.test_type AND t.active = true
-      WHERE (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
-        AND t.frequency_days IS NOT NULL
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
     `;
     qcPetctVencidas = Number((petctDue[0] as any)?.count ?? 0);
   } catch {}
 
   try {
-    // Activímetro: contar combinaciones equipo+prueba con última prueba vencida
+    // Activímetro: tabla qc_activimetro_tests con instrument_id/test_type/test_date
     const { rows: activDue } = await sql`
       WITH latest AS (
-        SELECT
-          r.equipment_id,
-          r.test_type,
-          MAX(r.performed_at) AS last_performed
-        FROM qc_activimetro_records r
-        WHERE r.status = 'final'
-        GROUP BY r.equipment_id, r.test_type
+        SELECT instrument_id, test_type, MAX(test_date) AS last_test_date
+        FROM qc_activimetro_tests
+        WHERE instrument_id IS NOT NULL
+        GROUP BY instrument_id, test_type
       )
       SELECT COUNT(*) AS count
       FROM latest l
       JOIN qc_activimetro_tolerances t ON t.test_type = l.test_type AND t.active = true
-      WHERE (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
-        AND t.frequency_days IS NOT NULL
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
     `;
     qcActivimetroVencidas = Number((activDue[0] as any)?.count ?? 0);
   } catch {}
