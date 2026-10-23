@@ -94,7 +94,7 @@ const REPORT_TYPES = [
     id: "dosimetry",
     name: "Informe Dosimétrico — Lecturas trimestrales",
     description: "Dosis individuales Hp(10) y Hp(0.07) por trabajador y servicio. DS 3/1985 MINSAL.",
-    format: "CSV",
+    format: "CSV · PDF",
     regulation: "DS 3/1985",
     exportType: "dosimetry",
   },
@@ -264,6 +264,17 @@ function ReportsAppInner() {
                           Próximo
                         </button>
                       )}
+                      {r.id === "dosimetry" && (
+                        <a
+                          href={`/api/dosimetry/export/pdf?year=${new Date().getFullYear()}`}
+                          download
+                          className="inline-flex items-center gap-1 rounded border border-border bg-blue-50 px-2.5 py-1 text-xs text-blue-700 hover:bg-blue-100 dark:bg-blue-950/30 dark:text-blue-400 dark:hover:bg-blue-900/40"
+                          title="Descargar Informe Dosimétrico en PDF — DS 3/1985 MINSAL"
+                        >
+                          <FileText className="h-3 w-3" />
+                          PDF
+                        </a>
+                      )}
                       {r.id === "summary" && (
                         <a
                           href="/api/reports/export/pdf"
@@ -284,7 +295,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          Exportación CSV disponible para todos los módulos. PDF disponible para el Resumen Ejecutivo SPRM.
+          Exportación CSV disponible para todos los módulos. PDF disponible para Informe Dosimétrico (DS 3/1985) y Resumen Ejecutivo SPRM.
         </p>
       </div>
     </div>
