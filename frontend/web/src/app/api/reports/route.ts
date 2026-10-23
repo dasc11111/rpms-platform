@@ -59,8 +59,8 @@ export async function GET() {
               AND c.expiry_date >= CURRENT_DATE
           )
       `),
-      // Waste pending
-      safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE status = 'pending'`),
+      // Waste pending (state = 'en_almacenamiento' is the in-storage state)
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM waste_records WHERE state = 'en_almacenamiento'`),
       // Radiology equipment with expired authorization (DS 133/1984)
       safeCount(() => sql`
         SELECT COUNT(*)::text as count FROM radiology_equipment
@@ -76,12 +76,21 @@ export async function GET() {
           AND authorization_expiry_date >= CURRENT_DATE
           AND authorization_expiry_date < CURRENT_DATE + INTERVAL '90 days'
       `),
-      // QC PET/CT overdue (latest finalized record per equipment+test_type past frequency)
+      // QC PET/CT overdue — union of the three real sub-tables (pet/ct/joint), is_finalized = true
       safeCount(() => sql`
-        WITH latest AS (
-          SELECT r.equipment_id, r.test_type, MAX(r.performed_at) AS last_performed
-          FROM qc_petct_records r WHERE r.status = 'final'
-          GROUP BY r.equipment_id, r.test_type
+        WITH all_tests AS (
+          SELECT equipment_id, test_code AS test_type, performed_at
+          FROM qc_petct_pet_tests WHERE is_finalized = true
+          UNION ALL
+          SELECT equipment_id, test_code, performed_at
+          FROM qc_petct_ct_tests WHERE is_finalized = true
+          UNION ALL
+          SELECT equipment_id, test_code, performed_at
+          FROM qc_petct_joint_tests WHERE is_finalized = true
+        ),
+        latest AS (
+          SELECT equipment_id, test_type, MAX(performed_at) AS last_performed
+          FROM all_tests GROUP BY equipment_id, test_type
         )
         SELECT COUNT(*)::text AS count
         FROM latest l
@@ -89,18 +98,19 @@ export async function GET() {
         WHERE t.frequency_days IS NOT NULL
           AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
       `),
-      // QC Activímetro overdue
+      // QC Activímetro overdue — uses qc_activimetro_tests with instrument_id/test_type/test_date
       safeCount(() => sql`
         WITH latest AS (
-          SELECT r.equipment_id, r.test_type, MAX(r.performed_at) AS last_performed
-          FROM qc_activimetro_records r WHERE r.status = 'final'
-          GROUP BY r.equipment_id, r.test_type
+          SELECT instrument_id, test_type, MAX(test_date) AS last_test_date
+          FROM qc_activimetro_tests
+          WHERE instrument_id IS NOT NULL
+          GROUP BY instrument_id, test_type
         )
         SELECT COUNT(*)::text AS count
         FROM latest l
         JOIN qc_activimetro_tolerances t ON t.test_type = l.test_type AND t.active = true
         WHERE t.frequency_days IS NOT NULL
-          AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
+          AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
       `),
       // QC Gammacamara overdue (latest per instrument+test_type+test_mode past frequency)
       safeCount(() => sql`
