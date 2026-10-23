@@ -1,8 +1,8 @@
 import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
-import { AlertsPanel } from "@/components/dashboard/alerts-panel";
-import { CopilotSuggestions } from "@/components/dashboard/copilot-suggestions";
+import { AlertsPanel, type DashboardAlert } from "@/components/dashboard/alerts-panel";
+import { CopilotSuggestions, type CopilotSuggestion } from "@/components/dashboard/copilot-suggestions";
 import { WorkersByService } from "@/components/dashboard/workers-by-service";
 import { ExpiringAuthorizationsTable } from "@/components/dashboard/expiring-authorizations-table";
 import { sql } from "@/lib/db";
@@ -143,6 +143,110 @@ export default async function Dashboard() {
     calibracionesProx90 = Number((calibProxRows[0] as any)?.count ?? 0);
   } catch {}
 
+  // ── Build real dashboard alerts from DB data ────────────────────────────────
+  const dashboardAlerts: DashboardAlert[] = [];
+
+  if (totalVencida > 0) {
+    dashboardAlerts.push({
+      id: "auth-vencida",
+      severity: "critical",
+      title: `${totalVencida} autorización${totalVencida > 1 ? "es" : ""} vencida${totalVencida > 1 ? "s" : ""}`,
+      description: "Trabajadores con autorización OPR vencida requieren acción inmediata.",
+      href: "/workers",
+    });
+  }
+
+  if (complianceVencido > 0) {
+    dashboardAlerts.push({
+      id: "compliance-vencido",
+      severity: "critical",
+      title: `${complianceVencido} requisito${complianceVencido > 1 ? "s" : ""} normativo${complianceVencido > 1 ? "s" : ""} vencido${complianceVencido > 1 ? "s" : ""}`,
+      description: "Requisitos DS 133/1984 / DS 3/1985 / Ley 18.302 vencidos sin renovar.",
+      href: "/compliance",
+    });
+  }
+
+  if (instrumentosCalibVencida > 0) {
+    dashboardAlerts.push({
+      id: "calib-vencida",
+      severity: instrumentosCalibVencida > 2 ? "critical" : "high",
+      title: `${instrumentosCalibVencida} instrumento${instrumentosCalibVencida > 1 ? "s" : ""} sin calibración vigente`,
+      description: "Instrumentos operativos sin certificado de calibración activo.",
+      href: "/instruments",
+    });
+  }
+
+  if (totalProximaVencer > 0) {
+    dashboardAlerts.push({
+      id: "auth-proxima",
+      severity: "high",
+      title: `${totalProximaVencer} autorización${totalProximaVencer > 1 ? "es" : ""} próxima a vencer`,
+      description: "Gestionar renovación de autorizaciones OPR antes del vencimiento.",
+      dueLabel: "≤ 90 días",
+      href: "/workers",
+    });
+  }
+
+  if (compliancePendiente > 0) {
+    dashboardAlerts.push({
+      id: "compliance-pendiente",
+      severity: "medium",
+      title: `${compliancePendiente} requisito${compliancePendiente > 1 ? "s" : ""} normativo${compliancePendiente > 1 ? "s" : ""} pendiente${compliancePendiente > 1 ? "s" : ""}`,
+      description: "Requieren revisión y actualización de evidencia.",
+      href: "/compliance",
+    });
+  }
+
+  if (calibracionesProx90 > 0) {
+    dashboardAlerts.push({
+      id: "calib-proxima",
+      severity: "medium",
+      title: `${calibracionesProx90} calibración${calibracionesProx90 > 1 ? "es" : ""} próxima${calibracionesProx90 > 1 ? "s" : ""} a vencer`,
+      description: "Coordinar calibración de instrumentos antes del vencimiento.",
+      dueLabel: "≤ 90 días",
+      href: "/instruments",
+    });
+  }
+
+  // ── Build copilot suggestions based on real data ──────────────────────────
+  const copilotSuggestions: CopilotSuggestion[] = [];
+
+  if (incidentesAbiertos > 0) {
+    copilotSuggestions.push({
+      id: "close-incidents",
+      title: `Revisar ${incidentesAbiertos} incidente${incidentesAbiertos > 1 ? "s" : ""} abierto${incidentesAbiertos > 1 ? "s" : ""}`,
+      action: "Verificar estado de investigación y acciones correctivas.",
+      href: "/incidents",
+    });
+  }
+
+  if (pendingReturnCount > 0) {
+    copilotSuggestions.push({
+      id: "dosimetros-devolver",
+      title: `Gestionar ${pendingReturnCount} dosímetro${pendingReturnCount > 1 ? "s" : ""} pendiente${pendingReturnCount > 1 ? "s" : ""} de devolución`,
+      action: "Contactar trabajadores o laboratorio de dosimetría.",
+      href: "/dosimetry",
+    });
+  }
+
+  if (complianceVencido > 0 || compliancePendiente > 0) {
+    copilotSuggestions.push({
+      id: "compliance-action",
+      title: "Actualizar requisitos normativos",
+      action: `${complianceVencido} vencidos y ${compliancePendiente} pendientes requieren atención.`,
+      href: "/compliance",
+    });
+  }
+
+  if (instrumentosCalibVencida > 0) {
+    copilotSuggestions.push({
+      id: "calibration-action",
+      title: `Programar calibración para ${instrumentosCalibVencida} instrumento${instrumentosCalibVencida > 1 ? "s" : ""}`,
+      action: "Coordinar con el proveedor de calibración acreditado.",
+      href: "/instruments",
+    });
+  }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -183,14 +287,14 @@ export default async function Dashboard() {
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Alertas regulatorias</h2>
-          <AlertsPanel />
+          <AlertsPanel alerts={dashboardAlerts} />
         </div>
         <div className="rounded-lg border border-border bg-surface p-4">
           <div className="mb-3 flex items-center gap-1.5">
             <Radiation className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
             <h2 className="text-sm font-semibold">Copilot — Recomendado hoy</h2>
           </div>
-          <CopilotSuggestions />
+          <CopilotSuggestions suggestions={copilotSuggestions} />
         </div>
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
