@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
+import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel, type DashboardAlert } from "@/components/dashboard/alerts-panel";
@@ -143,6 +143,51 @@ export default async function Dashboard() {
     calibracionesProx90 = Number((calibProxRows[0] as any)?.count ?? 0);
   } catch {}
 
+  // Control de Calidad — pruebas vencidas (PET/CT + Activímetro)
+  let qcPetctVencidas = 0;
+  let qcActivimetroVencidas = 0;
+  try {
+    // PET/CT: contar combinaciones equipo+prueba con última prueba vencida
+    const { rows: petctDue } = await sql`
+      WITH latest AS (
+        SELECT
+          r.equipment_id,
+          r.test_type,
+          MAX(r.performed_at) AS last_performed
+        FROM qc_petct_records r
+        WHERE r.status = 'final'
+        GROUP BY r.equipment_id, r.test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_petct_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
+        AND t.frequency_days IS NOT NULL
+    `;
+    qcPetctVencidas = Number((petctDue[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    // Activímetro: contar combinaciones equipo+prueba con última prueba vencida
+    const { rows: activDue } = await sql`
+      WITH latest AS (
+        SELECT
+          r.equipment_id,
+          r.test_type,
+          MAX(r.performed_at) AS last_performed
+        FROM qc_activimetro_records r
+        WHERE r.status = 'final'
+        GROUP BY r.equipment_id, r.test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_activimetro_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
+        AND t.frequency_days IS NOT NULL
+    `;
+    qcActivimetroVencidas = Number((activDue[0] as any)?.count ?? 0);
+  } catch {}
+
   // ── Build real dashboard alerts from DB data ────────────────────────────────
   const dashboardAlerts: DashboardAlert[] = [];
 
@@ -208,6 +253,26 @@ export default async function Dashboard() {
     });
   }
 
+  if (qcPetctVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-petct-vencidas",
+      severity: qcPetctVencidas > 3 ? "critical" : "high",
+      title: `${qcPetctVencidas} prueba${qcPetctVencidas > 1 ? "s" : ""} de QC PET/CT vencida${qcPetctVencidas > 1 ? "s" : ""}`,
+      description: "Controles de calidad PET/CT fuera de frecuencia establecida.",
+      href: "/quality-control/petct/compliance",
+    });
+  }
+
+  if (qcActivimetroVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-activimetro-vencidas",
+      severity: "high",
+      title: `${qcActivimetroVencidas} prueba${qcActivimetroVencidas > 1 ? "s" : ""} de QC Activímetro vencida${qcActivimetroVencidas > 1 ? "s" : ""}`,
+      description: "Controles de calidad del activímetro fuera de frecuencia establecida.",
+      href: "/quality-control/activimetro/dashboard",
+    });
+  }
+
   // ── Build copilot suggestions based on real data ──────────────────────────
   const copilotSuggestions: CopilotSuggestion[] = [];
 
@@ -247,6 +312,24 @@ export default async function Dashboard() {
     });
   }
 
+  if (qcPetctVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-petct-action",
+      title: `Realizar ${qcPetctVencidas} control${qcPetctVencidas > 1 ? "es" : ""} de calidad PET/CT vencido${qcPetctVencidas > 1 ? "s" : ""}`,
+      action: "Revisar pruebas PET, CT e interacción con el Físico Médico responsable.",
+      href: "/quality-control/petct/compliance",
+    });
+  }
+
+  if (qcActivimetroVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-activimetro-action",
+      title: `Realizar ${qcActivimetroVencidas} control${qcActivimetroVencidas > 1 ? "es" : ""} de calidad de activímetro vencido${qcActivimetroVencidas > 1 ? "s" : ""}`,
+      action: "Registrar pruebas de constancia, linealidad y exactitud del activímetro.",
+      href: "/quality-control/activimetro/dashboard",
+    });
+  }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -271,6 +354,8 @@ export default async function Dashboard() {
         <KPICard label="Req. normativos pendientes" value={compliancePendiente} href="/compliance" icon={FileWarning} tone={compliancePendiente > 0 ? "warning" : undefined} />
         <KPICard label="Calibraciones vencidas" value={instrumentosCalibVencida} href="/instruments" icon={ClipboardCheck} tone={instrumentosCalibVencida > 0 ? "warning" : undefined} />
         <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone={incidentesAbiertos > 0 ? "danger" : undefined} />
+        <KPICard label="QC PET/CT vencidas" value={qcPetctVencidas} href="/quality-control/petct/compliance" icon={Activity} tone={qcPetctVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC Activímetro vencidas" value={qcActivimetroVencidas} href="/quality-control/activimetro/dashboard" icon={Activity} tone={qcActivimetroVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">

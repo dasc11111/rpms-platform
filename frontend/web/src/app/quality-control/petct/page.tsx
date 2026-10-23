@@ -5,6 +5,21 @@ import { PetCtQcApp } from "@/components/quality-control/petct-qc-app";
 
 export const dynamic = "force-dynamic";
 
+const NAV_LINKS = [
+  { href: "/quality-control/petct/equipment", label: "Ficha técnica" },
+  { href: "/quality-control/petct/baseline", label: "Baseline" },
+  { href: "/quality-control/petct/service-events", label: "Eventos servicio" },
+  { href: "/quality-control/petct/evidence", label: "Evidencia gráfica" },
+  { href: "/quality-control/petct/pet-tests", label: "Pruebas PET" },
+  { href: "/quality-control/petct/ct-tests", label: "Pruebas CT" },
+  { href: "/quality-control/petct/joint-tests", label: "Interacción PET/CT" },
+  { href: "/quality-control/petct/comparison", label: "Comparación" },
+  { href: "/quality-control/petct/compliance", label: "Cumplimiento" },
+  { href: "/quality-control/petct/trend", label: "Tendencia" },
+  { href: "/quality-control/petct/alerts", label: "Alertas" },
+  { href: "/quality-control/petct/report", label: "Informe PDF" },
+];
+
 export default async function PetCtQcPage() {
   await ensurePetCtQcTables();
 
@@ -14,79 +29,16 @@ export default async function PetCtQcPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
-        <Link
-          href="/quality-control/petct/equipment"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Ficha tecnica del equipo
-        </Link>
-        <Link
-          href="/quality-control/petct/baseline"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Baseline del equipo
-        </Link>
-        <Link
-          href="/quality-control/petct/service-events"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Eventos de servicio tecnico
-        </Link>
-        <Link
-          href="/quality-control/petct/evidence"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Evidencia grafica
-        </Link>
-        <Link
-          href="/quality-control/petct/pet-tests"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Pruebas PET (PET-01 a PET-06)
-        </Link>
-        <Link
-          href="/quality-control/petct/ct-tests"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Pruebas CT (CT-01 a CT-14)
-        </Link>
-        <Link
-          href="/quality-control/petct/joint-tests"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Interaccion PET/CT (PETCT-01, PETCT-02)
-        </Link>
-        <Link
-          href="/quality-control/petct/comparison"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Comparacion PET+CT+Fusion
-        </Link>
-        <Link
-          href="/quality-control/petct/compliance"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Cumplimiento y catalogo
-        </Link>
-        <Link
-          href="/quality-control/petct/trend"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Tendencia y grafico de control
-        </Link>
-        <Link
-          href="/quality-control/petct/alerts"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Alertas inteligentes
-        </Link>
-        <Link
-          href="/quality-control/petct/report"
-          className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Informe PDF
-        </Link>
+      <div className="flex flex-wrap gap-2">
+        {NAV_LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/40 transition-colors"
+          >
+            {link.label}
+          </Link>
+        ))}
       </div>
       <PetCtQcApp instruments={JSON.parse(JSON.stringify(instrumentRows))} />
     </div>
