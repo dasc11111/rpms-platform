@@ -113,6 +113,7 @@ export default async function Dashboard() {
   let instrumentosMantenimiento = 0;
   let instrumentosFueraServicio = 0;
   let instrumentosCalibVencida = 0;
+  let calibracionesProx90 = 0;
   try {
     const { rows: instrRows } = await sql`
       SELECT status, COUNT(*)::int as count FROM instruments GROUP BY status
@@ -130,6 +131,16 @@ export default async function Dashboard() {
         )
     `;
     instrumentosCalibVencida = Number((calibRows[0] as any)?.count ?? 0);
+    // Calibraciones próximas a vencer (90 días)
+    const { rows: calibProxRows } = await sql`
+      SELECT COUNT(DISTINCT i.id)::int as count FROM instruments i
+      JOIN LATERAL (
+        SELECT expiry_date FROM calibrations c WHERE c.instrument_id = i.id
+        ORDER BY c.calibration_date DESC LIMIT 1
+      ) lc ON true
+      WHERE lc.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
+    `;
+    calibracionesProx90 = Number((calibProxRows[0] as any)?.count ?? 0);
   } catch {}
 
   return (
@@ -165,7 +176,7 @@ export default async function Dashboard() {
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Vencimientos próximos 90 días</h2>
           <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Autorizaciones: {totalProximaVencer + totalVencida} · Licencias: 5 · Calibraciones: 18 · QA: 7</p>
+            <p className="text-xs text-muted-foreground">Autorizaciones: {totalProximaVencer + totalVencida} · Calibraciones: {calibracionesProx90} · Req. normativos vencidos: {complianceVencido}</p>
           </div>
         </div>
       </div>
