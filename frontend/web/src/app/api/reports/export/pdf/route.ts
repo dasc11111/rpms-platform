@@ -34,6 +34,9 @@ export async function GET() {
       instruments,
       wastePending,
       equipmentVencido,
+      dosimetersExtraviados,
+      dosimetersOverdue,
+      transportThisMonth,
     ] = await Promise.all([
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeter_assignments WHERE returned_at IS NULL AND due_date < CURRENT_DATE`),
@@ -58,6 +61,9 @@ export async function GET() {
           AND authorization_expiry_date IS NOT NULL
           AND authorization_expiry_date < CURRENT_DATE
       `),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeters WHERE status = 'extraviado'`),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeters WHERE status = 'asignado' AND actual_return_date IS NULL AND estimated_return_date < CURRENT_DATE`),
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM transport_shipments WHERE EXTRACT(YEAR FROM transport_date) = EXTRACT(YEAR FROM NOW()) AND EXTRACT(MONTH FROM transport_date) = EXTRACT(MONTH FROM NOW())`),
     ]);
 
     const complianceTotal = complianceOk + compliancePendiente + complianceVencido;
@@ -93,8 +99,8 @@ export async function GET() {
     doc.text("Normativa: DS 133/1984, DS 3/1985 MINSAL, Ley 18.302, NCh 2764 Of. 2003, CCHEN", 14, 34);
 
     // ── Global status banner ───────────────────────────────────────────────────
-    const hasDanger = dosimetryAlerts > 3 || incidentsGrave > 0 || complianceVencido > 0 || instruments > 2 || equipmentVencido > 0;
-    const hasWarning = !hasDanger && (dosimetryAlerts > 0 || incidentsOpen > 0 || compliancePendiente > 0 || instruments > 0);
+    const hasDanger = dosimetryAlerts > 3 || incidentsGrave > 0 || complianceVencido > 0 || instruments > 2 || equipmentVencido > 0 || dosimetersExtraviados > 0 || dosimetersOverdue > 2;
+    const hasWarning = !hasDanger && (dosimetryAlerts > 0 || incidentsOpen > 0 || compliancePendiente > 0 || instruments > 0 || dosimetersOverdue > 0);
     const [r, g, b] = hasDanger ? [220, 38, 38] : hasWarning ? [202, 138, 4] : [22, 163, 74];
     const statusLabel = hasDanger ? "REQUIERE ATENCIÓN URGENTE" : hasWarning ? "REVISAR ALERTAS" : "SISTEMA EN NORMA";
 
@@ -119,7 +125,10 @@ export async function GET() {
 
     const kpiRows = [
       ["Trabajadores expuestos activos", String(workers), workers > 0 ? "OK" : "—"],
-      ["Dosímetros vencidos sin retornar", String(dosimetryAlerts), dosimetryAlerts === 0 ? "OK" : dosimetryAlerts <= 3 ? "Alerta" : "Urgente"],
+      ["Dosímetros vencidos sin retornar (TLD/película)", String(dosimetryAlerts), dosimetryAlerts === 0 ? "OK" : dosimetryAlerts <= 3 ? "Alerta" : "Urgente"],
+      ["Dosímetros físicos extraviados", String(dosimetersExtraviados), dosimetersExtraviados === 0 ? "OK" : "Urgente"],
+      ["Dosímetros físicos fuera de plazo devolución", String(dosimetersOverdue), dosimetersOverdue === 0 ? "OK" : dosimetersOverdue <= 2 ? "Alerta" : "Urgente"],
+      ["Embarques de material radiactivo (mes actual)", String(transportThisMonth), "OK"],
       ["Administraciones I-131 (mes actual)", String(i131ThisMonth), "OK"],
       ["Incidentes radiológicos abiertos", incidentsGrave > 0 ? `${incidentsOpen} (${incidentsGrave} grave)` : String(incidentsOpen), incidentsOpen === 0 ? "OK" : incidentsGrave > 0 ? "Urgente" : "Alerta"],
       ["Cumplimiento normativo", complianceScore !== null ? `${complianceScore}% (${complianceOk}/${complianceTotal})` : "—", complianceVencido > 0 ? "Urgente" : compliancePendiente > 0 ? "Alerta" : "OK"],
