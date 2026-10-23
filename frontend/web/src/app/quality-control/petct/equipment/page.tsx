@@ -1,6 +1,8 @@
 import { ensurePetCtEquipmentTables } from "@/lib/qc-petct-equipment-db";
 import PetCtEquipmentApp from "@/components/quality-control/petct-equipment-app";
 
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO 4 - PET/CT - FASE A
  * Pagina wrapper de la ficha tecnica del equipo PET/CT.
