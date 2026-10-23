@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, FlaskConical, Home, Radiation, Radio, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe, Trash2, Truck, UserCog, Users, Wrench, Recycle } from "lucide-react";
+import { Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList, FileText, FlaskConical, Home, Radiation, Radio, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe, Trash2, Truck, UserCog, Users, Wrench, Recycle, ScanLine, CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
 
@@ -11,6 +11,8 @@ const NAV = [
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
   { href: "/nuclear-medicine", label: "Medicina Nuclear", icon: Stethoscope },
+  { href: "/petct", label: "PET/CT Exámenes", icon: ScanLine },
+  { href: "/quality-control", label: "Control de Calidad", icon: CheckSquare },
   { href: "/i131", label: "Administración I-131", icon: Syringe },
   { href: "/contamination", label: "Contaminación", icon: Biohazard },
   { href: "/room-release", label: "Liberación de Sala", icon: Trash2 },
