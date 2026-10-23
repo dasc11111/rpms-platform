@@ -28,6 +28,8 @@ export async function GET() {
       wastePending,
       equipmentVencido,
       equipmentProximo,
+      qcPetctVencidas,
+      qcActivimetroVencidas,
     ] = await Promise.all([
       // Workers
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status = 'activo'`),
@@ -71,6 +73,32 @@ export async function GET() {
           AND authorization_expiry_date IS NOT NULL
           AND authorization_expiry_date >= CURRENT_DATE
           AND authorization_expiry_date < CURRENT_DATE + INTERVAL '90 days'
+      `),
+      // QC PET/CT overdue (latest finalized record per equipment+test_type past frequency)
+      safeCount(() => sql`
+        WITH latest AS (
+          SELECT r.equipment_id, r.test_type, MAX(r.performed_at) AS last_performed
+          FROM qc_petct_records r WHERE r.status = 'final'
+          GROUP BY r.equipment_id, r.test_type
+        )
+        SELECT COUNT(*)::text AS count
+        FROM latest l
+        JOIN qc_petct_tolerances t ON t.test_type = l.test_type AND t.active = true
+        WHERE t.frequency_days IS NOT NULL
+          AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
+      `),
+      // QC Activímetro overdue
+      safeCount(() => sql`
+        WITH latest AS (
+          SELECT r.equipment_id, r.test_type, MAX(r.performed_at) AS last_performed
+          FROM qc_activimetro_records r WHERE r.status = 'final'
+          GROUP BY r.equipment_id, r.test_type
+        )
+        SELECT COUNT(*)::text AS count
+        FROM latest l
+        JOIN qc_activimetro_tolerances t ON t.test_type = l.test_type AND t.active = true
+        WHERE t.frequency_days IS NOT NULL
+          AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
       `),
     ]);
 
@@ -125,6 +153,15 @@ export async function GET() {
           value: equipmentVencido,
           status: equipmentVencido > 0 ? "danger" : equipmentProximo > 0 ? "warning" : "ok",
           detail: equipmentProximo > 0 ? `${equipmentProximo} próxima(s) a vencer` : null,
+        },
+        quality_control: {
+          label: "Controles de calidad vencidos",
+          value: qcPetctVencidas + qcActivimetroVencidas,
+          status: (qcPetctVencidas + qcActivimetroVencidas) === 0 ? "ok" :
+                  (qcPetctVencidas + qcActivimetroVencidas) <= 3 ? "warning" : "danger",
+          detail: qcPetctVencidas > 0 && qcActivimetroVencidas > 0
+            ? `PET/CT: ${qcPetctVencidas} · Activímetro: ${qcActivimetroVencidas}`
+            : qcPetctVencidas > 0 ? `PET/CT: ${qcPetctVencidas}` : qcActivimetroVencidas > 0 ? `Activímetro: ${qcActivimetroVencidas}` : null,
         },
       },
     };

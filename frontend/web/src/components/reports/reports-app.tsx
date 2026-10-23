@@ -56,6 +56,7 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
     instruments: "/instruments",
     waste: "/waste-records",
     equipment: "/equipment",
+    quality_control: "/quality-control",
   };
 
   return (
