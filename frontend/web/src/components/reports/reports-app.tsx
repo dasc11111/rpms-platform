@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle, Clock, FileText, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Download, FileText, XCircle } from "lucide-react";
 
 const _qc = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
 
@@ -88,41 +88,55 @@ function ModuleCard({ id, kpi }: { id: string; kpi: ModuleKPI }) {
 
 // ─── Report types ─────────────────────────────────────────────────────────────
 
+// exportType = undefined means not yet available (shows disabled button)
 const REPORT_TYPES = [
   {
     id: "dosimetry",
-    name: "Informe Dosimétrico Mensual",
-    description: "Dosis individuales por trabajador y servicio. DS 3/1985 MINSAL.",
-    format: "PDF / XLSX",
+    name: "Informe Dosimétrico — Lecturas trimestrales",
+    description: "Dosis individuales Hp(10) y Hp(0.07) por trabajador y servicio. DS 3/1985 MINSAL.",
+    format: "CSV",
     regulation: "DS 3/1985",
+    exportType: "dosimetry",
   },
   {
     id: "compliance",
     name: "Reporte de Cumplimiento Normativo",
     description: "Estado de requisitos DS 133/1984, DS 3/1985, Ley 18.302, NCh 2764, CCHEN.",
-    format: "PDF",
+    format: "CSV",
     regulation: "DS 133/1984 · Ley 18.302",
+    exportType: "compliance",
   },
   {
     id: "i131",
     name: "Registro Administración I-131",
     description: "Libro de administraciones de Yodo-131. Criterios de aislamiento DS 3/1985.",
-    format: "PDF / XLSX",
+    format: "CSV",
     regulation: "DS 3/1985",
+    exportType: "i131",
   },
   {
     id: "incidents",
     name: "Resumen de Incidentes Radiológicos",
     description: "Incidentes, cuasi-accidentes y acciones correctivas del período.",
-    format: "PDF",
+    format: "CSV",
     regulation: "DS 133/1984 · CCHEN",
+    exportType: "incidents",
   },
   {
     id: "waste",
     name: "Informe de Gestión de Residuos Radiactivos",
     description: "Inventario, almacenamiento y disposición de residuos. Formularios CCHEN.",
-    format: "PDF / XLSX",
+    format: "CSV",
     regulation: "Ley 18.302",
+    exportType: "waste",
+  },
+  {
+    id: "summary",
+    name: "Resumen Ejecutivo SPRM",
+    description: "Consolidado de indicadores de todos los módulos del sistema.",
+    format: "CSV",
+    regulation: "DS 133/1984 · DS 3/1985",
+    exportType: "summary",
   },
   {
     id: "equipment",
@@ -130,6 +144,7 @@ const REPORT_TYPES = [
     description: "Equipos, calibraciones, mantenimientos y resultados QC.",
     format: "PDF",
     regulation: "DS 133/1984",
+    exportType: undefined as string | undefined,
   },
 ];
 
@@ -229,13 +244,25 @@ function ReportsAppInner() {
                     <span className="text-xs text-muted-foreground">{r.format}</span>
                   </td>
                   <td className="px-3 py-3 text-right">
-                    <button
-                      className="rounded border border-border px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-40"
-                      title="Generación de reportes disponible próximamente"
-                      onClick={() => alert(`Generación de informe "${r.name}" estará disponible en próxima versión.`)}
-                    >
-                      Generar
-                    </button>
+                    {r.exportType ? (
+                      <a
+                        href={`/api/reports/export?type=${r.exportType}`}
+                        download
+                        className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1 text-xs hover:bg-muted"
+                        title={`Descargar ${r.name} en CSV`}
+                      >
+                        <Download className="h-3 w-3" />
+                        CSV
+                      </a>
+                    ) : (
+                      <button
+                        className="rounded border border-border px-2.5 py-1 text-xs opacity-40 cursor-not-allowed"
+                        disabled
+                        title="Disponible próximamente"
+                      >
+                        Próximo
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -244,7 +271,7 @@ function ReportsAppInner() {
         </div>
         <p className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
           <AlertTriangle className="h-3 w-3" />
-          La generación automatizada de PDF/XLSX estará disponible en la próxima versión del sistema.
+          Exportación CSV disponible para todos los módulos. Exportación PDF en próxima versión.
         </p>
       </div>
     </div>
