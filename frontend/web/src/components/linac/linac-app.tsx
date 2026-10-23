@@ -111,6 +111,7 @@ return (
 Gestion integral: seguridad radiologica, control de calidad, operacion clinica y cumplimiento normativo (CCHEN, SEREMI de Salud)
 </p>
 </div>
+<div className="flex items-center gap-2">
 <select
 value={unitId || ""}
 onChange={(e) => setUnitId(Number(e.target.value))}
@@ -123,6 +124,19 @@ className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-for
 </option>
 ))}
 </select>
+{unitId && (
+<a
+href={`/api/linac/export/pdf?linac_id=${unitId}`}
+target="_blank"
+rel="noopener noreferrer"
+className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+title="Descargar informe técnico PDF"
+>
+<Download className="h-4 w-4" />
+Informe PDF
+</a>
+)}
+</div>
 </div>
 
 <GlobalSearchBar onNavigate={(t: string, id: number | null) => { setTab(t); if (id) setUnitId(id); }} />
