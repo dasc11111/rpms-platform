@@ -119,6 +119,16 @@ export function WasteExpertDashboard({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/waste-expert/criteria"
+            className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            title="Gestionar criterios de liberación/dispensa de residuos radiactivos (Secciones 27-28)"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Criterios de Liberación
+          </Link>
           <a
             href="/api/waste-items/export/pdf"
             target="_blank"
