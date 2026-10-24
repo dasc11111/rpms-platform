@@ -62,7 +62,7 @@ export const RADIATION_FREQUENCIES: { value: string; label: string }[] = [
   { value: "unica", label: "Unica / Puntual" },
 ];
 
-export function computeRadiationSemaphore(status: any, value: any, limitValue: any, referenceLevel: any): string {
+export function computeRadiationSemaphore(status: string | null, value: number | null, limitValue: number | null, referenceLevel: number | null): string {
   if (status === "no_conforme") return "rojo";
   const v = value === null || value === undefined || value === "" ? null : Number(value);
   const limit = limitValue === null || limitValue === undefined || limitValue === "" ? null : Number(limitValue);
@@ -73,7 +73,7 @@ export function computeRadiationSemaphore(status: any, value: any, limitValue: a
   return "verde";
 }
 
-export function daysUntilDue(dateValue: any): number | null {
+export function daysUntilDue(dateValue: string | null | undefined): number | null {
   if (!dateValue) return null;
   const target = new Date(dateValue);
   if (Number.isNaN(target.getTime())) return null;

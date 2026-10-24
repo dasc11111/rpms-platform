@@ -80,14 +80,14 @@ export const QC_TEST_TEMPLATES = [
 { periodicity: "anual", testName: "Auditoria dosimetrica externa", procedure: "Auditoria dosimetrica independiente de la unidad de tratamiento.", regulation: "IAEA TRS-430", defaultTolerance: "3", unit: "%" },
 ];
 
-export function computeDeviationPct(expected: any, obtained: any): number | null {
+export function computeDeviationPct(expected: number | null | undefined, obtained: number | null | undefined): number | null {
 const e = parseFloat(expected);
 const o = parseFloat(obtained);
 if (!Number.isFinite(e) || !Number.isFinite(o) || e === 0) return null;
 return Math.round(((o - e) / e) * 1000) / 10;
 }
 
-export function computeSemaphore(status: any, deviationPct: any, tolerancePct: any): string {
+export function computeSemaphore(status: string | null, deviationPct: number | null, tolerancePct: number | null | undefined): string {
 if (status === "no_cumple") return "rojo";
 const tol = parseFloat(tolerancePct);
 if (deviationPct === null || deviationPct === undefined || !Number.isFinite(tol) || tol <= 0) return "verde";

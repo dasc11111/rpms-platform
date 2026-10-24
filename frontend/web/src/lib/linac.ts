@@ -246,7 +246,7 @@ export const LINAC_AUDIT_TYPES = [
   { value: "iaea", label: "IAEA" },
 ];
 
-export function daysUntil(dateValue: any) {
+export function daysUntil(dateValue: string | null | undefined) {
   if (!dateValue) return null;
   const target = new Date(dateValue);
   if (Number.isNaN(target.getTime())) return null;
@@ -255,7 +255,7 @@ export function daysUntil(dateValue: any) {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export function computeVigencyLevel(expiryDate: any) {
+export function computeVigencyLevel(expiryDate: string | null | undefined) {
   const days = daysUntil(expiryDate);
   if (days === null) return "sin_vigencia";
   if (days <= 30) return "rojo";

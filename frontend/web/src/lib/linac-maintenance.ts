@@ -77,7 +77,7 @@ export const MAINTENANCE_STATUSES: { value: string; label: string }[] = [
 { value: "en_proceso", label: "En Proceso" },
 ];
 
-export function daysUntilMaintenance(dateValue: any): number | null {
+export function daysUntilMaintenance(dateValue: string | null | undefined): number | null {
 if (!dateValue) return null;
 const target = new Date(dateValue);
 if (Number.isNaN(target.getTime())) return null;
@@ -86,7 +86,7 @@ const diffMs = target.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0);
 return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export function computeMaintenanceSemaphore(result: any, status: any, nextMaintenanceDate: any): string {
+export function computeMaintenanceSemaphore(result: string | null, status: string | null, nextMaintenanceDate: string | null | undefined): string {
 if (result === "fallido") return "rojo";
 const days = daysUntilMaintenance(nextMaintenanceDate);
 if (days !== null && days < 0) return "rojo";
@@ -96,21 +96,21 @@ if (status === "pendiente") return "amarillo";
 return "verde";
 }
 
-export function computeMTBF(totalOperatingHours: any, correctiveCount: any): number | null {
+export function computeMTBF(totalOperatingHours: number | null, correctiveCount: number | null): number | null {
 const hours = Number(totalOperatingHours || 0);
 const count = Number(correctiveCount || 0);
 if (count <= 0) return null;
 return Math.round((hours / count) * 10) / 10;
 }
 
-export function computeMTTR(totalDowntimeHours: any, correctiveCount: any): number | null {
+export function computeMTTR(totalDowntimeHours: number | null, correctiveCount: number | null): number | null {
 const hours = Number(totalDowntimeHours || 0);
 const count = Number(correctiveCount || 0);
 if (count <= 0) return null;
 return Math.round((hours / count) * 100) / 100;
 }
 
-export function computeMaintenanceAvailability(mtbf: any, mttr: any): number | null {
+export function computeMaintenanceAvailability(mtbf: number | null, mttr: number | null): number | null {
 const m = Number(mtbf);
 const r = Number(mttr);
 if (!mtbf || !mttr || Number.isNaN(m) || Number.isNaN(r) || m + r <= 0) return null;

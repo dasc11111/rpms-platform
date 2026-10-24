@@ -286,7 +286,7 @@ export const RT_ACTION_STATUSES = [
   { value: "cancelada", label: "Cancelada", color: "negro" },
 ];
 
-export function daysUntilDate(dateValue: any): number | null {
+export function daysUntilDate(dateValue: string | null | undefined): number | null {
   if (!dateValue) return null;
   const target = new Date(dateValue);
   if (Number.isNaN(target.getTime())) return null;
