@@ -59,6 +59,20 @@ export function qualCode(v: unknown): string | null {
   return s in DOSE_QUALITATIVE_CODES ? s : null;
 }
 
+// Clasifica la dosis efectiva trimestral (mSv/trimestre) en cuatro niveles de alerta.
+//
+// Base normativa y umbrales aplicados:
+//   - 'intervencion'  ≥ 5,0 mSv/T  (equivalente a 20 mSv/año — límite ICRP 103 / CCHEN NSR).
+//     El DS 3/1985 MINSAL vigente establece 50 mSv/año (ICRP 60). CCHEN recomienda el límite
+//     ICRP 103 de 20 mSv/año promediados en 5 años (máx 50 mSv en un año). OPR debe confirmar
+//     cuál es el límite autorizado por CCHEN en la licencia vigente del HHHA.
+//   - 'investigacion' ≥ 1,6 mSv/T  (≈ 6,4 mSv/año ≈ 32 % del límite anual de 20 mSv).
+//     El nivel de investigación ALARA típico es 30 % del límite = 6 mSv/año = 1,5 mSv/T.
+//     El valor 1,6 es ligeramente conservador. OPR debe validar contra práctica CCHEN.
+//   - 'registro'      ≥ 0,1 mSv/T  (Mínimo Nivel de Registro según DS 133/1984 Art. 62).
+//   - 'normal'        < 0,1 mSv/T
+//
+// PENDIENTE OPR: Confirmar límite operacional activo en autorización CCHEN vigente del HHHA.
 export function levelFor(dose: number): string {
   if (dose >= 5) return 'intervencion';
   if (dose >= 1.6) return 'investigacion';

@@ -14,7 +14,9 @@ import {
   type Clasificacion,
 } from "./contamination";
 
-export const RC_RADIONUCLIDOS = ["TC-99M", "I-131", "LU-177", "GA-68", "F-18", "OTRO"] as const;
+// Radionúclidos para monitoreo de liberación de sala. Sincronizado con RADIONUCLIDOS
+// en contamination.ts. Incluye los radionúclidos activos en la práctica clínica del HHHA.
+export const RC_RADIONUCLIDOS = ["TC-99M", "I-131", "I-123", "GA-67", "GA-68", "F-18", "LU-177", "OTRO"] as const;
 export type RcRadionuclido = (typeof RC_RADIONUCLIDOS)[number];
 
 export type RcAreaTipo = "laboratorio" | "sala_pacientes";
@@ -51,9 +53,24 @@ export function puntosFijosPorArea(area: RcAreaTipo): readonly string[] {
   return area === "laboratorio" ? RC_LABORATORIO_PUNTOS : RC_SALA_PACIENTES_PUNTOS;
 }
 
-// Parametros por defecto del detector, aplicados automaticamente sin pedirlos
-// al usuario (consistentes con los valores por defecto ya usados en el
-// registro de contaminacion general, ver /api/contamination).
+// Parámetros por defecto del detector Geiger-Müller tipo pancake.
+// Aplicados automáticamente para mantener consistencia con /api/contamination.
+//
+// IMPORTANTE – Base de calibración y limitaciones:
+//   RC_DEFAULT_FACTOR_EFICIENCIA = 0,15 (15 %) está calibrado para Tc-99m a
+//   contacto, detector tipo Ludlum 44-9 o equivalente. Para otros radionúclidos
+//   la eficiencia varía significativamente:
+//     - I-131  (364 keV γ):  ~8–12 % con detector GM pancake
+//     - GA-68  (511 keV β⁺): variable; se requiere calibración específica
+//     - LU-177 (208 keV γ):  ~10–15 %
+//     - F-18   (511 keV):    ~5–10 %
+//   El OPR debe ingresar la eficiencia real calibrada por instrumento/radionúclido
+//   desde la matriz de calibración (waste_calibration_matrix) para cada medición
+//   donde el radionúclido no sea Tc-99m.
+//
+//   RC_DEFAULT_AREA_MONITOREADA_CM2 = 15 cm² corresponde al área activa típica de
+//   un detector GM pancake (diámetro ~4,4 cm → ~15 cm²). Verificar con la ficha
+//   técnica del instrumento específico en uso en el HHHA.
 export const RC_DEFAULT_FACTOR_EFICIENCIA = 0.15;
 export const RC_DEFAULT_AREA_MONITOREADA_CM2 = 15;
 
@@ -119,15 +136,21 @@ export type RcResumenArea = {
   estado_general: RcEstadoGeneral;
 };
 
-// Genera el "Estado General" automatico de un area (Laboratorio o Sala de
-// Pacientes) a partir de sus puntos ya evaluados: Conforme, Requiere
-// descontaminacion, Liberado o No liberado.
+// Genera el "Estado General" automático de un área (Laboratorio o Sala de
+// Pacientes) a partir de sus puntos ya evaluados.
 //
-// Regla aplicada: si existe al menos un punto "sobre_limite" (rojo) el area
-// queda "No liberado" (o "Requiere descontaminacion" si ya se realizo una
-// limpieza y se esta a la espera de reevaluar). Si hay puntos "cercano_limite"
-// (amarillo) pero ninguno sobre el limite, el area queda "Conforme". Si todos
-// los puntos estan sin contaminacion o bajo el nivel de referencia, "Liberado".
+// Regla aplicada (por orden de precedencia):
+//   1. Si hay ≥1 punto "sobre_limite" (rojo):
+//      → "no_liberado" (área no liberable).
+//      Si además "limpiezaRealizada" es true, el estado es "requiere_descontaminacion"
+//      como señal de flujo de trabajo (indica que ya se intentó una limpieza pero no
+//      fue suficiente — el área SIGUE SIN PODERSE LIBERAR hasta nueva medición).
+//      NOTA: ambos estados implican que el área NO puede liberarse; la distinción es
+//      de flujo interno para el registro de acciones correctivas.
+//   2. Si hay puntos "cercano_limite" (amarillo) pero ninguno rojo:
+//      → "conforme" (área con monitoreo; no requiere acción inmediata).
+//   3. Si todos los puntos son verdes:
+//      → "liberado" (área apta para uso sin restricción radiológica).
 export function calcularResumenArea(puntos: RcPointResult[], limpiezaRealizada = false): RcResumenArea {
   const total_puntos = puntos.length;
   const contaminados = puntos.filter(

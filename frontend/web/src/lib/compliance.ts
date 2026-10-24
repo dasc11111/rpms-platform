@@ -175,7 +175,12 @@ export async function ensureComplianceTables(): Promise<void> {
     )
   `;
 
-  // Seed requerimientos base si la tabla está vacía
+  // Seed con requerimientos de referencia — VALORES DEMOSTRATIVOS.
+  // Las fechas (NOW() + INTERVAL) son plazos orientativos calculados desde la fecha
+  // de primera instalación. El OPR DEBE actualizarlas contra el calendario real
+  // de la Unidad de Medicina Nuclear del HHHA antes de usar en producción.
+  // Las referencias normativas (artículos DS 133/1984, DS 3/1985, Ley 18.302)
+  // deben verificarse contra los textos oficiales vigentes en la autorización CCHEN.
   const { rows } = await sql`SELECT COUNT(*) AS n FROM compliance_requirements`;
   if (Number(rows[0]?.n ?? 0) === 0) {
     await sql`

@@ -1,4 +1,8 @@
-export const RADIONUCLIDOS = ["TC-99M", "I-131", "GA-67", "F-18", "OTRO"] as const;
+// Radionúclidos disponibles en el selector de monitoreo de contaminación.
+// Debe mantenerse sincronizado con RC_RADIONUCLIDOS en room-clearance.ts.
+// LU-177: terapia con DOTATATE/PSMA177; GA-68: PET diagnóstico; GA-67: gammagrafía.
+// Fuente: práctica clínica HHHA y radiofármacos activos según autorización CCHEN.
+export const RADIONUCLIDOS = ["TC-99M", "I-131", "I-123", "GA-67", "GA-68", "F-18", "LU-177", "OTRO"] as const;
 
 export const CONTAMINATION_SUGGESTION_FIELDS = [
     "area",

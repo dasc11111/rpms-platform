@@ -1,7 +1,23 @@
 import { sql } from "@/lib/db";
 
-export const DOSE_LIMIT_1M = 100; // uSv/h
-export const DOSE_LIMIT_VEHICLE = 2000; // uSv/h
+// Límites de tasa de dosis para transporte de material radiactivo.
+// Fuente: IAEA Safety Standards SSR-6 (2018) "Regulations for the Safe
+// Transport of Radioactive Material", adoptada por Chile como base técnica
+// del transporte de materiales radiactivos (complementando DS 133/1984 MINSAL).
+//
+// DOSE_LIMIT_1M = 100 μSv/h: límite de tasa de dosis a 1 m de la superficie
+// del bulto, para envíos en uso no exclusivo (SSR-6, Tabla IX, párr. 527).
+//
+// DOSE_LIMIT_VEHICLE = 2000 μSv/h (= 2 mSv/h): límite de tasa de dosis en
+// la superficie del bulto para uso no exclusivo (SSR-6, Tabla IX).
+// Para vehículos de uso exclusivo el límite superficial es 10 mSv/h (SSR-6,
+// párr. 528); ese caso NO está cubierto por esta constante — si el HHHA
+// realiza envíos en uso exclusivo, agregar DOSE_LIMIT_VEHICLE_EXCLUSIVE_USE.
+//
+// OPR: verificar que estos límites son consistentes con la autorización CCHEN
+// vigente para el transporte de radiofármacos del HHHA.
+export const DOSE_LIMIT_1M = 100; // μSv/h — 1 m desde superficie del bulto, uso no exclusivo
+export const DOSE_LIMIT_VEHICLE = 2000; // μSv/h — superficie del bulto, uso no exclusivo
 
 export const AUTH_ALERT_LEVELS = [
   { min: 180, level: "verde", label: "Vigente" },
