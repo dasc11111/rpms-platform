@@ -105,7 +105,7 @@ export function isSuperAdminEmail(email: string) {
   return email.toLowerCase().trim() === SUPER_ADMIN_EMAIL;
 }
 
-export function sanitizeUser(user: any) {
+export function sanitizeUser(user: Record<string, unknown> | null | undefined) {
   if (!user) return null;
   const { password_hash, mfa_secret, ...rest } = user;
   return rest;
