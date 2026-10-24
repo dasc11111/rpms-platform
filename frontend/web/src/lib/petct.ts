@@ -71,22 +71,52 @@ export function calcDecay(a0_mbq: number, elapsed_min: number, radionuclide: Pet
   return a0_mbq * Math.pow(2, -elapsed_min / t_half);
 }
 
+// Constante de dosis Γ para estimación rápida de tasa de dosis a 1 m.
+//
+// IAEA SRS-58 (2004), Tabla 2, Γ(F-18) ≈ 0,143 μSv·m²/(MBq·h).
+// Esta constante corresponde a los fotones de aniquilación de 511 keV de los
+// emisores β⁺. Es una buena aproximación para F-18, Ga-68 y C-11 (emisores
+// casi puros de β⁺ cuyo Γ varía menos del 3% entre sí). Para Zr-89
+// (T½ = 78,4 h) la constante efectiva es mayor (~0,18 μSv·m²/(MBq·h)) por
+// la línea γ adicional de 909 keV (I ≈ 99 %); con la constante de F-18 el
+// sistema subestima la tasa de dosis de Zr-89 en ~20 %. Para Cu-64 la
+// diferencia respecto de F-18 es <5 % (Γ ≈ 0,15).
+//
+// OPR: para Zr-89 usar Γ ≈ 0,18 μSv·m²/(MBq·h) o el valor certificado por
+// el fabricante del radiofármaco. Considerar agregar un mapa
+// GAMMA_CONSTANT_BY_RADIONUCLIDE cuando Zr-89 esté activo en el HHHA.
+export const GAMMA_CONSTANT_F18_USVH_M2_PER_MBQ_H = 0.143;
+
 /**
- * Tasa de dosis estimada a 1 m del paciente (μSv/h)
- * Γ ≈ 0.143 μSv·m²/(MBq·h) (IAEA SRS 58, Tab. 2)
+ * Tasa de dosis estimada a 1 m del paciente (μSv/h).
+ * Usa Γ(F-18) = 0.143 μSv·m²/(MBq·h) como aproximación para todos los
+ * emisores β⁺ del módulo. Ver nota GAMMA_CONSTANT_F18 para limitaciones
+ * con Zr-89.
  */
 export function doseRateAt1m_usvh(activity_mbq: number): number {
-  return 0.143 * activity_mbq;
+  return GAMMA_CONSTANT_F18_USVH_M2_PER_MBQ_H * activity_mbq;
 }
+
+// Umbral de tasa de dosis para alta de paciente PET.
+// 25 μSv/h a 1 m es el criterio conservador habitual en medicina nuclear
+// (equivalente a 2,5 mR/h, adoptado internacionalmente como criterio de
+// referencia para alta ambulatoria de pacientes con β⁺ de corta semivida).
+// PENDIENTE OPR: confirmar que este valor coincide con el criterio
+// establecido en la autorización CCHEN vigente del HHHA. Para pacientes con
+// Zr-89 (T½ largo) el cálculo puede subestimarse por la constante de dosis
+// aproximada (ver comentario GAMMA_CONSTANT_F18).
+export const DOSE_RELEASE_THRESHOLD_USVH = 25;
 
 /**
  * Minutos hasta que la tasa de dosis a 1 m cae bajo el umbral.
  * CCHEN / DS 133: se usa 25 μSv/h como criterio conservador de referencia.
+ * Proyecta desde la actividad administrada (a0_mbq), no desde la actividad
+ * actual, para planificación de alta desde el momento de inyección.
  */
 export function minutesToBelowDoseRate(
   a0_mbq: number,
   radionuclide: PetctRadionuclide,
-  threshold_usvh = 25
+  threshold_usvh = DOSE_RELEASE_THRESHOLD_USVH
 ): number {
   const t_half = HALF_LIFE_MINUTES[radionuclide];
   const current = doseRateAt1m_usvh(a0_mbq);
