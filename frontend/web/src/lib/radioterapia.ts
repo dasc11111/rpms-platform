@@ -295,7 +295,7 @@ export function daysUntilDate(dateValue: string | null | undefined): number | nu
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export function getActionAlertLevel(status: string, dueDate: any): { level: string; label: string; daysOverdue: number | null; daysRemaining: number | null } {
+export function getActionAlertLevel(status: string, dueDate: string | null | undefined): { level: string; label: string; daysOverdue: number | null; daysRemaining: number | null } {
   const days = daysUntilDate(dueDate);
   const isOpenStatus = status === "pendiente" || status === "en_proceso" || status === "atrasada";
   if (!isOpenStatus) return { level: "cerrada", label: "Cerrada", daysOverdue: null, daysRemaining: null };
@@ -330,7 +330,7 @@ export const RT_RISK_STATUSES = [
   { value: "cerrado", label: "Cerrado", color: "negro" },
   ];
 
-export function getRiskClassification(probability: any, severity: any): { score: number; level: string; label: string; color: string } {
+export function getRiskClassification(probability: number | string | null, severity: number | string | null): { score: number; level: string; label: string; color: string } {
   const score = (Number(probability) || 0) * (Number(severity) || 0);
   if (score <= 4) return { score, level: "bajo", label: "Bajo", color: "verde" };
   if (score <= 9) return { score, level: "moderado", label: "Moderado", color: "amarillo" };
@@ -393,7 +393,7 @@ export const RT_ROOT_CAUSE_METHODS = [
 { value: "personalizado", label: "Analisis personalizado" },
 ];
 
-export function getIncidentStageIndex(stage: any) {
+export function getIncidentStageIndex(stage: string | null | undefined) {
 const idx = RT_INCIDENT_STAGES.findIndex((s) => s.value === stage);
 return idx === -1 ? 0 : idx;
 }
@@ -454,7 +454,7 @@ export const RT_DEFAULT_CHECKLIST_ITEMS: Record<string, string[]> = {
   ],
 };
 
-export function getFindingClassification(value: any) {
+export function getFindingClassification(value: string | number | null | undefined) {
   return RT_FINDING_CLASSIFICATIONS.find((c) => c.value === value) || RT_FINDING_CLASSIFICATIONS[3];
 }
 

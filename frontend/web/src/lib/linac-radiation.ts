@@ -82,7 +82,7 @@ export function daysUntilDue(dateValue: string | null | undefined): number | nul
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
 }
 
-export async function generateRadiationAlert(linacId: any, recordId: any, category: any, semaphore: any, message: any) {
+export async function generateRadiationAlert(linacId: string | number, recordId: string | number, category: string, semaphore: string, message: string) {
   try {
     await sql`
       INSERT INTO linac_radiation_alerts (linac_id, record_id, category, semaphore, message)
@@ -93,7 +93,7 @@ export async function generateRadiationAlert(linacId: any, recordId: any, catego
   }
 }
 
-export async function checkDueDateAlert(linacId: any, recordId: any, category: any, categoryLabel: any, testName: any, nextDueDate: any) {
+export async function checkDueDateAlert(linacId: string | number, recordId: string | number, category: string, categoryLabel: string, testName: string, nextDueDate: string | null | undefined) {
   const days = daysUntilDue(nextDueDate);
   if (days === null) return;
   if (days <= 30) {

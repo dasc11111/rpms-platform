@@ -74,7 +74,7 @@ export const ACCEPTANCE_RESULT_OPTIONS = [
   { value: "no_cumple", label: "No cumple" },
   ];
 
-export function evaluateItemResult(measuredValue: any, specification: any, tolerance: any): string | null {
+export function evaluateItemResult(measuredValue: number | null | undefined, specification: number | null | undefined, tolerance: number | null | undefined): string | null {
   if (measuredValue === undefined || measuredValue === null || measuredValue === "") return null;
   const measured = Number(String(measuredValue).replace(",", "."));
   if (Number.isNaN(measured)) return null;
@@ -109,7 +109,7 @@ const gte = tol.match(/^>=\s*([\d.,]+)$/);
 return null;
 }
 
-export function computeOverallResult(items: any[]): string {
+export function computeOverallResult(items: Record<string, unknown>[]): string {
   if (!Array.isArray(items) || items.length === 0) return "cumple";
   if (items.some((it) => it.result === "no_cumple")) return "no_cumple";
   if (items.some((it) => it.result === "cumple_observaciones" || (it.comment && String(it.comment).trim()))) {

@@ -97,7 +97,7 @@ if (dev <= tol * 1.5) return "amarillo";
 return "rojo";
 }
 
-function extractReferenceValue(data: any): number | null {
+function extractReferenceValue(data: Record<string, unknown>): number | null {
 if (!data) return null;
 if (typeof data.value === "number") return data.value;
 if (typeof data.referenceValue === "number") return data.referenceValue;
@@ -109,7 +109,7 @@ if (p && typeof p.y === "string" && Number.isFinite(parseFloat(p.y))) return par
 return null;
 }
 
-export async function findCurrentBaseline(linacId: any, measurementType: any, modality: any, energy: any): Promise<any> {
+export async function findCurrentBaseline(linacId: string | number, measurementType: string, modality: string | null, energy: string | null): Promise<Record<string, unknown> | null> {
 if (!measurementType) return null;
 const { rows } = await sql`
 SELECT b.id, b.version, b.approved_at, b.dataset_id, d.data
@@ -133,7 +133,7 @@ referenceValue,
 };
 }
 
-export async function generateQcAlert(linacId: any, qcTestId: any, periodicity: any, testName: any, semaphore: any, message: any) {
+export async function generateQcAlert(linacId: string | number, qcTestId: string | number, periodicity: string, testName: string, semaphore: string, message: string) {
 if (semaphore === "verde") return;
 await sql`
 INSERT INTO linac_qc_alerts (linac_id, qc_test_id, periodicity, test_name, semaphore, message)

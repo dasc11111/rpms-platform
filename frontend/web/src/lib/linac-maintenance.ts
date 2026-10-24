@@ -117,7 +117,7 @@ if (!mtbf || !mttr || Number.isNaN(m) || Number.isNaN(r) || m + r <= 0) return n
 return Math.round((m / (m + r)) * 1000) / 10;
 }
 
-export async function generateMaintenanceAlert(linacId: any, recordId: any, maintenanceType: any, semaphore: any, message: any) {
+export async function generateMaintenanceAlert(linacId: string | number, recordId: string | number, maintenanceType: string, semaphore: string, message: string) {
 try {
 await sql`
 INSERT INTO linac_maintenance_alerts (linac_id, record_id, maintenance_type, semaphore, message)
@@ -128,7 +128,7 @@ console.error("generateMaintenanceAlert failed", err);
 }
 }
 
-export async function checkMaintenanceDueAlert(linacId: any, recordId: any, maintenanceType: any, typeLabel: any, nextMaintenanceDate: any) {
+export async function checkMaintenanceDueAlert(linacId: string | number, recordId: string | number, maintenanceType: string, typeLabel: string, nextMaintenanceDate: string | null | undefined) {
 const days = daysUntilMaintenance(nextMaintenanceDate);
 if (days === null) return;
 if (days <= 30) {
@@ -197,9 +197,9 @@ return rows[0] || null;
 export function buildInheritedObservations(ctx: {
 parameterName: string;
 moduleName: string;
-measuredValue: any;
-referenceValue: any;
-deviationPct: any;
+measuredValue: number | null;
+referenceValue: number | null;
+deviationPct: number | null;
 criteriaSourceName?: string | null;
 documentName?: string | null;
 documentVersion?: string | null;
