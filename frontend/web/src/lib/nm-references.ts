@@ -93,7 +93,7 @@ export async function ensureNmReferencesTables() {
   ensured = true;
 }
 
-export async function logNmReferenceAudit(action: string, actorEmail: string | null, details: any) {
+export async function logNmReferenceAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (
