@@ -59,11 +59,20 @@ export async function ensureRoomClearanceSchema(): Promise<void> {
   // (contamination_limits), reutilizando el mismo esquema de umbrales
   // Registro/Investigacion/Intervencion ya validado en el modulo de
   // Registro de Contaminacion.
+  // Seed de límites para todos los radionúclidos del módulo. Los valores son
+  // configurables por el OPR desde el panel de límites (/contamination/limits).
+  // Nota normativa: para β+γ (LU-177, I-131, I-123) la IAEA Safety Reports
+  // Series No. 63 recomienda límites más conservadores que para γ puros (Tc-99m).
+  // Los valores de I-123 se asimilan a I-131 por ser ambos radioioduros (afinidad
+  // tiroidea). OPR debe validar todos los valores contra la autorización CCHEN.
   await sql`
     INSERT INTO contamination_limits (radionuclido, limite_bq_m2, pct_registro, pct_investigacion, pct_intervencion, notas)
     VALUES
-      ('LU-177', 370000, 5, 30, 50, 'Valor por defecto configurable para Lu-177, consistente con el nivel de referencia generico. Debe ser validado por el OPR segun normativa vigente.'),
-      ('GA-68', 370000, 5, 30, 50, 'Valor por defecto configurable para Ga-68, consistente con el nivel de referencia generico. Debe ser validado por el OPR segun normativa vigente.')
+      ('LU-177', 370000, 5, 30, 50, 'Valor provisional. Lu-177 es emisor β+γ (208 keV); límite más conservador que Tc-99m justificado por componente β. PENDIENTE VALIDACIÓN OPR. IAEA SRS-63 recomendaría revisisar límite según tipo de área.'),
+      ('GA-68', 370000, 5, 30, 50, 'Valor provisional. Ga-68 es β+ (T½ = 68 min); la semivida corta minimiza el riesgo persistente, pero el límite de intervención se mantiene conservador. PENDIENTE VALIDACIÓN OPR.'),
+      ('GA-67', 370000, 5, 30, 50, 'Valor provisional para Ga-67 (γ, T½ = 3,26 d). Igual al genérico (37 Bq/cm²). PENDIENTE VALIDACIÓN OPR contra normativa vigente.'),
+      ('I-123', 37000, 5, 30, 50, 'Valor provisional asimilado a I-131 (37 000 Bq/m² = 3,7 Bq/cm²) por ser ambos radioioduros con afinidad tiroidea. I-123 tiene T½ = 13,2 h (menor riesgo crónico). PENDIENTE VALIDACIÓN OPR.'),
+      ('F-18', 370000, 5, 30, 50, 'Valor provisional para F-18 (β+, T½ = 109,8 min). Igual al genérico dado que la corta semivida limita el riesgo persistente. PENDIENTE VALIDACIÓN OPR.')
     ON CONFLICT (radionuclido) DO NOTHING
   `;
 
