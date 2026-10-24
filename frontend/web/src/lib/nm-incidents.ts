@@ -89,7 +89,7 @@ export async function ensureNmIncidentsTables() {
   ensured = true;
 }
 
-export async function logNmIncidentAudit(action: string, actorEmail: string | null, details: any) {
+export async function logNmIncidentAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (

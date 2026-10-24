@@ -85,10 +85,28 @@ export interface LnLnRegressionResult extends LinearRegressionResult {
     impliedHalfLifeMinutes: number;
 }
 
+/**
+ * Regresion semilogatitmica para test de linealidad de activimetro por decaimiento.
+ *
+ * Fisica: A(t) = A₀ · e^(−λt)  →  ln(A) = ln(A₀) − λ·t
+ * La relacion es LINEAL en {t, ln(A)}, NO en {ln(t), ln(A)}.
+ * slope = −λ  →  T½_implicita = ln(2) / |slope|
+ *
+ * Metodologia: IAEA HHS No. 16, Seccion 5 (Linearity / dose calibrator);
+ * IAEA-TECDOC-602. Medir la misma fuente en intervalos sucesivos mientras
+ * decae; comparar la T½ ajustada con la T½ certificada del radionuclido.
+ *
+ * NOTA HISTORICA: la funcion se llamaba lnLnRegression y usaba x = ln(t),
+ * lo que es incorrecto para decaimiento exponencial (produce slope dependiente
+ * del tiempo y T½ implicita erronea). Corregido: x = t (minutos en bruto).
+ * El nombre de exportacion se mantiene por compatibilidad con route.ts.
+ */
 export function lnLnRegression(timeMinutes: number[], activity: number[]): LnLnRegressionResult {
-    const x = timeMinutes.map((t) => Math.log(t));
+    // Semilogatitmica: x = t (minutos), y = ln(A)
+    const x = timeMinutes;
     const y = activity.map((a) => Math.log(a));
     const { slope, intercept, r2 } = linearRegression(x, y);
+    // slope = -λ  →  T½ = ln(2) / λ = ln(2) / |slope|
     const impliedHalfLifeMinutes = slope ? Math.LN2 / -slope : NaN;
     return { slope, intercept, r2, impliedHalfLifeMinutes };
 }
