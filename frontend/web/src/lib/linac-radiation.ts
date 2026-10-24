@@ -102,7 +102,7 @@ export async function checkDueDateAlert(linacId: any, recordId: any, category: a
   }
 }
 
-export async function logRadiationAudit(action: string, actorEmail: string | null, details: any) {
+export async function logRadiationAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (

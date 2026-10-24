@@ -118,7 +118,7 @@ export function computeOverallResult(items: any[]): string {
   return "cumple";
 }
 
-export async function logAcceptanceAudit(action: string, actorEmail: string | null, details: any) {
+export async function logAcceptanceAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
     CREATE TABLE IF NOT EXISTS audit_logs (

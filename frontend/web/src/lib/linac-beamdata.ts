@@ -89,7 +89,7 @@ export async function importBeamDataEntry(input: any) {
   return { id: rows[0]!.id, version };
 }
 
-export async function logBeamDataAudit(action: string, actorEmail: string | null, details: any) {
+export async function logBeamDataAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (

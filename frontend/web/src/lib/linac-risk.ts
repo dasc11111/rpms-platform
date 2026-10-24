@@ -22,7 +22,7 @@ export function classifyRiskLevel(level: number | null | undefined): { label: st
   return { label: "Muy alto", cls: "text-danger", bg: "bg-danger" };
 }
 
-export async function logRiskAudit(action: string, actorEmail: string | null, details: any) {
+export async function logRiskAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
     CREATE TABLE IF NOT EXISTS audit_logs (

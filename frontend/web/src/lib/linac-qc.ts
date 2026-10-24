@@ -141,7 +141,7 @@ VALUES (${linacId}, ${qcTestId}, ${periodicity}, ${testName}, ${semaphore}, ${me
 `;
 }
 
-export async function logQcAudit(action: string, actorEmail: string | null, details: any) {
+export async function logQcAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
 try {
 await sql`
 CREATE TABLE IF NOT EXISTS audit_logs (

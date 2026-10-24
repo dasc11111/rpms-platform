@@ -338,7 +338,7 @@ export function getRiskClassification(probability: any, severity: any): { score:
   return { score, level: "muy_alto", label: "Muy alto", color: "rojo" };
 }
 
-export async function logRadioterapiaAudit(action: string, actorEmail: string | null, details: any) {
+export async function logRadioterapiaAudit(action: string, actorEmail: string | null, details: Record<string, unknown>) {
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS audit_logs (
