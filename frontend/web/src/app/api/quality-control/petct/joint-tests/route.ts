@@ -6,6 +6,7 @@ import {
   type JointTestCode,
 } from "@/lib/qc-petct-joint-tests-db";
 import {
+
   calculatePetCt01,
   calculatePetCt02,
   calculatePetClinico,
@@ -13,6 +14,8 @@ import {
   type CtAcceptanceStatus,
   type CtActionLevel,
 } from "@/lib/qc-petct-calc";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE D (extendido en FASE G)

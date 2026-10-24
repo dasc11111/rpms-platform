@@ -4,6 +4,9 @@ import { hashPassword, isValidPassword, isSuperAdminEmail } from "@/lib/auth";
 import { ensureAuthSchema, logAudit } from "@/lib/auth-db";
 import { sql } from "@/lib/db";
 
+
+export const dynamic = "force-dynamic";
+
 async function requireSuperAdmin(req: NextRequest) {
     const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
     const payload = await verifySession(token);

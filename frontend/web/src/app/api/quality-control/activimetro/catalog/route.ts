@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listActivimetroTestCatalog, getActivimetroTestCatalogByCode, ensureActivimetroArchitectureTables } from "@/lib/qc-activimetro-architecture-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO ACTIVIMETRO - FASE A
  * API de solo lectura del catalogo configurable ACTIV-01 a ACTIV-07

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listTestCatalog, getTestCatalogByCode, ensurePetCtArchitectureTables } from "@/lib/qc-petct-architecture-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO 4 - PET/CT - FASE A
  * API de solo lectura del catalogo configurable de pruebas (secciones 4 y

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listPurityTests, createPurityTest, reviewAndValidatePurityTest } from "@/lib/qc-activimetro-purity-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO ACTIVIMETRO - ACTIV-07: Pureza radionucleidica de 99mTc
  * GET: lista pruebas registradas (opcional ?instrument_id=N).

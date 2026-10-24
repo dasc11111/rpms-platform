@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   getPetTestById,
   listVersionChain,
   finalizePetTest,
@@ -7,6 +8,8 @@ import {
   createCorrectedVersion,
   ensurePetTestsTables,
 } from "@/lib/qc-petct-pet-tests-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE B

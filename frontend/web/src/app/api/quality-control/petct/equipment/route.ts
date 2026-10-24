@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   listPetCtEquipment,
   getPetCtEquipmentById,
   createPetCtEquipment,
   updatePetCtEquipment,
   ensurePetCtEquipmentTables,
 } from "@/lib/qc-petct-equipment-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE A

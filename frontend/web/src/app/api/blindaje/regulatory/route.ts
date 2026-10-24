@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import {
+
   ensureBlindajeTables,
   listBlindajeRegulatoryParameters,
   listBlindajeMaterials,
   logBlindajeAudit,
 } from "@/lib/blindaje";
+
+export const dynamic = "force-dynamic";
 
 // MODULO: BLINDAJE Y DISENO - Motor Regulatorio (S6).
 // Ningun valor normativo vive en el codigo: se lee/escribe aqui, siempre

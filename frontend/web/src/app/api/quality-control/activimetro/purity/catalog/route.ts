@@ -3,6 +3,9 @@ import { sql } from "@/lib/db";
 import { listActivimetroRadionuclides } from "@/lib/qc-activimetro-architecture-db";
 import { getPurityTolerance } from "@/lib/qc-activimetro-purity-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO ACTIVIMETRO - ACTIV-07
  * Catalogo de apoyo para el formulario guiado de 12 pasos: instrumentos,

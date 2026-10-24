@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   addEvidence,
   listEvidence,
   ensurePetCtArchitectureTables,
 } from "@/lib/qc-petct-architecture-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE J

@@ -22,6 +22,9 @@ import {
 } from "@/lib/qc-petct-calc";
 import { getCurrentBaseline } from "@/lib/qc-petct-architecture-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO 4 - PET/CT - FASE B (extendido en FASE L con PET-UNIF)
  * API de resultados de las pruebas PET-01 a PET-06 (seccion 5 del prompt de

@@ -6,6 +6,7 @@ import {
   type CtTestCode,
 } from "@/lib/qc-petct-ct-tests-db";
 import {
+
   calculateCt01,
   calculateCt02,
   calculateCt03,
@@ -23,6 +24,8 @@ import {
   type CtAcceptanceStatus,
   type CtActionLevel,
 } from "@/lib/qc-petct-calc";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE C

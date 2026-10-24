@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { listActivimetroInspectionChecklist } from "@/lib/qc-activimetro-inspection-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO ACTIVIMETRO - ACTIV-01
  * Devuelve el catalogo configurable de items del checklist de inspeccion

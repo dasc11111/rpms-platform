@@ -3,6 +3,9 @@ import { verifySession, SESSION_COOKIE_NAME } from "@/lib/auth-token";
 import { ensureAuthSchema } from "@/lib/auth-db";
 import { sql } from "@/lib/db";
 
+
+export const dynamic = "force-dynamic";
+
 // Solo lectura. Nunca se implementa un metodo DELETE para este recurso:
 // el historial de auditoria nunca debe eliminarse.
 export async function GET(req: NextRequest) {

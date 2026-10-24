@@ -3,6 +3,9 @@ import { sql } from "@/lib/db";
 import { listActivimetroRadionuclides } from "@/lib/qc-activimetro-architecture-db";
 import { getExactitudRadionuclidoTolerance } from "@/lib/qc-activimetro-radionuclide-accuracy-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
 * MODULO ACTIVIMETRO - ACTIV-05
 * Catalogo de apoyo para el formulario: instrumentos, radionucleidos

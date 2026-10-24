@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   createActivimetroServiceEvent,
   listActivimetroServiceEvents,
   updateActivimetroServiceEventStatus,
   ensureActivimetroArchitectureTables,
 } from "@/lib/qc-activimetro-architecture-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO ACTIVIMETRO - FASE C

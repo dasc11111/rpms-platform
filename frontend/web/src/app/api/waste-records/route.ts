@@ -6,11 +6,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import {
+
   buildWasteDedupeKey,
   calcWasteDerived,
   type WasteRecord,
   type WasteFormInput,
 } from "@/lib/waste-records";
+
+export const dynamic = "force-dynamic";
 
 function buildFilters(params: URLSearchParams) {
   const conditions: string[] = ["1=1"];

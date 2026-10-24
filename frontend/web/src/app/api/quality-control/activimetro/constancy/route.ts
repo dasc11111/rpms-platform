@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listConstanciaTests, createConstanciaTest } from "@/lib/qc-activimetro-constancy-db";
 
+
+export const dynamic = "force-dynamic";
+
 /**
  * MODULO ACTIVIMETRO - ACTIV-06: Constancia
  * GET: lista pruebas registradas (opcional ?instrument_id=N).

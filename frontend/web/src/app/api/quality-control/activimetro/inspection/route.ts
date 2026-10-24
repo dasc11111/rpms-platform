@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
     listActivimetroInspections,
     getActivimetroInspectionById,
     createActivimetroInspection,
 } from "@/lib/qc-activimetro-inspection-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO ACTIVIMETRO - ACTIV-01: Inspeccion fisica y funcional

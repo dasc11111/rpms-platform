@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   listExactitudRadionuclidoTests,
   createExactitudRadionuclidoTest,
 } from "@/lib/qc-activimetro-radionuclide-accuracy-db";
+
+export const dynamic = "force-dynamic";
 
 /**
 * MODULO ACTIVIMETRO - ACTIV-05: Exactitud por radionuclido

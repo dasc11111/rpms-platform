@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+
   getJointTestById,
   listJointVersionChain,
   finalizeJointTest,
@@ -7,6 +8,8 @@ import {
   createCorrectedJointVersion,
   ensureJointTestsTables,
 } from "@/lib/qc-petct-joint-tests-db";
+
+export const dynamic = "force-dynamic";
 
 /**
  * MODULO 4 - PET/CT - FASE D
