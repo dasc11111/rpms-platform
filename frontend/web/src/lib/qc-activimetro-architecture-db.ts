@@ -322,7 +322,7 @@ async function seedRadionuclides() {
     { name: 'Yodo-131', symbol: '131I', half_life_minutes: 11554.56, unit: 'MBq' },
     { name: 'Fluor-18', symbol: '18F', half_life_minutes: 109.77, unit: 'MBq' },
     { name: 'Galio-68', symbol: '68Ga', half_life_minutes: 67.71, unit: 'MBq' },
-    { name: 'Lutecio-177', symbol: '177Lu', half_life_minutes: 9569.6, unit: 'MBq' },
+    { name: 'Lutecio-177', symbol: '177Lu', half_life_minutes: 9571.8, unit: 'MBq' }, // NNDC: 6.6471 d = 159.53 h = 9571.8 min (corregido para consistencia con waste-records.ts)
   ];
 
   for (const e of entries) {
