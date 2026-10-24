@@ -50,7 +50,27 @@ export const BEAM_DATA_MEASUREMENT_TYPES = [
   { value: "otro", label: "Otro" },
 ];
 
-export async function importBeamDataEntry(input: any) {
+export interface BeamDataEntryInput {
+  linacId: number;
+  modality?: string | null;
+  energy?: string | null;
+  measurementType: string;
+  supersedesId?: number | null;
+  measurementDate: string;
+  measuredBy?: string | null;
+  instrumentUsed?: string | null;
+  data?: Record<string, unknown>;
+  uncertaintyType?: string | null;
+  uncertaintyValue?: string | null;
+  uncertaintyUnit?: string | null;
+  fileName?: string | null;
+  blobUrl?: string | null;
+  mimeType?: string | null;
+  notes?: string | null;
+  createdBy?: string | null;
+}
+
+export async function importBeamDataEntry(input: BeamDataEntryInput) {
   await ensureBeamDataTables();
   let version = 1;
   if (input.supersedesId) {
