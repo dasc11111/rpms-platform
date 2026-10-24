@@ -25,7 +25,26 @@ export const RADIONUCLIDES = [
 ] as const;
 export type Radionuclide = (typeof RADIONUCLIDES)[number];
 
-/** Vidas medias físicas en horas (fuente: IAEA Nuclear Data) */
+// Vidas medias físicas en horas.
+// Fuente primaria: IAEA Nuclear Data Services / NNDC Chart of Nuclides (2024).
+// OPR: verificar que los valores coinciden con los datos de calibración del
+// activímetro en uso en el HHHA; en caso de discrepancia usar el valor de la
+// hoja de calibración certificada del instrumento.
+//
+// Notas de precisión por radionúclido:
+//   Tc-99m : 6,0089 h  → redondeado 6,01 h  (NNDC; error despreciable)
+//   I-131  : 192,60 h  (8,0233 d)            (NNDC)
+//   I-123  : 13,22  h  (0,5508 d)            (NNDC)
+//   Ga-67  : 78,26  h  (3,2608 d)            (NNDC)
+//   Tl-201 : 73,06  h  (3,0442 d)            (NNDC)
+//   F-18   : 1,8291 h  → redondeado 1,83 h   (109,74 min; NNDC)
+//   Lu-177 : 159,53 h  (6,6471 d)            (NNDC) — CORRECCIÓN: valor previo
+//            incorrecto era 162,7 h (error ~2 %; implicaba ~3,2 h adicionales por
+//            período, es decir ~32 h de retención extra innecesaria al cabo de 10 T½).
+//            Efecto: conservador (overestimaba tiempo de retención), pero incorrecto.
+//   Y-90   : 64,06  h  → redondeado 64,1 h   (2,6691 d; NNDC)
+//   Ra-223 : 274,44 h  → redondeado 274.8 h  (11,435 d; NNDC; diferencia <0,15%)
+//   Sm-153 : 46,31  h  → redondeado 46,3 h   (1,9296 d; NNDC)
 export const HALF_LIFE_HOURS: Record<Radionuclide, number> = {
   "Tc-99m": 6.01,
   "I-131": 192.6,
@@ -33,7 +52,7 @@ export const HALF_LIFE_HOURS: Record<Radionuclide, number> = {
   "Ga-67": 78.26,
   "Tl-201": 73.06,
   "F-18": 1.83,
-  "Lu-177": 162.7,
+  "Lu-177": 159.53,  // Corregido: NNDC 6,6471 d = 159,53 h (anterior incorrecto: 162,7 h)
   "Y-90": 64.1,
   "Ra-223": 274.8,
   "Sm-153": 46.3,
