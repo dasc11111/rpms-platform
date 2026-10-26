@@ -167,7 +167,7 @@ export async function GET(
     y = sectionHeader(doc, "2. FUENTES DE RADIACIÓN", y);
 
     const sourceRows = sources.length > 0
-      ? sources.map((s: any) => [
+      ? sources.map((s: Record<string, unknown>) => [
           fmtStr(s.source_type),
           fmtStr(s.radionuclide),
           fmtStr(s.energy),
@@ -201,7 +201,7 @@ export async function GET(
     if (workload.length > 0) {
       y = sectionHeader(doc, "3. CARGA DE TRABAJO", y);
 
-      const workloadRows = workload.map((w: any) => {
+      const workloadRows = workload.map((w: Record<string, unknown>) => {
         const d = (w.data || {}) as Record<string, any>;
         const details = Object.entries(d)
           .filter(([, v]) => v !== null && v !== undefined && v !== "")
@@ -246,7 +246,7 @@ export async function GET(
     y = sectionHeader(doc, "4. PUNTOS DE INTERÉS RADIOLÓGICO (PIR)", y);
 
     const pirRows = pir.length > 0
-      ? pir.map((p: any) => [
+      ? pir.map((p: Record<string, unknown>) => [
           fmtStr(p.code),
           fmtStr(p.name),
           fmtStr(p.area_type),
@@ -292,7 +292,7 @@ export async function GET(
     y = sectionHeader(doc, "5. BARRERAS — RESULTADOS DE CÁLCULO", y);
 
     const barrierRows = barriers.length > 0
-      ? barriers.map((b: any) => [
+      ? barriers.map((b: Record<string, unknown>) => [
           fmtStr(b.code),
           fmtStr(b.name),
           BARRIER_TYPE_LABELS[b.barrier_type ?? ""] ?? fmtStr(b.barrier_type),
@@ -345,7 +345,7 @@ export async function GET(
     y = (doc as any).lastAutoTable.finalY + 6;
 
     // ── Barrier detail notes (result_unit) ─────────────────────────────────────
-    const barriersWithDetail = barriers.filter((b: any) => b.result_unit);
+    const barriersWithDetail = barriers.filter((b: Record<string, unknown>) => b.result_unit);
     if (barriersWithDetail.length > 0) {
       if (y > 165) {
         doc.addPage();
@@ -355,7 +355,7 @@ export async function GET(
 
       y = sectionHeader(doc, "6. DETALLE DE CÁLCULO POR BARRERA (memoria de cálculo)", y);
 
-      const detailRows = barriersWithDetail.map((b: any) => [
+      const detailRows = barriersWithDetail.map((b: Record<string, unknown>) => [
         fmtStr(b.code),
         fmtStr(b.name),
         (b.result_unit || "").slice(0, 400),

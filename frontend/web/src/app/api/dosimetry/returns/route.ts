@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
  await ensureDosimetryTables();
- const body: any = await request.json().catch(() => ({}));
+ const body: Record<string, unknown> = await request.json().catch(() => ({}));
  const dosimeter_code = String(body?.dosimeter_code ?? '').trim();
  const estado = String(body?.estado ?? '').trim();
  const observaciones = String(body?.observaciones ?? '').trim() || null;
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
  return NextResponse.json({ ok: false, error: 'Estado invalido. Debe ser uno de: ' + RETURN_STATUSES.join(', ') }, { status: 400 });
  }
 
- const info: any = await lookupByCode(dosimeter_code);
+ const info: Record<string, unknown> | null = await lookupByCode(dosimeter_code);
 
  const { rows } = await sql`
  INSERT INTO dosimetry_returns (

@@ -6,7 +6,7 @@ import { ensureDosimetryTables, toNum, levelFor, buildQuarterlyDoseAlertSummarie
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
- const body: any = await request.json().catch(() => ({}));
+ const body: Record<string, unknown> = await request.json().catch(() => ({}));
  const worker_rut = String(body?.worker_rut ?? '').trim();
  const year = Number(body?.year);
  const quarter = Number(body?.quarter);
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
  if (workerRows.length === 0) {
  return NextResponse.json({ ok: false, error: 'No se encontro un trabajador con ese RUT.' }, { status: 404 });
  }
- const worker: any = workerRows[0];
+ const worker: Record<string, unknown> | undefined = workerRows[0];
 
  const dose_body = toNum(body?.dose_body);
  const dose_lens = toNum(body?.dose_lens);

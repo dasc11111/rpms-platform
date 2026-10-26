@@ -44,7 +44,7 @@ type Agg = {
 // [23] dosimetro
 export async function POST(request: Request) {
  const body = await request.json().catch(() => ({}));
- const rows: any[][] = Array.isArray(body?.rows) ? body.rows : [];
+ const rows: unknown[][] = Array.isArray(body?.rows) ? body.rows : [];
 
  await ensureDosimetryTables();
 

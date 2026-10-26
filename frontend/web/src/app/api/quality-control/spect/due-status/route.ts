@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
   const { rows: instrumentsAll } = await sql`SELECT id, code, name FROM instruments ORDER BY name ASC`;
   const instruments = instrumentIdParam
-    ? instrumentsAll.filter((i: any) => String(i.id) === instrumentIdParam)
+    ? instrumentsAll.filter((i: Record<string, unknown>) => String(i.id) === instrumentIdParam)
     : instrumentsAll;
 
   const { rows: lastTests } = await sql`

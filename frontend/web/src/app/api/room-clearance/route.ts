@@ -31,7 +31,7 @@ function parsePoints(input: unknown, expectedPuntos: readonly string[]): RcPoint
   const arr = Array.isArray(input) ? input : [];
   return expectedPuntos.map((punto) => {
     const found = arr.find(
-      (p: any) => (p?.punto ?? "").toString().trim().toLowerCase() === punto.toLowerCase()
+      (p: Record<string, unknown>) => ((p?.punto as string) ?? "").toString().trim().toLowerCase() === punto.toLowerCase()
     );
     return {
       punto,

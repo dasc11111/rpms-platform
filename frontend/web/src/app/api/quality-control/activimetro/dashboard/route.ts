@@ -167,7 +167,7 @@ export async function GET() {
 
   const recentAudit = await listActivimetroAuditLogRecent(10);
 
-  const t: any = totals[0] || {};
+  const t: Record<string, unknown> = (totals[0] as Record<string, unknown>) || {};
   const testsTotal = Number(t.tests_total || 0);
   const testsCumple = Number(t.tests_cumple || 0);
   const testsAdvertencia = Number(t.tests_advertencia || 0);
