@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 
   const { rows } = await sql.query(query, values);
 
-  const shipments = rows.map((r: any) => {
+  const shipments = rows.map((r: Record<string, unknown>) => {
     const alerts = computeShipmentAlerts({
       dose_1m: toNum(r.dose_1m),
       dose_vehicle: toNum(r.dose_vehicle),
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
       doseVehicle: toNum(r.dose_vehicle),
       materialCode: r.material_code,
       requestedActivityMci: toNum(r.requested_activity_mci),
-      i131Activities: (r.i131_activities || []).map((a: any) => ({
+      i131Activities: (r.i131_activities as Record<string, unknown>[] || []).map((a: Record<string, unknown>) => ({
         id: a.id,
         label: a.label,
         activityMci: toNum(a.activityMci),

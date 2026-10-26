@@ -147,7 +147,7 @@ export async function GET(
     ]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const item: any = itemRows[0];
+    const item: Record<string, unknown> = itemRows[0] as Record<string, unknown>;
     if (!item) {
       return NextResponse.json({ error: "Residuo no encontrado" }, { status: 404 });
     }
@@ -165,7 +165,7 @@ export async function GET(
 
     // Motor de explicacion
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ultima: any = measRows[0];
+    const ultima: Record<string, unknown> | undefined = measRows[0] as Record<string, unknown> | undefined;
     const explicacion = construirExplicacion({
       itemCode: item.item_code,
       estado: item.estado,

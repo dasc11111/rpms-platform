@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const status = searchParams.get("status");
   const all = searchParams.get("all") === "1";
 
-  let rows: any[];
+  let rows: Record<string, unknown>[];
   if (all) {
     // Usado por la exportacion de trabajadores: incluye TODOS los registros
     // (activos, suspendidos e inactivos) para no perder informacion.
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  const rows: any[] = Array.isArray(body?.rows) ? body.rows : [];
+  const rows: unknown[] = Array.isArray(body?.rows) ? body.rows : [];
 
   await ensureNameColumns();
 

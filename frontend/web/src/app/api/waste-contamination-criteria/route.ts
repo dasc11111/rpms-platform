@@ -25,7 +25,7 @@ export async function GET(request: Request) {
         AND (${radionuclideCode}::text IS NULL OR radionuclide_code = ${radionuclideCode} OR radionuclide_code IS NULL)
       ORDER BY (radionuclide_code IS NULL) ASC, id DESC
     `;
-    const criteria = soloActivos ? rows.filter((r: any) => r.active) : rows;
+    const criteria = soloActivos ? rows.filter((r: Record<string, unknown>) => r.active) : rows;
 
     return NextResponse.json({ criteria });
   }

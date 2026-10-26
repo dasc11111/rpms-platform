@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ nam
   const { rows: driverRows } = await sql`SELECT name, company FROM transport_drivers WHERE name = ${name};`;
   const company = driverRows[0]?.company || null;
 
-  const dates = rows.map((r: any) => r.transport_date).sort();
+  const dates = rows.map((r: Record<string, unknown>) => r.transport_date).sort();
   const firstTransport = dates[0];
   const lastTransport = dates[dates.length - 1];
 

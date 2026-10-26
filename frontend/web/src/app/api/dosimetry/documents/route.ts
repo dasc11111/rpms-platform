@@ -33,10 +33,10 @@ export async function GET() {
   LIMIT 200
   `;
 
-  const pdfCount = rows.filter((r: any) => r.source_type === "pdf").length;
-    const excelCount = rows.filter((r: any) => r.source_type === "xlsx" || r.source_type === "csv").length;
-    const recordsExtracted = rows.reduce((acc: number, r: any) => acc + (Number(r.records_count) || 0), 0);
-    const pendingValidation = rows.filter((r: any) => r.status === "pending").length;
+  const pdfCount = rows.filter((r: Record<string, unknown>) => r.source_type === "pdf").length;
+    const excelCount = rows.filter((r: Record<string, unknown>) => r.source_type === "xlsx" || r.source_type === "csv").length;
+    const recordsExtracted = rows.reduce((acc: number, r: Record<string, unknown>) => acc + (Number(r.records_count) || 0), 0);
+    const pendingValidation = rows.filter((r: Record<string, unknown>) => r.status === "pending").length;
 
   return NextResponse.json({
     documents: rows,

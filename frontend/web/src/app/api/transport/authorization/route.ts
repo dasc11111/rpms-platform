@@ -12,7 +12,7 @@ export async function GET() {
     FROM transport_authorization_documents
     ORDER BY version DESC;
   `;
-  const current = rows.find((r: any) => r.is_current) || null;
+  const current = rows.find((r: Record<string, unknown>) => r.is_current) || null;
   return NextResponse.json({ ok: true, current, history: rows });
 }
 

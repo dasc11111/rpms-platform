@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     `);
   }
 
-  const result = soloActivos ? criteria.filter((r: any) => r.active) : criteria;
+  const result = soloActivos ? criteria.filter((r: Record<string, unknown>) => r.active) : criteria;
   return NextResponse.json({ criteria: result });
 }
 

@@ -42,7 +42,7 @@ async function loadShipment(id: number) {
     doseVehicle: toNum(r.dose_vehicle),
     materialCode: r.material_code,
     requestedActivityMci: toNum(r.requested_activity_mci),
-    i131Activities: (r.i131_activities || []).map((a: any) => ({
+    i131Activities: (r.i131_activities as Record<string, unknown>[] || []).map((a: Record<string, unknown>) => ({
       id: a.id,
       label: a.label,
       activityMci: toNum(a.activityMci),

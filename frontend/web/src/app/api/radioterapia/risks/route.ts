@@ -14,26 +14,29 @@ export async function GET(request: Request) {
   ? await sql`SELECT * FROM rt_risks WHERE facility_id = ${facilityId} ORDER BY created_at DESC`
   : await sql`SELECT * FROM rt_risks ORDER BY created_at DESC`;
 
-  let risks = rows.map((r: any) => ({
+  type RiskClassification = { level: string; score: number };
+  type RiskWithClass = Record<string, unknown> & { classification: RiskClassification };
+
+  let risks: RiskWithClass[] = rows.map((r: Record<string, unknown>): RiskWithClass => ({
     ...r,
-    classification: getRiskClassification(r.probability, r.severity),
+    classification: getRiskClassification(r.probability as number, r.severity as number),
     }));
 
-  if (status) risks = risks.filter((r: any) => r.status === status);
+  if (status) risks = risks.filter((r) => (r.status as string) === status);
 
-  const openRisks = risks.filter((r: any) => r.status !== "cerrado");
+  const openRisks = risks.filter((r) => (r.status as string) !== "cerrado");
   const summary = {
     total: risks.length,
     abiertos: openRisks.length,
-    bajo: risks.filter((r: any) => r.classification.level === "bajo").length,
-    moderado: risks.filter((r: any) => r.classification.level === "moderado").length,
-    alto: risks.filter((r: any) => r.classification.level === "alto").length,
-    muyAlto: risks.filter((r: any) => r.classification.level === "muy_alto").length,
-    controlados: risks.filter((r: any) => r.status === "controlado").length,
-    cerrados: risks.filter((r: any) => r.status === "cerrado").length,
+    bajo: risks.filter((r) => r.classification.level === "bajo").length,
+    moderado: risks.filter((r) => r.classification.level === "moderado").length,
+    alto: risks.filter((r) => r.classification.level === "alto").length,
+    muyAlto: risks.filter((r) => r.classification.level === "muy_alto").length,
+    controlados: risks.filter((r) => (r.status as string) === "controlado").length,
+    cerrados: risks.filter((r) => (r.status as string) === "cerrado").length,
     };
 
-const matrix: any = {};
+  const matrix: Record<number, Record<number, number>> = {};
   for (let p = 1; p <= 5; p++) {
     matrix[p] = {};
     for (let s = 1; s <= 5; s++) {

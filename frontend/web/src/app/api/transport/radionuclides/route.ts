@@ -10,7 +10,7 @@ export async function GET() {
   const { rows } = await sql`SELECT code, label, activity_label, allows_multiple FROM transport_radionuclides ORDER BY label;`;
   return NextResponse.json({
     ok: true,
-    radionuclides: rows.map((r: any) => ({
+    radionuclides: rows.map((r: Record<string, unknown>) => ({
       code: r.code,
       label: r.label,
       activityLabel: r.activity_label,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const { rows } = await sql`SELECT code, label, activity_label, allows_multiple FROM transport_radionuclides ORDER BY label;`;
   return NextResponse.json({
     ok: true,
-    radionuclides: rows.map((r: any) => ({
+    radionuclides: rows.map((r: Record<string, unknown>) => ({
       code: r.code,
       label: r.label,
       activityLabel: r.activity_label,
