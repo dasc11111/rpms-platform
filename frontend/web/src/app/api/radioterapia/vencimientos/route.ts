@@ -18,7 +18,7 @@ type VencimientoItem = {
   fuente: string;
 };
 
-function classify(dueDate: any): { nivel: Nivel; dias: number | null } {
+function classify(dueDate: string | null | undefined): { nivel: Nivel; dias: number | null } {
   const alert = getActionAlertLevel("pendiente", dueDate);
   if (alert.level === "sin_fecha") return { nivel: "sin_fecha", dias: null };
   if (alert.level === "vencida") return { nivel: "vencida", dias: alert.daysOverdue !== null ? -alert.daysOverdue : null };
@@ -36,14 +36,14 @@ export async function GET(request: Request) {
     ? await sql`SELECT * FROM rt_facilities WHERE id = ${facilityId}`
     : await sql`SELECT * FROM rt_facilities ORDER BY id ASC`;
   const facilities = facilitiesRes.rows;
-  const facilityIds: any = facilityId ? [Number(facilityId)] : facilities.map((f: any) => f.id);
+  const facilityIds: number[] = facilityId ? [Number(facilityId)] : facilities.map((f: Record<string, unknown>) => Number(f.id));
 
   const bunkersRes = facilityIds.length
     ? await sql`SELECT * FROM rt_bunkers WHERE facility_id = ANY(${facilityIds}::int[])`
-    : { rows: [] as any[] };
+    : { rows: [] as Record<string, unknown>[] };
   const bunkers = bunkersRes.rows;
-  const bunkerIds: any = bunkers.map((b: any) => b.id);
-  const linacIds: any = Array.from(new Set(bunkers.map((b: any) => b.linac_id).filter((v: any) => v !== null && v !== undefined)));
+  const bunkerIds: number[] = bunkers.map((b: Record<string, unknown>) => Number(b.id));
+  const linacIds: number[] = Array.from(new Set(bunkers.map((b: Record<string, unknown>) => b.linac_id as number | null).filter((v): v is number => v !== null && v !== undefined)));
 
   const items: VencimientoItem[] = [];
 
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
       SELECT * FROM rt_radiation_surveys WHERE bunker_id = ANY(${bunkerIds}::int[]) ORDER BY survey_date DESC
     `;
     for (const b of bunkers) {
-      const last = surveys.find((s: any) => s.bunker_id === b.id);
+      const last = surveys.find((s: Record<string, unknown>) => s.bunker_id === b.id);
       if (!last) continue;
       const next = new Date(last.survey_date);
       next.setDate(next.getDate() + 180);
@@ -174,7 +174,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const auditIds: any = audits.map((a: any) => a.id);
+    const auditIds: number[] = audits.map((a: Record<string, unknown>) => Number(a.id));
     if (auditIds.length) {
       const { rows: findings } = await sql`
         SELECT f.*, a.title AS audit_title FROM rt_audit_findings f

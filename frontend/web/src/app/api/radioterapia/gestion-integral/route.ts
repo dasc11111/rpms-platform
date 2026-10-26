@@ -7,7 +7,7 @@ import { getAuthStatus, daysRemaining } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
-function daysUntil(dateValue: any): number | null {
+function daysUntil(dateValue: string | null | undefined): number | null {
   if (!dateValue) return null;
   const target = new Date(dateValue);
   if (Number.isNaN(target.getTime())) return null;
@@ -16,7 +16,7 @@ function daysUntil(dateValue: any): number | null {
   return Math.round(diffMs / (1000 * 60 * 60 * 24));
   }
 
-function addInterval(dateValue: any, periodicity: string): Date | null {
+function addInterval(dateValue: string | null | undefined, periodicity: string): Date | null {
   if (!dateValue) return null;
   const d = new Date(dateValue);
   if (Number.isNaN(d.getTime())) return null;
@@ -109,15 +109,15 @@ export async function GET(request: Request) {
   ? await sql`SELECT * FROM rt_facilities WHERE id = ${facilityId}`
   : await sql`SELECT * FROM rt_facilities ORDER BY id ASC`;
   const facilities = facilitiesRes.rows;
-  const facilityIds: any = facilityId ? [Number(facilityId)] : facilities.map((f: any) => f.id);
+  const facilityIds: number[] = facilityId ? [Number(facilityId)] : facilities.map((f: Record<string, unknown>) => Number(f.id));
 
   const bunkersRes = facilityIds.length
   ? await sql`SELECT * FROM rt_bunkers WHERE facility_id = ANY(${facilityIds}::int[])`
-  : { rows: [] as any[] };
+  : { rows: [] as Record<string, unknown>[] };
   const bunkers = bunkersRes.rows;
-  const bunkerIds: any = bunkers.map((b: any) => b.id);
-  const linacIds: any = Array.from(
-    new Set(bunkers.map((b: any) => b.linac_id).filter((v: any) => v !== null && v !== undefined))
+  const bunkerIds: number[] = bunkers.map((b: Record<string, unknown>) => Number(b.id));
+  const linacIds: number[] = Array.from(
+    new Set(bunkers.map((b: Record<string, unknown>) => b.linac_id as number | null).filter((v): v is number => v !== null && v !== undefined))
     );
 
   const linacsRes = linacIds.length
@@ -221,8 +221,8 @@ export async function GET(request: Request) {
                           "Sin autorizaciones registradas para el/los acelerador(es) de esta instalacion.", null, null, null, null,
                           "Registrar la autorizacion vigente en el modulo Acelerador."));
     } else {
-    const vencidas = authorizations.filter((a: any) => { const d = daysUntil(a.expiry_date); return d !== null && d < 0; });
-    const proximas = authorizations.filter((a: any) => { const d = daysUntil(a.expiry_date); return d !== null && d >= 0 && d <= 90; });
+    const vencidas = authorizations.filter((a: Record<string, unknown>) => { const d = daysUntil(a.expiry_date); return d !== null && d < 0; });
+    const proximas = authorizations.filter((a: Record<string, unknown>) => { const d = daysUntil(a.expiry_date); return d !== null && d >= 0 && d <= 90; });
     const peor = vencidas[0] || proximas[0] || authorizations[0];
     const estado: Estado = vencidas.length ? "no_cumple" : proximas.length ? "proximo_a_vencer" : "cumple";
     requisitos.push(mkReq("q1_autorizacion_acelerador", "Esta el acelerador autorizado?",
@@ -240,7 +240,7 @@ export async function GET(request: Request) {
                           "No hay documentos registrados en el modulo Acelerador para esta instalacion.", null, null, null, null,
                           "Cargar la documentacion tecnica y administrativa del acelerador."));
     } else {
-    const current = documents.filter((d: any) => d.is_current);
+    const current = documents.filter((d: Record<string, unknown>) => d.is_current);
     const estado: Estado = current.length > 0 ? "cumple" : "requiere_revision";
     requisitos.push(mkReq("q2_documentacion_vigente", "Esta la documentacion vigente?",
                           "Documentos del acelerador con version vigente", "linac_documents", estado,
@@ -250,15 +250,15 @@ export async function GET(request: Request) {
     }
 
   // 3. Personal autorizado
-  const workersWithAuth = workers.filter((w: any) => w.authorization_expiry_date);
+  const workersWithAuth = workers.filter((w: Record<string, unknown>) => w.authorization_expiry_date);
   if (workersWithAuth.length === 0) {
     requisitos.push(mkReq("q3_personal_autorizado", "Esta el personal autorizado?",
                           "Autorizacion de desempeno vigente por trabajador", "workers", "no_evaluado",
                           "No hay trabajadores con fecha de vencimiento de autorizacion registrada.", null, null, null, null,
                           "Registrar la fecha de vencimiento de autorizacion de cada trabajador en el modulo Trabajadores."));
     } else {
-    const vencidos = workersWithAuth.filter((w: any) => getAuthStatus(daysRemaining(w.authorization_expiry_date)) === "vencida");
-    const proximos = workersWithAuth.filter((w: any) => getAuthStatus(daysRemaining(w.authorization_expiry_date)) === "proxima_vencer");
+    const vencidos = workersWithAuth.filter((w: Record<string, unknown>) => getAuthStatus(daysRemaining(w.authorization_expiry_date)) === "vencida");
+    const proximos = workersWithAuth.filter((w: Record<string, unknown>) => getAuthStatus(daysRemaining(w.authorization_expiry_date)) === "proxima_vencer");
     const estado: Estado = vencidos.length ? "no_cumple" : proximos.length ? "proximo_a_vencer" : "cumple";
     requisitos.push(mkReq("q3_personal_autorizado", "Esta el personal autorizado?",
                           "Autorizacion de desempeno vigente por trabajador", "workers", estado,
@@ -276,9 +276,9 @@ export async function GET(request: Request) {
                           "dosimetry_quarterly", "no_evaluado", "No hay lecturas de dosimetria registradas.", null, null, null, null,
                           "Cargar los reportes trimestrales de dosimetria."));
     } else {
-    const intervencion = dosimetry.filter((d: any) => d.level === "intervencion");
-    const investigacion = dosimetry.filter((d: any) => d.level === "investigacion");
-    const registro = dosimetry.filter((d: any) => d.level === "registro");
+    const intervencion = dosimetry.filter((d: Record<string, unknown>) => d.level === "intervencion");
+    const investigacion = dosimetry.filter((d: Record<string, unknown>) => d.level === "investigacion");
+    const registro = dosimetry.filter((d: Record<string, unknown>) => d.level === "registro");
     const estado: Estado = intervencion.length ? "no_cumple" : investigacion.length ? "requiere_revision" : registro.length ? "proximo_a_vencer" : "cumple";
     requisitos.push(mkReq("q4_dosimetria_controlada", "Esta la dosimetria controlada?",
                           "Nivel de dosis trimestral por trabajador (normal/registro/investigacion/intervencion)",
@@ -297,7 +297,7 @@ export async function GET(request: Request) {
                           "Calibracion vigente por instrumento", "instruments/calibrations", "no_evaluado",
                           "No hay instrumentos registrados.", null, null, null, null, "Registrar los instrumentos de medicion en el modulo Instrumentos."));
     } else {
-    const levels = instruments.map((i: any) => getCalibrationAlertLevel(i.last_calibration_expiry).level);
+    const levels = instruments.map((i: Record<string, unknown>) => getCalibrationAlertLevel(i.last_calibration_expiry).level);
     const vencidas2 = levels.filter((l) => l === "vencida").length;
     const rojo = levels.filter((l) => l === "rojo").length;
     const amarillo = levels.filter((l) => l === "amarillo").length;
@@ -321,7 +321,7 @@ export async function GET(request: Request) {
     let desactualizado = 0;
     let ultimaFecha: string | null = null;
     for (const b of bunkers) {
-      const last = surveys.find((s: any) => s.bunker_id === b.id);
+      const last = surveys.find((s: Record<string, unknown>) => s.bunker_id === b.id);
       if (!last) { sinLevantamiento++; continue; }
       if (!ultimaFecha || new Date(last.survey_date) > new Date(ultimaFecha)) ultimaFecha = last.survey_date;
       const d = daysUntil(last.survey_date);
@@ -336,8 +336,8 @@ export async function GET(request: Request) {
     }
 
   // 7. QC al dia
-  const qcPeriodStatus = LINAC_QC_PERIODICITIES.map((p: any) => {
-    const testsForP = qcTests.filter((q: any) => q.periodicity === p.value);
+  const qcPeriodStatus = LINAC_QC_PERIODICITIES.map((p: Record<string, unknown>) => {
+    const testsForP = qcTests.filter((q: Record<string, unknown>) => q.periodicity === p.value);
     const last = testsForP[0] || null;
     const nextDue = last ? addInterval(last.test_date, p.value) : null;
     const days = nextDue ? daysUntil(nextDue) : null;
@@ -373,9 +373,9 @@ export async function GET(request: Request) {
 
   // 9. Desviaciones
   {
-    const qcDesv = qcTests.filter((q: any) => q.status && q.status !== "cumple").slice(0, 50);
-    const shieldingDesv = shielding.filter((s: any) => s.status !== "conforme");
-    const devicesDesv = devices.filter((d: any) => d.status !== "operativo" && d.status !== "conforme");
+    const qcDesv = qcTests.filter((q: Record<string, unknown>) => q.status && q.status !== "cumple").slice(0, 50);
+    const shieldingDesv = shielding.filter((s: Record<string, unknown>) => s.status !== "conforme");
+    const devicesDesv = devices.filter((d: Record<string, unknown>) => d.status !== "operativo" && d.status !== "conforme");
     const total = qcDesv.length + shieldingDesv.length + devicesDesv.length;
     const sinDatos = qcTests.length === 0 && shielding.length === 0 && devices.length === 0;
     const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "requiere_revision" : "cumple";
@@ -389,11 +389,11 @@ export async function GET(request: Request) {
 
   // 10. Incidentes
   {
-    const abiertosLinac = linacIncidents.filter((i: any) => i.status === "abierto");
-const abiertosRt = rtIncidents.filter((i: any) => i.status === "abierto");
+    const abiertosLinac = linacIncidents.filter((i: Record<string, unknown>) => i.status === "abierto");
+const abiertosRt = rtIncidents.filter((i: Record<string, unknown>) => i.status === "abierto");
 const total = abiertosLinac.length + abiertosRt.length;
-const enInvestigacionRt = abiertosRt.filter((i: any) => i.investigation_stage && i.investigation_stage !== "registrado" && i.investigation_stage !== "cierre").length;
-const sinIniciarRt = abiertosRt.filter((i: any) => !i.investigation_stage || i.investigation_stage === "registrado").length;
+const enInvestigacionRt = abiertosRt.filter((i: Record<string, unknown>) => i.investigation_stage && i.investigation_stage !== "registrado" && i.investigation_stage !== "cierre").length;
+const sinIniciarRt = abiertosRt.filter((i: Record<string, unknown>) => !i.investigation_stage || i.investigation_stage === "registrado").length;
 const sinDatos = linacIncidents.length === 0 && rtIncidents.length === 0;
 const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "no_cumple" : "cumple";
 requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
@@ -404,8 +404,8 @@ requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
 
   // 11. Acciones correctivas pendientes
   {
-      const openActions = actions.filter((a: any) => ["pendiente", "en_proceso", "atrasada"].includes(a.status));
-      const overdue = openActions.filter((a: any) => { const d = daysUntil(a.due_date); return d !== null && d < 0; });
+      const openActions = actions.filter((a: Record<string, unknown>) => ["pendiente", "en_proceso", "atrasada"].includes(a.status));
+      const overdue = openActions.filter((a: Record<string, unknown>) => { const d = daysUntil(a.due_date); return d !== null && d < 0; });
       const sinDatos = actions.length === 0;
       const estado: Estado = sinDatos ? "no_evaluado" : overdue.length ? "no_cumple" : openActions.length ? "requiere_revision" : "cumple";
       requisitos.push(mkReq("q11_acciones_correctivas_pendientes", "Existen acciones correctivas pendientes?",
@@ -436,8 +436,8 @@ requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
 
   // 13. Documentos que requieren actualizacion
   {
-    const authsProx = authorizations.filter((a: any) => { const d = daysUntil(a.expiry_date); return d !== null && d <= 90; });
-    const trainingsProx = trainings.filter((t: any) => { const d = daysUntil(t.expiry_date); return d !== null && d <= 60; });
+    const authsProx = authorizations.filter((a: Record<string, unknown>) => { const d = daysUntil(a.expiry_date); return d !== null && d <= 90; });
+    const trainingsProx = trainings.filter((t: Record<string, unknown>) => { const d = daysUntil(t.expiry_date); return d !== null && d <= 60; });
     const total = authsProx.length + trainingsProx.length;
     const sinDatos = authorizations.length === 0 && trainings.length === 0;
     const estado: Estado = sinDatos ? "no_evaluado" : total > 0 ? "requiere_revision" : "cumple";
@@ -453,8 +453,8 @@ requisitos.push(mkReq("q10_incidentes", "Existen incidentes?",
     const evaluables = requisitos.filter((r) => r.evaluable);
     const criticos = evaluables.filter((r) => r.estado === "no_cumple");
     const advertencias = evaluables.filter((r) => r.estado === "requiere_revision" || r.estado === "proximo_a_vencer");
-    const openRisks = risks.filter((r: any) => r.status !== "cerrado");
-    const riskClassifications = openRisks.map((r: any) => getRiskClassification(r.probability, r.severity));
+    const openRisks = risks.filter((r: Record<string, unknown>) => r.status !== "cerrado");
+    const riskClassifications = openRisks.map((r: Record<string, unknown>) => getRiskClassification(r.probability, r.severity));
     const riesgosMuyAltos = riskClassifications.filter((c) => c.level === "muy_alto").length;
     const riesgosAltos = riskClassifications.filter((c) => c.level === "alto").length;
     const estado: Estado = evaluables.length === 0 && risks.length === 0 ? "no_evaluado" : (criticos.length || riesgosMuyAltos) ? "no_cumple" : (advertencias.length || riesgosAltos) ? "requiere_revision" : "cumple";
