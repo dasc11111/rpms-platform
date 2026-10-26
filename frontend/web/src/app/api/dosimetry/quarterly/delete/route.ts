@@ -4,7 +4,7 @@ import { deleteQuarterlyRecord } from '@/lib/dosimetry';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-    const body: any = await request.json().catch(() => ({}));
+    const body: Record<string, unknown> = await request.json().catch(() => ({}));
     const id = Number(body?.id);
 
   if (!id) {

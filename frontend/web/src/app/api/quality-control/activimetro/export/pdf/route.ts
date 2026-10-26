@@ -496,7 +496,7 @@ export async function GET(request: NextRequest) {
       autoTable(doc, {
         startY: y,
         head: [["Fecha", "Radionúclido", "Operador", "N lecturas", "Media", "CV%", "Dif%", "Estado"]],
-        body: constanciaTests.map((t: any) => [
+        body: constanciaTests.map((t: Record<string, unknown>) => [
           fmtDate(t.test_date),
           fmtStr(t.radionuclide),
           fmtStr(t.performed_by),
@@ -635,7 +635,7 @@ export async function GET(request: NextRequest) {
       autoTable(doc, {
         startY: y,
         head: [["Fecha", "Realizado por", "Revisor FM", "Resultado global", "Observaciones"]],
-        body: inspections.map((ins: any) => [
+        body: inspections.map((ins: Record<string, unknown>) => [
           fmtDate(ins.inspection_date),
           fmtStr(ins.performed_by),
           fmtStr(ins.physicist_reviewed_by),

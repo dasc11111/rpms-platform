@@ -33,14 +33,14 @@ function systemPrompt(moduleLabel?: string) {
 
 export async function POST(request: Request) {
   await ensureTable();
-  const body: any = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = await request.json().catch(() => ({}));
   const messages: AssistantMessage[] = Array.isArray(body?.messages)
     ? body.messages
         .filter(
-          (m: any) =>
+          (m: Record<string, unknown>) =>
             m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
         )
-        .map((m: any) => ({ role: m.role, content: m.content }))
+        .map((m: Record<string, unknown>) => ({ role: m.role, content: m.content }))
     : [];
   const moduleLabel = getModuleLabel(typeof body?.module === "string" ? body.module : undefined);
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   }
 
   const { rows } = await sql`SELECT * FROM assistant_settings WHERE id = 1`;
-  const row: any = rows[0];
+  const row: Record<string, unknown> | undefined = rows[0];
 
   const providerId = row?.api_key ? String(row.provider ?? "mock") : "mock";
   const provider = getProvider(providerId);

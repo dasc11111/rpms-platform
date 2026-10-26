@@ -85,7 +85,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const numericHistory = (history as any[])
       .map((h) => ({ date: h.created_at, value: parseNumeric(h.measured_value) }))
-      .filter((p) => p.value !== null) as { date: any; value: number }[];
+      .filter((p) => p.value !== null) as { date: string | null; value: number }[];
 
   const trendPoints = numericHistory.map((p, i) => ({ x: i, y: p.value }));
     const trend = linearTrend(trendPoints);

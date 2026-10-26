@@ -342,7 +342,7 @@ const checklist = matriz.map((m: Record<string, unknown>) => ({
 
 const indiceAutomatico = INDICE_CATEGORIAS.map((c) => {
   const items = checklist.filter((i: Record<string, unknown>) => i.categoria.n === c.n);
-  return { numero: c.n, categoria: c.label, items: items.length, conEvidencia: items.filter((i: any) => !!i.evidencia).length };
+  return { numero: c.n, categoria: c.label, items: items.length, conEvidencia: items.filter((i: Record<string, unknown>) => !!i.evidencia).length };
 });
 
 const alertasCriticasDash: Record<string, unknown>[] = dashboard?.alertasCriticas || [];

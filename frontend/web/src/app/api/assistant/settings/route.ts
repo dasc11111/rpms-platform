@@ -18,7 +18,7 @@ async function ensureTable() {
   `;
 }
 
-function shape(row: any) {
+function shape(row: Record<string, unknown>) {
   return {
     provider: row?.provider ?? "mock",
     model: row?.model ?? "",
@@ -36,7 +36,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   await ensureTable();
-  const body: any = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = await request.json().catch(() => ({}));
   const provider = String(body?.provider ?? "mock");
   const model = String(body?.model ?? "");
   const apiKey =
