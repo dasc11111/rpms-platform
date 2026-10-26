@@ -15,24 +15,27 @@ export async function GET(request: Request) {
     ? await sql`SELECT * FROM rt_actions WHERE facility_id = ${facilityId} ORDER BY due_date ASC NULLS LAST, created_at DESC`
     : await sql`SELECT * FROM rt_actions ORDER BY due_date ASC NULLS LAST, created_at DESC`;
 
-  let actions = rows.map((a: any) => ({
+  type AlertLevel = { level: string; daysRemaining: number | null; daysOverdue: number | null };
+  type ActionWithAlert = Record<string, unknown> & { alert: AlertLevel };
+
+  let actions: ActionWithAlert[] = rows.map((a: Record<string, unknown>) => ({
     ...a,
-    alert: getActionAlertLevel(a.status, a.due_date),
+    alert: getActionAlertLevel(a.status as string, a.due_date as string | null),
   }));
 
-  if (status) actions = actions.filter((a: any) => a.status === status);
-  if (actionType) actions = actions.filter((a: any) => a.action_type === actionType);
+  if (status) actions = actions.filter((a) => (a.status as string) === status);
+  if (actionType) actions = actions.filter((a) => (a.action_type as string) === actionType);
 
-  const openActions = actions.filter((a: any) => ["pendiente", "en_proceso", "atrasada"].includes(a.status));
+  const openActions = actions.filter((a) => ["pendiente", "en_proceso", "atrasada"].includes(a.status as string));
   const summary = {
     total: actions.length,
     abiertas: openActions.length,
-    vencidas: openActions.filter((a: any) => a.alert.level === "vencida").length,
-    proximasA7: openActions.filter((a: any) => a.alert.level === "rojo").length,
-    proximasA15: openActions.filter((a: any) => a.alert.level === "naranjo").length,
-    proximasA30: openActions.filter((a: any) => a.alert.level === "amarillo").length,
-    completadas: actions.filter((a: any) => a.status === "completada").length,
-    noResueltas: actions.filter((a: any) => a.status === "no_resuelta").length,
+    vencidas: openActions.filter((a) => a.alert.level === "vencida").length,
+    proximasA7: openActions.filter((a) => a.alert.level === "rojo").length,
+    proximasA15: openActions.filter((a) => a.alert.level === "naranjo").length,
+    proximasA30: openActions.filter((a) => a.alert.level === "amarillo").length,
+    completadas: actions.filter((a) => (a.status as string) === "completada").length,
+    noResueltas: actions.filter((a) => (a.status as string) === "no_resuelta").length,
   };
 
   return NextResponse.json({ ok: true, actions, summary });

@@ -73,7 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // --- Calibracion (Seccion 18): matriz Detector x Radionuclido x Geometria
     // x Distancia x Eficiencia/CF x Vigencia. Nunca se asume una calibracion
     // universal ni valida para cualquier radionuclido.
-    let calibration: any = null;
+    let calibration: Record<string, unknown> | null = null;
     if (body.calibration_id) {
           const { rows: calRows } = await sql`SELECT * FROM waste_calibration_matrix WHERE id = ${body.calibration_id}`;
           calibration = calRows[0] ?? null;
@@ -104,8 +104,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 });
           if (calibration && calibracionVigente) {
                   const metodo: CalibrationMethod = calibration.metodo === "factor_calibracion" ? "factor_calibracion" : "eficiencia";
-                  eficienciaUsada = metodo === "eficiencia" ? calibration.eficiencia : null;
-                  factorCalibracionUsado = metodo === "factor_calibracion" ? calibration.factor_calibracion : null;
+                  eficienciaUsada = metodo === "eficiencia" ? (calibration.eficiencia as number | null) : null;
+                  factorCalibracionUsado = metodo === "factor_calibracion" ? (calibration.factor_calibracion as number | null) : null;
                   actividadBq = activityFromMethod(metodo, metrologia.netCps, eficienciaUsada, factorCalibracionUsado);
                 }
         }
@@ -127,7 +127,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // --- Motor 5: criterio aplicable (contaminacion) y cumplimiento. Nunca
     // se inventa un criterio: si no hay uno configurado y vigente, cumpleCriterio
     // queda en null (seccion 44).
-    let criterio: any = null;
+    let criterio: Record<string, unknown> | null = null;
     if (esContaminacion && body.tipo_superficie) {
           const { rows: critRows } = await sql`
             SELECT * FROM waste_contamination_criteria
@@ -141,12 +141,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           criterio = critRows[0] ?? null;
         }
     const criterioVencido = Boolean(
-          criterio?.fecha_vigencia_hasta && new Date(criterio.fecha_vigencia_hasta) < new Date()
+          criterio?.fecha_vigencia_hasta && new Date(criterio.fecha_vigencia_hasta as string) < new Date()
         );
 
     let cumpleCriterio: boolean | null = null;
     if (esContaminacion) {
-          cumpleCriterio = cumpleCriterioContaminacion(actividadBqCm2, criterio && !criterioVencido ? Number(criterio.valor) : null);
+          cumpleCriterio = cumpleCriterioContaminacion(actividadBqCm2, criterio && !criterioVencido ? Number(criterio.valor as string | number) : null);
         } else if (body.limite_tasa_dosis_usv_h !== undefined && body.limite_tasa_dosis_usv_h !== null) {
           // No existe aun una tabla de criterios de tasa de dosis configurada: solo
           // se evalua si el limite se entrega explicitamente (seccion 44).

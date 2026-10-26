@@ -33,7 +33,7 @@ export default async function DosimeterDetailPage({ params }: { params: Promise<
   await ensureDosimeterTables();
 
   const { rows: dosimeterRows } = await sql`SELECT * FROM dosimeters WHERE id = ${id}`;
-  const dosimeter: any = dosimeterRows[0];
+  const dosimeter: Record<string, unknown> = dosimeterRows[0] as Record<string, unknown>;
   if (!dosimeter) return notFound();
 
   const { rows: assignments } = await sql`
