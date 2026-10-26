@@ -35,7 +35,7 @@ WHERE (${linacId} = 0 OR linac_id = ${linacId} OR linac_id IS NULL)
 GROUP BY status;
 `;
   const cumplimiento: Record<string, number> = { propuesto: 0, activo: 0, rechazado: 0, historico: 0 };
-  criteriaRows.forEach((r: any) => { cumplimiento[r.status] = r.n; });
+  criteriaRows.forEach((r: Record<string, unknown>) => { cumplimiento[r.status] = r.n; });
 
 const { rows: desviaciones } = await sql`
 SELECT id, parameter_name, module, measured_value, reference_value, deviation_pct, level, status, created_at
@@ -94,7 +94,7 @@ LIMIT 1;
     WHERE category_id IN (SELECT id FROM subtree)
     GROUP BY doc_status;
     `;
-    docStatusRows.forEach((r: any) => { documentos[r.doc_status] = r.n; });
+    docStatusRows.forEach((r: Record<string, unknown>) => { documentos[r.doc_status] = r.n; });
   }
 
 const { rows: historialCriterios } = await sql`
@@ -136,7 +136,7 @@ function csvEscape(value: unknown): string {
   return s;
 }
 
-function buildCsv(data: any): string {
+function buildCsv(data: Record<string, unknown>): string {
   const lines: string[] = [];
   lines.push("MODO AUDITORIA - RPMS Radioterapia (Fase 6, Tarea 49)");
   lines.push("Generado el;" + csvEscape(data.generadoEl));
@@ -149,15 +149,15 @@ function buildCsv(data: any): string {
   lines.push("Total;" + csvEscape(data.qc.resumen.total));
   lines.push("Ultimos 90 dias;" + csvEscape(data.qc.resumen.ultimos90dias));
   lines.push("Estado;Cantidad");
-  data.qc.porEstado.forEach((r: any) => lines.push(csvEscape(r.status) + ";" + csvEscape(r.n)));
+  data.qc.porEstado.forEach((r: Record<string, unknown>) => lines.push(csvEscape(r.status) + ";" + csvEscape(r.n)));
   lines.push("");
   lines.push("PROTECCION RADIOLOGICA (incluye calibraciones y dosimetria ocupacional, por categoria y semaforo)");
   lines.push("Categoria;Semaforo;Cantidad");
-  data.proteccionRadiologica.forEach((r: any) => lines.push(csvEscape(r.category) + ";" + csvEscape(r.semaphore) + ";" + csvEscape(r.n)));
+  data.proteccionRadiologica.forEach((r: Record<string, unknown>) => lines.push(csvEscape(r.category) + ";" + csvEscape(r.semaphore) + ";" + csvEscape(r.n)));
   lines.push("");
   lines.push("MANTENIMIENTO (por tipo y estado)");
   lines.push("Tipo;Estado;Cantidad");
-  data.mantenimiento.forEach((r: any) => lines.push(csvEscape(r.maintenance_type) + ";" + csvEscape(r.status) + ";" + csvEscape(r.n)));
+  data.mantenimiento.forEach((r: Record<string, unknown>) => lines.push(csvEscape(r.maintenance_type) + ";" + csvEscape(r.status) + ";" + csvEscape(r.n)));
   lines.push("");
   lines.push("DOCUMENTOS (Medicina Nuclear, por estado de vigencia)");
   lines.push("Estado;Cantidad");
@@ -165,22 +165,22 @@ function buildCsv(data: any): string {
   lines.push("");
   lines.push("DESVIACIONES (alertas cientificas)");
   lines.push("Fecha;Parametro;Modulo;Medido;Referencia;Desviacion;Nivel;Estado");
-  data.desviaciones.forEach((r: any) => lines.push([r.created_at, r.parameter_name, r.module, r.measured_value, r.reference_value, r.deviation_pct, r.level, r.status].map(csvEscape).join(";")));
+  data.desviaciones.forEach((r: Record<string, unknown>) => lines.push([r.created_at, r.parameter_name, r.module, r.measured_value, r.reference_value, r.deviation_pct, r.level, r.status].map(csvEscape).join(";")));
   lines.push("");
   lines.push("REGISTROS / HISTORIAL DE CAMBIOS DE CRITERIOS");
   lines.push("Fecha;Accion;Actor;Parametro;Modulo;Motivo");
-  data.historialCriterios.forEach((r: any) => lines.push([r.created_at, r.action, r.actor, r.parameter_name, r.module, r.reason].map(csvEscape).join(";")));
+  data.historialCriterios.forEach((r: Record<string, unknown>) => lines.push([r.created_at, r.action, r.actor, r.parameter_name, r.module, r.reason].map(csvEscape).join(";")));
   lines.push("");
   lines.push("REFERENCIAS (fuentes de criterios activos)");
   lines.push("Fuente;Nivel de jerarquia;Version de documento");
-  data.referencias.forEach((r: any) => lines.push([r.source_name, r.source_level, r.document_version].map(csvEscape).join(";")));
+  data.referencias.forEach((r: Record<string, unknown>) => lines.push([r.source_name, r.source_level, r.document_version].map(csvEscape).join(";")));
   lines.push("");
-  lines.push("INCIDENTES (linac_incidents, por estado)"); lines.push("Estado;Cantidad"); data.incidentes.porEstado.forEach((r: any) => lines.push(csvEscape(r.status) + ";" + csvEscape(r.n))); lines.push(""); lines.push("Incidentes abiertos"); lines.push("Fecha;Evento;Nivel INES;Dosis;Estado"); data.incidentes.abiertos.forEach((r: any) => lines.push([r.incident_date, r.event, r.ines_level, r.dose, r.status].map(csvEscape).join(";")));
-  lines.push(""); lines.push("AUTORIZACIONES (linac_authorizations, version vigente)"); lines.push("Tipo de documento;N documento;Vencimiento"); data.autorizaciones.forEach((r: any) => lines.push([r.doc_type, r.document_number, r.expiry_date].map(csvEscape).join(";")));
+  lines.push("INCIDENTES (linac_incidents, por estado)"); lines.push("Estado;Cantidad"); data.incidentes.porEstado.forEach((r: Record<string, unknown>) => lines.push(csvEscape(r.status) + ";" + csvEscape(r.n))); lines.push(""); lines.push("Incidentes abiertos"); lines.push("Fecha;Evento;Nivel INES;Dosis;Estado"); data.incidentes.abiertos.forEach((r: Record<string, unknown>) => lines.push([r.incident_date, r.event, r.ines_level, r.dose, r.status].map(csvEscape).join(";")));
+  lines.push(""); lines.push("AUTORIZACIONES (linac_authorizations, version vigente)"); lines.push("Tipo de documento;N documento;Vencimiento"); data.autorizaciones.forEach((r: Record<string, unknown>) => lines.push([r.doc_type, r.document_number, r.expiry_date].map(csvEscape).join(";")));
   return "\uFEFF" + lines.join("\n");
 }
 
-async function buildXlsx(data: any): Promise<Buffer> {
+async function buildXlsx(data: Record<string, unknown>): Promise<Buffer> {
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
 
@@ -193,7 +193,7 @@ XLSX.utils.book_append_sheet(
 XLSX.utils.book_append_sheet(
   wb,
   XLSX.utils.json_to_sheet(
-    data.desviaciones.map((r: any) => ({
+    data.desviaciones.map((r: Record<string, unknown>) => ({
       Fecha: r.created_at, Parametro: r.parameter_name, Modulo: r.module,
       Medido: r.measured_value, Referencia: r.reference_value,
       Desviacion: r.deviation_pct, Nivel: r.level, Estado: r.status,
@@ -209,20 +209,20 @@ XLSX.utils.book_append_sheet(
     ["Ultimos 90 dias", data.qc.resumen.ultimos90dias],
     [],
     ["Estado", "Cantidad"],
-    ...data.qc.porEstado.map((r: any) => [r.status, r.n]),
+    ...data.qc.porEstado.map((r: Record<string, unknown>) => [r.status, r.n]),
     ]),
   "QC"
   );
 
 XLSX.utils.book_append_sheet(
   wb,
-  XLSX.utils.json_to_sheet(data.proteccionRadiologica.map((r: any) => ({ Categoria: r.category, Semaforo: r.semaphore, Cantidad: r.n }))),
+  XLSX.utils.json_to_sheet(data.proteccionRadiologica.map((r: Record<string, unknown>) => ({ Categoria: r.category, Semaforo: r.semaphore, Cantidad: r.n }))),
   "Proteccion Radiologica"
   );
 
 XLSX.utils.book_append_sheet(
   wb,
-  XLSX.utils.json_to_sheet(data.mantenimiento.map((r: any) => ({ Tipo: r.maintenance_type, Estado: r.status, Cantidad: r.n }))),
+  XLSX.utils.json_to_sheet(data.mantenimiento.map((r: Record<string, unknown>) => ({ Tipo: r.maintenance_type, Estado: r.status, Cantidad: r.n }))),
   "Mantenimiento"
   );
 
@@ -235,7 +235,7 @@ XLSX.utils.book_append_sheet(
 XLSX.utils.book_append_sheet(
   wb,
   XLSX.utils.json_to_sheet(
-    data.historialCriterios.map((r: any) => ({
+    data.historialCriterios.map((r: Record<string, unknown>) => ({
       Fecha: r.created_at, Accion: r.action, Actor: r.actor, Parametro: r.parameter_name, Modulo: r.module, Motivo: r.reason,
     }))
     ),
@@ -244,20 +244,20 @@ XLSX.utils.book_append_sheet(
 
 XLSX.utils.book_append_sheet(
   wb,
-  XLSX.utils.json_to_sheet(data.referencias.map((r: any) => ({ Fuente: r.source_name, Nivel: r.source_level, Version: r.document_version }))),
+  XLSX.utils.json_to_sheet(data.referencias.map((r: Record<string, unknown>) => ({ Fuente: r.source_name, Nivel: r.source_level, Version: r.document_version }))),
   "Referencias"
   );
 
 XLSX.utils.book_append_sheet(
   wb,
-  XLSX.utils.json_to_sheet(data.incidentes.porEstado.map((r: any) => ({ Estado: r.status, Cantidad: r.n }))),
-  "Incidentes"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.incidentes.abiertos.map((r: any) => ({ Fecha: r.incident_date, Evento: r.event, NivelINES: r.ines_level, Dosis: r.dose, Estado: r.status }))), "Incidentes Abiertos"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.autorizaciones.map((r: any) => ({ Tipo: r.doc_type, Numero: r.document_number, Vencimiento: r.expiry_date }))), "Autorizaciones"
+  XLSX.utils.json_to_sheet(data.incidentes.porEstado.map((r: Record<string, unknown>) => ({ Estado: r.status, Cantidad: r.n }))),
+  "Incidentes"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.incidentes.abiertos.map((r: Record<string, unknown>) => ({ Fecha: r.incident_date, Evento: r.event, NivelINES: r.ines_level, Dosis: r.dose, Estado: r.status }))), "Incidentes Abiertos"); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data.autorizaciones.map((r: Record<string, unknown>) => ({ Tipo: r.doc_type, Numero: r.document_number, Vencimiento: r.expiry_date }))), "Autorizaciones"
   );
 
 return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
 
-async function buildPdf(data: any): Promise<Buffer> {
+async function buildPdf(data: Record<string, unknown>): Promise<Buffer> {
   const { jsPDF } = await import("jspdf");
   await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape", unit: "pt" }) as unknown as {
@@ -306,7 +306,7 @@ title("1. RESUMEN DE CUMPLIMIENTO (criterios tecnicos)");
 title("2. DESVIACIONES (alertas cientificas)");
   doc.autoTable({
     head: [["Fecha", "Parametro", "Modulo", "Medido", "Referencia", "Desviacion", "Nivel", "Estado"]],
-    body: data.desviaciones.slice(0, 100).map((r: any) => [
+    body: data.desviaciones.slice(0, 100).map((r: Record<string, unknown>) => [
       r.created_at ? new Date(r.created_at).toLocaleString("es-CL") : "-",
       r.parameter_name ?? "-", r.module ?? "-", r.measured_value ?? "-", r.reference_value ?? "-",
       r.deviation_pct !== null && r.deviation_pct !== undefined ? Number(r.deviation_pct).toFixed(2) + "%" : "-",
@@ -329,7 +329,7 @@ title("3. CONTROL DE CALIDAD (QC)");
   afterTable();
   doc.autoTable({
     head: [["Estado QC", "Cantidad"]],
-    body: data.qc.porEstado.map((r: any) => [r.status, String(r.n)]),
+    body: data.qc.porEstado.map((r: Record<string, unknown>) => [r.status, String(r.n)]),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
@@ -339,7 +339,7 @@ title("3. CONTROL DE CALIDAD (QC)");
 title("4. PROTECCION RADIOLOGICA (incluye calibraciones y dosimetria ocupacional)");
   doc.autoTable({
     head: [["Categoria", "Semaforo", "Cantidad"]],
-    body: data.proteccionRadiologica.map((r: any) => [r.category, r.semaphore ?? "-", String(r.n)]),
+    body: data.proteccionRadiologica.map((r: Record<string, unknown>) => [r.category, r.semaphore ?? "-", String(r.n)]),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
@@ -349,7 +349,7 @@ title("4. PROTECCION RADIOLOGICA (incluye calibraciones y dosimetria ocupacional
 title("5. MANTENIMIENTO");
   doc.autoTable({
     head: [["Tipo", "Estado", "Cantidad"]],
-    body: data.mantenimiento.map((r: any) => [r.maintenance_type, r.status, String(r.n)]),
+    body: data.mantenimiento.map((r: Record<string, unknown>) => [r.maintenance_type, r.status, String(r.n)]),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
@@ -369,7 +369,7 @@ title("6. DOCUMENTOS (Medicina Nuclear, por estado de vigencia)");
 title("7. REGISTROS / HISTORIAL DE CAMBIOS DE CRITERIOS");
   doc.autoTable({
     head: [["Fecha", "Accion", "Actor", "Parametro", "Modulo", "Motivo"]],
-    body: data.historialCriterios.slice(0, 80).map((r: any) => [
+    body: data.historialCriterios.slice(0, 80).map((r: Record<string, unknown>) => [
       r.created_at ? new Date(r.created_at).toLocaleString("es-CL") : "-",
       r.action ?? "-", r.actor ?? "-", r.parameter_name ?? "-", r.module ?? "-", r.reason ?? "-",
       ]),
@@ -382,7 +382,7 @@ title("7. REGISTROS / HISTORIAL DE CAMBIOS DE CRITERIOS");
 title("8. REFERENCIAS (fuentes de criterios activos)");
   doc.autoTable({
     head: [["Fuente", "Nivel de jerarquia", "Version de documento"]],
-    body: data.referencias.map((r: any) => [r.source_name ?? "-", r.source_level ?? "-", r.document_version ?? "-"]),
+    body: data.referencias.map((r: Record<string, unknown>) => [r.source_name ?? "-", r.source_level ?? "-", r.document_version ?? "-"]),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },
@@ -392,7 +392,7 @@ title("8. REFERENCIAS (fuentes de criterios activos)");
 title("9. INCIDENTES Y AUTORIZACIONES");
   doc.autoTable({
     head: [["Modulo", "Estado"]],
-    body: [].concat(data.incidentes.porEstado.map((r: any) => ["Incidente: " + r.status, String(r.n)])).concat(data.autorizaciones.map((r: any) => ["Autorizacion: " + (r.doc_type || "-"), (r.expiry_date ? "Vence " + String(r.expiry_date).slice(0,10) : "-")])),
+    body: [].concat(data.incidentes.porEstado.map((r: Record<string, unknown>) => ["Incidente: " + r.status, String(r.n)])).concat(data.autorizaciones.map((r: Record<string, unknown>) => ["Autorizacion: " + (r.doc_type || "-"), (r.expiry_date ? "Vence " + String(r.expiry_date).slice(0,10) : "-")])),
     startY: y,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 64, 175] },

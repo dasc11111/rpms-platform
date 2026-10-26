@@ -13,13 +13,13 @@ export async function GET(request: Request) {
   const linacId = searchParams.get("linacId");
   if (!type || !VALID_TYPES.includes(type)) return NextResponse.json({ error: "invalid_type" }, { status: 400 });
 
-  let rows: any[] = [];
+  let rows: Record<string, unknown>[] = [];
   if (type === "clinical") {
     rows = (await sql`SELECT * FROM linac_clinical_operations WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY op_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "radiation") {
     rows = (await sql`SELECT * FROM linac_radiation_protection WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY measurement_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "risk") {
-    await ensureRiskExtendedTables(); const riskRows = (await sql`SELECT * FROM linac_risks WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY risk_level DESC NULLS LAST, id DESC LIMIT 1000`).rows; rows = riskRows.map((r: any) => ({ ...r, classification: classifyRiskLevel(r.risk_level).label }));
+    await ensureRiskExtendedTables(); const riskRows = (await sql`SELECT * FROM linac_risks WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY risk_level DESC NULLS LAST, id DESC LIMIT 1000`).rows; rows = riskRows.map((r: Record<string, unknown>) => ({ ...r, classification: classifyRiskLevel(r.risk_level).label }));
   } else if (type === "emergency") {
     rows = (await sql`SELECT * FROM linac_emergencies WHERE (${linacId}::int IS NULL OR linac_id = ${linacId}::int) ORDER BY event_date DESC, id DESC LIMIT 1000`).rows;
   } else if (type === "audit") {

@@ -83,14 +83,14 @@ LIMIT 10;
 `;
 
 const results = [
-...units.map((r: any) => ({ type: "Equipo", tab: "info", id: r.id, linacId: r.id, label: [r.brand, r.model].filter(Boolean).join(" ") || "Equipo", subtitle: [r.manufacturer, r.serial_number, r.room].filter(Boolean).join(" · ") })),
-...documents.map((r: any) => ({ type: "Documento", tab: "documents", id: r.id, linacId: r.linac_id, label: r.title || r.file_name || "Documento", subtitle: [r.category, r.file_name].filter(Boolean).join(" · "), date: r.uploaded_at })),
-...authorizations.map((r: any) => ({ type: "Autorizacion", tab: "auth", id: r.id, linacId: r.linac_id, label: r.doc_type, subtitle: [r.document_number, r.file_name].filter(Boolean).join(" · "), date: r.expiry_date })),
-...qcTests.map((r: any) => ({ type: "Control de Calidad", tab: "qc", id: r.id, linacId: r.linac_id, label: r.test_name, subtitle: [r.periodicity, r.responsible, r.instrument_used].filter(Boolean).join(" · "), date: r.test_date })),
-...radiation.map((r: any) => ({ type: "Proteccion Radiologica", tab: "radiation", id: r.id, linacId: r.linac_id, label: r.category || "Registro", subtitle: [r.location, r.responsible, r.instrument_ref].filter(Boolean).join(" · "), date: r.measurement_date })),
-...maintenance.map((r: any) => ({ type: "Mantenimiento", tab: "maintenance", id: r.id, linacId: r.linac_id, label: [r.maintenance_type, r.company].filter(Boolean).join(" - "), subtitle: [r.engineer, r.spare_parts].filter(Boolean).join(" · "), date: r.maintenance_date })),
-...incidents.map((r: any) => ({ type: "Incidente", tab: "incidents", id: r.id, linacId: r.linac_id, label: r.event, subtitle: (r.description || "").slice(0, 80), date: r.incident_date })),
-...risks.map((r: any) => ({ type: "Riesgo", tab: "risks", id: r.id, linacId: r.linac_id, label: r.risk, subtitle: [r.responsible, "Nivel " + (r.risk_level ?? "-")].filter(Boolean).join(" · ") })),
+...units.map((r: Record<string, unknown>) => ({ type: "Equipo", tab: "info", id: r.id, linacId: r.id, label: [r.brand, r.model].filter(Boolean).join(" ") || "Equipo", subtitle: [r.manufacturer, r.serial_number, r.room].filter(Boolean).join(" · ") })),
+...documents.map((r: Record<string, unknown>) => ({ type: "Documento", tab: "documents", id: r.id, linacId: r.linac_id, label: r.title || r.file_name || "Documento", subtitle: [r.category, r.file_name].filter(Boolean).join(" · "), date: r.uploaded_at })),
+...authorizations.map((r: Record<string, unknown>) => ({ type: "Autorizacion", tab: "auth", id: r.id, linacId: r.linac_id, label: r.doc_type, subtitle: [r.document_number, r.file_name].filter(Boolean).join(" · "), date: r.expiry_date })),
+...qcTests.map((r: Record<string, unknown>) => ({ type: "Control de Calidad", tab: "qc", id: r.id, linacId: r.linac_id, label: r.test_name, subtitle: [r.periodicity, r.responsible, r.instrument_used].filter(Boolean).join(" · "), date: r.test_date })),
+...radiation.map((r: Record<string, unknown>) => ({ type: "Proteccion Radiologica", tab: "radiation", id: r.id, linacId: r.linac_id, label: r.category || "Registro", subtitle: [r.location, r.responsible, r.instrument_ref].filter(Boolean).join(" · "), date: r.measurement_date })),
+...maintenance.map((r: Record<string, unknown>) => ({ type: "Mantenimiento", tab: "maintenance", id: r.id, linacId: r.linac_id, label: [r.maintenance_type, r.company].filter(Boolean).join(" - "), subtitle: [r.engineer, r.spare_parts].filter(Boolean).join(" · "), date: r.maintenance_date })),
+...incidents.map((r: Record<string, unknown>) => ({ type: "Incidente", tab: "incidents", id: r.id, linacId: r.linac_id, label: r.event, subtitle: (r.description || "").slice(0, 80), date: r.incident_date })),
+...risks.map((r: Record<string, unknown>) => ({ type: "Riesgo", tab: "risks", id: r.id, linacId: r.linac_id, label: r.risk, subtitle: [r.responsible, "Nivel " + (r.risk_level ?? "-")].filter(Boolean).join(" · ") })),
 ];
 
 return NextResponse.json({ ok: true, query: q, results, total: results.length });

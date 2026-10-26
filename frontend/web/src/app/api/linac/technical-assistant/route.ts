@@ -16,7 +16,7 @@ function noInfo() {
   return "NO EXISTE INFORMACION VALIDADA EN EL SISTEMA.";
 }
 
-function extractReferenceValue(data: any): number | null {
+function extractReferenceValue(data: Record<string, unknown>): number | null {
   if (!data) return null;
   if (typeof data.value === "number") return data.value;
   if (typeof data.referenceValue === "number") return data.referenceValue;
@@ -49,9 +49,9 @@ export async function GET(request: Request) {
     ORDER BY (module = ${module}) DESC, (linac_id IS NOT NULL) DESC, updated_at DESC
     LIMIT 1;
   `;
-  const criteria: any = criteriaRows[0] || null;
+  const criteria: Record<string, unknown> | undefined = criteriaRows[0] || null;
 
-  let documento: any = null;
+  let documento: Record<string, unknown> | null = null;
   if (criteria && criteria.document_id) {
     const { rows: docRows } = await sql`SELECT id, original_name, blob_url, doc_version FROM documents WHERE id = ${criteria.document_id}`;
     if (docRows[0]) {
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     ORDER BY test_date DESC, id DESC
     LIMIT 1;
   `;
-  const ultimaMedicion: any = qcRows[0] || null;
+  const ultimaMedicion: Record<string, unknown> | undefined = qcRows[0] || null;
 
   // 3. Baseline vigente.
   const { rows: baselineRows } = await sql`
@@ -89,7 +89,7 @@ export async function GET(request: Request) {
     ORDER BY b.approved_at DESC
     LIMIT 1;
   `;
-  const baselineRow: any = baselineRows[0] || null;
+  const baselineRow: Record<string, unknown> | undefined = baselineRows[0] || null;
   const baseline = baselineRow
     ? {
         version: baselineRow.version,
@@ -111,7 +111,7 @@ export async function GET(request: Request) {
     ORDER BY created_at ASC
     LIMIT 1;
   `;
-  const alertaInicio: any = alertRows[0] || null;
+  const alertaInicio: Record<string, unknown> | undefined = alertRows[0] || null;
 
   // 5. Instrumento utilizado (prioriza la ultima medicion, luego el baseline).
   const instrumento = (ultimaMedicion && ultimaMedicion.instrument_used) || (baseline && baseline.instrumento) || null;

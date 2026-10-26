@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   }
 
 const items = Array.isArray(body.results) ? body.results : [];
-  const evaluatedItems = items.map((it: any) => {
+  const evaluatedItems = items.map((it: Record<string, unknown>) => {
     if (it.result === "cumple" || it.result === "cumple_observaciones" || it.result === "no_cumple") return it;
     const auto = evaluateItemResult(it.measuredValue, it.specification, it.tolerance);
     return { ...it, result: auto };

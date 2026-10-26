@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     GROUP BY status;
   `;
   const criterios: Record<string, number> = { propuesto: 0, activo: 0, rechazado: 0, historico: 0 };
-  criteriaRows.forEach((r: any) => { criterios[r.status] = r.n; });
+  criteriaRows.forEach((r: Record<string, unknown>) => { criterios[r.status] = r.n; });
 
   const { rows: alertRows } = await sql`
     SELECT level, status, count(*)::int AS n FROM linac_scientific_alerts
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     enRevision: 0,
     cerradas: 0,
   };
-  alertRows.forEach((r: any) => {
+  alertRows.forEach((r: Record<string, unknown>) => {
     alertas.porNivel[r.level] = (alertas.porNivel[r.level] || 0) + r.n;
     if (r.status === "abierta") alertas.abiertas += r.n;
     else if (r.status === "en_revision") alertas.enRevision += r.n;
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
       WHERE category_id IN (SELECT id FROM subtree)
       GROUP BY doc_status;
     `;
-    docStatusRows.forEach((r: any) => { documentos[r.doc_status] = r.n; });
+    docStatusRows.forEach((r: Record<string, unknown>) => { documentos[r.doc_status] = r.n; });
 
     const { rows: pendRows } = await sql`
       WITH RECURSIVE subtree AS (

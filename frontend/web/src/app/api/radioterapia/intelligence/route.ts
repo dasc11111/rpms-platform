@@ -93,7 +93,7 @@ async function detectRecurrence(table: string, dateCol: string, groupCol: string
                                    ORDER BY n DESC`,
           [facilityId]
         );
-    return res.rows.map((r: any) => ({
+    return res.rows.map((r: Record<string, unknown>) => ({
           tipo,
           campo: groupCol,
           clave: r.clave,
@@ -146,7 +146,7 @@ const [incMin, incCur, incPrev] = await Promise.all([
     sql`SELECT count(*)::int AS n FROM rt_risks WHERE facility_id = ${facilityId} AND created_at >= ${toDateStr(prevStart)} AND created_at < ${toDateStr(periodStart)}`,
     ]);
 
-function enoughHistory(minDate: any): boolean {
+function enoughHistory(minDate: string | null | undefined): boolean {
   if (!minDate) return false;
   return new Date(minDate).getTime() <= prevStart.getTime();
 }
@@ -238,7 +238,7 @@ const allCauseEventsRes = await Promise.all([
   sql`SELECT cause, incident_date AS d FROM rt_incidents WHERE facility_id = ${facilityId} AND cause IS NOT NULL AND btrim(cause) <> ''`,
   sql`SELECT cause, created_at AS d FROM rt_risks WHERE facility_id = ${facilityId} AND cause IS NOT NULL AND btrim(cause) <> ''`,
   ]);
-  const allCauseEvents = allCauseEventsRes.flatMap((r) => r.rows).map((r: any) => ({ cause: String(r.cause).trim().toLowerCase(), date: new Date(r.d) }));
+  const allCauseEvents = allCauseEventsRes.flatMap((r) => r.rows).map((r: Record<string, unknown>) => ({ cause: String(r.cause).trim().toLowerCase(), date: new Date(r.d) }));
 
 function countEventsInRange(causeLower: string, start: Date, end: Date): number {
   return allCauseEvents.filter((e) => e.cause === causeLower && e.date >= start && e.date < end).length;
@@ -250,7 +250,7 @@ FROM rt_actions
 WHERE facility_id = ${facilityId} AND cause IS NOT NULL AND btrim(cause) <> '' AND status IN ('completada', 'no_resuelta') AND closed_date IS NOT NULL
 `;
 
-const analisisEficacia = closedActionsRes.rows.map((a: any) => {
+const analisisEficacia = closedActionsRes.rows.map((a: Record<string, unknown>) => {
   const causeLower = String(a.cause).trim().toLowerCase();
   const base = {
     accionId: a.id,
@@ -316,8 +316,8 @@ const analisisEficacia = closedActionsRes.rows.map((a: any) => {
 const eficaciaResumen: Record<string, number> = { EFECTIVA: 0, PARCIALMENTE_EFECTIVA: 0, NO_EFECTIVA: 0, NO_EVALUADA: 0 };
   for (const e of analisisEficacia) eficaciaResumen[e.clasificacion] = (eficaciaResumen[e.clasificacion] || 0) + 1;
 
-const matriz: any[] = gi?.matrizCumplimiento || [];
-  const gapItems = matriz.map((m: any) => ({
+const matriz: Record<string, unknown>[] = gi?.matrizCumplimiento || [];
+  const gapItems = matriz.map((m: Record<string, unknown>) => ({
     requisito: m.requisito,
     estadoOriginal: m.estado,
     gap: GAP_MAP[m.estado] || "NO_EVALUADO",
@@ -330,7 +330,7 @@ const matriz: any[] = gi?.matrizCumplimiento || [];
   const gapResumen = { CUMPLE: 0, BRECHA_PARCIAL: 0, BRECHA: 0, NO_EVALUADO: 0, NO_APLICA: 0 } as Record<string, number>;
   for (const g of gapItems) gapResumen[g.gap] = (gapResumen[g.gap] || 0) + 1;
 
-const checklist = matriz.map((m: any) => ({
+const checklist = matriz.map((m: Record<string, unknown>) => ({
   requisito: m.requisito,
   estado: SEMAFORO_MAP[m.estado] || "blanco",
   evidencia: m.evidencia || null,
@@ -341,22 +341,22 @@ const checklist = matriz.map((m: any) => ({
 }));
 
 const indiceAutomatico = INDICE_CATEGORIAS.map((c) => {
-  const items = checklist.filter((i: any) => i.categoria.n === c.n);
+  const items = checklist.filter((i: Record<string, unknown>) => i.categoria.n === c.n);
   return { numero: c.n, categoria: c.label, items: items.length, conEvidencia: items.filter((i: any) => !!i.evidencia).length };
 });
 
-const alertasCriticasDash: any[] = dashboard?.alertasCriticas || [];
-  const critico: any[] = [];
-  const importante: any[] = [];
-  const preventivo: any[] = [];
-  const normal: any[] = [];
+const alertasCriticasDash: Record<string, unknown>[] = dashboard?.alertasCriticas || [];
+  const critico: Record<string, unknown>[] = [];
+  const importante: Record<string, unknown>[] = [];
+  const preventivo: Record<string, unknown>[] = [];
+  const normal: Record<string, unknown>[] = [];
 
 for (const a of alertasCriticasDash) critico.push({ origen: "alerta", detalle: a.message, modulo: a.module });
   for (const g of gapItems) {
     if (g.gap === "BRECHA") critico.push({ origen: "cumplimiento", detalle: g.requisito, accion: g.accion });
     else if (g.gap === "BRECHA_PARCIAL") importante.push({ origen: "cumplimiento", detalle: g.requisito, accion: g.accion });
   }
-  const vencItems: any[] = venc?.items || [];
+  const vencItems: Record<string, unknown>[] = venc?.items || [];
   for (const v of vencItems) {
     if (v.nivel === "vencida" || v.nivel === "rojo") critico.push({ origen: "vencimiento", detalle: v.categoria + ": " + v.descripcion, dias: v.dias });
     else if (v.nivel === "naranjo") importante.push({ origen: "vencimiento", detalle: v.categoria + ": " + v.descripcion, dias: v.dias });

@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   `;
 
   const results = [
-    ...docRows.map((d: any) => ({
+    ...docRows.map((d: Record<string, unknown>) => ({
       type: "documento",
       id: d.id,
       title: d.original_name,
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       documentId: d.id,
       documentUrl: d.blob_url,
     })),
-    ...criteriaRows.map((c: any) => ({
+    ...criteriaRows.map((c: Record<string, unknown>) => ({
       type: "criterio",
       id: c.id,
       title: `${c.parameter_name}${c.value ? ": " + c.value : ""}${c.unit ? " " + c.unit : ""}`,

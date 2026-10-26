@@ -76,7 +76,7 @@ export async function POST(request: Request) {
   await ensureAlertsTables();
   await ensureMaintenanceExtendedTables();
 
-  const body: any = await request.json().catch(() => ({}));
+  const body: Record<string, unknown> = await request.json().catch(() => ({}));
   const alertId = Number(body?.alertId || 0);
   const actorEmail = body?.actorEmail || null;
   const decisionId = body?.decisionId ? Number(body.decisionId) : null;

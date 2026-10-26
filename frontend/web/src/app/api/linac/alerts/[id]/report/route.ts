@@ -74,13 +74,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const alertId = Number(idParam);
     if (!alertId) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
 
-  const alert: any = await loadReportContext(alertId);
+  const alert: Record<string, unknown> = await loadReportContext(alertId);
     if (!alert) return NextResponse.json({ error: "alert_not_found" }, { status: 404 });
 
   const { searchParams } = new URL(request.url);
     const actor = searchParams.get("actor") || null;
 
-  const decision: any = await loadLatestDecision(alertId);
+  const decision: Record<string, unknown> | null = await loadLatestDecision(alertId);
     const { count: repetitionCount, history } = await getRepeatedDeviationInfo(alert.linac_id, alert.module, alert.parameter_name);
 
   const numericHistory = (history as any[])

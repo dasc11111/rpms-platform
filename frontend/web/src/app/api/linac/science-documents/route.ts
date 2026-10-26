@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       )
       SELECT id FROM subtree
     `;
-    const ids = subtreeRows.map((r: any) => r.id);
+    const ids = subtreeRows.map((r: Record<string, unknown>) => r.id);
     params.push(ids.length > 0 ? ids : [-1]);
     clauses.push(`category_id = ANY($${params.length}::int[])`);
   }
@@ -73,16 +73,16 @@ export async function GET(request: Request) {
     params
   );
 
-  const ids = rows.map((r: any) => r.id);
+  const ids = rows.map((r: Record<string, unknown>) => r.id);
   let newerMap: Record<number, number> = {};
   if (ids.length > 0) {
     const { rows: newerRows } = await sql.query(
       `SELECT previous_version_id, id FROM documents WHERE previous_version_id = ANY($1::int[])`,
       [ids]
     );
-    newerRows.forEach((n: any) => { newerMap[n.previous_version_id] = n.id; });
+    newerRows.forEach((n: Record<string, unknown>) => { newerMap[n.previous_version_id] = n.id; });
   }
-  const documents = rows.map((r: any) => ({ ...r, newer_version_id: newerMap[r.id] || null }));
+  const documents = rows.map((r: Record<string, unknown>) => ({ ...r, newer_version_id: newerMap[r.id] || null }));
 
   return NextResponse.json({ documents });
 }
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "category_not_found" }, { status: 404 });
   }
 
-  let previousDoc: any = null;
+  let previousDoc: Record<string, unknown> | null = null;
   if (previousVersionId) {
     const { rows: prevRows } = await sql`SELECT * FROM documents WHERE id = ${previousVersionId}`;
     previousDoc = prevRows[0] || null;
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
     )
     RETURNING *
   `;
-  const created: any = rows[0];
+  const created: Record<string, unknown> = rows[0] as Record<string, unknown>;
 
   if (previousDoc && created) {
     await sql`UPDATE documents SET doc_status = 'historico', updated_at = now() WHERE id = ${previousDoc.id}`;

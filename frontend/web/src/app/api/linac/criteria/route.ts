@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     RETURNING *
   `;
 
-  const criteria: any = rows[0];
+  const criteria: Record<string, unknown> = rows[0] as Record<string, unknown>;
   if (!criteria) {
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }

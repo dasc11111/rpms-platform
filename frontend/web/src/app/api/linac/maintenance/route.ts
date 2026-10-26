@@ -112,7 +112,7 @@ RETURNING id;
 `;
 
 const recordId = rows[0]!.id;
-const typeLabel = (MAINTENANCE_TYPES.find((t: any) => t.value === maintenanceType) || { label: maintenanceType }).label;
+const typeLabel = (MAINTENANCE_TYPES.find((t) => t.value === maintenanceType) || { label: maintenanceType }).label;
 
 if (semaphore !== "verde") {
 const msg = "Mantenimiento " + typeLabel + " con resultado " + (result || status) + ": semaforo " + semaphore + ".";

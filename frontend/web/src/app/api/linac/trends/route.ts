@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   `;
 
   const series: Point[] = [];
-  rows.forEach((r: any) => {
+  rows.forEach((r: Record<string, unknown>) => {
     const value = parseFloat(String(r.obtained_value).replace(",", "."));
     if (Number.isFinite(value)) {
       series.push({ idx: series.length, date: r.test_date, value, id: r.id });
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   const stats = computeStats(series.map((p) => p.value));
   const trend = linearTrend(series.map((p) => ({ x: p.idx, y: p.value })));
 
-let controlAnalysis: any = null;
+let controlAnalysis: Record<string, unknown> | null = null;
 if (stats) {
   const raw = detectControlViolations(series.map((p) => p.value), stats);
   controlAnalysis = {
@@ -56,7 +56,7 @@ if (stats) {
   };
 }
 
-  let evaluation: any = null;
+  let evaluation: Record<string, unknown> | null = null;
   const latest = series[series.length - 1];
   if (latest) {
     evaluation = await evaluateAndMaybeAlert({

@@ -136,7 +136,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       )
       RETURNING *
     `;
-    const created: any = rows[0];
+    const created: Record<string, unknown> = rows[0] as Record<string, unknown>;
     if (!created) {
       return NextResponse.json({ error: "insert_failed" }, { status: 500 });
     }

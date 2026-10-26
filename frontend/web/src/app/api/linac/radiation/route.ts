@@ -99,7 +99,7 @@ export async function POST(request: Request) {
   `;
 
   const recordId = rows[0]!.id;
-  const categoryLabel = (RADIATION_CATEGORIES.find((c: any) => c.value === category) || { label: category }).label;
+  const categoryLabel = (RADIATION_CATEGORIES.find((c) => c.value === category) || { label: category }).label;
   const recordLabel = (measurementType || categoryLabel) as string;
 
   if (semaphore !== "verde") {

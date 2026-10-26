@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       const parts = p.split(":");
       return { source: parts[0], id: Number(parts[1]) };
     });
-    const items: any[] = [];
+    const items: Record<string, unknown>[] = [];
     for (const p of pairs) {
       if (p.source === "library") {
         const { rows } = await sql`SELECT * FROM linac_beam_data WHERE id = ${p.id}`;
@@ -60,10 +60,10 @@ export async function GET(request: Request) {
   `;
 
   const items = [
-    ...libraryRows.map((r: any) => ({ ...r, source: "library" })),
-    ...commissioningRows.map((r: any) => ({ ...r, source: "commissioning" })),
+    ...libraryRows.map((r: Record<string, unknown>) => ({ ...r, source: "library" })),
+    ...commissioningRows.map((r: Record<string, unknown>) => ({ ...r, source: "commissioning" })),
   ];
-  items.sort((a: any, b: any) => new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime());
+  items.sort((a, b) => new Date(b.measurement_date).getTime() - new Date(a.measurement_date).getTime());
 
   return NextResponse.json({ ok: true, items });
 }
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
-  let points: any[] = [];
+  let points: Record<string, unknown>[] = [];
   try { points = JSON.parse(pointsRaw); } catch {}
 
   let fileName: string | null = null;
