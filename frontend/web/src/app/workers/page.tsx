@@ -26,7 +26,7 @@ async function getDosimetryFlags(): Promise<{ any: Set<string>; current: Set<str
     const quarter = Math.floor(now.getMonth() / 3) + 1;
     const any = new Set<string>();
     const current = new Set<string>();
-    for (const r of rows as any[]) {
+    for (const r of rows as Record<string, unknown>[]) {
       const key = rutMatchKey(String(r.worker_rut ?? ""));
       if (!key) continue;
       any.add(key);
@@ -53,7 +53,7 @@ async function getWorkers(): Promise<WorkerRow[]> {
       `,
       getDosimetryFlags(),
     ]);
-    return rows.map((w: any) => {
+    return rows.map((w: Record<string, unknown>) => {
       const key = rutMatchKey(String(w.rut ?? ""));
       return {
         ...w,

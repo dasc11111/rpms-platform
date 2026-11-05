@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 import { ensureWasteExpertSchema } from "@/lib/waste-expert-db";
-import { WasteExpertDashboard } from "@/components/waste-expert/waste-expert-dashboard";
+import { WasteExpertDashboard, type WasteItemRow, type RadionuclideOption } from "@/components/waste-expert/waste-expert-dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +21,7 @@ const { rows: radionuclides } = await sql`
 SELECT code, name, symbol, half_life_days FROM radionuclides WHERE active = true ORDER BY sort_order, code
 `;
 
-const serializedItems = items.map((row: any) => ({
+const serializedItems = items.map((row: Record<string, unknown>) => ({
   ...row,
   fecha_hora_generacion: row.fecha_hora_generacion ? new Date(row.fecha_hora_generacion).toISOString() : null,
   fecha_teorica_cumplimiento: row.fecha_teorica_cumplimiento ? new Date(row.fecha_teorica_cumplimiento).toISOString() : null,
@@ -30,5 +30,5 @@ const serializedItems = items.map((row: any) => ({
   created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
 }));
 
-return <WasteExpertDashboard items={serializedItems as any} radionuclides={radionuclides as any} />;
+return <WasteExpertDashboard items={serializedItems as WasteItemRow[]} radionuclides={radionuclides as RadionuclideOption[]} />;
 }

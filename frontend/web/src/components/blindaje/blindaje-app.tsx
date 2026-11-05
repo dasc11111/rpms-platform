@@ -1,6 +1,7 @@
 "use client";
 
-import { createElement as h, useEffect, useState, type FormEvent } from "react";
+import { createElement as h, useEffect, useState, type FormEvent, type ChangeEvent } from "react";
+type EChange = ChangeEvent<HTMLSelectElement | HTMLInputElement>;
 import { FACTORES_OCUPACION_NCRP147, FUENTE_TABLA_4_1_OCUPACION, OPCIONES_CRITERIO_DISENO_DIAGNOSTICO, MATERIALES_BARRERA_NCRP147 , FUENTE_TABLA_A1_MATERIALES} from "@/lib/ncrp147-shielding-references";
 import { MAPEO_OCUPACION_NCRP151_MEDICINA_NUCLEAR, OBJETIVOS_DISENO_P_NCRP151 } from "@/lib/ncrp151-shielding-references";
 import { RADIONUCLIDOS_PET, calcularTransmisionRequeridaSalaCaptacion, calcularTransmisionRequeridaSalaImagen, espesorRequeridoArcher, PARAMETROS_ARCHER_511KEV, redondearEspesorMinimo, type ParametrosSalaCaptacion, type ParametrosSalaImagen } from "@/lib/blindaje-calc-engine";
@@ -258,7 +259,7 @@ function field(label: string, value: string, onChange: (v: string) => void, plac
                   className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                   value,
                   placeholder: placeholder || "",
-                  onChange: (e: any) => onChange(e.target.value),
+                  onChange: (e: EChange) => onChange(e.target.value),
           })
         );
 }
@@ -1545,11 +1546,11 @@ async function createPenetration(e: FormEvent) {
     function sourceFieldInputs(facilityType: string) {
         const keys = SOURCE_FIELDS_BY_FACILITY[facilityType] || [];
         const labels = SOURCE_FIELD_LABELS[facilityType] || {};
-        const inputs: any[] = [];
+        const inputs: Record<string, unknown>[] = [];
         keys.forEach((key) => {
                 if (key === "activity") {
                           inputs.push(field(labels.activity || "Actividad", sourceForm.activity, (v) => updateSourceField("activity", v)));
-                          inputs.push(h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de actividad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.activity_unit, onChange: (e: any) => updateSourceField("activity_unit", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(ACTIVITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label))))));
+                          inputs.push(h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de actividad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.activity_unit, onChange: (e: EChange) => updateSourceField("activity_unit", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(ACTIVITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label))))));
                 } else if (key === "dose_rate") {
                           inputs.push(field(labels.dose_rate || "Tasa de dosis", sourceForm.dose_rate, (v) => updateSourceField("dose_rate", v)));
                           inputs.push(field("Unidad de tasa de dosis", sourceForm.dose_rate_unit, (v) => updateSourceField("dose_rate_unit", v)));
@@ -1565,7 +1566,7 @@ async function createPenetration(e: FormEvent) {
               {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: sourceForm.radionuclide,
-                onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
+                onChange: (e: EChange) => updateSourceField("radionuclide", e.target.value),
               },
               [h("option", { key: "", value: "" }, "Seleccione...")].concat(
                 RADIONUCLIDOS_PET.map((n) => h("option", { key: n.nuclido, value: n.nuclido }, n.nuclido + " (T1/2 = " + n.semividaMin + " min, " + n.modoDecaimiento + ")"))
@@ -1584,7 +1585,7 @@ async function createPenetration(e: FormEvent) {
               {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: sourceForm.radionuclide,
-                onChange: (e: any) => updateSourceField("radionuclide", e.target.value),
+                onChange: (e: EChange) => updateSourceField("radionuclide", e.target.value),
               },
               [h("option", { key: "", value: "" }, "Seleccione...")].concat(
                 NUCLEIDOS_TABLA20.map((n) => h("option", { key: n.nucleido, value: n.nucleido }, n.nucleido + " (RAKR = " + n.rakrUGyMBqM2H + " uGy*MBq^-1*m^2*h^-1)"))
@@ -1596,7 +1597,7 @@ async function createPenetration(e: FormEvent) {
         inputs.push(field(labels.radionuclide || "Radionuclido", sourceForm.radionuclide, (v) => updateSourceField("radionuclide", v)));
       }
                 } else if (key === "energy") {
-                          inputs.push(facilityType === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, labels.energy || "Energia nominal (MV, Tabla B.2 NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.energy, onChange: (e: any) => updateSourceField("energy", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(Array.from(new Set(TVL_BARRERA_PRIMARIA_NCRP151.map((t) => t.energiaMV))).map((en) => h("option", { key: en, value: en }, en + (en === "Co-60" ? "" : " MV")))))) : field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
+                          inputs.push(facilityType === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, labels.energy || "Energia nominal (MV, Tabla B.2 NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: sourceForm.energy, onChange: (e: EChange) => updateSourceField("energy", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(Array.from(new Set(TVL_BARRERA_PRIMARIA_NCRP151.map((t) => t.energiaMV))).map((en) => h("option", { key: en, value: en }, en + (en === "Co-60" ? "" : " MV")))))) : field(labels.energy || "Energia", sourceForm.energy, (v) => updateSourceField("energy", v)));
                 } else if (key === "geometry") {
                           inputs.push(field(labels.geometry || "Geometria", sourceForm.geometry, (v) => updateSourceField("geometry", v)));
                 }
@@ -1606,7 +1607,7 @@ async function createPenetration(e: FormEvent) {
 
   function workloadFieldInputs(mode: string) {
             const keys: string[] = WORKLOAD_FIELDS_BY_MODE[mode] || WORKLOAD_FIELDS_BY_MODE.simple || [];
-        const inputs: any[] = [];
+        const inputs: Record<string, unknown>[] = [];
         keys.forEach((key) => {
                 if (key === "scenario") {
                           inputs.push(
@@ -1619,7 +1620,7 @@ async function createPenetration(e: FormEvent) {
                                                       {
                                                                         className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                                                                         value: workloadForm.scenario,
-                                                                        onChange: (e: any) => updateWorkloadField("scenario", e.target.value),
+                                                                        onChange: (e: EChange) => updateWorkloadField("scenario", e.target.value),
                                                       },
                                                                     WORKLOAD_SCENARIOS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
                                                                   )
@@ -1658,7 +1659,7 @@ async function createPenetration(e: FormEvent) {
           {
                     className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                     value: form.facility_type,
-                    onChange: (e: any) => updateField("facility_type", e.target.value),
+                    onChange: (e: EChange) => updateField("facility_type", e.target.value),
           },
                 FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
               )
@@ -1750,7 +1751,7 @@ async function createPenetration(e: FormEvent) {
           {
                     className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                     value: facilityTypeDraft,
-                    onChange: (e: any) => setFacilityTypeDraft(e.target.value),
+                    onChange: (e: EChange) => setFacilityTypeDraft(e.target.value),
           },
                 FACILITY_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
               )
@@ -1791,7 +1792,7 @@ async function createPenetration(e: FormEvent) {
           {
                     className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                     value: equipmentForm.equipment_type,
-                    onChange: (e: any) => updateEquipmentField("equipment_type", e.target.value),
+                    onChange: (e: EChange) => updateEquipmentField("equipment_type", e.target.value),
           },
                 [h("option", { key: "", value: "" }, "Seleccione...")].concat(
                           equipmentTypeOptions.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
@@ -1946,7 +1947,7 @@ async function createPenetration(e: FormEvent) {
           {
                     className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                     value: workloadForm.input_mode,
-                    onChange: (e: any) => updateWorkloadField("input_mode", e.target.value),
+                    onChange: (e: EChange) => updateWorkloadField("input_mode", e.target.value),
           },
                 WORKLOAD_MODES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
               )
@@ -2039,7 +2040,7 @@ async function createPenetration(e: FormEvent) {
                         {
                                             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                                             value: pirForm.area_type,
-                                            onChange: (e: any) => updatePirField("area_type", e.target.value),
+                                            onChange: (e: EChange) => updatePirField("area_type", e.target.value),
                         },
                                     AREA_CLASSIFICATIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
                                 )
@@ -2054,7 +2055,7 @@ async function createPenetration(e: FormEvent) {
                         {
                                             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                                             value: pirForm.result_status,
-                                            onChange: (e: any) => updatePirField("result_status", e.target.value),
+                                            onChange: (e: EChange) => updatePirField("result_status", e.target.value),
                         },
                                     RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
                                 )
@@ -2093,9 +2094,9 @@ async function createPenetration(e: FormEvent) {
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: "",
-                onChange: (e: any) => {
+                onChange: (e: EChange) => {
                     const codigo = e.target.value;
-                    const opt = pirOccupancyReferenceOptions.find((o: any) => o.codigo === codigo);
+                    const opt = pirOccupancyReferenceOptions.find((o: Record<string, unknown>) => o.codigo === codigo);
                     if (opt) {
                         updatePirField("occupancy_factor", String(opt.factorT));
                         updatePirField("occupancy_type", opt.label);
@@ -2103,7 +2104,7 @@ async function createPenetration(e: FormEvent) {
                 },
             },
             [h("option", { key: "", value: "" }, pirOccupancyReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad (pendiente de extraccion)")].concat(
-                pirOccupancyReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                pirOccupancyReferenceOptions.map((o: Record<string, unknown>) => h("option", { key: o.codigo, value: o.codigo }, o.label))
                 )
             )
         );
@@ -2137,9 +2138,9 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: "",
-                onChange: (e: any) => {
+                onChange: (e: EChange) => {
                     const codigo = e.target.value;
-                    const opt = pirCriterionReferenceOptions.find((o: any) => o.codigo === codigo);
+                    const opt = pirCriterionReferenceOptions.find((o: Record<string, unknown>) => o.codigo === codigo);
                     if (opt) {
                         updatePirField("design_criterion_value", String(opt.valor));
                         updatePirField("design_criterion_unit", opt.unidad);
@@ -2148,7 +2149,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
                 },
             },
             [h("option", { key: "", value: "" }, pirCriterionReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad/clasificacion (pendiente de extraccion)")].concat(
-                pirCriterionReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                pirCriterionReferenceOptions.map((o: Record<string, unknown>) => h("option", { key: o.codigo, value: o.codigo }, o.label))
                 )
             )
         );
@@ -2257,7 +2258,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: barrierForm.barrier_type,
-                onChange: (e: any) => updateBarrierField("barrier_type", e.target.value),
+                onChange: (e: EChange) => updateBarrierField("barrier_type", e.target.value),
             },
             BARRIER_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -2272,7 +2273,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: barrierForm.result_status,
-                onChange: (e: any) => updateBarrierField("result_status", e.target.value),
+                onChange: (e: EChange) => updateBarrierField("result_status", e.target.value),
             },
             RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -2287,7 +2288,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: barrierForm.pir_id,
-                onChange: (e: any) => updateBarrierField("pir_id", e.target.value),
+                onChange: (e: EChange) => updateBarrierField("pir_id", e.target.value),
             },
             [h("option", { key: "", value: "" }, "Sin PIR asociado")].concat(
                 pirList.map((pir) => h("option", { key: String(pir.id), value: String(pir.id) }, pir.code + " - " + pir.name))
@@ -2353,7 +2354,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
           {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: barrierForm.material,
-            onChange: (e: any) => updateBarrierField("material", e.target.value),
+            onChange: (e: EChange) => updateBarrierField("material", e.target.value),
           },
           [h("option", { key: "", value: "" }, "Seleccione...")].concat(
             ["Hormigon", "Plomo", "Acero"].map((m) => h("option", { key: m, value: m }, m))
@@ -2370,14 +2371,14 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: barrierForm.material,
-                onChange: (e: any) => updateBarrierField("material", e.target.value),
+                onChange: (e: EChange) => updateBarrierField("material", e.target.value),
             },
             [h("option", { key: "", value: "" }, "Seleccione...")].concat(
                 BARRIER_MATERIALS_RADIOTERAPIA.map((m) => h("option", { key: m, value: m }, m))
                 )
             )
         )
-        : selectedProject && selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Material (" + FUENTE_TABLA_A1_MATERIALES.tablaOEcuacion + ", pag. " + FUENTE_TABLA_A1_MATERIALES.paginaAprox + ")", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.material, onChange: (e: any) => updateBarrierField("material", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(MATERIALES_BARRERA_NCRP147.map((m) => h("option", { key: m, value: m }, m))))) : field("Material (sin catalogo normativo verificado para esta modalidad; campo libre)", barrierForm.material, (v) => updateBarrierField("material", v));
+        : selectedProject && selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Material (" + FUENTE_TABLA_A1_MATERIALES.tablaOEcuacion + ", pag. " + FUENTE_TABLA_A1_MATERIALES.paginaAprox + ")", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.material, onChange: (e: EChange) => updateBarrierField("material", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(MATERIALES_BARRERA_NCRP147.map((m) => h("option", { key: m, value: m }, m))))) : field("Material (sin catalogo normativo verificado para esta modalidad; campo libre)", barrierForm.material, (v) => updateBarrierField("material", v));
 
   const barrierFormEl = selectedProject
         ? h(
@@ -2387,7 +2388,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             field("Nombre de la barrera *", barrierForm.name, (v) => updateBarrierField("name", v)),
             barrierTypeSelect,
             barrierPirSelect,
-            barrierMaterialInput, selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Distribucion de carga de trabajo (Tabla 4.5/4.7, B.1/C.1 NCRP147)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.distribucion_carga_ncrp147, onChange: (e: any) => updateBarrierField("distribucion_carga_ncrp147", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(DISTRIBUCIONES_CARGA_TRABAJO_NCRP147.map((d) => h("option", { key: d, value: d }, d))))) : null, selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Componente de radiacion secundaria (solo para barrera secundaria)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.componente_dispersion_ncrp147, onChange: (e: any) => updateBarrierField("componente_dispersion_ncrp147", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat([{ value: "lateral", label: "Lateral (90 grados, side-scatter)" }, { value: "frontal_trasera", label: "Frontal/Trasera (135/30 grados, conservador)" }].map((o) => h("option", { key: o.value, value: o.value }, o.label))))) : null,
+            barrierMaterialInput, selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Distribucion de carga de trabajo (Tabla 4.5/4.7, B.1/C.1 NCRP147)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.distribucion_carga_ncrp147, onChange: (e: EChange) => updateBarrierField("distribucion_carga_ncrp147", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat(DISTRIBUCIONES_CARGA_TRABAJO_NCRP147.map((d) => h("option", { key: d, value: d }, d))))) : null, selectedProject.facility_type === "diagnostico" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Componente de radiacion secundaria (solo para barrera secundaria)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.componente_dispersion_ncrp147, onChange: (e: EChange) => updateBarrierField("componente_dispersion_ncrp147", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat([{ value: "lateral", label: "Lateral (90 grados, side-scatter)" }, { value: "frontal_trasera", label: "Frontal/Trasera (135/30 grados, conservador)" }].map((o) => h("option", { key: o.value, value: o.value }, o.label))))) : null,
             field("Densidad (g/cm3)", barrierForm.density, (v) => updateBarrierField("density", v)),
             field("Fuente del material (norma, pagina)", barrierForm.material_source, (v) => updateBarrierField("material_source", v)),
             field("Espesor existente (cm)", barrierForm.thickness_existing_cm, (v) => updateBarrierField("thickness_existing_cm", v)),
@@ -2395,7 +2396,7 @@ cita: o.fuente.documento + " - " + o.fuente.tablaOEcuacion + ", pag. " + o.fuent
             field("Espesor adoptado (cm)", barrierForm.thickness_adopted_cm, (v) => updateBarrierField("thickness_adopted_cm", v)),
             field("Margen (cm)", barrierForm.margin_cm, (v) => updateBarrierField("margin_cm", v)),
             field("Distancia (m)", barrierForm.distance_m, (v) => updateBarrierField("distance_m", v)),
-            selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Angulo de dispersion (grados, Tablas B.4/B.5a NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.scatter_angle_grados, onChange: (e: any) => updateBarrierField("scatter_angle_grados", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat([30, 45, 60, 90, 135].map((a) => h("option", { key: String(a), value: String(a) }, String(a) + " grados"))))) : null,
+            selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Angulo de dispersion (grados, Tablas B.4/B.5a NCRP151)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: barrierForm.scatter_angle_grados, onChange: (e: EChange) => updateBarrierField("scatter_angle_grados", e.target.value) }, [h("option", { key: "", value: "" }, "Seleccione...")].concat([30, 45, 60, 90, 135].map((a) => h("option", { key: String(a), value: String(a) }, String(a) + " grados"))))) : null,
             selectedProject.facility_type === "radioterapia" ? field("Distancia objetivo-paciente dsca (m, tipicamente ~1 m, DFI/SAD)", barrierForm.dsca_m, (v) => updateBarrierField("dsca_m", v)) : null,
             field("Factor de uso (U)", barrierForm.use_factor, (v) => updateBarrierField("use_factor", v)),
             field("Factor de ocupacion (T)", barrierForm.occupancy_factor, (v) => updateBarrierField("occupancy_factor", v)),
@@ -2535,7 +2536,7 @@ const materialRows = materialsList.map((m) =>
         { onSubmit: createMaterial, className: "grid grid-cols-1 gap-3 md:grid-cols-3" },
         field("Nombre del material *", materialForm.name, (v) => updateMaterialField("name", v)),
         field("Densidad", materialForm.density, (v) => updateMaterialField("density", v)),
-        h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de densidad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: materialForm.density_unit, onChange: (e: any) => updateMaterialField("density_unit", e.target.value) }, DENSITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label)))),
+        h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Unidad de densidad", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: materialForm.density_unit, onChange: (e: EChange) => updateMaterialField("density_unit", e.target.value) }, DENSITY_UNIT_OPTIONS.map((o) => h("option", { key: o.value, value: o.value }, o.label)))),
         field("HVL (cm)", materialForm.hvl, (v) => updateMaterialField("hvl", v)),
         field("TVL (cm)", materialForm.tvl, (v) => updateMaterialField("tvl", v)),
         field("Metodo", materialForm.method, (v) => updateMaterialField("method", v)),
@@ -2581,7 +2582,7 @@ const materialRows = materialsList.map((m) =>
                 {
                     className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                     value: "",
-                    onChange: (e: any) => {
+                    onChange: (e: EChange) => {
                         const name = e.target.value;
                         if (name) onPick(name);
                     },
@@ -2602,7 +2603,7 @@ const materialRows = materialsList.map((m) =>
                 {
                                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                                 value: doorForm.barrier_id,
-                                onChange: (e: any) => updateDoorField("barrier_id", e.target.value),
+                                onChange: (e: EChange) => updateDoorField("barrier_id", e.target.value),
                 },
                         [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
                                         barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -2619,7 +2620,7 @@ const materialRows = materialsList.map((m) =>
                 {
                                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                                 value: doorForm.result_status,
-                                onChange: (e: any) => updateDoorField("result_status", e.target.value),
+                                onChange: (e: EChange) => updateDoorField("result_status", e.target.value),
                 },
                         RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
                     )
@@ -2722,7 +2723,7 @@ const materialRows = materialsList.map((m) =>
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: windowForm.barrier_id,
-                onChange: (e: any) => updateWindowField("barrier_id", e.target.value),
+                onChange: (e: EChange) => updateWindowField("barrier_id", e.target.value),
             },
             [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
                 barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -2739,7 +2740,7 @@ const materialRows = materialsList.map((m) =>
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: windowForm.result_status,
-                onChange: (e: any) => updateWindowField("result_status", e.target.value),
+                onChange: (e: EChange) => updateWindowField("result_status", e.target.value),
             },
             RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -2844,7 +2845,7 @@ const penetrationBarrierSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: penetrationForm.barrier_id,
-            onChange: (e: any) => updatePenetrationField("barrier_id", e.target.value),
+            onChange: (e: EChange) => updatePenetrationField("barrier_id", e.target.value),
         },
         [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
             barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -2861,7 +2862,7 @@ const penetrationBarrierSelect = h(
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: penetrationForm.penetration_type,
-                onChange: (e: any) => updatePenetrationField("penetration_type", e.target.value),
+                onChange: (e: EChange) => updatePenetrationField("penetration_type", e.target.value),
             },
             PENETRATION_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -2876,7 +2877,7 @@ const penetrationBarrierSelect = h(
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: penetrationForm.result_status,
-                onChange: (e: any) => updatePenetrationField("result_status", e.target.value),
+                onChange: (e: EChange) => updatePenetrationField("result_status", e.target.value),
             },
             RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -2984,7 +2985,7 @@ const mazeBarrierSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: mazeForm.barrier_id,
-            onChange: (e: any) => updateMazeField("barrier_id", e.target.value),
+            onChange: (e: EChange) => updateMazeField("barrier_id", e.target.value),
         },
         [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
             barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -3001,7 +3002,7 @@ const mazeResultStatusSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: mazeForm.result_status,
-            onChange: (e: any) => updateMazeField("result_status", e.target.value),
+            onChange: (e: EChange) => updateMazeField("result_status", e.target.value),
         },
         RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
         )
@@ -3071,7 +3072,7 @@ const disenosAlternativosPuertaInfoPanel = h("div", { className: "flex flex-col 
     field("Ancho del laberinto (cm)", mazeForm.maze_width_cm, (v) => updateMazeField("maze_width_cm", v)),
     field("Alto del laberinto (cm)", mazeForm.maze_height_cm, (v) => updateMazeField("maze_height_cm", v)),
     materialLibraryReferenceSelect((name) => updateMazeField("wall_material", name)),
-    field("Material de los muros", mazeForm.wall_material, (v) => updateMazeField("wall_material", v)), selectedProject.facility_type === "radioterapia" ? field("Factor de uso Pared G (UG, Tabla 3.1 NCRP151)", mazeForm.ug, (v) => updateMazeField("ug", v)) : null, selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "UG desde Tabla 3.1 NCRP151 (factor de uso por angulo de portico)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: "", onChange: (e: any) => { const idx = e.target.value; if (idx !== "") { const opt = FACTOR_USO_ANGULO_PORTICO_TABLA31[Number(idx)]; if (opt) updateMazeField("ug", String(opt.usoPorcentaje / 100)); } } }, [h("option", { key: "", value: "" }, "Seleccionar de tabla oficial...")].concat(FACTOR_USO_ANGULO_PORTICO_TABLA31.map((o, i) => h("option", { key: String(i), value: String(i) }, o.etiqueta + " (" + o.anchoIntervaloGrados + " grados) - " + o.usoPorcentaje + "% (Tabla 3.1)"))))) : null, selectedProject.facility_type === "radioterapia" ? field("alfa0 - coef. reflexion 1ra superficie (Tabla B.8a-f NCRP151, pag.168-171, ej. 0.0053)", mazeForm.alfa0, (v) => updateMazeField("alfa0", v)) : null, selectedProject.facility_type === "radioterapia" ? field("A0 - area del haz en la 1ra superficie de reflexion (m2, Ec.2.9)", mazeForm.a0_m2, (v) => updateMazeField("a0_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("alfaZ - coef. reflexion 2da superficie ~0.5MeV (Tabla B.8a-f NCRP151)", mazeForm.alfaz, (v) => updateMazeField("alfaz", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Az - area seccion transversal entrada interior del laberinto proyectada (m2)", mazeForm.az_m2, (v) => updateMazeField("az_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dh - distancia perpendicular objetivo a 1ra superficie de reflexion (m, = dpp+1m)", mazeForm.dh_m, (v) => updateMazeField("dh_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dr - distancia centro del haz en 1er reflejo a punto b en linea media (m)", mazeForm.dr_m, (v) => updateMazeField("dr_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dz - distancia en linea central del laberinto desde punto b hasta la puerta (m)", mazeForm.dz_m, (v) => updateMazeField("dz_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("WL - carga de trabajo para radiacion de fuga (Gy/semana, puede diferir de W)", mazeForm.wl_gy_semana, (v) => updateMazeField("wl_gy_semana", v)) : null, selectedProject.facility_type === "radioterapia" ? field("alfa1 - coef. reflexion fuga cabezal (Tabla B.8a, energia efectiva 1.4MeV)", mazeForm.alfa1, (v) => updateMazeField("alfa1", v)) : null, selectedProject.facility_type === "radioterapia" ? field("A1 - area Pared G visible desde la puerta del laberinto (m2)", mazeForm.a1_m2, (v) => updateMazeField("a1_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dsec - distancia objetivo a linea central del laberinto en Pared G (m)", mazeForm.dsec_m, (v) => updateMazeField("dsec_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dzz - distancia linea central del laberinto (m, Ec.2.10)", mazeForm.dzz_m, (v) => updateMazeField("dzz_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dL - distancia objetivo a centro puerta a traves pared interior laberinto (m, Ec.2.12)", mazeForm.dl_m, (v) => updateMazeField("dl_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("B - factor de transmision Pared Z en camino oblicuo dL (Ec.2.12)", mazeForm.b_pared_z, (v) => updateMazeField("b_pared_z", v)) : null, selectedProject.facility_type === "radioterapia" ? field("f - fraccion haz principal transmitido a traves del paciente (~0.25 para 6-10MV, campo 40x40cm2, McGinley y James 1997)", mazeForm.f_transmision_paciente, (v) => updateMazeField("f_transmision_paciente", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado HTot (Sv/semana)", mazeForm.result_value, (v) => updateMazeField("result_value", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado (detalle)", mazeForm.result_unit, (v) => updateMazeField("result_unit", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularLaberintoBajaEnergiaClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular puerta de laberinto (NCRP151, Ec. 2.9-2.14, <=10MV o Co-60)")) : null, selectedProject.facility_type === "radioterapia" ? field("beta - factor de transmision de neutrones a traves del blindaje del cabezal (1 para plomo, 0.85 para tungsteno; Ec.2.16 NCRP151)", mazeForm.beta_neutrones, (v) => updateMazeField("beta_neutrones", v)) : null, selectedProject.facility_type === "radioterapia" ? field("d1 - distancia desde el isocentro hasta el punto A del laberinto, donde el isocentro apenas deja de ser visible (m, Ecs.2.16/2.18/2.19 NCRP151)", mazeForm.d1_m, (v) => updateMazeField("d1_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Sr - superficie total de la sala de tratamiento (m2, Ec.2.16 NCRP151)", mazeForm.sr_m2, (v) => updateMazeField("sr_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Qn - fuerza de fuente de neutrones (x1e12 neutrones/Gy en isocentro, Tabla B.9 NCRP151, ej. 0.96 para Varian 2100C 18MV)", mazeForm.qn_x1e12, (v) => updateMazeField("qn_x1e12", v)) : null, selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Qn desde Tabla B.9 NCRP151 (fuerza de fuente de neutrones por modelo de acelerador, referencial)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: "", onChange: (e: any) => { const idx = e.target.value; if (idx !== "") { const opt = FUERZA_FUENTE_NEUTRONES_NCRP151[Number(idx)]; if (opt) updateMazeField("qn_x1e12", String(opt.qnX1e12)); } } }, [h("option", { key: "", value: "" }, "Seleccionar de tabla oficial...")].concat(FUERZA_FUENTE_NEUTRONES_NCRP151.map((o, i) => h("option", { key: String(i), value: String(i) }, o.vendedor + " " + o.modelo + " " + o.energiaNominalMV + "MV - Qn=" + o.qnX1e12 + "x1e12 n/Gy (Tabla B.9)"))))) : null, selectedProject.facility_type === "radioterapia" ? field("S0 - area de la entrada interior del laberinto (m2, Ecs.2.18/2.19/2.20 NCRP151)", mazeForm.s0_m2, (v) => updateMazeField("s0_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("S1 - area de la seccion transversal a lo largo del laberinto (m2, Ecs.2.18/2.19/2.20 NCRP151)", mazeForm.s1_m2, (v) => updateMazeField("s1_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("d2 - distancia desde el punto A hasta la puerta, a lo largo de la linea central del laberinto (m, Ecs.2.15/2.18/2.19 NCRP151)", mazeForm.d2_m, (v) => updateMazeField("d2_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado Hw alta energia (Sv/semana)", mazeForm.result_value_alta_energia, (v) => updateMazeField("result_value_alta_energia", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado alta energia (detalle)", mazeForm.result_unit_alta_energia, (v) => updateMazeField("result_unit_alta_energia", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularLaberintoAltaEnergiaClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular puerta de laberinto - alta energia (NCRP151, Ecs. 2.15-2.22, metodo de Kersey modificado, >10MV)")) : null, selectedProject.facility_type === "radioterapia" ? field("P - objetivo de diseno de la puerta (Sv/semana, del PIR/criterio de diseno)", mazeForm.p_diseno_puerta_sv_semana, (v) => updateMazeField("p_diseno_puerta_sv_semana", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado: espesor de plomo requerido (cm, Sec.2.4.3, gamma de captura de neutrones)", mazeForm.espesor_plomo_puerta_cm, (v) => updateMazeField("espesor_plomo_puerta_cm", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado: espesor de BPE requerido (cm, Sec.2.4.3, neutrones)", mazeForm.espesor_bpe_puerta_cm, (v) => updateMazeField("espesor_bpe_puerta_cm", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado espesor de puerta (detalle)", mazeForm.result_unit_puerta, (v) => updateMazeField("result_unit_puerta", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularEspesorPuertaLaberintoClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular espesor de puerta (NCRP151, Sec. 2.4.3, TVL plomo/BPE)")) : null,
+    field("Material de los muros", mazeForm.wall_material, (v) => updateMazeField("wall_material", v)), selectedProject.facility_type === "radioterapia" ? field("Factor de uso Pared G (UG, Tabla 3.1 NCRP151)", mazeForm.ug, (v) => updateMazeField("ug", v)) : null, selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "UG desde Tabla 3.1 NCRP151 (factor de uso por angulo de portico)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: "", onChange: (e: EChange) => { const idx = e.target.value; if (idx !== "") { const opt = FACTOR_USO_ANGULO_PORTICO_TABLA31[Number(idx)]; if (opt) updateMazeField("ug", String(opt.usoPorcentaje / 100)); } } }, [h("option", { key: "", value: "" }, "Seleccionar de tabla oficial...")].concat(FACTOR_USO_ANGULO_PORTICO_TABLA31.map((o, i) => h("option", { key: String(i), value: String(i) }, o.etiqueta + " (" + o.anchoIntervaloGrados + " grados) - " + o.usoPorcentaje + "% (Tabla 3.1)"))))) : null, selectedProject.facility_type === "radioterapia" ? field("alfa0 - coef. reflexion 1ra superficie (Tabla B.8a-f NCRP151, pag.168-171, ej. 0.0053)", mazeForm.alfa0, (v) => updateMazeField("alfa0", v)) : null, selectedProject.facility_type === "radioterapia" ? field("A0 - area del haz en la 1ra superficie de reflexion (m2, Ec.2.9)", mazeForm.a0_m2, (v) => updateMazeField("a0_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("alfaZ - coef. reflexion 2da superficie ~0.5MeV (Tabla B.8a-f NCRP151)", mazeForm.alfaz, (v) => updateMazeField("alfaz", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Az - area seccion transversal entrada interior del laberinto proyectada (m2)", mazeForm.az_m2, (v) => updateMazeField("az_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dh - distancia perpendicular objetivo a 1ra superficie de reflexion (m, = dpp+1m)", mazeForm.dh_m, (v) => updateMazeField("dh_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dr - distancia centro del haz en 1er reflejo a punto b en linea media (m)", mazeForm.dr_m, (v) => updateMazeField("dr_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dz - distancia en linea central del laberinto desde punto b hasta la puerta (m)", mazeForm.dz_m, (v) => updateMazeField("dz_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("WL - carga de trabajo para radiacion de fuga (Gy/semana, puede diferir de W)", mazeForm.wl_gy_semana, (v) => updateMazeField("wl_gy_semana", v)) : null, selectedProject.facility_type === "radioterapia" ? field("alfa1 - coef. reflexion fuga cabezal (Tabla B.8a, energia efectiva 1.4MeV)", mazeForm.alfa1, (v) => updateMazeField("alfa1", v)) : null, selectedProject.facility_type === "radioterapia" ? field("A1 - area Pared G visible desde la puerta del laberinto (m2)", mazeForm.a1_m2, (v) => updateMazeField("a1_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dsec - distancia objetivo a linea central del laberinto en Pared G (m)", mazeForm.dsec_m, (v) => updateMazeField("dsec_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dzz - distancia linea central del laberinto (m, Ec.2.10)", mazeForm.dzz_m, (v) => updateMazeField("dzz_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("dL - distancia objetivo a centro puerta a traves pared interior laberinto (m, Ec.2.12)", mazeForm.dl_m, (v) => updateMazeField("dl_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("B - factor de transmision Pared Z en camino oblicuo dL (Ec.2.12)", mazeForm.b_pared_z, (v) => updateMazeField("b_pared_z", v)) : null, selectedProject.facility_type === "radioterapia" ? field("f - fraccion haz principal transmitido a traves del paciente (~0.25 para 6-10MV, campo 40x40cm2, McGinley y James 1997)", mazeForm.f_transmision_paciente, (v) => updateMazeField("f_transmision_paciente", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado HTot (Sv/semana)", mazeForm.result_value, (v) => updateMazeField("result_value", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado (detalle)", mazeForm.result_unit, (v) => updateMazeField("result_unit", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularLaberintoBajaEnergiaClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular puerta de laberinto (NCRP151, Ec. 2.9-2.14, <=10MV o Co-60)")) : null, selectedProject.facility_type === "radioterapia" ? field("beta - factor de transmision de neutrones a traves del blindaje del cabezal (1 para plomo, 0.85 para tungsteno; Ec.2.16 NCRP151)", mazeForm.beta_neutrones, (v) => updateMazeField("beta_neutrones", v)) : null, selectedProject.facility_type === "radioterapia" ? field("d1 - distancia desde el isocentro hasta el punto A del laberinto, donde el isocentro apenas deja de ser visible (m, Ecs.2.16/2.18/2.19 NCRP151)", mazeForm.d1_m, (v) => updateMazeField("d1_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Sr - superficie total de la sala de tratamiento (m2, Ec.2.16 NCRP151)", mazeForm.sr_m2, (v) => updateMazeField("sr_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Qn - fuerza de fuente de neutrones (x1e12 neutrones/Gy en isocentro, Tabla B.9 NCRP151, ej. 0.96 para Varian 2100C 18MV)", mazeForm.qn_x1e12, (v) => updateMazeField("qn_x1e12", v)) : null, selectedProject.facility_type === "radioterapia" ? h("label", { className: "flex flex-col gap-1 text-xs text-muted-foreground" }, "Qn desde Tabla B.9 NCRP151 (fuerza de fuente de neutrones por modelo de acelerador, referencial)", h("select", { className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground", value: "", onChange: (e: EChange) => { const idx = e.target.value; if (idx !== "") { const opt = FUERZA_FUENTE_NEUTRONES_NCRP151[Number(idx)]; if (opt) updateMazeField("qn_x1e12", String(opt.qnX1e12)); } } }, [h("option", { key: "", value: "" }, "Seleccionar de tabla oficial...")].concat(FUERZA_FUENTE_NEUTRONES_NCRP151.map((o, i) => h("option", { key: String(i), value: String(i) }, o.vendedor + " " + o.modelo + " " + o.energiaNominalMV + "MV - Qn=" + o.qnX1e12 + "x1e12 n/Gy (Tabla B.9)"))))) : null, selectedProject.facility_type === "radioterapia" ? field("S0 - area de la entrada interior del laberinto (m2, Ecs.2.18/2.19/2.20 NCRP151)", mazeForm.s0_m2, (v) => updateMazeField("s0_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("S1 - area de la seccion transversal a lo largo del laberinto (m2, Ecs.2.18/2.19/2.20 NCRP151)", mazeForm.s1_m2, (v) => updateMazeField("s1_m2", v)) : null, selectedProject.facility_type === "radioterapia" ? field("d2 - distancia desde el punto A hasta la puerta, a lo largo de la linea central del laberinto (m, Ecs.2.15/2.18/2.19 NCRP151)", mazeForm.d2_m, (v) => updateMazeField("d2_m", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado Hw alta energia (Sv/semana)", mazeForm.result_value_alta_energia, (v) => updateMazeField("result_value_alta_energia", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado alta energia (detalle)", mazeForm.result_unit_alta_energia, (v) => updateMazeField("result_unit_alta_energia", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularLaberintoAltaEnergiaClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular puerta de laberinto - alta energia (NCRP151, Ecs. 2.15-2.22, metodo de Kersey modificado, >10MV)")) : null, selectedProject.facility_type === "radioterapia" ? field("P - objetivo de diseno de la puerta (Sv/semana, del PIR/criterio de diseno)", mazeForm.p_diseno_puerta_sv_semana, (v) => updateMazeField("p_diseno_puerta_sv_semana", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado: espesor de plomo requerido (cm, Sec.2.4.3, gamma de captura de neutrones)", mazeForm.espesor_plomo_puerta_cm, (v) => updateMazeField("espesor_plomo_puerta_cm", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado: espesor de BPE requerido (cm, Sec.2.4.3, neutrones)", mazeForm.espesor_bpe_puerta_cm, (v) => updateMazeField("espesor_bpe_puerta_cm", v)) : null, selectedProject.facility_type === "radioterapia" ? field("Resultado espesor de puerta (detalle)", mazeForm.result_unit_puerta, (v) => updateMazeField("result_unit_puerta", v)) : null, selectedProject.facility_type === "radioterapia" ? h("div", { className: "md:col-span-3" }, h("button", { type: "button", onClick: calcularEspesorPuertaLaberintoClick, className: "rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground" }, "Calcular espesor de puerta (NCRP151, Sec. 2.4.3, TVL plomo/BPE)")) : null,
     mazeResultStatusSelect,
     field("Fuente documental (norma, pagina)", mazeForm.source_document, (v) => updateMazeField("source_document", v)),
     field("Notas", mazeForm.notes, (v) => updateMazeField("notes", v)),
@@ -3118,7 +3119,7 @@ const paso11Panel = selectedProject
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: slabForm.barrier_id,
-                onChange: (e: any) => updateSlabField("barrier_id", e.target.value),
+                onChange: (e: EChange) => updateSlabField("barrier_id", e.target.value),
             },
             [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
                 barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -3135,7 +3136,7 @@ const slabTypeSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: slabForm.slab_type,
-            onChange: (e: any) => updateSlabField("slab_type", e.target.value),
+            onChange: (e: EChange) => updateSlabField("slab_type", e.target.value),
         },
         SLAB_TYPES.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
         )
@@ -3150,7 +3151,7 @@ const slabOccupancySelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: slabForm.occupancy_above,
-            onChange: (e: any) => updateSlabField("occupancy_above", e.target.value),
+            onChange: (e: EChange) => updateSlabField("occupancy_above", e.target.value),
         },
         OCCUPANCY_ABOVE_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
         )
@@ -3165,7 +3166,7 @@ const slabResultStatusSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: slabForm.result_status,
-            onChange: (e: any) => updateSlabField("result_status", e.target.value),
+            onChange: (e: EChange) => updateSlabField("result_status", e.target.value),
         },
         RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
         )
@@ -3268,7 +3269,7 @@ const occupancyPointBarrierSelect = h(
         {
             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
             value: occupancyPointForm.barrier_id,
-            onChange: (e: any) => updateOccupancyPointField("barrier_id", e.target.value),
+            onChange: (e: EChange) => updateOccupancyPointField("barrier_id", e.target.value),
         },
         [h("option", { key: "", value: "" }, "Sin barrera asociada")].concat(
             barriersList.map((b) => h("option", { key: String(b.id), value: String(b.id) }, b.code + " - " + b.name))
@@ -3303,9 +3304,9 @@ const occupancyPointBarrierSelect = h(
                     {
                             className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                             value: "",
-                            onChange: (e: any) => {
+                            onChange: (e: EChange) => {
                                     const codigo = e.target.value;
-                                    const opt = occupancyReferenceOptions.find((o: any) => o.codigo === codigo);
+                                    const opt = occupancyReferenceOptions.find((o: Record<string, unknown>) => o.codigo === codigo);
                                     if (opt) {
                                             updateOccupancyPointField("occupancy_factor_t", String(opt.factorT));
                                             updateOccupancyPointField("source_document", opt.cita);
@@ -3313,7 +3314,7 @@ const occupancyPointBarrierSelect = h(
                             },
                     },
                         [h("option", { key: "", value: "" }, occupancyReferenceOptions.length ? "Seleccionar de tabla oficial..." : "No disponible para esta modalidad (pendiente de extraccion)")].concat(
-                                occupancyReferenceOptions.map((o: any) => h("option", { key: o.codigo, value: o.codigo }, o.label))
+                                occupancyReferenceOptions.map((o: Record<string, unknown>) => h("option", { key: o.codigo, value: o.codigo }, o.label))
                                 )
                         )
                 );
@@ -3327,7 +3328,7 @@ const occupancyPointBarrierSelect = h(
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: occupancyPointForm.occupancy_type,
-                onChange: (e: any) => updateOccupancyPointField("occupancy_type", e.target.value),
+                onChange: (e: EChange) => updateOccupancyPointField("occupancy_type", e.target.value),
             },
             OCCUPANCY_TYPE_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -3342,7 +3343,7 @@ const occupancyPointBarrierSelect = h(
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: occupancyPointForm.beam_component,
-                onChange: (e: any) => updateOccupancyPointField("beam_component", e.target.value),
+                onChange: (e: EChange) => updateOccupancyPointField("beam_component", e.target.value),
             },
             BEAM_COMPONENT_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )
@@ -3357,7 +3358,7 @@ const occupancyPointBarrierSelect = h(
             {
                 className: "rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground",
                 value: occupancyPointForm.result_status,
-                onChange: (e: any) => updateOccupancyPointField("result_status", e.target.value),
+                onChange: (e: EChange) => updateOccupancyPointField("result_status", e.target.value),
             },
             RESULT_STATUS_OPTIONS.map((opt) => h("option", { key: opt.value, value: opt.value }, opt.label))
             )

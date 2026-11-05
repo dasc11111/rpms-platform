@@ -10,7 +10,7 @@ export default async function TransportPage() {
   const { rows: radionuclideRows } = await sql`
     SELECT code, label, activity_label, allows_multiple FROM transport_radionuclides ORDER BY label;
   `;
-  const radionuclides = radionuclideRows.map((r: any) => ({
+  const radionuclides = radionuclideRows.map((r: Record<string, unknown>) => ({
     code: r.code,
     label: r.label,
     activityLabel: r.activity_label,

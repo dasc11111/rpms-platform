@@ -20,7 +20,7 @@ export default async function WasteReleaseCriteriaPage() {
     SELECT code, name, symbol FROM radionuclides WHERE active = true ORDER BY sort_order, code
   `;
 
-  const serialized = criteria.map((r: any) => ({
+  const serialized = criteria.map((r: Record<string, unknown>) => ({
     ...r,
     fecha_vigencia_desde: r.fecha_vigencia_desde
       ? new Date(r.fecha_vigencia_desde).toISOString().slice(0, 10)

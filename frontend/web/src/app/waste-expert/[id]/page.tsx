@@ -39,7 +39,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
     LEFT JOIN radionuclides rn ON rn.code = wi.radionuclide_code
     WHERE wi.id = ${id}
   `;
-  const item: any = itemRows[0];
+  const item: Record<string, unknown> = itemRows[0] as Record<string, unknown>;
   if (!item) return notFound();
 
   const { rows: measurements } = await sql`
@@ -59,7 +59,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
     SELECT * FROM waste_item_corrections WHERE waste_item_id = ${id} ORDER BY fecha DESC, id DESC
   `;
 
-  const ultima: any = measurements[0];
+  const ultima: Record<string, unknown> | undefined = measurements[0] as Record<string, unknown> | undefined;
   const explicacion = construirExplicacion({
     itemCode: item.item_code,
     estado: item.estado,
@@ -184,7 +184,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(measurements as any[]).map((m) => (
+                  {(measurements as Record<string, unknown>[]).map((m) => (
                     <tr key={m.id}>
                       <td className="px-2 py-1.5">{fmtDate(m.fecha)}{m.hora ? ` ${String(m.hora).slice(0, 5)}` : ""}</td>
                       <td className="px-2 py-1.5">{tipoMedicionLabel(m.tipo_medicion)}</td>
@@ -226,7 +226,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(statusHistory as any[]).map((h) => (
+                  {(statusHistory as Record<string, unknown>[]).map((h) => (
                     <tr key={h.id}>
                       <td className="px-2 py-1.5">{fmtDateTime(h.fecha)}</td>
                       <td className="px-2 py-1.5 text-muted-foreground">{h.estado_anterior ?? "—"}</td>
@@ -261,7 +261,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(authorizations as any[]).map((a) => (
+                  {(authorizations as Record<string, unknown>[]).map((a) => (
                     <tr key={a.id}>
                       <td className="px-2 py-1.5">{fmtDateTime(a.fecha)}</td>
                       <td className="px-2 py-1.5">{a.tipo}</td>
@@ -297,7 +297,7 @@ export default async function WasteExpertItemPage({ params }: { params: Promise<
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(corrections as any[]).map((c) => (
+                  {(corrections as Record<string, unknown>[]).map((c) => (
                     <tr key={c.id}>
                       <td className="px-2 py-1.5">{fmtDateTime(c.fecha)}</td>
                       <td className="px-2 py-1.5">{c.campo}</td>

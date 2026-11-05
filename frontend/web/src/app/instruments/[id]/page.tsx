@@ -42,7 +42,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
     LEFT JOIN instrument_types t ON t.id = i.type_id
     WHERE i.id = ${id}
   `;
-  const instrument: any = instrumentRows[0];
+  const instrument: Record<string, unknown> = instrumentRows[0] as Record<string, unknown>;
   if (!instrument) return notFound();
 
   const { rows: calibrations } = await sql`
@@ -65,9 +65,9 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
     SELECT * FROM instrument_history WHERE instrument_id = ${id} ORDER BY changed_at DESC, id DESC
   `;
 
-  const calibrationIds = calibrations.map((c: any) => c.id as number);
-  const failureIds = failures.map((f: any) => f.id as number);
-  const maintenanceIds = maintenances.map((m: any) => m.id as number);
+  const calibrationIds = calibrations.map((c: Record<string, unknown>) => c.id as number);
+  const failureIds = failures.map((f: Record<string, unknown>) => f.id as number);
+  const maintenanceIds = maintenances.map((m: Record<string, unknown>) => m.id as number);
 
   const { rows: documents } = await sql.query(
     `SELECT * FROM instrument_documents
@@ -79,7 +79,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
     [id, calibrationIds.length ? calibrationIds : [0], failureIds.length ? failureIds : [0], maintenanceIds.length ? maintenanceIds : [0]]
   );
 
-  const lastCalibration: any = calibrations[0];
+  const lastCalibration: Record<string, unknown> | undefined = calibrations[0] as Record<string, unknown> | undefined;
   const alert = getCalibrationAlertLevel(lastCalibration?.expiry_date ?? null);
 
   const techFields: { label: string; value: string | null | undefined }[] = [
@@ -181,7 +181,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {calibrations.map((c: any) => {
+                {calibrations.map((c: Record<string, unknown>) => {
                   const a = getCalibrationAlertLevel(c.expiry_date);
                   return (
                     <tr key={c.id}>
@@ -226,7 +226,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {failures.map((f: any) => (
+                {failures.map((f: Record<string, unknown>) => (
                   <tr key={f.id}>
                     <td className="px-2 py-1.5">{fmtDate(f.failure_date)}</td>
                     <td className="px-2 py-1.5">{f.failure_type ?? "—"}</td>
@@ -261,7 +261,7 @@ export default async function InstrumentDetailPage({ params }: { params: Promise
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {maintenances.map((m: any) => (
+                {maintenances.map((m: Record<string, unknown>) => (
                   <tr key={m.id}>
                     <td className="px-2 py-1.5">{fmtDate(m.maintenance_date)}</td>
                     <td className="px-2 py-1.5">{MAINTENANCE_TYPE_LABELS[m.maintenance_type as keyof typeof MAINTENANCE_TYPE_LABELS] ?? m.maintenance_type}</td>

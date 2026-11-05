@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, GraduationCap, AlertTriangle, AlertCircle, Info } from "lucide-react";
@@ -26,7 +27,7 @@ const LEVEL_CLASS: Record<string, string> = {
   intervencion: "text-red-600 font-semibold",
 };
 
-const ALERT_ICON: Record<DosimeterAlertSeverity, any> = { alta: AlertCircle, media: AlertTriangle, baja: Info };
+const ALERT_ICON: Record<DosimeterAlertSeverity, React.ElementType> = { alta: AlertCircle, media: AlertTriangle, baja: Info };
 
 export default async function WorkerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,11 +47,11 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
     WHERE rut = ${rut}
     LIMIT 1
   `;
-  const worker: any = workerRows[0];
+  const worker: Record<string, unknown> = workerRows[0] as Record<string, unknown>;
   if (!worker) return notFound();
 
   const rutDigits = (rut.split("-")[0] ?? "").replace(/[^0-9]/g, "");
-  let quarterlyRows: any[] = [];
+  let quarterlyRows: Record<string, unknown>[] = [];
   try {
     const { rows } = await sql`
       SELECT year, quarter, period_label, dose_body, dose_lens, dose_skin,
@@ -67,7 +68,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
 
   // Hoja 'Lista de devolucion': historial de devoluciones fisicas de este
   // trabajador, tal como quedan registradas por el laboratorio.
-  let returnRows: any[] = [];
+  let returnRows: Record<string, unknown>[] = [];
   try {
     const { rows } = await sql`
       SELECT dosimeter_code, unidad, period_label, estado, observaciones, registered_at
@@ -262,7 +263,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {quarterlyRows.map((r: any, i: number) => (
+                {quarterlyRows.map((r: Record<string, unknown>, i: number) => (
                   <tr key={i}>
                     <td className="px-2 py-1.5 font-medium">{r.period_label}</td>
                     <td className="px-2 py-1.5 text-muted-foreground">{r.institucion || "—"}</td>
@@ -369,7 +370,7 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {returnRows.map((r: any, i: number) => (
+                {returnRows.map((r: Record<string, unknown>, i: number) => (
                   <tr key={i}>
                     <td className="px-2 py-1.5 text-muted-foreground">{new Date(r.registered_at).toLocaleDateString("es-CL")}</td>
                     <td className="px-2 py-1.5 font-medium">{r.dosimeter_code}</td>
