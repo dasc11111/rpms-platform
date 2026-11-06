@@ -304,7 +304,9 @@ export function PetctApp() {
                     return (
                       <tr key={String(exam.id)} className="hover:bg-muted/30">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-foreground">{exam.patient_id}</div>
+                          <a href={`/petct/${exam.id}`} className="font-medium text-foreground hover:text-accent hover:underline">
+                            {exam.patient_id}
+                          </a>
                           {exam.patient_name && <div className="text-muted-foreground text-xs">{exam.patient_name}</div>}
                         </td>
                         <td className="px-4 py-3">

@@ -46,10 +46,23 @@ async function ensurePetctTables() {
 export async function GET(req: NextRequest) {
   await ensurePetctTables();
   const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ?? "";
   const state = searchParams.get("state") ?? "";
   const date = searchParams.get("date") ?? "";
   const limit = Math.min(Number(searchParams.get("limit") ?? "100"), 200);
   const type = searchParams.get("type") ?? "exams";
+
+  // Single exam by ID
+  if (id) {
+    try {
+      const rows = await sql.query(`SELECT * FROM petct_examinations WHERE id = $1`, [id]);
+      if (rows.rowCount === 0) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+      return NextResponse.json({ data: rows.rows[0] });
+    } catch (err) {
+      console.error("[petct GET id]", err);
+      return NextResponse.json({ error: "Error al obtener examen" }, { status: 500 });
+    }
+  }
 
   try {
     if (type === "qc") {
