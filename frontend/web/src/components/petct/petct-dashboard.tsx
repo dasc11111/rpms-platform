@@ -20,6 +20,7 @@ import {
   type PetctRadionuclide,
   type PetctExamState,
 } from "@/lib/petct";
+import { PetctAlertsPanel } from "@/components/petct/petct-alerts";
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -359,6 +360,9 @@ export function PetctDashboard({ initialData }: { initialData: DashboardData }) 
           color="default"
         />
       </div>
+
+      {/* Alertas en tiempo real */}
+      <PetctAlertsPanel />
 
       {/* Pacientes activos */}
       {activePatients.length > 0 && (
