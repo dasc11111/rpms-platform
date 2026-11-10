@@ -35,6 +35,8 @@ export async function GET() {
       dosimetersExtraviados,
       dosimetersOverdue,
       transportThisMonth,
+      petctExamenesHoy,
+      petctPacientesActivos,
     ] = await Promise.all([
       // Workers — 'active' and 'suspended' are in scope; 'inactive' is not
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
@@ -149,6 +151,10 @@ export async function GET() {
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM dosimeters WHERE status = 'asignado' AND actual_return_date IS NULL AND estimated_return_date < CURRENT_DATE`),
       // Transport shipments this month
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM transport_shipments WHERE EXTRACT(YEAR FROM transport_date) = EXTRACT(YEAR FROM NOW()) AND EXTRACT(MONTH FROM transport_date) = EXTRACT(MONTH FROM NOW())`),
+      // PET/CT exams today (Fase 24D)
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM petct_examinations WHERE injection_datetime::date = CURRENT_DATE`),
+      // PET/CT patients currently active (en_espera or en_examen)
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM petct_examinations WHERE state IN ('en_espera', 'en_examen')`),
     ]);
 
     // Compliance score
@@ -225,6 +231,12 @@ export async function GET() {
           label: "Embarques material radiactivo (mes actual)",
           value: transportThisMonth,
           status: "ok",
+        },
+        petct: {
+          label: "Exámenes PET/CT",
+          value: petctExamenesHoy,
+          status: "ok" as const,
+          detail: petctPacientesActivos > 0 ? `${petctPacientesActivos} paciente${petctPacientesActivos > 1 ? "s" : ""} activo${petctPacientesActivos > 1 ? "s" : ""}` : null,
         },
       },
     };
