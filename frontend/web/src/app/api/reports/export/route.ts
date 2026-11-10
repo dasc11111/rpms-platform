@@ -532,6 +532,104 @@ export async function GET(req: NextRequest) {
         return csvResponse(csv, `dosimetros_fisicos_${dateStr}.csv`);
       }
 
+      case "linac": {
+        // Fase 26B: exportación CSV del módulo Linac (unidades + alertas QC/mantención)
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              u.code,
+              u.name,
+              u.brand,
+              u.model,
+              u.serial_number,
+              u.location,
+              u.status,
+              u.commissioning_date,
+              u.authorization_number,
+              u.authorization_expiry_date,
+              COALESCE(qa.open_qc_alerts, 0) AS alertas_qc_abiertas,
+              COALESCE(ma.open_maint_alerts, 0) AS alertas_mantencion_abiertas,
+              u.notes
+            FROM linac_units u
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*)::int AS open_qc_alerts
+              FROM linac_qc_alerts a
+              WHERE a.unit_id = u.id AND a.status = 'abierta'
+            ) qa ON true
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*)::int AS open_maint_alerts
+              FROM linac_maintenance_alerts a
+              WHERE a.unit_id = u.id AND a.status = 'abierta'
+            ) ma ON true
+            ORDER BY u.name ASC LIMIT 1000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "code", label: "Código" },
+          { key: "name", label: "Equipo" },
+          { key: "brand", label: "Marca" },
+          { key: "model", label: "Modelo" },
+          { key: "serial_number", label: "N° Serie" },
+          { key: "location", label: "Ubicación" },
+          { key: "status", label: "Estado" },
+          { key: "commissioning_date", label: "Fecha Comisionamiento" },
+          { key: "authorization_number", label: "N° Autorización" },
+          { key: "authorization_expiry_date", label: "Vencimiento Autorización" },
+          { key: "alertas_qc_abiertas", label: "Alertas QC Abiertas" },
+          { key: "alertas_mantencion_abiertas", label: "Alertas Mantención Abiertas" },
+          { key: "notes", label: "Notas" },
+        ]);
+        return csvResponse(csv, `linac_unidades_${dateStr}.csv`);
+      }
+
+      case "radioterapia": {
+        // Fase 26B: exportación CSV del módulo Radioterapia SIGR
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              f.code,
+              f.name,
+              f.location,
+              f.status,
+              f.authorization_number,
+              f.authorization_expiry_date,
+              f.last_audit_date,
+              f.next_audit_date,
+              COALESCE(ic.open_incidents, 0) AS incidentes_abiertos,
+              COALESCE(ac.open_actions, 0) AS acciones_correctivas_abiertas,
+              f.notes
+            FROM rt_facilities f
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*)::int AS open_incidents
+              FROM rt_incidents i
+              WHERE i.facility_id = f.id AND i.status = 'abierto'
+            ) ic ON true
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*)::int AS open_actions
+              FROM rt_corrective_actions a
+              WHERE a.facility_id = f.id AND a.status IN ('pendiente','en_proceso')
+            ) ac ON true
+            ORDER BY f.name ASC LIMIT 1000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "code", label: "Código" },
+          { key: "name", label: "Instalación" },
+          { key: "location", label: "Ubicación" },
+          { key: "status", label: "Estado" },
+          { key: "authorization_number", label: "N° Autorización" },
+          { key: "authorization_expiry_date", label: "Vencimiento Autorización" },
+          { key: "last_audit_date", label: "Última Auditoría" },
+          { key: "next_audit_date", label: "Próxima Auditoría" },
+          { key: "incidentes_abiertos", label: "Incidentes Abiertos" },
+          { key: "acciones_correctivas_abiertas", label: "Acciones Correctivas Abiertas" },
+          { key: "notes", label: "Notas" },
+        ]);
+        return csvResponse(csv, `radioterapia_instalaciones_${dateStr}.csv`);
+      }
+
       case "summary":
       default: {
         // Resumen ejecutivo como CSV

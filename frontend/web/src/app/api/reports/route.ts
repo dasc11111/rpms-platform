@@ -37,6 +37,10 @@ export async function GET() {
       transportThisMonth,
       petctExamenesHoy,
       petctPacientesActivos,
+      linacQcAlerts,
+      linacMaintenanceAlerts,
+      rtIncidentesAbiertos,
+      rtAccionesAbiertas,
     ] = await Promise.all([
       // Workers — 'active' and 'suspended' are in scope; 'inactive' is not
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM workers WHERE status <> 'inactive'`),
@@ -155,6 +159,14 @@ export async function GET() {
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM petct_examinations WHERE injection_datetime::date = CURRENT_DATE`),
       // PET/CT patients currently active (en_espera or en_examen)
       safeCount(() => sql`SELECT COUNT(*)::text as count FROM petct_examinations WHERE state IN ('en_espera', 'en_examen')`),
+      // Linac QC alerts open
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM linac_qc_alerts WHERE status = 'abierta'`),
+      // Linac maintenance alerts open
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM linac_maintenance_alerts WHERE status = 'abierta'`),
+      // Radioterapia incidents open
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM rt_incidents WHERE status = 'abierto'`),
+      // Radioterapia acciones correctivas abiertas
+      safeCount(() => sql`SELECT COUNT(*)::text as count FROM rt_corrective_actions WHERE status IN ('pendiente','en_proceso')`),
     ]);
 
     // Compliance score
@@ -237,6 +249,21 @@ export async function GET() {
           value: petctExamenesHoy,
           status: "ok" as const,
           detail: petctPacientesActivos > 0 ? `${petctPacientesActivos} paciente${petctPacientesActivos > 1 ? "s" : ""} activo${petctPacientesActivos > 1 ? "s" : ""}` : null,
+        },
+        linac: {
+          label: "Alertas Linac abiertas",
+          value: linacQcAlerts + linacMaintenanceAlerts,
+          status: (linacQcAlerts + linacMaintenanceAlerts) === 0 ? "ok" : linacQcAlerts > 0 ? "danger" : "warning",
+          detail: [
+            linacQcAlerts > 0 ? `QC: ${linacQcAlerts}` : null,
+            linacMaintenanceAlerts > 0 ? `Mantención: ${linacMaintenanceAlerts}` : null,
+          ].filter(Boolean).join(" · ") || null,
+        },
+        radioterapia: {
+          label: "Incidentes Radioterapia abiertos",
+          value: rtIncidentesAbiertos,
+          status: rtIncidentesAbiertos === 0 ? (rtAccionesAbiertas === 0 ? "ok" : "warning") : "danger",
+          detail: rtAccionesAbiertas > 0 ? `${rtAccionesAbiertas} acción(es) correctiva(s) pendiente(s)` : null,
         },
       },
     };
