@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Syringe, DoorOpen, Trash2, AlertTriangle } from "lucide-react";
+import { Search, Syringe, DoorOpen, Trash2, AlertTriangle, ScanLine } from "lucide-react";
 
 type PatientRow = {
   run_normalizado: string;
@@ -10,13 +10,14 @@ type PatientRow = {
   total_administraciones: number;
   total_liberaciones: number;
   total_residuos: number;
+  total_petct: number;
   variantes_run: number;
   ultima_actividad: string | null;
   primera_actividad: string | null;
 };
 
 type TimelineRow = {
-  origen: "i131" | "room_release" | "residuo";
+  origen: "i131" | "room_release" | "residuo" | "petct";
   id: number;
   event_date: string | null;
   paciente_nombre: string;
@@ -33,6 +34,7 @@ const ORIGEN_LABEL: Record<TimelineRow["origen"], string> = {
   i131: "Administracion I-131",
   room_release: "Liberacion de Sala",
   residuo: "Gestion de Residuos Radiactivos (Rotulo)",
+  petct: "Examen PET/CT",
 };
 
 function formatDate(d: string | null) {
@@ -128,8 +130,9 @@ export function PatientsApp() {
                   <th className="py-1.5 pr-2 font-medium">Paciente</th>
                   <th className="py-1.5 pr-2 font-medium">RUN</th>
                   <th className="py-1.5 pr-2 font-medium text-center">I-131</th>
-                  <th className="py-1.5 pr-2 font-medium text-center">Liberaciones</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">Lib. Sala</th>
                   <th className="py-1.5 pr-2 font-medium text-center">Residuos</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">PET/CT</th>
                   <th className="py-1.5 pr-2 font-medium">Ultima actividad</th>
                 </tr>
               </thead>
@@ -160,12 +163,13 @@ export function PatientsApp() {
                     <td className="py-1.5 pr-2 text-center">{r.total_administraciones}</td>
                     <td className="py-1.5 pr-2 text-center">{r.total_liberaciones}</td>
                     <td className="py-1.5 pr-2 text-center">{r.total_residuos}</td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_petct ?? 0}</td>
                     <td className="py-1.5 pr-2">{formatDate(r.ultima_actividad)}</td>
                   </tr>
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
                       Sin pacientes con RUN registrado en I-131, Liberacion de Sala o Residuos.
                     </td>
                   </tr>
@@ -195,6 +199,8 @@ export function PatientsApp() {
                     <Syringe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
                   ) : t.origen === "room_release" ? (
                     <DoorOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  ) : t.origen === "petct" ? (
+                    <ScanLine className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
                   ) : (
                     <Trash2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
                   )}

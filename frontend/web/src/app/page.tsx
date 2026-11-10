@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
+import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, ScanLine, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel, type DashboardAlert } from "@/components/dashboard/alerts-panel";
@@ -228,6 +228,26 @@ export default async function Dashboard() {
     qcSpectVencidas = Number((spectDue[0] as any)?.count ?? 0);
   } catch {}
 
+  // Fase 24D — Exámenes PET/CT: exámenes realizados hoy y pacientes activos
+  // (en espera o en examen). Fallback gracioso si petct_examinations no existe.
+  let petctExamenesHoy = 0;
+  let petctPacientesActivos = 0;
+  try {
+    const { rows: petctHoyRows } = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM petct_examinations
+      WHERE injection_datetime::date = CURRENT_DATE
+    `;
+    petctExamenesHoy = Number((petctHoyRows[0] as any)?.count ?? 0);
+
+    const { rows: petctActivosRows } = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM petct_examinations
+      WHERE state IN ('en_espera', 'en_examen')
+    `;
+    petctPacientesActivos = Number((petctActivosRows[0] as any)?.count ?? 0);
+  } catch {}
+
   // ── Build real dashboard alerts from DB data ────────────────────────────────
   const dashboardAlerts: DashboardAlert[] = [];
 
@@ -436,6 +456,8 @@ export default async function Dashboard() {
         <KPICard label="QC Activímetro vencidas" value={qcActivimetroVencidas} href="/quality-control/activimetro/dashboard" icon={Activity} tone={qcActivimetroVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
         <KPICard label="QC Gammacámara vencidas" value={qcGammacamaraVencidas} href="/quality-control/gammacamara" icon={Activity} tone={qcGammacamaraVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
         <KPICard label="QC SPECT vencidas" value={qcSpectVencidas} href="/quality-control/spect" icon={Activity} tone={qcSpectVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="Exámenes PET/CT hoy" value={petctExamenesHoy} href="/petct" icon={ScanLine} hint="realizados hoy" />
+        <KPICard label="Pacientes PET/CT activos" value={petctPacientesActivos} href="/petct" icon={ScanLine} tone={petctPacientesActivos > 0 ? "warning" : undefined} hint="en espera o en examen" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
