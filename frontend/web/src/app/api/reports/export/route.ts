@@ -354,6 +354,39 @@ export async function GET(req: NextRequest) {
         return csvResponse(csv, `contaminacion_superficial_${dateStr}.csv`);
       }
 
+      case "petct": {
+        // Fase 24D: exportación CSV de exámenes PET/CT
+        const { rows: petctRows } = await sql`
+          SELECT
+            id,
+            patient_id,
+            patient_name,
+            radiopharmaceutical,
+            administered_mbq,
+            injection_datetime,
+            state,
+            operator,
+            prescribing_physician,
+            notes
+          FROM petct_examinations
+          ORDER BY injection_datetime DESC
+          LIMIT 2000
+        `;
+        const csv = toCSV(petctRows as Record<string, unknown>[], [
+          { key: "id", label: "ID" },
+          { key: "patient_id", label: "RUN Paciente" },
+          { key: "patient_name", label: "Nombre Paciente" },
+          { key: "radiopharmaceutical", label: "Radiofármaco" },
+          { key: "administered_mbq", label: "Dosis Admin. (MBq)" },
+          { key: "injection_datetime", label: "Fecha/Hora Inyección" },
+          { key: "state", label: "Estado" },
+          { key: "operator", label: "Operador" },
+          { key: "prescribing_physician", label: "Médico Prescriptor" },
+          { key: "notes", label: "Notas" },
+        ]);
+        return csvResponse(csv, `examenes_petct_${dateStr}.csv`);
+      }
+
       case "summary":
       default: {
         // Resumen ejecutivo como CSV

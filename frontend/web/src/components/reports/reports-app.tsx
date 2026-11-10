@@ -213,6 +213,15 @@ const REPORT_TYPES = [
     pageHref: "/blindaje",
   },
   {
+    id: "petct",
+    name: "Registro de Exámenes PET/CT",
+    description: "Libro de exámenes PET/CT con radiofármaco, dosis administrada (MBq), estado del examen y datos del paciente. DS 133/1984 Art. 22-26, IAEA HHS No. 1.",
+    format: "CSV · PDF",
+    regulation: "DS 133/1984 · IAEA HHS No. 1",
+    exportType: "petct",
+    pdfApiHref: "/api/petct/export/pdf",
+  },
+  {
     id: "qc_petct",
     name: "Informe de Control de Calidad PET/CT",
     description: "Cumplimiento de pruebas PET, CT e interacción PET/CT, alertas activas y acciones recomendadas (Fase P).",
