@@ -387,6 +387,151 @@ export async function GET(req: NextRequest) {
         return csvResponse(csv, `examenes_petct_${dateStr}.csv`);
       }
 
+      case "instruments": {
+        // Fase 26A: exportación CSV del inventario de instrumentos
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              i.code,
+              i.name,
+              t.name AS tipo,
+              i.brand,
+              i.model,
+              i.serial_number,
+              i.location,
+              i.status,
+              i.acquisition_date,
+              lc.calibration_date AS ultima_calibracion,
+              lc.expiry_date AS vencimiento_calibracion,
+              lc.certificate_number AS certificado_calibracion,
+              COALESCE(lc.company_name, cc.name) AS empresa_calibracion,
+              COALESCE(fc.open_count, 0) AS fallas_abiertas,
+              i.notes
+            FROM instruments i
+            LEFT JOIN instrument_types t ON t.id = i.type_id
+            LEFT JOIN LATERAL (
+              SELECT c.calibration_date, c.expiry_date, c.certificate_number, c.company_name, c.company_id
+              FROM calibrations c WHERE c.instrument_id = i.id
+              ORDER BY c.calibration_date DESC, c.id DESC LIMIT 1
+            ) lc ON true
+            LEFT JOIN calibration_companies cc ON cc.id = lc.company_id
+            LEFT JOIN LATERAL (
+              SELECT COUNT(*)::int AS open_count FROM instrument_failures f
+              WHERE f.instrument_id = i.id AND f.status IN ('abierta','en_proceso')
+            ) fc ON true
+            ORDER BY i.name ASC
+            LIMIT 2000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "code", label: "Código" },
+          { key: "name", label: "Instrumento" },
+          { key: "tipo", label: "Tipo" },
+          { key: "brand", label: "Marca" },
+          { key: "model", label: "Modelo" },
+          { key: "serial_number", label: "N° Serie" },
+          { key: "location", label: "Ubicación" },
+          { key: "status", label: "Estado" },
+          { key: "acquisition_date", label: "Fecha Adquisición" },
+          { key: "ultima_calibracion", label: "Última Calibración" },
+          { key: "vencimiento_calibracion", label: "Vencimiento Calibración" },
+          { key: "certificado_calibracion", label: "N° Certificado" },
+          { key: "empresa_calibracion", label: "Empresa Calibradora" },
+          { key: "fallas_abiertas", label: "Fallas Abiertas" },
+          { key: "notes", label: "Notas" },
+        ]);
+        return csvResponse(csv, `instrumentos_medicion_${dateStr}.csv`);
+      }
+
+      case "transport": {
+        // Fase 26A: exportación CSV de embarques de transporte de material radiactivo
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              s.transport_date,
+              s.correlative_number,
+              s.material_code,
+              s.it_value,
+              s.dose_contact,
+              s.dose_1m,
+              s.dose_vehicle,
+              s.requested_activity_mci,
+              s.driver_name,
+              s.opr_name,
+              s.signage_dosimeter,
+              s.signage_radiactivo7,
+              s.signage_nu2915,
+              s.notes,
+              s.created_at
+            FROM transport_shipments s
+            ORDER BY s.transport_date DESC, s.correlative_number DESC
+            LIMIT 2000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "transport_date", label: "Fecha Transporte" },
+          { key: "correlative_number", label: "N° Correlativo" },
+          { key: "material_code", label: "Código Material" },
+          { key: "it_value", label: "IT (mR/h)" },
+          { key: "dose_contact", label: "Dosis Contacto (mR/h)" },
+          { key: "dose_1m", label: "Dosis 1m (mR/h)" },
+          { key: "dose_vehicle", label: "Dosis Vehículo (mR/h)" },
+          { key: "requested_activity_mci", label: "Actividad Solicitada (mCi)" },
+          { key: "driver_name", label: "Conductor" },
+          { key: "opr_name", label: "OPR" },
+          { key: "signage_dosimeter", label: "Señalética Dosímetro" },
+          { key: "signage_radiactivo7", label: "Señalética Radiactivo 7" },
+          { key: "signage_nu2915", label: "Señalética NU 2915" },
+          { key: "notes", label: "Notas" },
+          { key: "created_at", label: "Fecha Registro" },
+        ]);
+        return csvResponse(csv, `transporte_material_radiactivo_${dateStr}.csv`);
+      }
+
+      case "dosimeters": {
+        // Fase 26A: exportación CSV del inventario de dosímetros físicos
+        const rows = await safeQuery(async () => {
+          const { rows } = await sql`
+            SELECT
+              code,
+              type,
+              status,
+              worker_name,
+              worker_rut,
+              service,
+              unit,
+              assigned_at,
+              estimated_return_date,
+              actual_return_date,
+              last_reading_date,
+              last_reading_msv,
+              notes
+            FROM dosimeters
+            ORDER BY code ASC
+            LIMIT 5000
+          `;
+          return rows as Record<string, unknown>[];
+        }, []);
+        const csv = toCSV(rows, [
+          { key: "code", label: "Código XA" },
+          { key: "type", label: "Tipo" },
+          { key: "status", label: "Estado" },
+          { key: "worker_name", label: "Trabajador Asignado" },
+          { key: "worker_rut", label: "RUT Trabajador" },
+          { key: "service", label: "Servicio" },
+          { key: "unit", label: "Unidad" },
+          { key: "assigned_at", label: "Fecha Asignación" },
+          { key: "estimated_return_date", label: "Fecha Devolución Estimada" },
+          { key: "actual_return_date", label: "Fecha Devolución Real" },
+          { key: "last_reading_date", label: "Fecha Última Lectura" },
+          { key: "last_reading_msv", label: "Última Lectura (mSv)" },
+          { key: "notes", label: "Notas" },
+        ]);
+        return csvResponse(csv, `dosimetros_fisicos_${dateStr}.csv`);
+      }
+
       case "summary":
       default: {
         // Resumen ejecutivo como CSV
