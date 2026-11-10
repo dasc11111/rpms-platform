@@ -84,14 +84,38 @@ const NUCLEO_OPERACIONAL: ModuleCard[] = [
   },
 ];
 
+// Fase 23 (Medicina Nuclear) — Registro de Exámenes PET/CT: registro
+// individual de exámenes PET/CT con radiofármaco, dosis administrada (MBq),
+// uptake, estado del examen, alertas en tiempo real y trazabilidad por
+// paciente. Integrado con el módulo de Trazabilidad (Fase 24) para que los
+// exámenes PET/CT aparezcan en la línea de tiempo del paciente.
+const PETCT_EXAMENES: ModuleCard[] = [
+  {
+    href: "/petct",
+    label: "Registro de Exámenes PET/CT",
+    description: "Registro individual de exámenes: radiofármaco, dosis administrada (MBq), uptake, estado del examen y alertas en tiempo real (captacion vencida, alta retrasada). DS 133/1984 Art. 22-26, IAEA HHS No. 1.",
+    icon: ScanLine,
+    status: "activo",
+    phase: "Fase 23 (nuevo)",
+  },
+  {
+    href: "/petct/dashboard",
+    label: "Dashboard PET/CT",
+    description: "Panel analítico: exámenes por estado, distribución de radiofármacos, carga de trabajo y alertas activas del servicio PET/CT.",
+    icon: BarChart3,
+    status: "activo",
+    phase: "Fase 23C (nuevo)",
+  },
+];
+
 const TRAZABILIDAD: ModuleCard[] = [
   {
     href: "/nuclear-medicine/patients",
     label: "Pacientes y Tratamientos",
-    description: "Vista de trazabilidad de solo lectura: combina I-131 y Liberacion de Sala por RUN del paciente. No crea ni modifica registros.",
+    description: "Vista de trazabilidad de solo lectura: combina I-131, Liberacion de Sala, Residuos y Examenes PET/CT por RUN del paciente. No crea ni modifica registros.",
     icon: Users,
     status: "activo",
-    phase: "Fase 1 (nuevo)",
+    phase: "Fase 1 + 24 (actualizado)",
   },
 ];
 
@@ -380,6 +404,19 @@ export default async function NuclearMedicinePage() {
     incidentesAbiertos = Number((rows[0] as any)?.count ?? 0);
   } catch {}
 
+  let petctHoy = 0;
+  let petctActivos = 0;
+  try {
+    const { rows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE injection_datetime::date = CURRENT_DATE)::int AS hoy,
+        COUNT(*) FILTER (WHERE state IN ('en_espera', 'en_examen'))::int AS activos
+      FROM petct_examinations
+    `;
+    petctHoy = Number((rows[0] as any)?.hoy ?? 0);
+    petctActivos = Number((rows[0] as any)?.activos ?? 0);
+  } catch {}
+
   const kpis: NmKpi[] = [
     {
       label: "Administraciones hoy",
@@ -416,6 +453,13 @@ export default async function NuclearMedicinePage() {
       href: "/nuclear-medicine/incidents",
       detail: incidentesAbiertos > 0 ? "Requieren cierre" : "Sin incidentes abiertos",
     },
+    {
+      label: "Exámenes PET/CT hoy",
+      value: petctHoy,
+      status: "neutral",
+      href: "/petct",
+      detail: petctActivos > 0 ? `${petctActivos} activo${petctActivos > 1 ? "s" : ""}` : "Sin pacientes activos",
+    },
   ];
 
   return (
@@ -430,7 +474,7 @@ export default async function NuclearMedicinePage() {
       </p>
 
       {/* KPI strip — real-time operational summary */}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {kpis.map((kpi) => (
           <NmKpiCard key={kpi.label} kpi={kpi} />
         ))}
@@ -440,6 +484,11 @@ export default async function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Nucleo operacional (en produccion)</h2>
       </div>
       <ModuleGrid items={NUCLEO_OPERACIONAL} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Exámenes PET/CT (en producción)</h2>
+      </div>
+      <ModuleGrid items={PETCT_EXAMENES} />
 
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">Trazabilidad</h2>
