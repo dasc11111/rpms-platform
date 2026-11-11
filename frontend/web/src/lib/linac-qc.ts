@@ -124,7 +124,7 @@ LIMIT 1;
 `;
 const row = rows[0] as Record<string, unknown> | undefined;
 if (!row) return null;
-const referenceValue = extractReferenceValue(row.data);
+const referenceValue = extractReferenceValue(row.data as Record<string, unknown>);
 return {
 id: row.id,
 version: row.version,

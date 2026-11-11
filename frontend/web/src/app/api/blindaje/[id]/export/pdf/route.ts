@@ -76,7 +76,24 @@ export async function GET(
     if (!projRows[0]) {
       return NextResponse.json({ error: "Proyecto de blindaje no encontrado." }, { status: 404 });
     }
-    const project = projRows[0] as Record<string, unknown>;
+    // Helper to extract typed fields from the SQL row
+    const projectRow = projRows[0] as Record<string, unknown>;
+    const project = {
+      name: String(projectRow.name ?? ""),
+      project_number: String(projectRow.project_number ?? ""),
+      version: String(projectRow.version ?? ""),
+      institution: String(projectRow.institution ?? ""),
+      service: String(projectRow.service ?? ""),
+      unit: String(projectRow.unit ?? ""),
+      address: String(projectRow.address ?? ""),
+      city: String(projectRow.city ?? ""),
+      facility_type: String(projectRow.facility_type ?? ""),
+      status: String(projectRow.status ?? ""),
+      responsible: String(projectRow.responsible ?? ""),
+      opr_name: String(projectRow.opr_name ?? ""),
+      medical_physicist: String(projectRow.medical_physicist ?? ""),
+      created_at: projectRow.created_at,
+    };
 
     // Load related data in parallel
     const [pir, barriers, sources, workload, institution] = await Promise.all([
