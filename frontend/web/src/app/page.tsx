@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, ScanLine, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info } from "lucide-react";
+import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, ScanLine, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info, Zap, HeartPulse } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel, type DashboardAlert } from "@/components/dashboard/alerts-panel";
@@ -248,6 +248,19 @@ export default async function Dashboard() {
     petctPacientesActivos = Number((petctActivosRows[0] as any)?.count ?? 0);
   } catch {}
 
+  // Fase 26B — Linac y Radioterapia KPIs en dashboard principal
+  let linacQcAlerts = 0;
+  let linacMaintenanceAlerts = 0;
+  let rtIncidentesAbiertos = 0;
+  try {
+    const { rows: lqcRows } = await sql`SELECT COUNT(*)::int AS count FROM linac_qc_alerts WHERE status = 'abierta'`;
+    linacQcAlerts = Number((lqcRows[0] as any)?.count ?? 0);
+    const { rows: lmaRows } = await sql`SELECT COUNT(*)::int AS count FROM linac_maintenance_alerts WHERE status = 'abierta'`;
+    linacMaintenanceAlerts = Number((lmaRows[0] as any)?.count ?? 0);
+    const { rows: rtRows } = await sql`SELECT COUNT(*)::int AS count FROM rt_incidents WHERE status = 'abierto'`;
+    rtIncidentesAbiertos = Number((rtRows[0] as any)?.count ?? 0);
+  } catch {}
+
   // ── Build real dashboard alerts from DB data ────────────────────────────────
   const dashboardAlerts: DashboardAlert[] = [];
 
@@ -458,6 +471,9 @@ export default async function Dashboard() {
         <KPICard label="QC SPECT vencidas" value={qcSpectVencidas} href="/quality-control/spect" icon={Activity} tone={qcSpectVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
         <KPICard label="Exámenes PET/CT hoy" value={petctExamenesHoy} href="/petct" icon={ScanLine} hint="realizados hoy" />
         <KPICard label="Pacientes PET/CT activos" value={petctPacientesActivos} href="/petct" icon={ScanLine} tone={petctPacientesActivos > 0 ? "warning" : undefined} hint="en espera o en examen" />
+        <KPICard label="Alertas QC Linac" value={linacQcAlerts} href="/linac" icon={Zap} tone={linacQcAlerts > 0 ? "danger" : undefined} hint="controles vencidos o fallidos" />
+        <KPICard label="Alertas Mantención Linac" value={linacMaintenanceAlerts} href="/linac" icon={Zap} tone={linacMaintenanceAlerts > 0 ? "warning" : undefined} hint="mantenciones pendientes" />
+        <KPICard label="Incidentes Radioterapia" value={rtIncidentesAbiertos} href="/radioterapia" icon={HeartPulse} tone={rtIncidentesAbiertos > 0 ? "danger" : undefined} hint="incidentes abiertos SIGR" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
