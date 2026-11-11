@@ -20,6 +20,9 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Zap,
+  HeartPulse,
+  Activity,
 } from "lucide-react";
 import { sql } from "@/lib/db";
 
@@ -250,6 +253,67 @@ const EMERGENCIAS: ModuleCard[] = [
   },
 ];
 
+// Fase 25 (Linac) — Aceleradores Lineales (CML): inventario de unidades Linac,
+// autorizaciones, control de calidad (QC) y mantención periódica. DS 133/1984,
+// IAEA Safety Reports No. 38. Módulo independiente con tablas propias
+// (linac_units, linac_qc_alerts, linac_maintenance_alerts).
+const LINAC: ModuleCard[] = [
+  {
+    href: "/linac",
+    label: "Unidades Linac",
+    description: "Inventario de aceleradores lineales con estado de autorización, alertas de control de calidad (QC) y mantención periódica. DS 133/1984, IAEA Safety Reports No. 38.",
+    icon: Zap,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+  {
+    href: "/linac/qc",
+    label: "Control de Calidad Linac",
+    description: "Registro y seguimiento de pruebas de QC para aceleradores lineales: alertas abiertas, historial y vencimientos por unidad.",
+    icon: Activity,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+  {
+    href: "/linac/maintenance",
+    label: "Mantención Linac",
+    description: "Órdenes de mantención periódica y correctiva de unidades Linac: programación, estado y alertas de vencimiento.",
+    icon: Gauge,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+];
+
+// Fase 25 (Radioterapia) — SIGR: instalaciones de radioterapia con
+// autorización, auditorías, incidentes abiertos y acciones correctivas
+// pendientes. DS 133/1984 Cap. IV, IAEA Safety Standards Series SS-115.
+const RADIOTERAPIA: ModuleCard[] = [
+  {
+    href: "/radioterapia",
+    label: "Instalaciones de Radioterapia (SIGR)",
+    description: "Registro de instalaciones de radioterapia con estado de autorización, auditorías, incidentes abiertos y acciones correctivas. DS 133/1984 Cap. IV, IAEA SS-115.",
+    icon: HeartPulse,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+  {
+    href: "/radioterapia/incidents",
+    label: "Incidentes Radioterapia",
+    description: "Registro SIGR de incidentes de radioterapia: clasificación, estado, seguimiento y cierre con trazabilidad regulatoria.",
+    icon: AlertTriangle,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+  {
+    href: "/radioterapia/corrective-actions",
+    label: "Acciones Correctivas RT",
+    description: "Acciones correctivas pendientes y en proceso derivadas de incidentes de radioterapia. Estado, responsable y fecha límite.",
+    icon: ClipboardCheck,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+];
+
 function ModuleGrid({ items }: { items: ModuleCard[] }) {
   return (
     <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -417,6 +481,23 @@ export default async function NuclearMedicinePage() {
     petctActivos = Number((rows[0] as any)?.activos ?? 0);
   } catch {}
 
+  // Fase 25 — Linac y Radioterapia KPIs
+  let linacQcAlerts = 0;
+  let linacMaintAlerts = 0;
+  let rtIncidentes = 0;
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM linac_qc_alerts WHERE status = 'abierta'`;
+    linacQcAlerts = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM linac_maintenance_alerts WHERE status = 'abierta'`;
+    linacMaintAlerts = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM rt_incidents WHERE status = 'abierto'`;
+    rtIncidentes = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
   const kpis: NmKpi[] = [
     {
       label: "Administraciones hoy",
@@ -460,6 +541,27 @@ export default async function NuclearMedicinePage() {
       href: "/petct",
       detail: petctActivos > 0 ? `${petctActivos} activo${petctActivos > 1 ? "s" : ""}` : "Sin pacientes activos",
     },
+    {
+      label: "Alertas QC Linac",
+      value: linacQcAlerts,
+      status: linacQcAlerts > 0 ? "danger" : "ok",
+      href: "/linac",
+      detail: linacQcAlerts > 0 ? "Controles vencidos o fallidos" : "Sin alertas QC",
+    },
+    {
+      label: "Mantención Linac",
+      value: linacMaintAlerts,
+      status: linacMaintAlerts > 0 ? "warning" : "ok",
+      href: "/linac",
+      detail: linacMaintAlerts > 0 ? "Mantenciones pendientes" : "Sin alertas mantención",
+    },
+    {
+      label: "Incidentes RT",
+      value: rtIncidentes,
+      status: rtIncidentes > 0 ? "danger" : "ok",
+      href: "/radioterapia",
+      detail: rtIncidentes > 0 ? "Incidentes SIGR abiertos" : "Sin incidentes abiertos",
+    },
   ];
 
   return (
@@ -474,7 +576,7 @@ export default async function NuclearMedicinePage() {
       </p>
 
       {/* KPI strip — real-time operational summary */}
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9">
         {kpis.map((kpi) => (
           <NmKpiCard key={kpi.label} kpi={kpi} />
         ))}
@@ -524,6 +626,17 @@ export default async function NuclearMedicinePage() {
         <h2 className="text-sm font-semibold">Emergencias e Incidentes (en produccion)</h2>
       </div>
       <ModuleGrid items={EMERGENCIAS} />
+
+      {/* Fase 25 — Linac y Radioterapia */}
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Aceleradores Lineales — CML (en producción)</h2>
+      </div>
+      <ModuleGrid items={LINAC} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Radioterapia — SIGR (en producción)</h2>
+      </div>
+      <ModuleGrid items={RADIOTERAPIA} />
 
       <div className="rounded-lg border border-border bg-surface p-4">
         <h2 className="mb-2 text-sm font-semibold">Documentacion de referencia</h2>
