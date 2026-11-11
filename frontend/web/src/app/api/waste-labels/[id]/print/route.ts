@@ -15,14 +15,15 @@ SET print_count = print_count + 1, last_printed_at = now(), updated_at = now()
 WHERE id = ${Number(id)}
 RETURNING *
 `;
-  if (!rows[0]) {
+  const label = rows[0] as Record<string, unknown> | undefined;
+  if (!label) {
     return NextResponse.json({ error: "Rótulo no encontrado" }, { status: 404 });
   }
 
 await sql`
 INSERT INTO waste_label_history (label_id, label_number, action, changed_by, snapshot)
-VALUES (${Number(id)}, ${rows[0].label_number}, 'printed', ${body.changed_by ?? null}, ${JSON.stringify(rows[0])})
+VALUES (${Number(id)}, ${label.label_number}, 'printed', ${body.changed_by ?? null}, ${JSON.stringify(label)})
 `;
 
-return NextResponse.json({ row: rows[0] });
+return NextResponse.json({ row: label });
 }

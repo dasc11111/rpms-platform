@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
       filter_can_release === "true" ? enriched.filter((r) => r.derived.can_release) :
       filter_can_release === "false" ? enriched.filter((r) => !r.derived.can_release) :
       enriched;
-    return NextResponse.json({ data: filtered, total: parseInt(countResult.rows[0].count, 10), limit, offset });
+    const countRow = countResult.rows[0] as Record<string, unknown> | undefined;
+    const total = parseInt(String(countRow?.count ?? 0), 10);
+    return NextResponse.json({ data: filtered, total, limit, offset });
   } catch (err) {
     console.error("[waste-records GET]", err);
     return NextResponse.json({ error: "Error al obtener residuos" }, { status: 500 });
@@ -136,7 +138,8 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: "id es obligatorio" }, { status: 400 });
     const check = await sql.query(`SELECT state FROM waste_records WHERE id = $1`, [id]);
     if (check.rows.length === 0) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
-    const { state } = check.rows[0];
+    const checkRow = check.rows[0] as Record<string, unknown> | undefined;
+    const { state } = (checkRow ?? {}) as { state?: string };
     if (!["liberado", "transferido", "descartado"].includes(state)) {
       return NextResponse.json({ error: "Solo se pueden eliminar registros ya liberados o descartados" }, { status: 409 });
     }

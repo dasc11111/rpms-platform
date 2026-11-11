@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
 
   await ensureAuthSchema();
     const { rows } = await sql`SELECT value FROM platform_settings WHERE key = 'session_timeout_minutes';`;
-    const sessionTimeoutMinutes = rows[0] ? Number(rows[0].value) : 30;
+    const secRow = rows[0] as Record<string, unknown> | undefined;
+    const sessionTimeoutMinutes = secRow ? Number(secRow.value) : 30;
 
   return NextResponse.json({ sessionTimeoutMinutes });
 }

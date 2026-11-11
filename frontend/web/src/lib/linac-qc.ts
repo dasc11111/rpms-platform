@@ -122,13 +122,14 @@ AND (${energy}::text IS NULL OR b.energy = ${energy}::text)
 ORDER BY b.approved_at DESC
 LIMIT 1;
 `;
-if (!rows[0]) return null;
-const referenceValue = extractReferenceValue(rows[0].data);
+const row = rows[0] as Record<string, unknown> | undefined;
+if (!row) return null;
+const referenceValue = extractReferenceValue(row.data);
 return {
-id: rows[0].id,
-version: rows[0].version,
-approvedAt: rows[0].approved_at,
-datasetId: rows[0].dataset_id,
+id: row.id,
+version: row.version,
+approvedAt: row.approved_at,
+datasetId: row.dataset_id,
 referenceValue,
 };
 }
