@@ -73,10 +73,10 @@ export async function GET(
 
     // Load project
     const { rows: projRows } = await sql`SELECT * FROM blindaje_projects WHERE id = ${projectId}`;
-    const project = projRows[0];
-    if (!project) {
+    if (!projRows[0]) {
       return NextResponse.json({ error: "Proyecto de blindaje no encontrado." }, { status: 404 });
     }
+    const project = projRows[0] as Record<string, unknown>;
 
     // Load related data in parallel
     const [pir, barriers, sources, workload, institution] = await Promise.all([
