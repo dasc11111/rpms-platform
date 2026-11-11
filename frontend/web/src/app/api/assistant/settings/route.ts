@@ -18,7 +18,7 @@ async function ensureTable() {
   `;
 }
 
-function shape(row: Record<string, unknown>) {
+function shape(row: Record<string, unknown> | undefined) {
   return {
     provider: row?.provider ?? "mock",
     model: row?.model ?? "",
