@@ -35,12 +35,15 @@ export async function POST(request: Request) {
   await ensureTable();
   const body: Record<string, unknown> = await request.json().catch(() => ({}));
   const messages: AssistantMessage[] = Array.isArray(body?.messages)
-    ? body.messages
+    ? (body.messages as Record<string, unknown>[])
         .filter(
           (m: Record<string, unknown>) =>
             m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
         )
-        .map((m: Record<string, unknown>) => ({ role: m.role, content: m.content }))
+        .map((m: Record<string, unknown>) => ({
+          role: m.role as AssistantMessage["role"],
+          content: m.content as string,
+        }))
     : [];
   const moduleLabel = getModuleLabel(typeof body?.module === "string" ? body.module : undefined);
 
