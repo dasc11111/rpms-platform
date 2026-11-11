@@ -22,7 +22,6 @@ import {
   Clock,
   Zap,
   HeartPulse,
-  Activity,
 } from "lucide-react";
 import { sql } from "@/lib/db";
 
@@ -260,25 +259,9 @@ const EMERGENCIAS: ModuleCard[] = [
 const LINAC: ModuleCard[] = [
   {
     href: "/linac",
-    label: "Unidades Linac",
-    description: "Inventario de aceleradores lineales con estado de autorización, alertas de control de calidad (QC) y mantención periódica. DS 133/1984, IAEA Safety Reports No. 38.",
+    label: "Aceleradores Lineales (CML)",
+    description: "Inventario de unidades Linac con autorizaciones, acceptance testing, commissioning, baseline, QC, mantención, incidentes y auditorías. DS 133/1984, IAEA Safety Reports No. 38.",
     icon: Zap,
-    status: "activo",
-    phase: "Fase 25 (nuevo)",
-  },
-  {
-    href: "/linac/qc",
-    label: "Control de Calidad Linac",
-    description: "Registro y seguimiento de pruebas de QC para aceleradores lineales: alertas abiertas, historial y vencimientos por unidad.",
-    icon: Activity,
-    status: "activo",
-    phase: "Fase 25 (nuevo)",
-  },
-  {
-    href: "/linac/maintenance",
-    label: "Mantención Linac",
-    description: "Órdenes de mantención periódica y correctiva de unidades Linac: programación, estado y alertas de vencimiento.",
-    icon: Gauge,
     status: "activo",
     phase: "Fase 25 (nuevo)",
   },
@@ -291,24 +274,8 @@ const RADIOTERAPIA: ModuleCard[] = [
   {
     href: "/radioterapia",
     label: "Instalaciones de Radioterapia (SIGR)",
-    description: "Registro de instalaciones de radioterapia con estado de autorización, auditorías, incidentes abiertos y acciones correctivas. DS 133/1984 Cap. IV, IAEA SS-115.",
+    description: "Instalaciones de radioterapia con estado de autorización, auditorías, incidentes abiertos, acciones correctivas, vencimientos y gestión integral. DS 133/1984 Cap. IV, IAEA SS-115.",
     icon: HeartPulse,
-    status: "activo",
-    phase: "Fase 25 (nuevo)",
-  },
-  {
-    href: "/radioterapia/incidents",
-    label: "Incidentes Radioterapia",
-    description: "Registro SIGR de incidentes de radioterapia: clasificación, estado, seguimiento y cierre con trazabilidad regulatoria.",
-    icon: AlertTriangle,
-    status: "activo",
-    phase: "Fase 25 (nuevo)",
-  },
-  {
-    href: "/radioterapia/corrective-actions",
-    label: "Acciones Correctivas RT",
-    description: "Acciones correctivas pendientes y en proceso derivadas de incidentes de radioterapia. Estado, responsable y fecha límite.",
-    icon: ClipboardCheck,
     status: "activo",
     phase: "Fase 25 (nuevo)",
   },
