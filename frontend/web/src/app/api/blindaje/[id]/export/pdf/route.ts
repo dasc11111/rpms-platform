@@ -141,7 +141,7 @@ export async function GET(
       doc.setFontSize(7);
       const oprLine = institution.opr_name ? `OPR: ${institution.opr_name}  ·  ` : "";
       const cchenLine = institution.cchen_code ? `CCHEN: ${institution.cchen_code}  ·  ` : "";
-      const facilityLine = FACILITY_LABELS[project.facility_type ?? ""] ?? (project.facility_type ?? "");
+      const facilityLine = FACILITY_LABELS[String(project.facility_type ?? "")] ?? (project.facility_type ?? "");
       doc.text(
         `${oprLine}${cchenLine}${facilityLine}  ·  DS 133/1984 MINSAL  ·  Generado: ${dateStr}`,
         14,
@@ -159,7 +159,7 @@ export async function GET(
       ["Nombre del proyecto", fmtStr(project.name), "Número / Versión", `${fmtStr(project.project_number)} / ${fmtStr(project.version)}`],
       ["Institución", fmtStr(project.institution), "Servicio / Unidad", `${fmtStr(project.service)} / ${fmtStr(project.unit)}`],
       ["Dirección", fmtStr(project.address), "Ciudad", fmtStr(project.city)],
-      ["Tipo de instalación", FACILITY_LABELS[project.facility_type ?? ""] ?? fmtStr(project.facility_type), "Estado", fmtStr(project.status)],
+      ["Tipo de instalación", FACILITY_LABELS[String(project.facility_type ?? "")] ?? fmtStr(project.facility_type), "Estado", fmtStr(project.status)],
       ["Responsable técnico", fmtStr(project.responsible), "OPR", fmtStr(project.opr_name)],
       ["Físico médico", fmtStr(project.medical_physicist), "Fecha creación", fmtDate(project.created_at)],
     ];
@@ -312,13 +312,13 @@ export async function GET(
       ? barriers.map((b: Record<string, unknown>) => [
           fmtStr(b.code),
           fmtStr(b.name),
-          BARRIER_TYPE_LABELS[b.barrier_type ?? ""] ?? fmtStr(b.barrier_type),
+          BARRIER_TYPE_LABELS[String(b.barrier_type ?? "")] ?? fmtStr(b.barrier_type),
           fmtStr(b.material),
           b.thickness_existing_cm !== null ? `${fmtNum(b.thickness_existing_cm, 1)} cm` : "—",
           b.thickness_required_cm !== null ? `${fmtNum(b.thickness_required_cm, 2)} cm` : "—",
           b.thickness_adopted_cm !== null ? `${fmtNum(b.thickness_adopted_cm, 2)} cm` : "—",
           b.result_value !== null ? fmtNum(b.result_value, 4) : "—",
-          STATUS_LABELS[b.result_status ?? ""] ?? fmtStr(b.result_status),
+          STATUS_LABELS[String(b.result_status ?? "")] ?? fmtStr(b.result_status),
         ])
       : [["Sin barreras registradas", "—", "—", "—", "—", "—", "—", "—", "—"]];
 

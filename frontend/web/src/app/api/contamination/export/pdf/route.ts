@@ -212,9 +212,9 @@ export async function GET(req: NextRequest) {
       r.radionuclido ?? "—",
       r.actividad_bq_m2 !== null ? fmtNum(r.actividad_bq_m2, 1) : "—",
       r.pct_limite !== null ? `${fmtNum(r.pct_limite, 1)}%` : "—",
-      CLASIFICACION_LABELS[r.clasificacion ?? ""] ?? (r.clasificacion ?? "—"),
+      CLASIFICACION_LABELS[String(r.clasificacion ?? "")] ?? (r.clasificacion ?? "—"),
       r.tasa_dosis_usv_h !== null ? `${fmtNum(r.tasa_dosis_usv_h, 2)}` : "—",
-      ESTADO_LABELS[r.estado ?? ""] ?? (r.estado ?? "—"),
+      ESTADO_LABELS[String(r.estado ?? "")] ?? (r.estado ?? "—"),
       r.responsable ?? "—",
       r.accion_correctiva ? r.accion_correctiva.slice(0, 35) : "—",
     ]);

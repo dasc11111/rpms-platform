@@ -35,7 +35,7 @@ const TEST_TYPE_LABELS: Record<string, string> = {
 };
 
 function testLabel(testType: string): string {
-  return TEST_TYPE_LABELS[testType] ?? testType;
+  return TEST_TYPE_LABELS[String(testType)] ?? testType;
 }
 
 function frequencyLabel(days: number): string {

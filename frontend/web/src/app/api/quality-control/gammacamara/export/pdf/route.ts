@@ -92,8 +92,8 @@ const TEST_MODE_LABELS: Record<string, string> = {
 };
 
 function testLabel(testType: string, testMode: string): string {
-  const t = TEST_TYPE_LABELS[testType] ?? testType;
-  const m = TEST_MODE_LABELS[testMode] ?? testMode;
+  const t = TEST_TYPE_LABELS[String(testType)] ?? testType;
+  const m = TEST_MODE_LABELS[String(testMode)] ?? testMode;
   return m && testMode !== "na" ? `${t} (${m})` : t;
 }
 
@@ -405,8 +405,8 @@ export async function GET(request: NextRequest) {
         margin: { left: ML, right: MR },
         head: [["Prueba", "Modo", "Frecuencia", "Último registro", "Próximo vencimiento", "Días restantes", "Estado"]],
         body: complianceRows.map((r) => [
-          TEST_TYPE_LABELS[r.test_type] ?? r.test_type,
-          TEST_MODE_LABELS[r.test_mode] ?? r.test_mode,
+          TEST_TYPE_LABELS[String(r.test_type)] ?? r.test_type,
+          TEST_MODE_LABELS[String(r.test_mode)] ?? r.test_mode,
           r.frequency_label,
           fmtDate(r.last_test_date),
           fmtDate(r.next_due_date),
@@ -567,8 +567,8 @@ export async function GET(request: NextRequest) {
         head: [["Severidad", "Prueba", "Modo", "Mensaje", "Acción recomendada"]],
         body: alerts.map((a) => [
           a.severity.toUpperCase(),
-          TEST_TYPE_LABELS[a.test_type] ?? a.test_type,
-          TEST_MODE_LABELS[a.test_mode] ?? a.test_mode,
+          TEST_TYPE_LABELS[String(a.test_type)] ?? a.test_type,
+          TEST_MODE_LABELS[String(a.test_mode)] ?? a.test_mode,
           fmtStr(a.message),
           fmtStr(a.recommended_action),
         ]),

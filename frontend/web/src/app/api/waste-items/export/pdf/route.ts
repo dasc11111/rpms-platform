@@ -170,7 +170,7 @@ export async function GET(req: NextRequest) {
     doc.text(`Generado: ${dateLabel}`, pageW - 14, y + 5, { align: "right" });
 
     const filterParts: string[] = [];
-    if (estado) filterParts.push(`Estado: ${ESTADO_LABELS[estado] ?? estado}`);
+    if (estado) filterParts.push(`Estado: ${ESTADO_LABELS[String(estado)] ?? estado}`);
     if (radionuclide) filterParts.push(`RN: ${radionuclide}`);
     if (filterParts.length > 0) { doc.text(`Filtros: ${filterParts.join("  ·  ")}`, 14, y + 10); y += 4; }
 
@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
         startY: y,
         head: [["Estado", "N fichas", "% del total"]],
         body: estadoEntries.map(([st, n]) => [
-          ESTADO_LABELS[st] ?? st,
+          ESTADO_LABELS[String(st)] ?? st,
           String(n),
           total > 0 ? `${((n / total) * 100).toFixed(1)}%` : "—",
         ]),
@@ -266,7 +266,7 @@ export async function GET(req: NextRequest) {
           it.item_code,
           it.radionuclide_code + (it.radionuclide_name ? `\n${truncate(it.radionuclide_name, 18)}` : ""),
           TIPO_LABEL[it.tipo_residuo] ?? it.tipo_residuo,
-          ESTADO_LABELS[it.estado] ?? it.estado,
+          ESTADO_LABELS[String(it.estado)] ?? it.estado,
           fmtDateTime(it.fecha_hora_generacion),
           it.actividad_inicial != null
             ? `${it.actividad_inicial} ${it.unidad_actividad ?? ""}`

@@ -167,7 +167,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     field("Fecha de generacion del informe", new Date().toLocaleString("es-CL"));
     field("Fecha de deteccion de la alerta", alert.created_at ? new Date(alert.created_at).toLocaleString("es-CL") : "-");
     field("Modulo", alert.module);
-    field("Nivel", LEVEL_LABELS[alert.level] || alert.level);
+    field("Nivel", LEVEL_LABELS[String(alert.level)] || alert.level);
     field("Estado de la alerta", alert.status);
 
   heading("2. EQUIPO");
@@ -263,7 +263,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   heading("8. ACCION / DECISION REGISTRADA");
     if (decision) {
-          field("Decision", DECISION_LABELS[decision.decision] || decision.decision);
+          field("Decision", DECISION_LABELS[String(decision.decision)] || decision.decision);
           field("Justificacion", decision.justification);
           field("Registrada por", decision.decided_by);
           field("Fecha de decision", decision.decided_at ? new Date(decision.decided_at).toLocaleString("es-CL") : "-");
@@ -275,7 +275,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const conclusionParts: string[] = [];
     conclusionParts.push(
           'Se ' + (alert.status === "cerrada" ? "gestiono" : "detecto") + ' una alerta de nivel "' +
-            (LEVEL_LABELS[alert.level] || alert.level) + '" para el parametro "' + alert.parameter_name + '" del modulo "' + alert.module + '".'
+            (LEVEL_LABELS[String(alert.level)] || alert.level) + '" para el parametro "' + alert.parameter_name + '" del modulo "' + alert.module + '".'
         );
     if (alert.criteria_id) {
           conclusionParts.push(
@@ -286,7 +286,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
     conclusionParts.push(
           decision
-            ? 'La accion registrada fue: "' + (DECISION_LABELS[decision.decision] || decision.decision) + '".'
+            ? 'La accion registrada fue: "' + (DECISION_LABELS[String(decision.decision)] || decision.decision) + '".'
             : "No se ha registrado una accion/decision formal a la fecha de este informe."
         );
     conclusionParts.push("Este informe es una herramienta de gestion y apoyo tecnico; no sustituye el juicio clinico del Fisico Medico ni del OPR.");

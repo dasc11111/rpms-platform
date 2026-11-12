@@ -275,14 +275,14 @@ export async function GET(): Promise<NextResponse> {
       body: activeRecords.map((r) => [
         r.container_label,
         r.radionuclide,
-        WASTE_CATEGORY_LABELS[r.waste_category as WasteCategory] ?? r.waste_category,
+        WASTE_CATEGORY_LABELS[String(r.waste_category as WasteCategory)] ?? r.waste_category,
         fmtMbq(r.initial_activity_mbq),
         fmtDate(r.initial_activity_date),
         fmtMbq(r.derived.current_activity_mbq),
         `${r.derived.activity_pct_initial.toFixed(1)}%`,
         fmtDate(r.derived.retention_deadline),
         r.derived.can_release ? "—" : r.derived.days_until_release.toFixed(0),
-        WASTE_STATE_LABELS[r.state as WasteState] ?? r.state,
+        WASTE_STATE_LABELS[String(r.state as WasteState)] ?? r.state,
         r.derived.semaphore_label,
       ]),
       margin: { left: ML, right: MR },
@@ -347,12 +347,12 @@ export async function GET(): Promise<NextResponse> {
       body: releasedRecords.map((r) => [
         r.container_label,
         r.radionuclide,
-        WASTE_CATEGORY_LABELS[r.waste_category as WasteCategory] ?? r.waste_category,
+        WASTE_CATEGORY_LABELS[String(r.waste_category as WasteCategory)] ?? r.waste_category,
         fmtMbq(r.initial_activity_mbq),
         fmtDate(r.initial_activity_date),
-        WASTE_STATE_LABELS[r.state as WasteState] ?? r.state,
+        WASTE_STATE_LABELS[String(r.state as WasteState)] ?? r.state,
         r.disposal_route
-          ? (DISPOSAL_ROUTE_LABELS[r.disposal_route as DisposalRoute] ?? r.disposal_route)
+          ? (DISPOSAL_ROUTE_LABELS[String(r.disposal_route as DisposalRoute)] ?? r.disposal_route)
           : "—",
         fmtDate(r.release_date),
         r.released_by ?? "—",
@@ -417,10 +417,10 @@ export async function GET(): Promise<NextResponse> {
       body: records.map((r) => [
         r.container_label,
         r.radionuclide,
-        WASTE_CATEGORY_LABELS[r.waste_category as WasteCategory] ?? r.waste_category,
+        WASTE_CATEGORY_LABELS[String(r.waste_category as WasteCategory)] ?? r.waste_category,
         fmtMbq(r.initial_activity_mbq),
         fmtDate(r.initial_activity_date),
-        WASTE_STATE_LABELS[r.state as WasteState] ?? r.state,
+        WASTE_STATE_LABELS[String(r.state as WasteState)] ?? r.state,
         r.origin_area,
         r.generated_by,
         fmtDate(r.created_at),

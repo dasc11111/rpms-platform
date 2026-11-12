@@ -63,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           measurements,
           roomRelease,
           proyeccion,
-          dispensa_estado_label: WASTE_DISPENSA_ESTADO_LABELS[label.dispensa_estado] ?? label.dispensa_estado,
+          dispensa_estado_label: WASTE_DISPENSA_ESTADO_LABELS[String(label.dispensa_estado)] ?? label.dispensa_estado,
   });
 }
 

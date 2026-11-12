@@ -143,8 +143,8 @@ export async function GET(req: NextRequest) {
     doc.text(`Generado: ${dateLabel}`, pageW - 14, y + 5, { align: "right" });
 
     const filterParts: string[] = [];
-    if (recordType) filterParts.push(`Tipo: ${RECORD_TYPE_LABELS[recordType as NmReferenceRecordType] ?? recordType}`);
-    if (organization) filterParts.push(`Org.: ${ORGANIZATION_LABELS[organization as NmReferenceOrganization] ?? organization}`);
+    if (recordType) filterParts.push(`Tipo: ${RECORD_TYPE_LABELS[String(recordType as NmReferenceRecordType)] ?? recordType}`);
+    if (organization) filterParts.push(`Org.: ${ORGANIZATION_LABELS[String(organization as NmReferenceOrganization)] ?? organization}`);
     if (status) filterParts.push(`Estado: ${status}`);
     if (filterParts.length > 0) { doc.text(`Filtros: ${filterParts.join("  ·  ")}`, 14, y + 10); y += 4; }
 
@@ -187,7 +187,7 @@ export async function GET(req: NextRequest) {
         startY: y,
         head: [["Organismo", "N registros", "% del total"]],
         body: orgEntries.map(([org, n]) => [
-          ORGANIZATION_LABELS[org as NmReferenceOrganization] ?? org,
+          ORGANIZATION_LABELS[String(org as NmReferenceOrganization)] ?? org,
           String(n),
           total > 0 ? `${((n / total) * 100).toFixed(1)}%` : "—",
         ]),
@@ -213,14 +213,14 @@ export async function GET(req: NextRequest) {
 
     const tableRows = references.length > 0
       ? references.map(ref => [
-          RECORD_TYPE_LABELS[ref.record_type] ?? ref.record_type,
-          ORGANIZATION_LABELS[ref.organization] ?? ref.organization,
+          RECORD_TYPE_LABELS[String(ref.record_type)] ?? ref.record_type,
+          ORGANIZATION_LABELS[String(ref.organization)] ?? ref.organization,
           truncate(ref.document_title, 50) + (ref.document_code ? ` (${ref.document_code})` : ""),
           ref.year ? String(ref.year) : "—",
           fmtStr(ref.radionuclide),
           truncate(ref.criterion_type || ref.variable_name, 35),
           ref.value_text ? `${ref.value_text}${ref.unit ? " " + ref.unit : ""}` : "—",
-          VERIFICATION_LABELS[ref.verification_status] ?? ref.verification_status,
+          VERIFICATION_LABELS[String(ref.verification_status)] ?? ref.verification_status,
           fmtDate(ref.verification_date),
         ])
       : [["Sin referencias registradas", "—", "—", "—", "—", "—", "—", "—", "—"]];

@@ -182,7 +182,7 @@ function buildTrend(indicador: string, actual: number, anterior: number | null, 
     anterior,
     unidad,
     tendencia,
-    tendenciaLabel: TREND_LABELS[tendencia] ?? tendencia,
+    tendenciaLabel: TREND_LABELS[String(tendencia)] ?? tendencia,
     variacionAbsoluta: anterior === null ? null : Number((actual - anterior).toFixed(2)),
     variacionPorcentual: anterior === null || anterior === 0 ? null : Number((((actual - anterior) / anterior) * 100).toFixed(1)),
   };
@@ -308,7 +308,7 @@ const analisisEficacia = closedActionsRes.rows.map((a: Record<string, unknown>) 
     eventosAntes,
     eventosDespues,
     clasificacion,
-    clasificacionLabel: EFICACIA_LABELS[clasificacion] ?? clasificacion,
+    clasificacionLabel: EFICACIA_LABELS[String(clasificacion)] ?? clasificacion,
     motivo,
   };
 });
@@ -383,7 +383,7 @@ const resumenPartes: string[] = [];
   if (tCump === "datos_insuficientes") {
     resumenPartes.push("Informacion insuficiente para establecer una tendencia de cumplimiento respecto del periodo anterior.");
   } else {
-    resumenPartes.push("El area presenta una tendencia de cumplimiento: " + (TREND_LABELS[tCump] ?? tCump).toLowerCase() + ".");
+    resumenPartes.push("El area presenta una tendencia de cumplimiento: " + (TREND_LABELS[String(tCump)] ?? tCump).toLowerCase() + ".");
   }
   if (recurrencias.length > 0) {
     resumenPartes.push("Se detectaron " + recurrencias.length + " patron(es) de recurrencia que ameritan revision.");

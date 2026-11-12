@@ -185,14 +185,14 @@ export async function GET() {
     const tableRows = rows.map((r) => {
       const overdue = isOverdue(r);
       const overdueDays = overdue ? daysOverdue(r.estimated_return_date) : null;
-      const statusLabel = STATUS_LABELS[r.status] ?? r.status;
+      const statusLabel = STATUS_LABELS[String(r.status)] ?? r.status;
       const statusDisplay = overdue && overdueDays
         ? `${statusLabel} (+${overdueDays}d)`
         : statusLabel;
 
       return [
         r.code,
-        TYPE_LABELS[r.type] ?? r.type,
+        TYPE_LABELS[String(r.type)] ?? r.type,
         r.worker_name ?? "—",
         r.worker_rut ?? "—",
         r.service ?? "—",

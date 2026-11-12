@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
     const filterParts: string[] = [];
     if (from) filterParts.push(`Desde: ${fmtDate(from)}`);
     if (to)   filterParts.push(`Hasta: ${fmtDate(to)}`);
-    if (state) filterParts.push(`Estado: ${PETCT_EXAM_STATE_LABELS[state as PetctExamState] ?? state}`);
+    if (state) filterParts.push(`Estado: ${PETCT_EXAM_STATE_LABELS[String(state as PetctExamState)] ?? state}`);
     if (radiopharm) filterParts.push(`Radiofármaco: ${radiopharm}`);
     if (filterParts.length > 0) {
       doc.text(`Filtros: ${filterParts.join("  ·  ")}`, 14, y + 10);
@@ -226,7 +226,7 @@ export async function GET(req: NextRequest) {
         startY: y,
         head: [["Estado", "N exámenes", "% del total"]],
         body: stateEntries.map(([st, n]) => [
-          PETCT_EXAM_STATE_LABELS[st as PetctExamState] ?? st,
+          PETCT_EXAM_STATE_LABELS[String(st as PetctExamState)] ?? st,
           String(n),
           `${((n / total) * 100).toFixed(1)}%`,
         ]),
@@ -267,7 +267,7 @@ export async function GET(req: NextRequest) {
             fmtNum(e.administered_mbq, 1),
             fmtStr(e.radionuclide),
             String(e.uptake_minutes),
-            PETCT_EXAM_STATE_LABELS[e.state] ?? e.state,
+            PETCT_EXAM_STATE_LABELS[String(e.state)] ?? e.state,
             fmtStr(e.operator),
             fmtStr(e.prescribing_physician),
           ];

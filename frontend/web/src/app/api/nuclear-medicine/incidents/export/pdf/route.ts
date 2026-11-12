@@ -141,7 +141,7 @@ export async function GET(req: NextRequest) {
     const filterParts: string[] = [];
     if (from)   filterParts.push(`Desde: ${fmtDate(from)}`);
     if (to)     filterParts.push(`Hasta: ${fmtDate(to)}`);
-    if (status) filterParts.push(`Estado: ${STATUS_LABELS[status as NmIncidentStatus] ?? status}`);
+    if (status) filterParts.push(`Estado: ${STATUS_LABELS[String(status as NmIncidentStatus)] ?? status}`);
     if (filterParts.length > 0) { doc.text(`Filtros: ${filterParts.join("  ·  ")}`, 14, y + 10); y += 4; }
 
     y += 14;
@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
         startY: y,
         head: [["Categoría", "N incidentes", "% del total"]],
         body: catEntries.map(([cat, n]) => [
-          CATEGORY_LABELS[cat as NmIncidentCategory] ?? cat,
+          CATEGORY_LABELS[String(cat as NmIncidentCategory)] ?? cat,
           String(n),
           `${((n / total) * 100).toFixed(1)}%`,
         ]),
@@ -211,13 +211,13 @@ export async function GET(req: NextRequest) {
     const rows = incidents.length > 0
       ? incidents.map(inc => [
           fmtDate(inc.event_date),
-          CATEGORY_LABELS[inc.category] ?? inc.category,
-          SEVERITY_LABELS[inc.severity] ?? inc.severity,
+          CATEGORY_LABELS[String(inc.category)] ?? inc.category,
+          SEVERITY_LABELS[String(inc.severity)] ?? inc.severity,
           inc.is_near_miss ? "Sí" : "No",
           fmtStr(inc.location),
           truncate(inc.description, 120),
           truncate(inc.immediate_actions, 80),
-          STATUS_LABELS[inc.status] ?? inc.status,
+          STATUS_LABELS[String(inc.status)] ?? inc.status,
           inc.notification_status === "notificado" ? "Sí" : inc.notification_status === "pendiente" ? "Pend." : "N/A",
         ])
       : [["Sin incidentes registrados", "—", "—", "—", "—", "—", "—", "—", "—"]];

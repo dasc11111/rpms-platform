@@ -214,7 +214,7 @@ export async function GET(request: NextRequest) {
         if (!lastDate) {
           complianceRows.push({
             test_type: tol.test_type,
-            test_label: TEST_TYPE_LABELS[tol.test_type] ?? tol.test_type,
+            test_label: TEST_TYPE_LABELS[String(tol.test_type)] ?? tol.test_type,
             frequency_days: tol.frequency_days,
             frequency_label: frequencyLabel(tol.frequency_days),
             last_test_date: null,
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
 
         complianceRows.push({
           test_type: tol.test_type,
-          test_label: TEST_TYPE_LABELS[tol.test_type] ?? tol.test_type,
+          test_label: TEST_TYPE_LABELS[String(tol.test_type)] ?? tol.test_type,
           frequency_days: tol.frequency_days,
           frequency_label: frequencyLabel(tol.frequency_days),
           last_test_date: lastDate,
@@ -280,9 +280,9 @@ export async function GET(request: NextRequest) {
           .find((t) => t.test_type === row.test_type);
 
         if (row.last_status === "no_cumple") {
-          alerts.push({ id: `notol-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: "alta", message: `Último resultado de ${TEST_TYPE_LABELS[row.test_type] ?? row.test_type} está fuera de tolerancia.`, recommended_action: "Suspender uso clínico. Notificar al Físico Médico/OPR." });
+          alerts.push({ id: `notol-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: "alta", message: `Último resultado de ${TEST_TYPE_LABELS[String(row.test_type)] ?? row.test_type} está fuera de tolerancia.`, recommended_action: "Suspender uso clínico. Notificar al Físico Médico/OPR." });
         } else if (row.last_status === "advertencia") {
-          alerts.push({ id: `adv-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: "media", message: `Último resultado de ${TEST_TYPE_LABELS[row.test_type] ?? row.test_type} está en zona de advertencia.`, recommended_action: "Revisar con Físico Médico/OPR y programar verificación adicional." });
+          alerts.push({ id: `adv-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: "media", message: `Último resultado de ${TEST_TYPE_LABELS[String(row.test_type)] ?? row.test_type} está en zona de advertencia.`, recommended_action: "Revisar con Físico Médico/OPR y programar verificación adicional." });
         }
 
         if (tol?.frequency_days && row.last_test_date) {
@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
           nextDue.setDate(nextDue.getDate() + tol.frequency_days);
           const diffDays = Math.round((nextDue.getTime() - todayAlert.getTime()) / 86400000);
           if (diffDays < 0) {
-            alerts.push({ id: `vencida-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: diffDays < -tol.frequency_days ? "alta" : "media", message: `Prueba ${TEST_TYPE_LABELS[row.test_type] ?? row.test_type} vencida hace ${Math.abs(diffDays)} día(s).`, recommended_action: "Realizar la prueba a la brevedad y registrar en bitácora." });
+            alerts.push({ id: `vencida-${row.instrument_id}-${row.test_type}`, test_type: row.test_type, severity: diffDays < -tol.frequency_days ? "alta" : "media", message: `Prueba ${TEST_TYPE_LABELS[String(row.test_type)] ?? row.test_type} vencida hace ${Math.abs(diffDays)} día(s).`, recommended_action: "Realizar la prueba a la brevedad y registrar en bitácora." });
           }
         }
       }
@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
         for (const tol of tolerances as Array<{ test_type: string; frequency_days: number | null }>) {
           const hasRecord = (lastTests as Array<{ test_type: string }>).some((r) => r.test_type === tol.test_type);
           if (!hasRecord) {
-            alerts.push({ id: `sinreg-${instrumentId}-${tol.test_type}`, test_type: tol.test_type, severity: "baja", message: `Sin registros de ${TEST_TYPE_LABELS[tol.test_type] ?? tol.test_type} para este equipo.`, recommended_action: "Registrar la primera prueba antes del uso clínico." });
+            alerts.push({ id: `sinreg-${instrumentId}-${tol.test_type}`, test_type: tol.test_type, severity: "baja", message: `Sin registros de ${TEST_TYPE_LABELS[String(tol.test_type)] ?? tol.test_type} para este equipo.`, recommended_action: "Registrar la primera prueba antes del uso clínico." });
           }
         }
       }
@@ -407,7 +407,7 @@ export async function GET(request: NextRequest) {
           fmtDate(r.last_test_date),
           fmtDate(r.next_due_date),
           r.days_until_due !== null ? String(r.days_until_due) : "—",
-          COMPLIANCE_LABELS[r.status] ?? r.status,
+          COMPLIANCE_LABELS[String(r.status)] ?? r.status,
         ]),
         theme: "striped",
         headStyles: { fillColor: [30, 80, 140], fontSize: 7.5, textColor: 255 },
@@ -447,14 +447,14 @@ export async function GET(request: NextRequest) {
         startY: y,
         head: [["Tipo", "Fecha", "Operador", "N lecturas", "Media", "CV%", "Diferencia%", "Estado"]],
         body: (legacyTests as any[]).map((t) => [
-          TEST_TYPE_LABELS[t.test_type] ?? fmtStr(t.test_type),
+          TEST_TYPE_LABELS[String(t.test_type)] ?? fmtStr(t.test_type),
           fmtDate(t.test_date),
           fmtStr(t.performed_by),
           fmtStr(t.num_readings),
           fmtNum(t.mean_value, 3),
           fmtNum(t.cv_percent, 2),
           fmtNum(t.percent_difference, 2),
-          STATUS_LABELS[t.result_status] ?? fmtStr(t.result_status),
+          STATUS_LABELS[String(t.result_status)] ?? fmtStr(t.result_status),
         ]),
         theme: "striped",
         headStyles: { fillColor: [30, 80, 140], fontSize: 7.5, textColor: 255 },
@@ -504,7 +504,7 @@ export async function GET(request: NextRequest) {
           fmtNum(t.mean_value, 3),
           fmtNum(t.cv_percent, 2),
           fmtNum(t.percent_difference, 2),
-          STATUS_LABELS[t.result_status] ?? fmtStr(t.result_status),
+          STATUS_LABELS[String(t.result_status)] ?? fmtStr(t.result_status),
         ]),
         theme: "striped",
         headStyles: { fillColor: [30, 80, 140], fontSize: 7.5, textColor: 255 },
@@ -550,7 +550,7 @@ export async function GET(request: NextRequest) {
           fmtStr(t.performed_by),
           fmtNum(t.activity_mbq, 1),
           fmtNum(t.purity_percent, 3),
-          STATUS_LABELS[t.result_status ?? t.final_status] ?? fmtStr(t.result_status ?? t.final_status),
+          STATUS_LABELS[String(t.result_status ?? t.final_status)] ?? fmtStr(t.result_status ?? t.final_status),
         ]),
         theme: "striped",
         headStyles: { fillColor: [30, 80, 140], fontSize: 7.5, textColor: 255 },
@@ -597,7 +597,7 @@ export async function GET(request: NextRequest) {
           fmtNum(t.reference_activity_mbq, 2),
           fmtNum(t.measured_activity_mbq, 2),
           fmtNum(t.percent_difference, 2),
-          STATUS_LABELS[t.result_status] ?? fmtStr(t.result_status),
+          STATUS_LABELS[String(t.result_status)] ?? fmtStr(t.result_status),
         ]),
         theme: "striped",
         headStyles: { fillColor: [30, 80, 140], fontSize: 7.5, textColor: 255 },
@@ -639,7 +639,7 @@ export async function GET(request: NextRequest) {
           fmtDate(ins.inspection_date),
           fmtStr(ins.performed_by),
           fmtStr(ins.physicist_reviewed_by),
-          STATUS_LABELS[ins.overall_result] ?? fmtStr(ins.overall_result),
+          STATUS_LABELS[String(ins.overall_result)] ?? fmtStr(ins.overall_result),
           fmtStr(ins.observaciones),
         ]),
         theme: "striped",
@@ -678,7 +678,7 @@ export async function GET(request: NextRequest) {
         head: [["Severidad", "Prueba", "Descripción", "Acción recomendada"]],
         body: alerts.map((a) => [
           a.severity === "alta" ? "Alta" : a.severity === "media" ? "Media" : "Baja",
-          TEST_TYPE_LABELS[a.test_type] ?? fmtStr(a.test_type),
+          TEST_TYPE_LABELS[String(a.test_type)] ?? fmtStr(a.test_type),
           fmtStr(a.message),
           fmtStr(a.recommended_action),
         ]),

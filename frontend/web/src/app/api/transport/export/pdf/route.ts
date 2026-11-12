@@ -222,7 +222,7 @@ export async function GET(req: NextRequest) {
       return [
         fmtDate(r.transport_date),
         String(r.correlative_number),
-        MATERIAL_LABELS[r.material_code] ?? r.material_code,
+        MATERIAL_LABELS[String(r.material_code)] ?? r.material_code,
         fmtActivity(r),
         r.it_value !== null ? fmtNum(r.it_value) : "—",
         r.dose_contact !== null ? fmtNum(r.dose_contact) : "—",

@@ -164,7 +164,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
                   row: updRows[0],
                   measurement: measRows[0],
                   proyeccion,
-                  dispensa_estado_label: WASTE_DISPENSA_ESTADO_LABELS[dispensaEstado] ?? dispensaEstado,
+                  dispensa_estado_label: WASTE_DISPENSA_ESTADO_LABELS[String(dispensaEstado)] ?? dispensaEstado,
                 },
           { status: 201 }
         );

@@ -49,8 +49,8 @@ const TEST_MODE_LABELS: Record<string, string> = {
 };
 
 function testLabel(testType: string, testMode: string): string {
-  const t = TEST_TYPE_LABELS[testType] ?? testType;
-  const m = TEST_MODE_LABELS[testMode] ?? testMode;
+  const t = TEST_TYPE_LABELS[String(testType)] ?? testType;
+  const m = TEST_MODE_LABELS[String(testMode)] ?? testMode;
   return m ? `${t} (${m})` : t;
 }
 

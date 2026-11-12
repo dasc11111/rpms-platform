@@ -473,7 +473,7 @@ export async function GET(request: NextRequest) {
         head: [["Severidad", "Prueba", "Mensaje", "Acción recomendada"]],
         body: alerts.map((a) => [
           a.severity.toUpperCase(),
-          TEST_TYPE_LABELS[a.test_type] ?? a.test_type,
+          TEST_TYPE_LABELS[String(a.test_type)] ?? a.test_type,
           fmtStr(a.message),
           fmtStr(a.recommended_action),
         ]),

@@ -187,14 +187,14 @@ export async function GET(req: NextRequest) {
     // ── Table ──────────────────────────────────────────────────────────────────
     const tableRows = incidents.map((r) => [
       fmtDate(r.event_date),
-      CATEGORY_LABELS[r.category ?? ""] ?? (r.category ?? "—"),
-      SEVERITY_LABELS[r.severity] ?? r.severity,
+      CATEGORY_LABELS[String(r.category ?? "")] ?? (r.category ?? "—"),
+      SEVERITY_LABELS[String(r.severity)] ?? r.severity,
       r.is_near_miss ? "Sí" : "No",
       r.location ?? "—",
       r.person_involved ?? "—",
       r.description ? r.description.slice(0, 60) : "—",
       r.immediate_actions ? r.immediate_actions.slice(0, 40) : "—",
-      INVESTIGATION_LABELS[r.investigation_status] ?? r.investigation_status,
+      INVESTIGATION_LABELS[String(r.investigation_status)] ?? r.investigation_status,
       r.notification_status === "notificado" ? "Sí" : r.notification_status === "no_aplica" ? "N/A" : "Pend.",
       r.status === "cerrado" ? "Cerrado" : "Abierto",
     ]);

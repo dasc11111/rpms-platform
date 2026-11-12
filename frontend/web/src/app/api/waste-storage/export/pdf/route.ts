@@ -192,7 +192,7 @@ export async function GET() {
       const currentAct = r.current_activity !== null
         ? `${r.current_activity.toFixed(2)} ${r.unidad_actividad}`
         : "—";
-      const statusLabel = WASTE_LABEL_STATUS_LABELS[r.status as keyof typeof WASTE_LABEL_STATUS_LABELS] ?? r.status;
+      const statusLabel = WASTE_LABEL_STATUS_LABELS[String(r.status as keyof typeof WASTE_LABEL_STATUS_LABELS)] ?? r.status;
 
       return [
         r.label_number,
