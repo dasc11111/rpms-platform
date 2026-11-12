@@ -1,0 +1,52 @@
+name: Claude Fix
+
+on:
+  workflow_dispatch:
+    inputs:
+      patch_b64:
+        description: 'Base64 del diff (Claude lo genera automáticamente)'
+        required: true
+        type: string
+      message:
+        description: 'Mensaje del commit'
+        required: true
+        type: string
+        default: 'fix(ts): Claude auto-fix'
+      branch:
+        description: 'Rama destino'
+        required: true
+        type: string
+        default: 'feature/fase23-petct-fase-a-arquitectura'
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+
+      - name: Apply patch
+        run: |
+          printf '%s' "${{ inputs.patch_b64 }}" | base64 --decode > /tmp/claude.patch
+          echo "=== Patch content preview ==="
+          head -40 /tmp/claude.patch
+          echo "=== Applying ==="
+          git apply --whitespace=fix /tmp/claude.patch
+
+      - name: Commit & push
+        run: |
+          git config user.name "Claude Sonnet 4.6"
+          git config user.email "noreply@anthropic.com"
+          git add -A
+          git commit -m "${{ inputs.message }}
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_019WtbdcPyBonjC3rCiF3wqd"
+          git push origin ${{ inputs.branch }}
+          echo "✅ Push exitoso a ${{ inputs.branch }}"
