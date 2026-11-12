@@ -19,7 +19,20 @@ jobs:
           fetch-depth: 0
       - name: Fix LABELS indexing
         run: |
-          find frontend/web/src/app/api -name '*.ts' -print0 | xargs -0 perl -pi -e 's/(\b\w+_LABELS)\[(?!String\()([^\]]+)\]/\1[String(\2)]/g'
+          cat > /tmp/fix_labels.py << 'PYEOF'
+          import re, os, sys
+          pat = re.compile(r'(\b\w+_LABELS)\[(?!String\()([^\]]+)\]')
+          for root, dirs, files in os.walk('frontend/web/src/app/api'):
+              for f in files:
+                  if not f.endswith('.ts'): continue
+                  path = os.path.join(root, f)
+                  txt = open(path).read()
+                  new = pat.sub(r'\1[String(\2)]', txt)
+                  if new != txt:
+                      open(path, 'w').write(new)
+                      print('Fixed:', path, file=sys.stderr)
+          PYEOF
+          python3 /tmp/fix_labels.py
           echo "Files changed:"; git diff --name-only
       - name: Commit and push
         run: |
@@ -33,5 +46,5 @@ jobs:
             git push origin ${{ inputs.branch }}
             echo "Pushed $CHANGED files"
           else
-            echo "No changes needed"
+            echo "No changes to commit - files may already be fixed"
           fi
