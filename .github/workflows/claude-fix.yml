@@ -17,22 +17,24 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
-      - name: Fix LABELS indexing
+      - name: Fix TypeScript type errors
         run: |
-          cat > /tmp/fix_labels.py << 'PYEOF'
+          cat > /tmp/fix_ts.py << 'PYEOF'
           import re, os, sys
-          pat = re.compile(r'(\b\w+_LABELS)\[(?!String\()([^\]]+)\]')
+          pat1 = re.compile(r'(\b\w+_LABELS)\[(?!String\()([^\]]+)\]')
+          pat2 = re.compile(r'\((?!String\()([^()]+\s*\|\|\s*[^()]+)\)\.slice\(')
           for root, dirs, files in os.walk('frontend/web/src/app/api'):
               for f in files:
                   if not f.endswith('.ts'): continue
                   path = os.path.join(root, f)
                   txt = open(path).read()
-                  new = pat.sub(r'\1[String(\2)]', txt)
+                  new = pat1.sub(r'\1[String(\2)]', txt)
+                  new = pat2.sub(r'String(\1).slice(', new)
                   if new != txt:
                       open(path, 'w').write(new)
                       print('Fixed:', path, file=sys.stderr)
           PYEOF
-          python3 /tmp/fix_labels.py
+          python3 /tmp/fix_ts.py
           echo "Files changed:"; git diff --name-only
       - name: Commit and push
         run: |
@@ -41,7 +43,7 @@ jobs:
           git add -A
           CHANGED=$(git diff --cached --name-only | wc -l)
           if [ "$CHANGED" -gt 0 ]; then
-            printf 'fix(ts): wrap all LABELS index accesses with String()\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_019WtbdcPyBonjC3rCiF3wqd\n' > /tmp/msg.txt
+            printf 'fix(ts): fix slice on unknown type\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_019WtbdcPyBonjC3rCiF3wqd\n' > /tmp/msg.txt
             git commit -F /tmp/msg.txt
             git push origin ${{ inputs.branch }}
             echo "Pushed $CHANGED files"
