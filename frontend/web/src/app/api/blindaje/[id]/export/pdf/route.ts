@@ -375,7 +375,7 @@ export async function GET(
       const detailRows = barriersWithDetail.map((b: Record<string, unknown>) => [
         fmtStr(b.code),
         fmtStr(b.name),
-        (b.result_unit || "").slice(0, 400),
+        String(b.result_unit || "").slice(0, 400),
       ]);
 
       autoTable(doc, {

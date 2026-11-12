@@ -89,7 +89,7 @@ const results = [
 ...qcTests.map((r: Record<string, unknown>) => ({ type: "Control de Calidad", tab: "qc", id: r.id, linacId: r.linac_id, label: r.test_name, subtitle: [r.periodicity, r.responsible, r.instrument_used].filter(Boolean).join(" · "), date: r.test_date })),
 ...radiation.map((r: Record<string, unknown>) => ({ type: "Proteccion Radiologica", tab: "radiation", id: r.id, linacId: r.linac_id, label: r.category || "Registro", subtitle: [r.location, r.responsible, r.instrument_ref].filter(Boolean).join(" · "), date: r.measurement_date })),
 ...maintenance.map((r: Record<string, unknown>) => ({ type: "Mantenimiento", tab: "maintenance", id: r.id, linacId: r.linac_id, label: [r.maintenance_type, r.company].filter(Boolean).join(" - "), subtitle: [r.engineer, r.spare_parts].filter(Boolean).join(" · "), date: r.maintenance_date })),
-...incidents.map((r: Record<string, unknown>) => ({ type: "Incidente", tab: "incidents", id: r.id, linacId: r.linac_id, label: r.event, subtitle: (r.description || "").slice(0, 80), date: r.incident_date })),
+...incidents.map((r: Record<string, unknown>) => ({ type: "Incidente", tab: "incidents", id: r.id, linacId: r.linac_id, label: r.event, subtitle: String(r.description || "").slice(0, 80), date: r.incident_date })),
 ...risks.map((r: Record<string, unknown>) => ({ type: "Riesgo", tab: "risks", id: r.id, linacId: r.linac_id, label: r.risk, subtitle: [r.responsible, "Nivel " + (r.risk_level ?? "-")].filter(Boolean).join(" · ") })),
 ];
 
