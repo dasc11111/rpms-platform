@@ -1,40 +1,21 @@
-import { sql } from "@/lib/db";
-import type { ComponentType } from "react";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import {
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  Users,
-  Award,
-  Calendar,
-  GraduationCap,
+  GraduationCap, Plus, Trash2, RefreshCw, CheckCircle2,
+  Clock, AlertTriangle, BookOpen, Award, Users, Edit3,
 } from "lucide-react";
-import { KPICard } from "@/components/dashboard/kpi-card";
+import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-
-// Requisitos de capacitación radiológica — NS-06.0 §16, DS 133/1984 Art. 23
-const TRAINING_REQUIREMENTS = {
-  ANNUAL_HOURS_OCC: 8,          // horas mínimas anuales para trabajador ocupacionalmente expuesto
-  REFRESHER_MONTHS: 12,         // meses entre cursos de actualización
-  BASIC_RADIATION_PROTECTION: true, // obligatorio para todo TOE
-  EMERGENCY_DRILLS_ANNUAL: 1,   // simulacros anuales mínimos
-};
-
-type TrainingStatus = "scheduled" | "in_progress" | "completed" | "failed" | "cancelled";
-type TrainingCategory = "basic_rp" | "advanced_rp" | "emergency" | "equipment" | "regulatory" | "clinical";
-type ParticipantStatus = "registered" | "attended" | "passed" | "failed" | "absent";
-
-interface TrainingRow {
+interface Course {
   id: number;
   course_code: string;
   course_name: string;
-  category: TrainingCategory;
+  category: string;
   instructor: string | null;
   scheduled_date: string;
   duration_hours: number;
-  status: TrainingStatus;
+  status: string;
   participants_registered: number;
   participants_attended: number;
   participants_passed: number;
@@ -43,319 +24,439 @@ interface TrainingRow {
   notes: string | null;
 }
 
-interface WorkerTrainingRow {
-  worker_name: string;
-  worker_rut: string;
-  courses_completed: number;
-  hours_total: number;
-  last_training: string | null;
-  next_due: string | null;
-  compliant: boolean;
+interface Stats {
+  total: number;
+  completed: number;
+  scheduled: number;
+  in_progress: number;
+  total_hours_delivered: number;
+  total_passed: number;
+  total_attended: number;
 }
 
-const CAT_LABEL: Record<TrainingCategory, { label: string; cls: string }> = {
-  basic_rp:   { label: "Protección radiológica básica", cls: "text-blue-700 bg-blue-50" },
-  advanced_rp:{ label: "Protección radiológica avanzada", cls: "text-purple-700 bg-purple-50" },
-  emergency:  { label: "Emergencias radiológicas",        cls: "text-red-700 bg-red-50" },
-  equipment:  { label: "Equipamiento y dosimetría",       cls: "text-amber-700 bg-amber-50" },
-  regulatory: { label: "Marco regulatorio",               cls: "text-green-700 bg-green-50" },
-  clinical:   { label: "Procedimientos clínicos",         cls: "text-cyan-700 bg-cyan-50" },
+const CAT_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  basic_rp:    { label: "PR Básica",           color: "text-blue-700",   bg: "bg-blue-100" },
+  advanced_rp: { label: "PR Avanzada",          color: "text-purple-700", bg: "bg-purple-100" },
+  emergency:   { label: "Emergencias",          color: "text-red-700",    bg: "bg-red-100" },
+  equipment:   { label: "Equipamiento",         color: "text-amber-700",  bg: "bg-amber-100" },
+  regulatory:  { label: "Marco regulatorio",    color: "text-green-700",  bg: "bg-green-100" },
+  clinical:    { label: "Procedimientos clín.", color: "text-cyan-700",   bg: "bg-cyan-100" },
 };
 
-const STATUS_LABEL: Record<TrainingStatus, { label: string; cls: string }> = {
-  scheduled:   { label: "Programado",   cls: "text-blue-700 bg-blue-50" },
-  in_progress: { label: "En curso",     cls: "text-amber-700 bg-amber-50" },
-  completed:   { label: "Completado",   cls: "text-green-700 bg-green-50" },
-  failed:      { label: "Reprobado",    cls: "text-red-700 bg-red-50" },
-  cancelled:   { label: "Cancelado",    cls: "text-gray-500 bg-gray-50" },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+  scheduled:   { label: "Programado",   color: "text-blue-700",  bg: "bg-blue-100",  icon: Clock },
+  in_progress: { label: "En curso",     color: "text-amber-700", bg: "bg-amber-100", icon: AlertTriangle },
+  completed:   { label: "Completado",   color: "text-green-700", bg: "bg-green-100", icon: CheckCircle2 },
+  failed:      { label: "Reprobado",    color: "text-red-700",   bg: "bg-red-100",   icon: AlertTriangle },
+  cancelled:   { label: "Cancelado",    color: "text-gray-500",  bg: "bg-gray-100",  icon: Clock },
 };
 
-const DEMO_COURSES = [
-  { code: "CAP-RP-001", name: "Protección Radiológica Básica NS-06.0", cat: "basic_rp",    h: 8,  status: "completed", reg: "NS-06.0 §16 / DS 133/1984 Art.23", months: 24, pReg: 12, pAtt: 11, pPass: 10 },
-  { code: "CAP-RP-002", name: "Uso Seguro de Fuentes No Selladas",      cat: "advanced_rp", h: 4,  status: "completed", reg: "IAEA Safety Series No. 38",        months: 12, pReg: 6,  pAtt: 6,  pPass: 5  },
-  { code: "CAP-EM-001", name: "Simulacro Emergencia Radiológica 2024",  cat: "emergency",   h: 3,  status: "completed", reg: "DS 133/1984 Art.47 / NS-06.0 §18", months: 12, pReg: 15, pAtt: 14, pPass: 14 },
-  { code: "CAP-EQ-001", name: "Calibración Detector Geiger-Müller",     cat: "equipment",   h: 2,  status: "completed", reg: "IAEA-TECDOC-1683",                 months: 12, pReg: 5,  pAtt: 5,  pPass: 5  },
-  { code: "CAP-REG-001","name": "Actualización Normativa CCHEN 2024",   cat: "regulatory",  h: 4,  status: "scheduled", reg: "NS-06.0 / RB-5.1 CCHEN",           months: 12, pReg: 10, pAtt: 0,  pPass: 0  },
-  { code: "CAP-CL-001", name: "Protocolo I-131 Terapia Ambulatoria",    cat: "clinical",    h: 3,  status: "completed", reg: "NS-06.0 §13 / IAEA-TECDOC-1340",   months: 24, pReg: 8,  pAtt: 8,  pPass: 7  },
-  { code: "CAP-RP-003", name: "Dosimetría Personal y Lectura TLD",      cat: "equipment",   h: 2,  status: "scheduled", reg: "DS 3/1985 / NS-06.0 §6",           months: 12, pReg: 20, pAtt: 0,  pPass: 0  },
-  { code: "CAP-EM-002", name: "Respuesta Contaminación Radiactiva",      cat: "emergency",   h: 4,  status: "in_progress",reg: "IAEA EPR-2016",                   months: 12, pReg: 8,  pAtt: 8,  pPass: 0  },
+const CATEGORIES = Object.entries(CAT_CONFIG).map(([k, v]) => ({ value: k, label: v.label }));
+const STATUSES = Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label }));
+
+const REG_OPTIONS = [
+  "NS-06.0 §16 — CCHEN",
+  "DS 133/1984 Art. 23 — MINSAL",
+  "IAEA Safety Series No. 38",
+  "IAEA-TECDOC-1683",
+  "IAEA EPR-2016",
+  "DS 3/1985 — MINSAL",
+  "NS-04 CCHEN",
 ];
 
-export default async function TrainingPage() {
-  // Lazy migration
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS training_courses (
-        id SERIAL PRIMARY KEY,
-        course_code VARCHAR(50) UNIQUE NOT NULL,
-        course_name VARCHAR(300) NOT NULL,
-        category VARCHAR(30) DEFAULT 'basic_rp',
-        instructor VARCHAR(200),
-        scheduled_date TIMESTAMPTZ NOT NULL,
-        duration_hours NUMERIC(4,1) DEFAULT 1,
-        status VARCHAR(20) DEFAULT 'scheduled',
-        participants_registered INT DEFAULT 0,
-        participants_attended INT DEFAULT 0,
-        participants_passed INT DEFAULT 0,
-        regulatory_basis VARCHAR(300),
-        certificate_valid_months INT DEFAULT 12,
-        notes TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `;
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, color: "text-gray-600", bg: "bg-gray-100", icon: Clock };
+  const Icon = cfg.icon;
+  return (
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg.bg, cfg.color)}>
+      <Icon className="w-3 h-3" />
+      {cfg.label}
+    </span>
+  );
+}
 
-    await sql`
-      CREATE TABLE IF NOT EXISTS training_worker_records (
-        id SERIAL PRIMARY KEY,
-        worker_rut VARCHAR(20) NOT NULL,
-        worker_name VARCHAR(200) NOT NULL,
-        course_id INT REFERENCES training_courses(id),
-        status VARCHAR(20) DEFAULT 'registered',
-        score NUMERIC(5,2),
-        certificate_number VARCHAR(100),
-        issued_date TIMESTAMPTZ,
-        expiry_date TIMESTAMPTZ,
-        notes TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(worker_rut, course_id)
-      )
-    `;
-  } catch { /* already exists */ }
+function CatBadge({ cat }: { cat: string }) {
+  const cfg = CAT_CONFIG[cat] ?? { label: cat, color: "text-gray-700", bg: "bg-gray-100" };
+  return (
+    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-medium", cfg.bg, cfg.color)}>
+      {cfg.label}
+    </span>
+  );
+}
 
-  // Seed
-  let seeded = false;
-  try {
-    const { rows: cnt } = await sql`SELECT COUNT(*)::int AS n FROM training_courses`;
-    if (Number((cnt[0] as any)?.n ?? 0) === 0) {
-      for (let i = 0; i < DEMO_COURSES.length; i++) {
-        const c = DEMO_COURSES[i]!;
-        const daysOffset = c.status === "completed" ? -(30 + i * 15) : c.status === "scheduled" ? (14 + i * 7) : -2;
-        await sql`
-          INSERT INTO training_courses
-            (course_code, course_name, category, instructor, scheduled_date, duration_hours,
-             status, participants_registered, participants_attended, participants_passed,
-             regulatory_basis, certificate_valid_months)
-          VALUES
-            (${c.code}, ${c.name}, ${c.cat},
-             'TM Diego Solís Catalán / Encargado PR',
-             now() + (${daysOffset} || ' days')::interval, ${c.h},
-             ${c.status}, ${c.pReg}, ${c.pAtt}, ${c.pPass},
-             ${c.reg}, ${c.months})
-          ON CONFLICT DO NOTHING
-        `;
-      }
-      seeded = true;
-    }
-  } catch { /* table doesn't exist */ }
+function PassRate({ attended, passed }: { attended: number; passed: number }) {
+  if (!attended) return <span className="text-gray-400 text-xs">—</span>;
+  const pct = Math.round((passed / attended) * 100);
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-16 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+        <div className={cn("h-full rounded-full", pct >= 90 ? "bg-green-500" : pct >= 70 ? "bg-amber-500" : "bg-red-500")}
+          style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-xs text-gray-600">{pct}%</span>
+    </div>
+  );
+}
 
-  let courses: TrainingRow[] = [];
-  let totalCourses = 0, completed = 0, scheduled = 0, inProgress = 0;
-  let totalParticipants = 0, totalPassed = 0;
+const DEFAULT_FORM = {
+  course_code: "",
+  course_name: "",
+  category: "basic_rp",
+  instructor: "",
+  scheduled_date: new Date().toISOString().slice(0, 10),
+  duration_hours: "8",
+  status: "scheduled",
+  participants_registered: "0",
+  participants_attended: "0",
+  participants_passed: "0",
+  regulatory_basis: "NS-06.0 §16 — CCHEN",
+  certificate_valid_months: "12",
+  notes: "",
+};
 
-  try {
-    const { rows } = await sql`
-      SELECT id, course_code, course_name, category, instructor,
-             scheduled_date::text, duration_hours::float, status,
-             participants_registered, participants_attended, participants_passed,
-             regulatory_basis, certificate_valid_months, notes
-      FROM training_courses
-      ORDER BY
-        CASE status WHEN 'in_progress' THEN 0 WHEN 'scheduled' THEN 1 WHEN 'completed' THEN 2 ELSE 3 END,
-        scheduled_date ASC
-      LIMIT 50
-    `;
-    courses = rows as TrainingRow[];
-    totalCourses = courses.length;
-    for (const c of courses) {
-      if (c.status === "completed") completed++;
-      else if (c.status === "scheduled") scheduled++;
-      else if (c.status === "in_progress") inProgress++;
-      totalParticipants += c.participants_attended ?? 0;
-      totalPassed += c.participants_passed ?? 0;
-    }
-  } catch { /* table doesn't exist */ }
+export default function TrainingPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCat, setFilterCat] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState({ ...DEFAULT_FORM });
 
-  // Resumen de cumplimiento por trabajador (simplificado)
-  const workerSummary: WorkerTrainingRow[] = [
-    { worker_name: "Diego Solís Catalán",    worker_rut: "16.397.583-1", courses_completed: 4, hours_total: 17, last_training: "2024-09-15", next_due: "2025-09-15", compliant: true },
-    { worker_name: "María González Prado",   worker_rut: "15.234.567-8", courses_completed: 3, hours_total: 14, last_training: "2024-07-20", next_due: "2025-07-20", compliant: true },
-    { worker_name: "Carlos Muñoz Álvarez",   worker_rut: "14.876.543-2", courses_completed: 2, hours_total: 10, last_training: "2024-03-10", next_due: "2025-03-10", compliant: false },
-    { worker_name: "Ana Ramírez Contreras",  worker_rut: "17.654.321-K", courses_completed: 5, hours_total: 23, last_training: "2024-10-05", next_due: "2025-10-05", compliant: true },
-    { worker_name: "Roberto Vega Sepúlveda", worker_rut: "13.456.789-3", courses_completed: 1, hours_total: 8,  last_training: "2024-01-15", next_due: "2025-01-15", compliant: false },
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterStatus) params.set("status", filterStatus);
+      if (filterCat) params.set("category", filterCat);
+      const res = await fetch(`/api/training?${params}`);
+      const json = await res.json();
+      setCourses(json.courses ?? []);
+      setStats(json.stats ?? null);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [filterStatus, filterCat]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const openNew = () => { setEditId(null); setForm({ ...DEFAULT_FORM }); setShowModal(true); };
+  const openEdit = (c: Course) => {
+    setEditId(c.id);
+    setForm({
+      course_code: c.course_code,
+      course_name: c.course_name,
+      category: c.category,
+      instructor: c.instructor ?? "",
+      scheduled_date: c.scheduled_date.slice(0, 10),
+      duration_hours: String(c.duration_hours),
+      status: c.status,
+      participants_registered: String(c.participants_registered),
+      participants_attended: String(c.participants_attended),
+      participants_passed: String(c.participants_passed),
+      regulatory_basis: c.regulatory_basis ?? "",
+      certificate_valid_months: String(c.certificate_valid_months),
+      notes: c.notes ?? "",
+    });
+    setShowModal(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await fetch("/api/training", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          course_code: form.course_code,
+          course_name: form.course_name,
+          category: form.category,
+          instructor: form.instructor || null,
+          scheduled_date: form.scheduled_date,
+          duration_hours: parseFloat(form.duration_hours) || 1,
+          status: form.status,
+          participants_registered: parseInt(form.participants_registered) || 0,
+          participants_attended: parseInt(form.participants_attended) || 0,
+          participants_passed: parseInt(form.participants_passed) || 0,
+          regulatory_basis: form.regulatory_basis || null,
+          certificate_valid_months: parseInt(form.certificate_valid_months) || 12,
+          notes: form.notes || null,
+        }),
+      });
+      setShowModal(false);
+      fetchData();
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Eliminar este curso?")) return;
+    setDeleting(id);
+    try {
+      await fetch(`/api/training?id=${id}`, { method: "DELETE" });
+      fetchData();
+    } finally { setDeleting(null); }
+  };
+
+  const kpiCards = [
+    { label: "Total cursos", value: stats?.total ?? 0, icon: BookOpen, color: "text-blue-600" },
+    { label: "Completados", value: stats?.completed ?? 0, icon: CheckCircle2, color: "text-green-600" },
+    { label: "Programados", value: stats?.scheduled ?? 0, icon: Clock, color: "text-blue-500" },
+    { label: "Horas impartidas", value: `${Math.round(stats?.total_hours_delivered ?? 0)}h`, icon: Award, color: "text-purple-600" },
+    { label: "Participantes", value: stats?.total_attended ?? 0, icon: Users, color: "text-cyan-600" },
+    { label: "Aprobados", value: stats?.total_passed ?? 0, icon: GraduationCap, color: "text-emerald-600" },
   ];
-  const compliant = workerSummary.filter(w => w.compliant).length;
-  const nonCompliant = workerSummary.filter(w => !w.compliant).length;
-
-  function fmtDate(dt: string) {
-    try { return new Date(dt).toLocaleDateString("es-CL"); }
-    catch { return dt; }
-  }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Capacitación en Protección Radiológica</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Registro y seguimiento de capacitación del personal ocupacionalmente expuesto (TOE)
-          {seeded && <span className="ml-2 text-accent">(datos demo inicializados)</span>}
-        </p>
-        <p className="text-xs text-muted-foreground">NS-06.0 §16 CCHEN · DS 133/1984 Art. 23 · IAEA Safety Series No. 38</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <GraduationCap className="w-7 h-7 text-blue-600" />
+            Capacitación en Protección Radiológica
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Registro y seguimiento de formación del personal TOE · NS-06.0 §16 / DS 133/1984 Art. 23
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={fetchData} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button onClick={openNew}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+            <Plus className="w-4 h-4" /> Registrar Curso
+          </button>
+        </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-8">
-        <KPICard label="Total cursos" value={totalCourses} href="/training" icon={BookOpen as ComponentType<{ className?: string }>} />
-        <KPICard label="Completados" value={completed} href="/training" icon={CheckCircle2 as ComponentType<{ className?: string }>} tone="success" />
-        <KPICard label="Programados" value={scheduled} href="/training" icon={Calendar as ComponentType<{ className?: string }>} tone="default" />
-        <KPICard label="En curso" value={inProgress} href="/training" icon={Clock as ComponentType<{ className?: string }>} tone="warning" />
-        <KPICard label="Participantes" value={totalParticipants} href="/training" icon={Users as ComponentType<{ className?: string }>} />
-        <KPICard label="Certificados" value={totalPassed} href="/training" icon={Award as ComponentType<{ className?: string }>} tone="success" />
-        <KPICard label="TOE al día" value={compliant} href="/training" icon={GraduationCap as ComponentType<{ className?: string }>} tone="success" />
-        <KPICard label="TOE vencidos" value={nonCompliant} href="/training" icon={AlertTriangle as ComponentType<{ className?: string }>} tone={nonCompliant > 0 ? "danger" : "default"} />
-      </div>
-
-      {/* Requisitos mínimos */}
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="font-semibold mb-3">Requisitos Mínimos Anuales — NS-06.0 §16 / DS 133/1984 Art. 23</h2>
-        <div className="grid gap-2 text-xs md:grid-cols-4">
-          {[
-            { label: "Horas mínimas anuales (TOE)", value: `${TRAINING_REQUIREMENTS.ANNUAL_HOURS_OCC} h`, ok: true },
-            { label: "Actualización cada", value: `${TRAINING_REQUIREMENTS.REFRESHER_MONTHS} meses`, ok: true },
-            { label: "Protección radiológica básica", value: "Obligatorio", ok: true },
-            { label: "Simulacros anuales mínimos", value: `${TRAINING_REQUIREMENTS.EMERGENCY_DRILLS_ANNUAL} simulacro`, ok: true },
-          ].map((req) => (
-            <div key={req.label} className="rounded-lg border border-border bg-background p-3 flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
-              <div>
-                <div className="font-semibold">{req.value}</div>
-                <div className="text-muted-foreground">{req.label}</div>
-              </div>
+      {/* KPI cards */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        {kpiCards.map(k => {
+          const Icon = k.icon;
+          return (
+            <div key={k.label} className="bg-white border rounded-xl p-4 shadow-sm">
+              <Icon className={cn("w-5 h-5 mb-2", k.color)} />
+              <p className="text-xs text-gray-500">{k.label}</p>
+              <p className={cn("text-2xl font-bold", k.color)}>{k.value}</p>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Tabla de cursos */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-accent" />
-            <h2 className="font-semibold">Registro de Capacitaciones</h2>
-          </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+          className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Todos los estados</option>
+          {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
+          className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="">Todas las categorías</option>
+          {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+        {(filterStatus || filterCat) && (
+          <button onClick={() => { setFilterStatus(""); setFilterCat(""); }}
+            className="text-xs text-blue-600 hover:underline">Limpiar filtros</button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-gray-500" />
+          <h2 className="font-semibold text-gray-800">Registro de cursos de capacitación</h2>
+          {courses.length > 0 && <span className="ml-auto text-xs text-gray-400">{courses.length} registros</span>}
         </div>
-        {courses.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Sin registros.</div>
+        {loading ? (
+          <div className="text-center py-16 text-gray-400">Cargando cursos…</div>
+        ) : courses.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <GraduationCap className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p>Sin cursos registrados.</p>
+            <button onClick={openNew} className="mt-3 text-blue-600 hover:underline text-sm">Registrar primer curso</button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="px-4 py-2 font-medium">Código</th>
-                  <th className="px-3 py-2 font-medium">Nombre del curso</th>
-                  <th className="px-3 py-2 font-medium">Categoría</th>
-                  <th className="px-3 py-2 font-medium">Fecha</th>
-                  <th className="px-3 py-2 font-medium text-right">Hrs</th>
-                  <th className="px-3 py-2 font-medium text-right">Reg.</th>
-                  <th className="px-3 py-2 font-medium text-right">Asist.</th>
-                  <th className="px-3 py-2 font-medium text-right">Aprob.</th>
-                  <th className="px-3 py-2 font-medium text-right">% Aprob.</th>
-                  <th className="px-3 py-2 font-medium">Vigencia cert.</th>
-                  <th className="px-3 py-2 font-medium">Base regulatoria</th>
-                  <th className="px-3 py-2 font-medium">Estado</th>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th className="text-left px-5 py-3">Código</th>
+                  <th className="text-left px-4 py-3">Curso</th>
+                  <th className="text-left px-4 py-3">Categoría</th>
+                  <th className="text-left px-4 py-3">Estado</th>
+                  <th className="text-left px-4 py-3">Fecha</th>
+                  <th className="text-left px-4 py-3">Duración</th>
+                  <th className="text-left px-4 py-3">Instructor</th>
+                  <th className="text-left px-4 py-3">Participantes</th>
+                  <th className="text-left px-4 py-3">Aprobación</th>
+                  <th className="text-left px-4 py-3">Vigencia cert.</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
-                {courses.map((c) => {
-                  const cl = CAT_LABEL[c.category as TrainingCategory] ?? CAT_LABEL.basic_rp;
-                  const sl = STATUS_LABEL[c.status] ?? STATUS_LABEL.scheduled;
-                  const pctPass = c.participants_attended > 0
-                    ? Math.round((c.participants_passed / c.participants_attended) * 100)
-                    : 0;
-                  return (
-                    <tr
-                      key={c.id}
-                      className={
-                        c.status === "in_progress"
-                          ? "bg-amber-50/15"
-                          : c.status === "scheduled"
-                          ? "bg-blue-50/10"
-                          : ""
-                      }
-                    >
-                      <td className="px-4 py-1.5 font-mono text-[11px]">{c.course_code}</td>
-                      <td className="px-3 py-1.5 max-w-[200px] truncate font-medium" title={c.course_name}>{c.course_name}</td>
-                      <td className="px-3 py-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${cl.cls}`}>
-                          {cl.label.split(" ").slice(0, 2).join(" ")}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1.5">{fmtDate(c.scheduled_date)}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums">{c.duration_hours}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums">{c.participants_registered}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums">{c.participants_attended}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums">{c.participants_passed}</td>
-                      <td className={`px-3 py-1.5 text-right tabular-nums ${c.status === "completed" ? (pctPass >= 80 ? "text-green-600" : "text-red-600") : ""}`}>
-                        {c.status === "completed" ? `${pctPass}%` : "—"}
-                      </td>
-                      <td className="px-3 py-1.5 text-muted-foreground">{c.certificate_valid_months} meses</td>
-                      <td className="px-3 py-1.5 max-w-[160px] truncate text-muted-foreground text-[10px]" title={c.regulatory_basis ?? ""}>
-                        {c.regulatory_basis}
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${sl.cls}`}>
-                          {sl.label}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+              <tbody className="divide-y">
+                {courses.map(c => (
+                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3 font-mono text-xs text-gray-600">{c.course_code}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-900">{c.course_name}</p>
+                      {c.regulatory_basis && <p className="text-xs text-gray-400">{c.regulatory_basis}</p>}
+                    </td>
+                    <td className="px-4 py-3"><CatBadge cat={c.category} /></td>
+                    <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                      {new Date(c.scheduled_date).toLocaleDateString("es-CL")}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600">{c.duration_hours}h</td>
+                    <td className="px-4 py-3 text-xs text-gray-600">{c.instructor ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-gray-600">
+                      {c.participants_attended}/{c.participants_registered} asist.
+                    </td>
+                    <td className="px-4 py-3">
+                      <PassRate attended={c.participants_attended} passed={c.participants_passed} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600">{c.certificate_valid_months} meses</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEdit(c)}
+                          className="text-gray-400 hover:text-blue-600 p-1 rounded">
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
+                          className="text-gray-400 hover:text-red-600 p-1 rounded">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {/* Resumen de cumplimiento por trabajador */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="flex items-center gap-2 p-4 border-b border-border">
-          <Users className="h-4 w-4 text-accent" />
-          <h2 className="font-semibold">Cumplimiento de Capacitación — TOE</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="px-4 py-2 font-medium">Trabajador</th>
-                <th className="px-3 py-2 font-medium">RUT</th>
-                <th className="px-3 py-2 font-medium text-right">Cursos</th>
-                <th className="px-3 py-2 font-medium text-right">Horas totales</th>
-                <th className="px-3 py-2 font-medium">Última capacitación</th>
-                <th className="px-3 py-2 font-medium">Próximo vencimiento</th>
-                <th className="px-3 py-2 font-medium">Cumplimiento</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {workerSummary.map((w) => (
-                <tr key={w.worker_rut} className={!w.compliant ? "bg-red-50/20" : ""}>
-                  <td className="px-4 py-1.5 font-medium">{w.worker_name}</td>
-                  <td className="px-3 py-1.5 font-mono">{w.worker_rut}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{w.courses_completed}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{w.hours_total} h</td>
-                  <td className="px-3 py-1.5">{w.last_training ? fmtDate(w.last_training) : "—"}</td>
-                  <td className={`px-3 py-1.5 ${!w.compliant ? "text-red-600 font-semibold" : ""}`}>
-                    {w.next_due ? fmtDate(w.next_due) : "—"}
-                  </td>
-                  <td className="px-3 py-1.5">
-                    {w.compliant
-                      ? <span className="inline-flex items-center gap-1 text-green-600 font-semibold text-[10px]"><CheckCircle2 className="h-3 w-3" /> Al día</span>
-                      : <span className="inline-flex items-center gap-1 text-red-600 font-semibold text-[10px]"><AlertTriangle className="h-3 w-3" /> Vencido</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Regulatory note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+        <strong>Fundamento normativo:</strong> NS-06.0 §16 (CCHEN) y DS 133/1984 Art. 23 (MINSAL) establecen
+        la obligación de capacitación anual mínima de 8 horas para todo trabajador ocupacionalmente expuesto (TOE).
+        Los simulacros de emergencia radiológica son anuales (DS 133/1984 Art. 47). Se recomienda certificar
+        mediante evaluación escrita con tasa de aprobación ≥ 80%.
       </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h2 className="text-lg font-semibold">
+                {editId ? "Editar curso" : "Registrar curso de capacitación"}
+              </h2>
+              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+            </div>
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Código *</label>
+                  <input required value={form.course_code}
+                    onChange={e => setForm(f => ({ ...f, course_code: e.target.value }))}
+                    placeholder="CAP-RP-001"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del curso *</label>
+                  <input required value={form.course_name}
+                    onChange={e => setForm(f => ({ ...f, course_name: e.target.value }))}
+                    placeholder="Protección Radiológica Básica NS-06.0"
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                  <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                  <input required type="date" value={form.scheduled_date}
+                    onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Duración (h)</label>
+                  <input type="number" step="0.5" min="0.5" value={form.duration_hours}
+                    onChange={e => setForm(f => ({ ...f, duration_hours: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Vigencia cert. (meses)</label>
+                  <input type="number" value={form.certificate_valid_months}
+                    onChange={e => setForm(f => ({ ...f, certificate_valid_months: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+                  <input value={form.instructor}
+                    onChange={e => setForm(f => ({ ...f, instructor: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Base regulatoria</label>
+                  <select value={form.regulatory_basis}
+                    onChange={e => setForm(f => ({ ...f, regulatory_basis: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    {REG_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Registrados</label>
+                  <input type="number" value={form.participants_registered}
+                    onChange={e => setForm(f => ({ ...f, participants_registered: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Asistentes</label>
+                  <input type="number" value={form.participants_attended}
+                    onChange={e => setForm(f => ({ ...f, participants_attended: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Aprobados</label>
+                  <input type="number" value={form.participants_passed}
+                    onChange={e => setForm(f => ({ ...f, participants_passed: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                  <textarea value={form.notes} rows={2}
+                    onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
+                <button type="submit" disabled={saving}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                  {saving ? "Guardando…" : editId ? "Actualizar" : "Guardar Curso"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
