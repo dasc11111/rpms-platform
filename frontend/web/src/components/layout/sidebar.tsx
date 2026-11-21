@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList,
   FileText, Flame, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen,
+  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -55,6 +55,7 @@ const NAV = [
   { href: "/transport", label: "Transporte Radiactivo", icon: Truck },
 
   // ── Gestión Normativa ─────────────────────────────────
+  { href: "/alara", label: "Programa ALARA", icon: TrendingDown },
   { href: "/emergency", label: "Plan de Contingencia", icon: Flame },
   { href: "/incidents", label: "Incidentes", icon: AlertTriangle },
   { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
