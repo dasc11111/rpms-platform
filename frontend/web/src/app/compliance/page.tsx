@@ -81,6 +81,17 @@ export default async function CompliancePage() {
         <p className="text-sm text-muted-foreground mt-1">
           Matriz NS-06.0 CCHEN · DS 133/1984 · DS 3/1985 MINSAL — {requirements.length} requisitos
         </p>
+        <div className="mt-2 flex items-center gap-3">
+          <a
+            href="/api/compliance/auto-update"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            🔄 Actualizar estado automático (POST)
+          </a>
+          <span className="text-xs text-muted-foreground">
+            Sincroniza con módulos: dosimetría, instrumentos, fuentes, residuos, capacitación, incidentes, contaminación
+          </span>
+        </div>
       </div>
 
       {/* KPIs */}
