@@ -127,3 +127,55 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ dosimeter: created });
 }
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const { id, ...fields } = body as {
+    id: number;
+    status?: string;
+    worker_rut?: string | null;
+    worker_name?: string | null;
+    service?: string | null;
+    unit?: string | null;
+    delivery_date?: string | null;
+    estimated_return_date?: string | null;
+    observations?: string | null;
+    changedBy?: string;
+  };
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE dosimeters SET
+      status                 = COALESCE(${fields.status ?? null}, status),
+      worker_rut             = COALESCE(${fields.worker_rut ?? null}, worker_rut),
+      worker_name            = COALESCE(${fields.worker_name ?? null}, worker_name),
+      service                = COALESCE(${fields.service ?? null}, service),
+      unit                   = COALESCE(${fields.unit ?? null}, unit),
+      delivery_date          = COALESCE(${fields.delivery_date ?? null}::date, delivery_date),
+      estimated_return_date  = COALESCE(${fields.estimated_return_date ?? null}::date, estimated_return_date),
+      observations           = COALESCE(${fields.observations ?? null}, observations),
+      updated_at             = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ error: "Dosímetro no encontrado" }, { status: 404 });
+
+  // Log history
+  try {
+    await sql`
+      INSERT INTO dosimeter_history (dosimeter_id, changed_by, field_name, old_value, new_value)
+      VALUES (${id}, ${fields.changedBy ?? 'Sistema'}, 'actualizacion', NULL, ${JSON.stringify(fields)})
+    `;
+  } catch { /* tabla history opcional */ }
+
+  return NextResponse.json({ dosimeter: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  // Soft delete via status
+  await sql`UPDATE dosimeters SET status = 'retired', updated_at = NOW() WHERE id = ${Number(id)}`;
+  return NextResponse.json({ ok: true });
+}
