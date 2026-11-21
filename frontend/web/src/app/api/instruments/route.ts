@@ -178,3 +178,47 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ instrument: created });
 }
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const { id, changedBy, ...fields } = body as {
+    id: number; changedBy?: string;
+    name?: string; brand?: string; model?: string; serial_number?: string;
+    service?: string; unit?: string; location?: string; status?: string;
+    notes?: string; next_calibration_date?: string; next_maintenance_date?: string;
+  };
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE instruments SET
+      name                   = COALESCE(${fields.name ?? null}, name),
+      brand                  = COALESCE(${fields.brand ?? null}, brand),
+      model                  = COALESCE(${fields.model ?? null}, model),
+      serial_number          = COALESCE(${fields.serial_number ?? null}, serial_number),
+      service                = COALESCE(${fields.service ?? null}, service),
+      unit                   = COALESCE(${fields.unit ?? null}, unit),
+      location               = COALESCE(${fields.location ?? null}, location),
+      status                 = COALESCE(${fields.status ?? null}, status),
+      notes                  = COALESCE(${fields.notes ?? null}, notes),
+      next_calibration_date  = COALESCE(${fields.next_calibration_date ?? null}::date, next_calibration_date),
+      next_maintenance_date  = COALESCE(${fields.next_maintenance_date ?? null}::date, next_maintenance_date),
+      updated_at             = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ error: "Instrumento no encontrado" }, { status: 404 });
+  try {
+    await sql`
+      INSERT INTO instrument_history (instrument_id, changed_by, field_name, old_value, new_value)
+      VALUES (${id}, ${changedBy ?? 'Sistema'}, 'actualizacion', NULL, ${JSON.stringify(fields)})
+    `;
+  } catch { /* history opcional */ }
+  return NextResponse.json({ instrument: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  await sql`UPDATE instruments SET status = 'decommissioned', updated_at = NOW() WHERE id = ${Number(id)}`;
+  return NextResponse.json({ ok: true });
+}
