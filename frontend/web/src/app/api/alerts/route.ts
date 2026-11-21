@@ -332,6 +332,30 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #14: novedades con seguimiento vencido sin cerrar (DS 3/1985 Art.32)
+  try {
+    const { rows: overdueFollowUp } = await sql`
+      SELECT id, zone_name, event_type, description, reported_by, follow_up_date::text
+      FROM operational_logbook
+      WHERE follow_up_required = TRUE
+        AND follow_up_date < CURRENT_DATE
+        AND status != 'closed'
+      ORDER BY follow_up_date ASC
+      LIMIT 5
+    `;
+    for (const e of overdueFollowUp as { id: number; zone_name: string | null; event_type: string; description: string; reported_by: string; follow_up_date: string }[]) {
+      alerts.push({
+        id: `logbook-followup-${e.id}`,
+        type: "warning",
+        module: "Libro de Novedades",
+        title: `Seguimiento vencido: ${e.event_type}`,
+        detail: `Zona: ${e.zone_name ?? "N/A"} · Vencido: ${e.follow_up_date} · Rep: ${e.reported_by}`,
+        regulation: "DS 3/1985 MINSAL Art. 32",
+        action: "/logbook",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
