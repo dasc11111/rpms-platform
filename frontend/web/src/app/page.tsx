@@ -261,6 +261,43 @@ export default async function Dashboard() {
     rtIncidentesAbiertos = Number((rtRows[0] as any)?.count ?? 0);
   } catch {}
 
+  // Monitoreo de Área + Zonas Clasificadas KPIs
+  let areaMonitoringFails = 0;
+  let areaMonitoringReview = 0;
+  let zonasVencidas = 0;
+  let workersDoseExceeded = 0;
+  try {
+    const { rows: amFail } = await sql`
+      SELECT COUNT(DISTINCT zone_name)::int AS count FROM (
+        SELECT DISTINCT ON (zone_name) zone_name, result FROM area_monitoring_records ORDER BY zone_name, measurement_date DESC
+      ) t WHERE result = 'fail'
+    `;
+    areaMonitoringFails = Number((amFail[0] as any)?.count ?? 0);
+    const { rows: amReview } = await sql`
+      SELECT COUNT(DISTINCT zone_name)::int AS count FROM (
+        SELECT DISTINCT ON (zone_name) zone_name, result FROM area_monitoring_records ORDER BY zone_name, measurement_date DESC
+      ) t WHERE result = 'review'
+    `;
+    areaMonitoringReview = Number((amReview[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const { rows: zvRows } = await sql`
+      SELECT COUNT(*)::int AS count FROM classified_zones
+      WHERE status = 'active' AND next_survey_date IS NOT NULL AND next_survey_date < CURRENT_DATE
+    `;
+    zonasVencidas = Number((zvRows[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const currentYear = new Date().getFullYear();
+    const { rows: doseRows } = await sql`
+      SELECT COUNT(DISTINCT worker_id)::int AS count
+      FROM dosimetry_records
+      WHERE EXTRACT(YEAR FROM period_start) = ${currentYear}
+      GROUP BY worker_id HAVING SUM(heff_msv) >= 20
+    `;
+    workersDoseExceeded = doseRows.length;
+  } catch {}
+
   // ── Build real dashboard alerts from DB data ────────────────────────────────
   const dashboardAlerts: DashboardAlert[] = [];
 
@@ -363,6 +400,26 @@ export default async function Dashboard() {
       title: `${qcSpectVencidas} prueba${qcSpectVencidas > 1 ? "s" : ""} de QC SPECT vencida${qcSpectVencidas > 1 ? "s" : ""}`,
       description: "Centro de rotación o uniformidad tomográfica SPECT fuera de frecuencia IAEA TECDOC-602.",
       href: "/quality-control/spect",
+    });
+  }
+
+  if (areaMonitoringFails > 0) {
+    dashboardAlerts.push({
+      id: "area-monitoring-fail",
+      severity: "critical",
+      title: `${areaMonitoringFails} zona${areaMonitoringFails > 1 ? "s" : ""} con tasa de dosis excesiva`,
+      description: "Tasa de dosis ambiental supera límite de zona clasificada. Acción correctiva inmediata requerida. DS 3/1985 Art. 15.",
+      href: "/area-monitoring",
+    });
+  }
+
+  if (workersDoseExceeded > 0) {
+    dashboardAlerts.push({
+      id: "workers-dose-exceeded",
+      severity: "critical",
+      title: `${workersDoseExceeded} trabajador${workersDoseExceeded > 1 ? "es" : ""} excede límite anual de dosis`,
+      description: "Heff ≥ 20 mSv en el año actual. Reporte obligatorio a CCHEN. DS 3/1985 Art. 7.",
+      href: "/dosimetry/worker-history",
     });
   }
 
@@ -474,6 +531,10 @@ export default async function Dashboard() {
         <KPICard label="Alertas QC Linac" value={linacQcAlerts} href="/linac" icon={Zap} tone={linacQcAlerts > 0 ? "danger" : undefined} hint="controles vencidos o fallidos" />
         <KPICard label="Alertas Mantención Linac" value={linacMaintenanceAlerts} href="/linac" icon={Zap} tone={linacMaintenanceAlerts > 0 ? "warning" : undefined} hint="mantenciones pendientes" />
         <KPICard label="Incidentes Radioterapia" value={rtIncidentesAbiertos} href="/radioterapia" icon={HeartPulse} tone={rtIncidentesAbiertos > 0 ? "danger" : undefined} hint="incidentes abiertos SIGR" />
+        <KPICard label="Zonas con dosis excesiva" value={areaMonitoringFails} href="/area-monitoring" icon={Radiation} tone={areaMonitoringFails > 0 ? "danger" : undefined} hint="tasa supera límite DS 3/1985" />
+        <KPICard label="Zonas en revisión" value={areaMonitoringReview} href="/area-monitoring" icon={Activity} tone={areaMonitoringReview > 0 ? "warning" : undefined} hint="monitoreo ambiental" />
+        <KPICard label="Monitoreo zonas vencido" value={zonasVencidas} href="/classified-zones" icon={AlertCircle} tone={zonasVencidas > 0 ? "warning" : undefined} hint="zonas con survey vencido" />
+        <KPICard label="Trabajadores dosis excedida" value={workersDoseExceeded} href="/dosimetry/worker-history" icon={AlertTriangle} tone={workersDoseExceeded > 0 ? "danger" : undefined} hint="Heff ≥ 20 mSv este año" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
