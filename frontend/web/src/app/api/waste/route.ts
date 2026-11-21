@@ -71,3 +71,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json() as Record<string, unknown>;
+    const id = body.id;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE waste_records SET
+        radionuclido        = COALESCE(${body.radionuclido ? String(body.radionuclido).toUpperCase() : null}, radionuclido),
+        descripcion         = COALESCE(${body.descripcion ? String(body.descripcion) : null}, descripcion),
+        cantidad_mci        = COALESCE(${body.cantidad_mci != null ? Number(body.cantidad_mci) : null}, cantidad_mci),
+        cantidad_gbq        = COALESCE(${body.cantidad_gbq != null ? Number(body.cantidad_gbq) : null}, cantidad_gbq),
+        tipo_residuo        = COALESCE(${body.tipo_residuo ? String(body.tipo_residuo) : null}, tipo_residuo),
+        contenedor          = COALESCE(${body.contenedor ? String(body.contenedor) : null}, contenedor),
+        estado              = COALESCE(${body.estado ? String(body.estado) : null}, estado),
+        decaimiento_previsto = COALESCE(${body.decaimiento_previsto ? String(body.decaimiento_previsto) : null}::date, decaimiento_previsto),
+        responsable         = COALESCE(${body.responsable ? String(body.responsable) : null}, responsable),
+        observaciones       = COALESCE(${body.observaciones ? String(body.observaciones) : null}, observaciones),
+        updated_at          = NOW()
+      WHERE id = ${Number(id)}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json({ waste_record: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`UPDATE waste_records SET estado = 'eliminado', updated_at = NOW() WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

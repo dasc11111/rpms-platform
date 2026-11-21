@@ -1,36 +1,18 @@
-import { sql } from "@/lib/db";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import type { ComponentType } from "react";
+import type { LucideProps } from "lucide-react";
 import {
-  AlertTriangle,
-  CheckCircle2,
-  Trash2,
-  Package,
-  Clock,
-  ShieldAlert,
+  AlertTriangle, CheckCircle2, Trash2, Package, Clock,
+  ShieldAlert, Plus, Pencil, X, Loader2, Archive,
 } from "lucide-react";
-import { KPICard } from "@/components/dashboard/kpi-card";
+import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-
-// Categorías IAEA de residuos radiactivos (IAEA GSG-1)
-// Vida media en días para cálculo de decaimiento
-const NUCLIDE_HALF_LIFE: Record<string, number> = {
-  "I-131":   8.02,
-  "Tc-99m":  0.251,  // 6.01 horas
-  "F-18":    0.077,  // 1.83 horas
-  "Ga-67":   3.26,
-  "In-111":  2.80,
-  "Tl-201":  3.05,
-  "Lu-177":  6.65,
-  "Y-90":    2.67,
-  "Sr-89":   50.5,
-  "P-32":    14.3,
-  "Co-57":   272,
-};
-
+// ─── types ───────────────────────────────────────────────────────────────────
 type WasteCategory = "exempt" | "llw" | "ilw" | "hlw";
-type WasteStatus = "storage" | "decay_waiting" | "ready_release" | "transferred" | "disposed";
-type WasteState = "solid" | "liquid" | "gas";
+type WasteStatus   = "storage" | "decay_waiting" | "ready_release" | "transferred" | "disposed";
+type WasteState    = "solid" | "liquid" | "gas";
 
 interface WasteRow {
   id: number;
@@ -40,183 +22,301 @@ interface WasteRow {
   physical_state: WasteState;
   activity_bq_initial: number;
   activity_reference_date: string;
-  activity_current_bq: number | null;
-  half_life_days: number;
-  volume_liters: number;
-  mass_kg: number;
-  location: string;
+  half_life_days: number | null;
+  volume_liters: number | null;
+  mass_kg: number | null;
+  location: string | null;
   status: WasteStatus;
   estimated_release_date: string | null;
   generated_by: string | null;
   notes: string | null;
 }
 
-const CAT_LABEL: Record<WasteCategory, { label: string; cls: string; desc: string }> = {
-  exempt:  { label: "Exento",        cls: "text-green-700 bg-green-50",   desc: "< 10× Bq exento" },
-  llw:     { label: "BBNA",          cls: "text-blue-700 bg-blue-50",     desc: "Baja actividad" },
-  ilw:     { label: "MBNA",          cls: "text-amber-700 bg-amber-50",   desc: "Media actividad" },
-  hlw:     { label: "ABNA",          cls: "text-red-700 bg-red-50",       desc: "Alta actividad" },
+// ─── constants ───────────────────────────────────────────────────────────────
+const NUCLIDE_HALF_LIFE: Record<string, number> = {
+  "I-131":   8.02,
+  "Tc-99m":  0.251,
+  "F-18":    0.077,
+  "Ga-67":   3.26,
+  "In-111":  2.80,
+  "Tl-201":  3.05,
+  "Lu-177":  6.65,
+  "Y-90":    2.67,
+  "Sr-89":   50.5,
+  "P-32":    14.3,
+  "Co-57":   272,
+  "Ra-223":  11.4,
 };
 
-const STATUS_LABEL: Record<WasteStatus, { label: string; cls: string }> = {
-  storage:        { label: "En almacén",       cls: "text-blue-700 bg-blue-50" },
-  decay_waiting:  { label: "En decaimiento",   cls: "text-amber-700 bg-amber-50" },
-  ready_release:  { label: "Listo liberar",    cls: "text-green-700 bg-green-50" },
-  transferred:    { label: "Transferido",      cls: "text-purple-700 bg-purple-50" },
-  disposed:       { label: "Eliminado",        cls: "text-gray-500 bg-gray-50" },
+const NUCLIDES = Object.keys(NUCLIDE_HALF_LIFE);
+
+const CAT_CONFIG: Record<WasteCategory, { label: string; cls: string; desc: string }> = {
+  exempt:  { label: "Exento",  cls: "text-green-700 bg-green-50 border-green-200",   desc: "< 10× Bq exento" },
+  llw:     { label: "BBNA",   cls: "text-blue-700 bg-blue-50 border-blue-200",       desc: "Baja actividad" },
+  ilw:     { label: "MBNA",   cls: "text-amber-700 bg-amber-50 border-amber-200",    desc: "Media actividad" },
+  hlw:     { label: "ABNA",   cls: "text-red-700 bg-red-50 border-red-200",          desc: "Alta actividad" },
 };
 
-function calcCurrentActivity(initialBq: number, refDate: string, halfLifeDays: number): number {
+const STATUS_CONFIG: Record<WasteStatus, { label: string; cls: string; icon: ComponentType<LucideProps> }> = {
+  storage:        { label: "En almacén",      cls: "text-blue-700 bg-blue-50",    icon: Package },
+  decay_waiting:  { label: "En decaimiento",  cls: "text-amber-700 bg-amber-50",  icon: Clock },
+  ready_release:  { label: "Listo liberar",   cls: "text-green-700 bg-green-50",  icon: CheckCircle2 },
+  transferred:    { label: "Transferido",     cls: "text-purple-700 bg-purple-50", icon: Archive },
+  disposed:       { label: "Eliminado",       cls: "text-gray-500 bg-gray-100",   icon: Trash2 },
+};
+
+const PHYSICAL_STATES: { value: WasteState; label: string }[] = [
+  { value: "solid",  label: "Sólido" },
+  { value: "liquid", label: "Líquido" },
+  { value: "gas",    label: "Gaseoso" },
+];
+
+const CATEGORIES: { value: WasteCategory; label: string }[] = [
+  { value: "exempt", label: "Exento" },
+  { value: "llw",    label: "BBNA — Baja actividad" },
+  { value: "ilw",    label: "MBNA — Media actividad" },
+  { value: "hlw",    label: "ABNA — Alta actividad" },
+];
+
+const STATUSES: { value: WasteStatus; label: string }[] = [
+  { value: "storage",       label: "En almacén" },
+  { value: "decay_waiting", label: "En decaimiento" },
+  { value: "ready_release", label: "Listo para liberar" },
+  { value: "transferred",   label: "Transferido" },
+  { value: "disposed",      label: "Eliminado" },
+];
+
+const EXEMPT_LIMIT_BQ = 37000; // 37 kBq ~ límite exención típico
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+function fmtBq(bq: number): string {
+  if (bq >= 1e12) return `${(bq / 1e12).toFixed(2)} TBq`;
+  if (bq >= 1e9)  return `${(bq / 1e9).toFixed(2)} GBq`;
+  if (bq >= 1e6)  return `${(bq / 1e6).toFixed(2)} MBq`;
+  if (bq >= 1e3)  return `${(bq / 1e3).toFixed(1)} kBq`;
+  return `${bq.toFixed(0)} Bq`;
+}
+
+function calcCurrentBq(initialBq: number, refDate: string, halfLifeDays: number): number {
   if (halfLifeDays <= 0) return initialBq;
-  const ref = new Date(refDate).getTime();
-  const now = Date.now();
-  const elapsedDays = (now - ref) / (1000 * 60 * 60 * 24);
-  return initialBq * Math.pow(0.5, elapsedDays / halfLifeDays);
+  const elapsed = (Date.now() - new Date(refDate).getTime()) / 86400000;
+  return initialBq * Math.pow(0.5, elapsed / halfLifeDays);
 }
 
-function daysUntilRelease(initialBq: number, refDate: string, halfLifeDays: number, exemptLimitBq: number): number {
-  if (initialBq <= exemptLimitBq) return 0;
-  if (halfLifeDays <= 0) return Infinity;
-  const ref = new Date(refDate).getTime();
-  const elapsedDays = (Date.now() - ref) / (1000 * 60 * 60 * 24);
-  const tHalf = halfLifeDays * Math.log2(initialBq / exemptLimitBq);
-  return Math.max(0, tHalf - elapsedDays);
+function daysUntilExempt(initialBq: number, refDate: string, halfLifeDays: number): number | null {
+  if (!halfLifeDays || halfLifeDays <= 0) return null;
+  if (initialBq <= EXEMPT_LIMIT_BQ) return 0;
+  const elapsed = (Date.now() - new Date(refDate).getTime()) / 86400000;
+  const tHalf = halfLifeDays * Math.log2(initialBq / EXEMPT_LIMIT_BQ);
+  return Math.max(0, Math.ceil(tHalf - elapsed));
 }
 
-export default async function WastePage() {
-  // Lazy migration
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS radioactive_waste (
-        id SERIAL PRIMARY KEY,
-        container_code VARCHAR(50) UNIQUE NOT NULL,
-        nuclide VARCHAR(30) NOT NULL,
-        category VARCHAR(20) DEFAULT 'llw',
-        physical_state VARCHAR(10) DEFAULT 'solid',
-        activity_bq_initial NUMERIC(16,2) NOT NULL,
-        activity_reference_date TIMESTAMPTZ NOT NULL,
-        half_life_days NUMERIC(10,3),
-        volume_liters NUMERIC(10,3) DEFAULT 0,
-        mass_kg NUMERIC(10,3) DEFAULT 0,
-        location VARCHAR(200),
-        status VARCHAR(20) DEFAULT 'decay_waiting',
-        estimated_release_date TIMESTAMPTZ,
-        generated_by VARCHAR(200),
-        notes TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
-      )
-    `;
-  } catch { /* already exists */ }
+function halfLife(row: WasteRow): number {
+  return row.half_life_days ?? NUCLIDE_HALF_LIFE[row.nuclide] ?? 10;
+}
 
-  // Seed demo data
-  let seeded = false;
-  try {
-    const { rows: cnt } = await sql`SELECT COUNT(*)::int AS n FROM radioactive_waste`;
-    if (Number((cnt[0] as any)?.n ?? 0) === 0) {
-      const demos = [
-        { code: "RW-001", nuc: "I-131",  cat: "llw",  state: "solid",  bq: 3.7e9,  status: "decay_waiting",  loc: "Bodega residuos Sala I-131" },
-        { code: "RW-002", nuc: "Tc-99m", cat: "llw",  state: "liquid", bq: 1.85e9, status: "decay_waiting",  loc: "Bodega residuos Sala Prep" },
-        { code: "RW-003", nuc: "Tc-99m", cat: "exempt",state: "solid",  bq: 185e3,  status: "ready_release",  loc: "Bodega residuos Sala Prep" },
-        { code: "RW-004", nuc: "I-131",  cat: "llw",  state: "liquid", bq: 925e6,  status: "decay_waiting",  loc: "Bodega residuos Sala I-131" },
-        { code: "RW-005", nuc: "Ga-67",  cat: "llw",  state: "solid",  bq: 370e6,  status: "decay_waiting",  loc: "Bodega residuos Medicina Nuclear" },
-        { code: "RW-006", nuc: "F-18",   cat: "llw",  state: "solid",  bq: 1850e6, status: "ready_release",  loc: "Bodega residuos PET" },
-        { code: "RW-007", nuc: "Lu-177", cat: "ilw",  state: "liquid", bq: 7400e6, status: "storage",        loc: "Bodega blindada Terapia" },
-        { code: "RW-008", nuc: "Co-57",  cat: "exempt",state: "solid",  bq: 50e3,   status: "ready_release",  loc: "Bodega control de calidad" },
-      ];
-      for (const d of demos) {
-        const hl = NUCLIDE_HALF_LIFE[d.nuc] ?? 10;
-        await sql`
-          INSERT INTO radioactive_waste
-            (container_code, nuclide, category, physical_state, activity_bq_initial,
-             activity_reference_date, half_life_days, volume_liters, mass_kg,
-             location, status, generated_by)
-          VALUES
-            (${d.code}, ${d.nuc}, ${d.cat}, ${d.state}, ${d.bq},
-             now() - (random() * interval '20 days'), ${hl}, 5.0, 2.5,
-             ${d.loc}, ${d.status}, 'TM Diego Solís Catalán')
-          ON CONFLICT DO NOTHING
-        `;
-      }
-      seeded = true;
+// ─── blank form ──────────────────────────────────────────────────────────────
+function blankForm() {
+  return {
+    container_code: "",
+    nuclide: "I-131",
+    category: "llw" as WasteCategory,
+    physical_state: "solid" as WasteState,
+    activity_bq_initial: "",
+    activity_reference_date: new Date().toISOString().slice(0, 16),
+    half_life_days: "",
+    volume_liters: "",
+    mass_kg: "",
+    location: "",
+    status: "decay_waiting" as WasteStatus,
+    estimated_release_date: "",
+    generated_by: "",
+    notes: "",
+  };
+}
+
+// ─── KPI card ────────────────────────────────────────────────────────────────
+function KPI({ label, value, icon: Icon, tone }: {
+  label: string; value: number;
+  icon: ComponentType<LucideProps>;
+  tone?: "default" | "warning" | "success" | "danger";
+}) {
+  const colors = {
+    default: "text-foreground",
+    warning: "text-amber-600",
+    success: "text-green-600",
+    danger:  "text-red-600",
+  };
+  return (
+    <div className="rounded-xl border border-border bg-surface p-4 flex flex-col gap-1">
+      <div className="flex items-center gap-2 text-muted-foreground text-xs">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className={cn("text-2xl font-bold", colors[tone ?? "default"])}>{value}</div>
+    </div>
+  );
+}
+
+// ─── main page ───────────────────────────────────────────────────────────────
+export default function WastePage() {
+  const [containers, setContainers] = useState<WasteRow[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [filterStatus, setFilter]   = useState<WasteStatus | "all">("all");
+  const [showModal, setShowModal]   = useState(false);
+  const [editing, setEditing]       = useState<WasteRow | null>(null);
+  const [form, setForm]             = useState(blankForm());
+  const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/radioactive-waste");
+      const data = await res.json();
+      setContainers(data.containers ?? []);
+    } catch {
+      setError("Error cargando residuos");
+    } finally {
+      setLoading(false);
     }
-  } catch { /* table doesn't exist */ }
+  }, []);
 
-  let rows: WasteRow[] = [];
-  let totalContainers = 0;
-  let totalDecaying = 0;
-  let totalReadyRelease = 0;
-  let totalStorage = 0;
+  useEffect(() => { load(); }, [load]);
 
-  try {
-    const { rows: dbRows } = await sql`
-      SELECT id, container_code, nuclide, category, physical_state,
-             activity_bq_initial::float, activity_reference_date::text,
-             activity_current_bq::float, half_life_days::float,
-             volume_liters::float, mass_kg::float, location, status,
-             estimated_release_date::text, generated_by, notes
-      FROM radioactive_waste
-      WHERE status NOT IN ('disposed')
-      ORDER BY
-        CASE status WHEN 'storage' THEN 0 WHEN 'decay_waiting' THEN 1 WHEN 'ready_release' THEN 2 ELSE 3 END,
-        activity_bq_initial DESC
-      LIMIT 100
-    `;
-    rows = dbRows as WasteRow[];
-    totalContainers = rows.length;
-    for (const r of rows) {
-      if (r.status === "decay_waiting") totalDecaying++;
-      else if (r.status === "ready_release") totalReadyRelease++;
-      else if (r.status === "storage") totalStorage++;
-    }
-  } catch { /* tabla no existe */ }
-
-  // Enrich with calculated current activity
-  const enriched = rows.map((r) => {
-    const halfLife = r.half_life_days ?? (NUCLIDE_HALF_LIFE[r.nuclide] ?? 10);
-    const currentBq = calcCurrentActivity(r.activity_bq_initial, r.activity_reference_date, halfLife);
-    const daysLeft = daysUntilRelease(r.activity_bq_initial, r.activity_reference_date, halfLife, 37000); // 37 kBq ~ exemption
-    return { ...r, currentBq, daysLeft: isFinite(daysLeft) ? Math.ceil(daysLeft) : null };
-  });
-
-  function fmtBq(bq: number): string {
-    if (bq >= 1e12) return `${(bq / 1e12).toFixed(2)} TBq`;
-    if (bq >= 1e9)  return `${(bq / 1e9).toFixed(2)} GBq`;
-    if (bq >= 1e6)  return `${(bq / 1e6).toFixed(2)} MBq`;
-    if (bq >= 1e3)  return `${(bq / 1e3).toFixed(1)} kBq`;
-    return `${bq.toFixed(0)} Bq`;
+  function openNew() {
+    setEditing(null);
+    setForm(blankForm());
+    setError(null);
+    setShowModal(true);
   }
+
+  function openEdit(row: WasteRow) {
+    setEditing(row);
+    setForm({
+      container_code:         row.container_code,
+      nuclide:                row.nuclide,
+      category:               row.category,
+      physical_state:         row.physical_state,
+      activity_bq_initial:    String(row.activity_bq_initial),
+      activity_reference_date: row.activity_reference_date?.slice(0, 16) ?? "",
+      half_life_days:         row.half_life_days != null ? String(row.half_life_days) : "",
+      volume_liters:          row.volume_liters != null ? String(row.volume_liters) : "",
+      mass_kg:                row.mass_kg != null ? String(row.mass_kg) : "",
+      location:               row.location ?? "",
+      status:                 row.status,
+      estimated_release_date: row.estimated_release_date?.slice(0, 16) ?? "",
+      generated_by:           row.generated_by ?? "",
+      notes:                  row.notes ?? "",
+    });
+    setError(null);
+    setShowModal(true);
+  }
+
+  async function handleSave(ev: { preventDefault: () => void }) {
+    ev.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        ...form,
+        activity_bq_initial:    form.activity_bq_initial    ? Number(form.activity_bq_initial) : undefined,
+        half_life_days:         form.half_life_days          ? Number(form.half_life_days) : undefined,
+        volume_liters:          form.volume_liters           ? Number(form.volume_liters) : undefined,
+        mass_kg:                form.mass_kg                 ? Number(form.mass_kg) : undefined,
+        activity_reference_date: form.activity_reference_date || undefined,
+        estimated_release_date:  form.estimated_release_date  || undefined,
+        ...(editing ? { id: editing.id } : {}),
+      };
+      const method = editing ? "PATCH" : "POST";
+      const res = await fetch("/api/radioactive-waste", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error ?? "Error guardando");
+      }
+      setShowModal(false);
+      load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDispose(id: number) {
+    if (!confirm("¿Marcar este contenedor como eliminado (disposed)?")) return;
+    await fetch(`/api/radioactive-waste?id=${id}`, { method: "DELETE" });
+    load();
+  }
+
+  // filter
+  const filtered = filterStatus === "all"
+    ? containers
+    : containers.filter(r => r.status === filterStatus);
+
+  // KPIs
+  const totalStorage      = containers.filter(r => r.status === "storage").length;
+  const totalDecaying     = containers.filter(r => r.status === "decay_waiting").length;
+  const totalReady        = containers.filter(r => r.status === "ready_release").length;
+  const totalHlw          = containers.filter(r => r.category === "hlw").length;
+  const readyForRelease   = containers.filter(r => {
+    const hl = halfLife(r);
+    const days = daysUntilExempt(r.activity_bq_initial, r.activity_reference_date, hl);
+    return days === 0 && r.status !== "disposed";
+  }).length;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Gestión de Residuos Radiactivos</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Inventario, seguimiento de decaimiento y gestión de residuos radiactivos hospitalarios
-          {seeded && <span className="ml-2 text-accent">(datos demo inicializados)</span>}
-        </p>
-        <p className="text-xs text-muted-foreground">NS-06.0 §9 CCHEN · DS 133/1984 · IAEA GSG-1 · IAEA GSR Part 5</p>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Gestión de Residuos Radiactivos</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Inventario, seguimiento de decaimiento y gestión de residuos radiactivos hospitalarios
+          </p>
+          <p className="text-xs text-muted-foreground">
+            NS-06.0 §9 CCHEN · DS 133/1984 · IAEA GSG-1 · IAEA GSR Part 5
+          </p>
+        </div>
+        <button
+          onClick={openNew}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> Nuevo contenedor
+        </button>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-        <KPICard label="Total contenedores" value={totalContainers} href="/waste" icon={Package as ComponentType<{ className?: string }>} />
-        <KPICard label="En almacenamiento" value={totalStorage} href="/waste" icon={Trash2 as ComponentType<{ className?: string }>} tone="warning" />
-        <KPICard label="En decaimiento" value={totalDecaying} href="/waste" icon={Clock as ComponentType<{ className?: string }>} tone="default" />
-        <KPICard label="Listos para liberar" value={totalReadyRelease} href="/waste" icon={CheckCircle2 as ComponentType<{ className?: string }>} tone={totalReadyRelease > 0 ? "success" : "default"} />
-        <KPICard label="ABNA almacenada" value={enriched.filter(r => r.category === "hlw").length} href="/waste" icon={ShieldAlert as ComponentType<{ className?: string }>} tone={enriched.filter(r => r.category === "hlw").length > 0 ? "danger" : "default"} hint="Alta actividad" />
-        <KPICard label="Lím. 10 vidas medias" value={10} href="/waste" icon={AlertTriangle as ComponentType<{ className?: string }>} hint="Regla decaimiento" />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <KPI label="Total activos"      value={containers.length}  icon={Package}      />
+        <KPI label="En almacén"         value={totalStorage}       icon={Package}      tone="warning" />
+        <KPI label="En decaimiento"     value={totalDecaying}      icon={Clock}        />
+        <KPI label="Listos liberar"     value={totalReady}         icon={CheckCircle2} tone={totalReady > 0 ? "success" : "default"} />
+        <KPI label="Listos (cálculo)"   value={readyForRelease}    icon={CheckCircle2} tone={readyForRelease > 0 ? "success" : "default"} />
+        <KPI label="ABNA"               value={totalHlw}           icon={ShieldAlert}  tone={totalHlw > 0 ? "danger" : "default"} />
       </div>
 
-      {/* Categorías IAEA */}
+      {/* Alert: containers ready */}
+      {readyForRelease > 0 && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          <CheckCircle2 className="inline h-4 w-4 mr-1" />
+          <strong>{readyForRelease}</strong> contenedor{readyForRelease > 1 ? "es" : ""} ha alcanzado nivel exento y puede ser liberado.
+        </div>
+      )}
+
+      {/* Category guide */}
       <div className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="font-semibold mb-3">Clasificación de Residuos — IAEA GSG-1 / NS-06.0 §9</h2>
+        <h2 className="font-semibold mb-3">Clasificación IAEA GSG-1 / NS-06.0 §9</h2>
         <div className="grid gap-3 text-xs md:grid-cols-4">
-          {(Object.entries(CAT_LABEL) as [WasteCategory, typeof CAT_LABEL[WasteCategory]][]).map(([cat, info]) => (
-            <div key={cat} className={`rounded-lg border p-3 ${info.cls.replace("text-", "border-").split(" ")[0]!.replace("700", "200")} bg-opacity-20`}>
-              <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${info.cls}`}>{info.label}</span>
+          {(Object.entries(CAT_CONFIG) as [WasteCategory, (typeof CAT_CONFIG)[WasteCategory]][]).map(([cat, info]) => (
+            <div key={cat} className={cn("rounded-lg border p-3", info.cls)}>
+              <span className="font-bold">{info.label}</span>
               <div className="mt-1 font-medium">{info.desc}</div>
-              <div className="mt-0.5 text-muted-foreground">
+              <div className="mt-0.5 text-current/60">
                 {cat === "exempt" && "Libre de gestión especial"}
                 {cat === "llw"    && "Almacen. temporal + decaimiento"}
                 {cat === "ilw"    && "Gestión especializada CCHEN"}
@@ -227,16 +327,39 @@ export default async function WastePage() {
         </div>
       </div>
 
-      {/* Tabla de inventario */}
+      {/* Filter */}
+      <div className="flex flex-wrap gap-2">
+        {([["all", "Todos"] as const, ...STATUSES.map(s => [s.value, s.label] as const)]).map(([val, lbl]) => (
+          <button
+            key={val}
+            onClick={() => setFilter(val as WasteStatus | "all")}
+            className={cn(
+              "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
+              filterStatus === val
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-surface text-muted-foreground border-border hover:border-primary/50"
+            )}
+          >
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
       <div className="rounded-xl border border-border bg-surface">
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-semibold">Inventario de Residuos Activos</h2>
-          <span className="text-xs text-muted-foreground">Actividad actual calculada por decaimiento radiactivo</span>
+          <h2 className="font-semibold">Inventario de Contenedores</h2>
+          <span className="text-xs text-muted-foreground">
+            {filtered.length} contenedor{filtered.length !== 1 ? "es" : ""}
+          </span>
         </div>
-        {enriched.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Sin registros. Ejecute{" "}
-            <a href="/api/init" className="text-accent underline">/api/init</a> para datos demo.
+        {loading ? (
+          <div className="flex items-center justify-center p-10 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Cargando…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            Sin contenedores. Haga clic en <strong>Nuevo contenedor</strong> para registrar.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -253,49 +376,57 @@ export default async function WastePage() {
                   <th className="px-3 py-2 font-medium">Días p/ liberar</th>
                   <th className="px-3 py-2 font-medium">Ubicación</th>
                   <th className="px-3 py-2 font-medium">Estado</th>
+                  <th className="px-3 py-2 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {enriched.map((r) => {
-                  const cl = CAT_LABEL[r.category] ?? CAT_LABEL.llw;
-                  const sl = STATUS_LABEL[r.status] ?? STATUS_LABEL.storage;
-                  const halfLife = r.half_life_days ?? (NUCLIDE_HALF_LIFE[r.nuclide] ?? 10);
+                {filtered.map((r) => {
+                  const hl   = halfLife(r);
+                  const curr = calcCurrentBq(r.activity_bq_initial, r.activity_reference_date, hl);
+                  const days = daysUntilExempt(r.activity_bq_initial, r.activity_reference_date, hl);
+                  const cat  = CAT_CONFIG[r.category] ?? CAT_CONFIG.llw;
+                  const st   = STATUS_CONFIG[r.status] ?? STATUS_CONFIG.storage;
                   return (
-                    <tr
-                      key={r.id}
-                      className={
-                        r.category === "hlw"
-                          ? "bg-red-50/20"
-                          : r.status === "ready_release"
-                          ? "bg-green-50/20"
-                          : ""
-                      }
-                    >
+                    <tr key={r.id} className={cn(
+                      r.category === "hlw"            ? "bg-red-50/20"   :
+                      r.status === "ready_release"    ? "bg-green-50/20" :
+                      "hover:bg-muted/30 transition-colors"
+                    )}>
                       <td className="px-4 py-1.5 font-mono font-medium">{r.container_code}</td>
                       <td className="px-3 py-1.5 font-mono">{r.nuclide}</td>
                       <td className="px-3 py-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${cl.cls}`}>
-                          {cl.label}
+                        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", cat.cls)}>
+                          {cat.label}
                         </span>
                       </td>
                       <td className="px-3 py-1.5 capitalize">{r.physical_state}</td>
                       <td className="px-3 py-1.5 text-right tabular-nums">{fmtBq(r.activity_bq_initial)}</td>
-                      <td className="px-3 py-1.5 text-right tabular-nums text-accent">{fmtBq(r.currentBq)}</td>
-                      <td className="px-3 py-1.5 tabular-nums">{halfLife.toFixed(2)}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums text-blue-600">{fmtBq(curr)}</td>
+                      <td className="px-3 py-1.5 tabular-nums">{hl.toFixed(2)}</td>
                       <td className="px-3 py-1.5 tabular-nums">
-                        {r.daysLeft === null ? "—" : r.daysLeft === 0 ? (
-                          <span className="text-green-600 font-semibold">✓ Listo</span>
-                        ) : (
-                          `${r.daysLeft} días`
-                        )}
+                        {days === null ? "—" :
+                         days === 0   ? <span className="text-green-600 font-semibold">✓ Listo</span> :
+                                        `${days} días`}
                       </td>
                       <td className="px-3 py-1.5 max-w-[160px] truncate text-muted-foreground" title={r.location ?? ""}>
-                        {r.location}
+                        {r.location ?? "—"}
                       </td>
                       <td className="px-3 py-1.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${sl.cls}`}>
-                          {sl.label}
+                        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", st.cls)}>
+                          {st.label}
                         </span>
+                      </td>
+                      <td className="px-3 py-1.5">
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => openEdit(r)}
+                            className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground">
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => handleDispose(r.id)}
+                            className="rounded p-1 hover:bg-red-50 text-muted-foreground hover:text-red-600">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -305,6 +436,161 @@ export default async function WastePage() {
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-border bg-background shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-6 py-4">
+              <h2 className="font-semibold text-lg">
+                {editing ? "Editar contenedor" : "Nuevo contenedor de residuos"}
+              </h2>
+              <button onClick={() => setShowModal(false)} className="rounded-full p-1 hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="p-6 space-y-6">
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {/* Identificación */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Identificación del contenedor
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Código contenedor *</label>
+                    <input required value={form.container_code} onChange={e => setForm(f => ({ ...f, container_code: e.target.value }))}
+                      placeholder="RW-001"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Responsable</label>
+                    <input value={form.generated_by} onChange={e => setForm(f => ({ ...f, generated_by: e.target.value }))}
+                      placeholder="TM Diego Solís Catalán"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Categoría IAEA *</label>
+                    <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as WasteCategory }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Estado físico</label>
+                    <select value={form.physical_state} onChange={e => setForm(f => ({ ...f, physical_state: e.target.value as WasteState }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      {PHYSICAL_STATES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium mb-1">Ubicación</label>
+                    <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                      placeholder="Bodega residuos Sala I-131"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                </div>
+              </section>
+
+              {/* Radiactividad */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Radiactividad y nuclido
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Nuclido *</label>
+                    <select value={form.nuclide} onChange={e => {
+                      const hl = NUCLIDE_HALF_LIFE[e.target.value];
+                      setForm(f => ({ ...f, nuclide: e.target.value, half_life_days: hl ? String(hl) : f.half_life_days }));
+                    }}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      {NUCLIDES.map(n => <option key={n} value={n}>{n}</option>)}
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Vida media (días)</label>
+                    <input type="number" step="0.001" min="0" value={form.half_life_days}
+                      onChange={e => setForm(f => ({ ...f, half_life_days: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Actividad inicial (Bq) *</label>
+                    <input required type="number" step="any" min="0" value={form.activity_bq_initial}
+                      onChange={e => setForm(f => ({ ...f, activity_bq_initial: e.target.value }))}
+                      placeholder="3700000000"
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Fecha referencia actividad</label>
+                    <input type="datetime-local" value={form.activity_reference_date}
+                      onChange={e => setForm(f => ({ ...f, activity_reference_date: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Volumen (L)</label>
+                    <input type="number" step="0.001" min="0" value={form.volume_liters}
+                      onChange={e => setForm(f => ({ ...f, volume_liters: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Masa (kg)</label>
+                    <input type="number" step="0.001" min="0" value={form.mass_kg}
+                      onChange={e => setForm(f => ({ ...f, mass_kg: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                </div>
+              </section>
+
+              {/* Estado y fechas */}
+              <section>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Estado y gestión
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Estado</label>
+                    <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as WasteStatus }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Fecha estimada liberación</label>
+                    <input type="datetime-local" value={form.estimated_release_date}
+                      onChange={e => setForm(f => ({ ...f, estimated_release_date: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium mb-1">Observaciones</label>
+                    <textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                      className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" />
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={saving}
+                  className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {editing ? "Guardar cambios" : "Registrar contenedor"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
