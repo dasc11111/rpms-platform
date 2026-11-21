@@ -179,31 +179,39 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
-  // 8. Trabajadores con dosis anuales ≥ 15 mSv (nivel investigación DS 3/1985)
+  // 8. Trabajadores con dosis anuales superando umbrales DS 3/1985 Art.7
   try {
     const currentYear = new Date().getFullYear();
+    const yearStr = String(currentYear);
+    // Consulta compatible con nueva tabla dosimetry_readings
     const { rows: doseRows } = await sql`
       SELECT
-        w.name,
-        ROUND(SUM(COALESCE(dr.dose_whole_body_msv, 0))::numeric, 2) AS heff_msv
-      FROM workers w
-      JOIN dosimetry_records dr ON dr.worker_id = w.id AND dr.year = ${currentYear}
-      WHERE w.status <> 'inactive'
-      GROUP BY w.name
-      HAVING SUM(COALESCE(dr.dose_whole_body_msv, 0)) >= 15
-      ORDER BY heff_msv DESC
+        d.worker_name,
+        d.worker_rut,
+        COALESCE(w.category, 'B') AS category,
+        ROUND(SUM(d.dose)::numeric, 3) AS total_dose
+      FROM dosimetry_readings d
+      LEFT JOIN workers w ON w.rut = d.worker_rut
+      WHERE (d.period LIKE ${yearStr + '-%'} OR d.period LIKE ${'%/' + yearStr} OR d.period LIKE ${yearStr + '%'})
+        AND (d.body_region = 'whole_body' OR d.body_region IS NULL)
+        AND d.status NOT IN ('lost', 'not_worn', 'damaged')
+      GROUP BY d.worker_name, d.worker_rut, w.category
+      HAVING SUM(d.dose) >= 15
+      ORDER BY total_dose DESC
       LIMIT 5
     `;
-    for (const d of doseRows as { name: string; heff_msv: string }[]) {
-      const heff = parseFloat(d.heff_msv);
+    for (const d of doseRows as { worker_name: string; worker_rut: string | null; category: string; total_dose: string }[]) {
+      const dose = parseFloat(d.total_dose);
+      const limit = d.category === "A" ? 50 : 15;
+      const exceeded = dose >= limit;
       alerts.push({
-        id: `dose-${d.name}`,
-        type: heff >= 20 ? "danger" : "warning",
+        id: `dose-${d.worker_name}`,
+        type: exceeded ? "danger" : "warning",
         module: "Dosimetría",
-        title: `${heff >= 20 ? "Límite superado" : "Nivel investigación"}: ${d.name}`,
-        detail: `Heff ${currentYear}: ${heff} mSv / 20 mSv límite anual`,
-        regulation: "DS 3/1985 Art. 7 — CCHEN",
-        action: "/dosimetry/worker-history",
+        title: `${exceeded ? "Límite anual superado" : "Umbral investigación"}: ${d.worker_name}`,
+        detail: `Heff ${currentYear}: ${dose.toFixed(2)} mSv / ${limit} mSv (Cat.${d.category})`,
+        regulation: "DS 3/1985 MINSAL Art. 7",
+        action: "/dosimetry",
       });
     }
   } catch { /* tabla no existe aún */ }
