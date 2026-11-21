@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureCommissioningTables, logCommissioningAudit } from "@/lib/linac-commissioning";
 import { promoteDatasetToBaseline } from "@/lib/linac-baseline";
@@ -83,4 +83,18 @@ export async function PATCH(request: Request) {
   }
 
   return NextResponse.json({ error: "invalid_action" }, { status: 400 });
+}
+
+// DELETE /api/linac/commissioning?id=
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { rows } = await sql`DELETE FROM linac_commissioning_datasets WHERE id = ${Number(id)} RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    await logCommissioningAudit("delete_commissioning_dataset", "system", { id: Number(id) });
+    return NextResponse.json({ deleted: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

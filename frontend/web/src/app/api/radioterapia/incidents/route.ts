@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureRadioterapiaTables, logRadioterapiaAudit } from "@/lib/radioterapia";
 
@@ -72,4 +72,18 @@ return NextResponse.json({ ok: true });
 await sql`UPDATE rt_incidents SET status = ${body.status}, updated_at = now() WHERE id = ${body.id}`;
 await logRadioterapiaAudit("update_rt_incident_status", actorEmail, { id: body.id, status: body.status });
 return NextResponse.json({ ok: true });
+}
+
+// DELETE /api/radioterapia/incidents?id=
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { rows } = await sql`DELETE FROM rt_incidents WHERE id = ${Number(id)} RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    await logRadioterapiaAudit("delete_rt_incident", "system", { id: Number(id) });
+    return NextResponse.json({ deleted: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

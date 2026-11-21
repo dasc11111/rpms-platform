@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureRadioterapiaTables, logRadioterapiaAudit, getRiskClassification } from "@/lib/radioterapia";
 
@@ -104,4 +104,18 @@ export async function PATCH(request: Request) {
   `;
   await logRadioterapiaAudit("update_rt_risk", actorEmail, { id: body.id, fromStatus: existing.status, toStatus: body.status ?? existing.status });
   return NextResponse.json({ ok: true });
+}
+
+// DELETE /api/radioterapia/risks?id=
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { rows } = await sql`DELETE FROM rt_risks WHERE id = ${Number(id)} RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    await logRadioterapiaAudit("delete_rt_risk", "system", { id: Number(id) });
+    return NextResponse.json({ deleted: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
+}

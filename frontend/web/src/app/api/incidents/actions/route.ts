@@ -106,3 +106,16 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+// DELETE /api/incidents/actions?id=
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { rows } = await sql`DELETE FROM incident_actions WHERE id = ${Number(id)} RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json({ deleted: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

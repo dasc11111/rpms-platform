@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
@@ -126,4 +126,18 @@ export async function PATCH(request: Request) {
   await sql`UPDATE linac_radiation_protection SET status = ${status}, updated_at = now() WHERE id = ${id}`;
   await logRadiationAudit("update_linac_radiation_status", actorEmail, { id, status });
   return NextResponse.json({ ok: true });
+}
+
+// DELETE /api/linac/radiation?id=
+export async function DELETE(req: NextRequest) {
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const { rows } = await sql`DELETE FROM linac_radiation_protection WHERE id = ${Number(id)} RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+    await logRadiationAudit("delete_linac_radiation", "system", { id: Number(id) });
+    return NextResponse.json({ deleted: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }

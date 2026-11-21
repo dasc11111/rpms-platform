@@ -157,6 +157,39 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ movement: rows[0] }, { status: 201 });
 }
 
+export async function PATCH(req: NextRequest) {
+  await ensureTable();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const body = (await req.json()) as Partial<{
+    movement_type: string; movement_date: string; origin_location: string;
+    destination_location: string; responsible: string; authorized_by: string;
+    document_ref: string; expected_return_date: string; actual_return_date: string;
+    activity_gbq: number; notes: string;
+  }>;
+
+  const { rows } = await sql`
+    UPDATE source_movements SET
+      movement_type       = COALESCE(${body.movement_type ?? null}, movement_type),
+      movement_date       = COALESCE(${body.movement_date ?? null}::date, movement_date),
+      origin_location     = COALESCE(${body.origin_location ?? null}, origin_location),
+      destination_location = COALESCE(${body.destination_location ?? null}, destination_location),
+      responsible         = COALESCE(${body.responsible ?? null}, responsible),
+      authorized_by       = COALESCE(${body.authorized_by ?? null}, authorized_by),
+      document_ref        = COALESCE(${body.document_ref ?? null}, document_ref),
+      expected_return_date = COALESCE(${body.expected_return_date ?? null}::date, expected_return_date),
+      actual_return_date  = COALESCE(${body.actual_return_date ?? null}::date, actual_return_date),
+      activity_gbq        = COALESCE(${body.activity_gbq ?? null}::numeric, activity_gbq),
+      notes               = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${parseInt(id, 10)}
+    RETURNING *
+  `;
+  if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+  return NextResponse.json({ movement: rows[0] });
+}
+
 export async function DELETE(req: NextRequest) {
   await ensureTable();
   const { searchParams } = new URL(req.url);
