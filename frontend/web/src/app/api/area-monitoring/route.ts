@@ -165,3 +165,44 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  await ensureTable();
+  try {
+    const body = await req.json();
+    const { id, zone_name, location, measurement_date, instrument_name,
+            dose_rate_usv_h, background_usv_h, occupancy_factor, notes, performed_by } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+    let net = null as number | null;
+    let classification = null as { result: string; annual_estimate_msv: number } | null;
+    if (dose_rate_usv_h != null) {
+      const occ = parseFloat(occupancy_factor ?? 1);
+      const bg = background_usv_h != null ? parseFloat(background_usv_h) : 0;
+      net = Math.max(0, parseFloat(dose_rate_usv_h) - bg);
+      classification = classifyRate(net, occ);
+    }
+
+    const { rows } = await sql`
+      UPDATE area_monitoring_records SET
+        zone_name           = COALESCE(${zone_name ?? null}, zone_name),
+        location            = COALESCE(${location ?? null}, location),
+        measurement_date    = COALESCE(${measurement_date ? new Date(measurement_date) : null}, measurement_date),
+        instrument_name     = COALESCE(${instrument_name ?? null}, instrument_name),
+        dose_rate_usv_h     = COALESCE(${dose_rate_usv_h != null ? parseFloat(dose_rate_usv_h) : null}, dose_rate_usv_h),
+        background_usv_h    = COALESCE(${background_usv_h != null ? parseFloat(background_usv_h) : null}, background_usv_h),
+        net_dose_rate_usv_h = COALESCE(${net}, net_dose_rate_usv_h),
+        occupancy_factor    = COALESCE(${occupancy_factor != null ? parseFloat(occupancy_factor) : null}, occupancy_factor),
+        expected_annual_dose_msv = COALESCE(${classification?.annual_estimate_msv ?? null}, expected_annual_dose_msv),
+        result              = COALESCE(${classification?.result ?? null}, result),
+        notes               = COALESCE(${notes ?? null}, notes),
+        performed_by        = COALESCE(${performed_by ?? null}, performed_by)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json(rows[0]);
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

@@ -162,3 +162,23 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, exit_datetime, exit_dose_reading_usv, notes } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE zone_access_log SET
+        exit_datetime          = COALESCE(${exit_datetime ? new Date(exit_datetime) : null}, exit_datetime),
+        exit_dose_reading_usv  = COALESCE(${exit_dose_reading_usv ?? null}, exit_dose_reading_usv),
+        notes                  = COALESCE(${notes ?? null}, notes)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json(rows[0]);
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

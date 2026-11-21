@@ -328,3 +328,37 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ row: created }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, estado, accion_correctiva, observaciones, responsable } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE contamination_records SET
+        estado            = COALESCE(${estado ?? null}, estado),
+        accion_correctiva = COALESCE(${accion_correctiva ?? null}, accion_correctiva),
+        observaciones     = COALESCE(${observaciones ?? null}, observaciones),
+        responsable       = COALESCE(${responsable ?? null}, responsable),
+        updated_at        = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json({ row: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`DELETE FROM contamination_records WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
