@@ -163,6 +163,24 @@ export default async function Dashboard() {
     dosimetrosProblema = Number((dosRows[0] as any)?.problems ?? 0);
   } catch { /* tabla no creada */ }
 
+  // Dosis colectiva mensual (últimos 6 meses) para DoseChart
+  interface DosePoint { month: string; dosis_total: number; trabajadores: number; dosis_max: number; }
+  let doseData: DosePoint[] = [];
+  try {
+    const { rows: doseRows } = await sql`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', month_year), 'Mon YY') AS month,
+        ROUND(SUM(total_dose_msv)::numeric, 2)::float AS dosis_total,
+        COUNT(DISTINCT worker_rut)::int AS trabajadores,
+        ROUND(MAX(total_dose_msv)::numeric, 2)::float AS dosis_max
+      FROM worker_dose_summary_monthly
+      WHERE month_year >= DATE_TRUNC('month', now()) - INTERVAL '5 months'
+      GROUP BY DATE_TRUNC('month', month_year)
+      ORDER BY DATE_TRUNC('month', month_year) ASC
+    `;
+    doseData = doseRows as DosePoint[];
+  } catch { /* tabla no creada aún */ }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -194,7 +212,7 @@ export default async function Dashboard() {
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Dosis colectiva mensual</h2>
-          <DoseChart />
+          <DoseChart data={doseData} />
         </div>
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Vencimientos próximos 90 días</h2>
