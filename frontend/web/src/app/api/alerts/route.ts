@@ -232,6 +232,28 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #10: area monitoring — zones with result = 'fail' (tasa supera límite)
+  try {
+    const { rows: failZones } = await sql`
+      SELECT DISTINCT ON (zone_name) zone_name, location, dose_rate_usv_h, expected_annual_dose_msv
+      FROM area_monitoring_records
+      WHERE result = 'fail'
+      ORDER BY zone_name, measurement_date DESC
+      LIMIT 5
+    `;
+    for (const z of failZones as { zone_name: string; location: string; dose_rate_usv_h: number; expected_annual_dose_msv: number }[]) {
+      alerts.push({
+        id: `area-fail-${z.zone_name}`,
+        type: "danger",
+        module: "Monitoreo de Área",
+        title: `Tasa de dosis excesiva: ${z.zone_name}`,
+        detail: `${Number(z.dose_rate_usv_h).toFixed(2)} µSv/h → ~${Number(z.expected_annual_dose_msv).toFixed(1)} mSv/año en ${z.location}`,
+        regulation: "DS 3/1985 Art. 15 — MINSAL",
+        action: "/area-monitoring",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
