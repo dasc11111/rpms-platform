@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList,
+  Tag, Activity, AlertTriangle, Award, BarChart3, Biohazard, ClipboardList,
   FileText, Flame, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
@@ -43,6 +43,7 @@ const NAV = [
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/instruments", label: "Instrumentos", icon: Wrench },
   { href: "/instruments/operational-check", label: "Verif. Operacional", icon: CheckSquare },
+  { href: "/instruments/calibrations", label: "Estado Calibraciones", icon: Award },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
   { href: "/sources/movements", label: "Movimientos IMAR", icon: ArrowRightLeft },
 
