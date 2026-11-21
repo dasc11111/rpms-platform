@@ -1,43 +1,63 @@
-import { sql } from "@/lib/db";
-import { ensureTransportTables } from "@/lib/transport";
+"use client";
+
+import { useState, useEffect } from "react";
 import { TransportApp } from "@/components/transport/transport-app";
+import { Loader2 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export default function TransportPage() {
+  const [data, setData] = useState<{
+    shipments: unknown[];
+    radionuclides: unknown[];
+    authorization: unknown | null;
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-export default async function TransportPage() {
-  await ensureTransportTables();
+  useEffect(() => {
+    async function load() {
+      try {
+        const [shipRes, nucRes, authRes] = await Promise.all([
+          fetch("/api/transport"),
+          fetch("/api/transport/radionuclides"),
+          fetch("/api/transport/authorization"),
+        ]);
+        const [shipData, nucData, authData] = await Promise.all([
+          shipRes.json(),
+          nucRes.json(),
+          authRes.json(),
+        ]);
+        setData({
+          shipments:    shipData.shipments    ?? [],
+          radionuclides: nucData.radionuclides ?? [],
+          authorization: authData.authorization ?? null,
+        });
+      } catch (e) {
+        setError(String(e));
+      }
+    }
+    load();
+  }, []);
 
-  const { rows: radionuclideRows } = await sql`
-    SELECT code, label, activity_label, allows_multiple FROM transport_radionuclides ORDER BY label;
-  `;
-  const radionuclides = radionuclideRows.map((r: Record<string, unknown>) => ({
-    code: r.code,
-    label: r.label,
-    activityLabel: r.activity_label,
-    allowsMultiple: r.allows_multiple,
-  }));
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] text-sm text-red-600">
+        Error cargando datos de transporte: {error}
+      </div>
+    );
+  }
 
-  const { rows: shipmentRows } = await sql`
-    SELECT s.*,
-      COALESCE(
-        (SELECT json_agg(json_build_object('id', a.id, 'label', a.label, 'activityMci', a.activity_mci) ORDER BY a.id)
-         FROM transport_i131_activities a WHERE a.shipment_id = s.id),
-        '[]'
-      ) AS i131_activities
-    FROM transport_shipments s
-    ORDER BY s.transport_date DESC, s.correlative_number DESC
-    LIMIT 500;
-  `;
-
-  const { rows: authRows } = await sql`
-    SELECT * FROM transport_authorization_documents WHERE is_current = true ORDER BY version DESC LIMIT 1;
-  `;
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Cargando transporte…
+      </div>
+    );
+  }
 
   return (
     <TransportApp
-      initialShipments={JSON.parse(JSON.stringify(shipmentRows))}
-      radionuclides={radionuclides}
-      initialAuthorization={authRows[0] ? JSON.parse(JSON.stringify(authRows[0])) : null}
+      initialShipments={data.shipments}
+      radionuclides={data.radionuclides as Parameters<typeof TransportApp>[0]["radionuclides"]}
+      initialAuthorization={data.authorization}
     />
   );
 }

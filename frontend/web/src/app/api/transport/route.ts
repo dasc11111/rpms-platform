@@ -205,3 +205,52 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true, id: shipmentId });
 }
+
+export async function PATCH(request: Request) {
+  try {
+    await ensureTransportTables();
+    const body = await request.json().catch(() => ({}));
+    const { id, actorEmail: actor, transportDate, itValue, doseContact, dose1m, doseVehicle,
+            materialCode, requestedActivityMci, driverName, oprName,
+            signageDosimeter, signageRadiactivo7, signageNu2915, notes } = body as Record<string, unknown>;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const actorEmail = (actor as string) || "sistema";
+    const { rows } = await sql`
+      UPDATE transport_shipments SET
+        transport_date         = COALESCE(${(transportDate as string) ?? null}::timestamptz, transport_date),
+        it_value               = COALESCE(${itValue != null ? Number(itValue) : null}, it_value),
+        dose_contact           = COALESCE(${doseContact != null ? Number(doseContact) : null}, dose_contact),
+        dose_1m                = COALESCE(${dose1m != null ? Number(dose1m) : null}, dose_1m),
+        dose_vehicle           = COALESCE(${doseVehicle != null ? Number(doseVehicle) : null}, dose_vehicle),
+        material_code          = COALESCE(${(materialCode as string) ?? null}, material_code),
+        requested_activity_mci = COALESCE(${requestedActivityMci != null ? Number(requestedActivityMci) : null}, requested_activity_mci),
+        driver_name            = COALESCE(${(driverName as string) ?? null}, driver_name),
+        opr_name               = COALESCE(${(oprName as string) ?? null}, opr_name),
+        signage_dosimeter      = COALESCE(${signageDosimeter != null ? Boolean(signageDosimeter) : null}, signage_dosimeter),
+        signage_radiactivo7    = COALESCE(${signageRadiactivo7 != null ? Boolean(signageRadiactivo7) : null}, signage_radiactivo7),
+        signage_nu2915         = COALESCE(${signageNu2915 != null ? Boolean(signageNu2915) : null}, signage_nu2915),
+        notes                  = COALESCE(${(notes as string) ?? null}, notes),
+        updated_at             = NOW()
+      WHERE id = ${Number(id)}
+      RETURNING id
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Envío no encontrado" }, { status: 404 });
+    await logTransportAudit("update_shipment", actorEmail, { shipmentId: id });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await ensureTransportTables();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    await sql`DELETE FROM transport_shipments WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

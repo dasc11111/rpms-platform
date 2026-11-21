@@ -127,3 +127,50 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ row: rows[0] }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const { id, ...fields } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE room_release_records SET
+        release_date                  = COALESCE(${(fields.release_date as string) ?? null}::timestamptz, release_date),
+        admission_date                = COALESCE(${(fields.admission_date as string) ?? null}::timestamptz, admission_date),
+        service                       = COALESCE(${(fields.service as string) ?? null}, service),
+        sala                          = COALESCE(${(fields.sala as string) ?? null}, sala),
+        room_number                   = COALESCE(${(fields.room_number as string) ?? null}, room_number),
+        ubicacion                     = COALESCE(${(fields.ubicacion as string) ?? null}, ubicacion),
+        paciente_nombre               = COALESCE(${(fields.paciente_nombre as string) ?? null}, paciente_nombre),
+        paciente_run                  = COALESCE(${(fields.paciente_run as string) ?? null}, paciente_run),
+        ficha_clinica                 = COALESCE(${(fields.ficha_clinica as string) ?? null}, ficha_clinica),
+        radionuclide_code             = COALESCE(${(fields.radionuclide_code as string) ?? null}, radionuclide_code),
+        actividad_administrada        = COALESCE(${fields.actividad_administrada != null ? Number(fields.actividad_administrada) : null}, actividad_administrada),
+        actividad_medida_liberacion   = COALESCE(${fields.actividad_medida_liberacion != null ? Number(fields.actividad_medida_liberacion) : null}, actividad_medida_liberacion),
+        tasa_dosis_medida             = COALESCE(${fields.tasa_dosis_medida != null ? Number(fields.tasa_dosis_medida) : null}, tasa_dosis_medida),
+        criterio_liberacion           = COALESCE(${(fields.criterio_liberacion as string) ?? null}, criterio_liberacion),
+        responsable_opr               = COALESCE(${(fields.responsable_opr as string) ?? null}, responsable_opr),
+        observaciones                 = COALESCE(${(fields.observaciones as string) ?? null}, observaciones),
+        status                        = COALESCE(${(fields.status as string) ?? null}, status),
+        updated_at                    = NOW()
+      WHERE id = ${Number(id)}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json({ row: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`DELETE FROM room_release_records WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
