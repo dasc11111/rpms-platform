@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Tag, Activity, AlertTriangle, Award, BarChart3, Biohazard, ClipboardList,
-  FileText, Flame, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
+  FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
 } from "lucide-react";
@@ -44,6 +44,7 @@ const NAV = [
   { href: "/instruments", label: "Instrumentos", icon: Wrench },
   { href: "/instruments/operational-check", label: "Verif. Operacional", icon: CheckSquare },
   { href: "/instruments/calibrations", label: "Estado Calibraciones", icon: Award },
+  { href: "/instruments/maintenances", label: "Estado Mantenimientos", icon: Hammer },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
   { href: "/sources/movements", label: "Movimientos IMAR", icon: ArrowRightLeft },
 
