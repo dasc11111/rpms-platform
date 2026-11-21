@@ -364,6 +364,29 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #15: trabajadores activos sin curso PR completado (NS-04 CCHEN)
+  try {
+    const { rows: noCourse } = await sql`
+      SELECT rut, name, role, service
+      FROM workers
+      WHERE status = 'active'
+        AND (course_pr_completed IS NULL OR course_pr_completed = FALSE)
+      ORDER BY name
+      LIMIT 10
+    `;
+    if ((noCourse as unknown[]).length > 0) {
+      alerts.push({
+        id: "training-pr-pending",
+        type: "warning",
+        module: "Capacitación",
+        title: `${(noCourse as unknown[]).length} TOE sin curso de Protección Radiológica`,
+        detail: (noCourse as { name: string }[]).slice(0, 3).map(w => w.name).join(", ") + ((noCourse as unknown[]).length > 3 ? ` y ${(noCourse as unknown[]).length - 3} más` : ""),
+        regulation: "NS-04 CCHEN — Art. 15; DS 3/1985 Art. 7",
+        action: "/workers",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
