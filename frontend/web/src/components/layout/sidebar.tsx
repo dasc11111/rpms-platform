@@ -69,6 +69,7 @@ const NAV = [
   { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
+  { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
 
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
