@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Tag, Activity, AlertTriangle, Award, BarChart3, Bell, Biohazard, CalendarClock, ClipboardList, Search,
+  Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, CalendarClock, ClipboardList, Search,
   FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
@@ -24,6 +24,7 @@ const NAV = [
 
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
   { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
+  { href: "/internal-dosimetry", label: "Dosimetría Interna", icon: Atom },
 
   // ── Medicina Nuclear ───────────────────────────────────
   { href: "/nuclear-medicine", label: "Medicina Nuclear", icon: Stethoscope },
