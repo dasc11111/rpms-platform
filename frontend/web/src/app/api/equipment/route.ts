@@ -118,3 +118,53 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  await ensureTable();
+  try {
+    const body = await req.json();
+    const { id, ...fields } = body as {
+      id: number;
+      inventory_number?: string; service?: string; unit?: string; location?: string;
+      equipment_name?: string; brand?: string; model?: string;
+      equipment_serial_number?: string; tube_serial_number?: string;
+      authorization_status?: string; observations?: string; status?: string;
+    };
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE radiology_equipment SET
+        inventory_number       = COALESCE(${fields.inventory_number ?? null}, inventory_number),
+        service                = COALESCE(${fields.service ?? null}, service),
+        unit                   = COALESCE(${fields.unit ?? null}, unit),
+        location               = COALESCE(${fields.location ?? null}, location),
+        equipment_name         = COALESCE(${fields.equipment_name ?? null}, equipment_name),
+        brand                  = COALESCE(${fields.brand ?? null}, brand),
+        model                  = COALESCE(${fields.model ?? null}, model),
+        equipment_serial_number = COALESCE(${fields.equipment_serial_number ?? null}, equipment_serial_number),
+        tube_serial_number     = COALESCE(${fields.tube_serial_number ?? null}, tube_serial_number),
+        authorization_status   = COALESCE(${fields.authorization_status ?? null}, authorization_status),
+        observations           = COALESCE(${fields.observations ?? null}, observations),
+        status                 = COALESCE(${fields.status ?? null}, status),
+        updated_at             = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Equipo no encontrado" }, { status: 404 });
+    return NextResponse.json(rowToEquipment(rows[0] as Record<string, unknown>));
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  await ensureTable();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`UPDATE radiology_equipment SET status = 'dado_de_baja', updated_at = NOW() WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

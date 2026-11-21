@@ -148,3 +148,17 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    await ensureNmIncidentsTables();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    await sql`UPDATE nm_incidents SET status = 'cerrado', updated_at = NOW() WHERE id = ${Number(id)}`;
+    await logNmIncidentAudit("close_incident", null, { id });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

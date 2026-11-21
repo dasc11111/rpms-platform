@@ -69,3 +69,36 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ document: rows[0] });
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, original_name, category_id, notes } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE documents SET
+        original_name = COALESCE(${original_name ?? null}, original_name),
+        category_id   = COALESCE(${category_id ?? null}, category_id),
+        notes         = COALESCE(${notes ?? null}, notes),
+        updated_at    = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+    return NextResponse.json({ document: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`DELETE FROM documents WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
