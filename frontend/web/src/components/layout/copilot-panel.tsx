@@ -36,7 +36,8 @@ export function CopilotPanel({ open, onClose }: { open: boolean; onClose: () => 
       const res = await fetch("/api/alerts", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setAlerts(Array.isArray(data) ? data.slice(0, 8) : []);
+        const list = Array.isArray(data) ? data : (Array.isArray(data?.alerts) ? data.alerts : []);
+        setAlerts(list.slice(0, 8));
         setLastUpdated(new Date());
       }
     } catch {

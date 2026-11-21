@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList,
   FileText, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap,
+  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -26,6 +26,7 @@ const NAV = [
 
   // ── Protección Radiológica ─────────────────────────────
   { href: "/contamination", label: "Contaminación", icon: Biohazard },
+  { href: "/classified-zones", label: "Zonas Clasificadas", icon: MapPin },
   { href: "/room-release", label: "Liberación de Sala", icon: Radiation },
 
   // ── Residuos Radiactivos ───────────────────────────────

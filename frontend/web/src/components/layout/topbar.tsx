@@ -18,7 +18,8 @@ export function Topbar() {
         const res = await fetch("/api/alerts", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
-          setAlertCount(Array.isArray(data) ? data.filter((a: { type: string }) => a.type === "danger" || a.type === "warning").length : 0);
+          const list = Array.isArray(data) ? data : (Array.isArray(data?.alerts) ? data.alerts : []);
+          setAlertCount(list.filter((a: { type: string }) => a.type === "danger" || a.type === "warning").length);
         }
       } catch { /* ignore */ }
     }

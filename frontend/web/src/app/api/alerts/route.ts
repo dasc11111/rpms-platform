@@ -179,6 +179,30 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // 8. Zonas clasificadas con monitoreo vencido
+  try {
+    const { rows: zoneRows } = await sql`
+      SELECT name, zone_type, next_survey_date::text
+      FROM classified_zones
+      WHERE status = 'active'
+        AND next_survey_date IS NOT NULL
+        AND next_survey_date < CURRENT_DATE
+      ORDER BY next_survey_date ASC
+      LIMIT 5
+    `;
+    for (const z of zoneRows as { name: string; zone_type: string; next_survey_date: string }[]) {
+      alerts.push({
+        id: `zone-${z.name}`,
+        type: z.zone_type === "controlada" ? "danger" : "warning",
+        module: "Zonas Clasificadas",
+        title: `Monitoreo vencido: ${z.name} (zona ${z.zone_type})`,
+        detail: `Monitoreo programado para: ${z.next_survey_date}`,
+        regulation: "DS 3/1985 Art. 15 — MINSAL",
+        action: "/classified-zones",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
