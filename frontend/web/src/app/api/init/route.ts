@@ -1130,5 +1130,71 @@ ON CONFLICT (radionuclido) DO NOTHING;
     }
   } catch { /* seed skip */ }
 
-  return NextResponse.json({ ok: true });
+  // --- Sistema de usuarios y control de acceso (RBAC) ---------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS system_users (
+      id SERIAL PRIMARY KEY,
+      rut VARCHAR(12) UNIQUE NOT NULL,
+      full_name VARCHAR(200) NOT NULL,
+      email VARCHAR(200) UNIQUE,
+      role VARCHAR(50) NOT NULL DEFAULT 'readonly',
+      department VARCHAR(100),
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      last_login TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  const { rows: usersCount } = await sql`SELECT COUNT(*)::int AS n FROM system_users`;
+  if ((usersCount[0] as { n: number }).n === 0) {
+    await sql`
+      INSERT INTO system_users (rut, full_name, email, role, department)
+      VALUES
+        ('16397583-1', 'Diego Armando Solís Catalán', 'diego.solis@hospital.cl', 'opr', 'Prevención de Riesgos'),
+        ('12345678-9', 'María González López', 'maria.gonzalez@hospital.cl', 'medico_nuclear', 'Medicina Nuclear'),
+        ('98765432-1', 'Carlos Muñoz Pérez', 'carlos.munoz@hospital.cl', 'tm', 'Medicina Nuclear'),
+        ('11111111-1', 'Ana Torres Vidal', 'ana.torres@hospital.cl', 'readonly', 'Administración')
+      ON CONFLICT (rut) DO NOTHING
+    `;
+  }
+
+  // --- Enriquecer compliance_requirements con requisitos NS-06.0 completos --
+  // Si ya existen filas, agregar solo los que falten usando ON CONFLICT DO NOTHING
+  // con una restricción por (requirement, regulation)
+  await sql`ALTER TABLE compliance_requirements ADD COLUMN IF NOT EXISTS reference_code TEXT`;
+  await sql`ALTER TABLE compliance_requirements ADD COLUMN IF NOT EXISTS priority TEXT DEFAULT 'normal'`;
+
+  const nsRequirements = [
+    { code: 'NS-01', req: 'Autorización de instalación vigente CCHEN', reg: 'NS-06.0 §3', freq: 12, status: 'ok', priority: 'critical' },
+    { code: 'NS-02', req: 'OPR designado y autorizado CCHEN', reg: 'NS-06.0 §4', freq: 12, status: 'ok', priority: 'critical' },
+    { code: 'NS-03', req: 'Programa de Protección Radiológica vigente', reg: 'NS-06.0 §5', freq: 12, status: 'ok', priority: 'high' },
+    { code: 'NS-04', req: 'Inventario de fuentes selladas al día', reg: 'NS-06.0 §6', freq: 6, status: 'pending', priority: 'high' },
+    { code: 'NS-05', req: 'Gestión de residuos radiactivos documentada', reg: 'NS-06.0 §8', freq: 3, status: 'ok', priority: 'high' },
+    { code: 'NS-06', req: 'Monitoreo de dosis individuales trimestral', reg: 'DS 3/1985 Art.5', freq: 3, status: 'ok', priority: 'critical' },
+    { code: 'NS-07', req: 'Capacitación PR personal expuesto (anual)', reg: 'NS-06.0 §17', freq: 12, status: 'ok', priority: 'high' },
+    { code: 'NS-08', req: 'Simulacro emergencia radiológica', reg: 'NS-06.0 Anexo C', freq: 12, status: 'ok', priority: 'normal' },
+    { code: 'NS-09', req: 'Calibración instrumentos de medición', reg: 'NS-06.0 §9', freq: 12, status: 'ok', priority: 'high' },
+    { code: 'NS-10', req: 'Control de calidad equipos medicina nuclear (CC MN)', reg: 'NS-06.0 §10', freq: 1, status: 'ok', priority: 'critical' },
+    { code: 'NS-11', req: 'Revisión blindajes periódica', reg: 'DS 3/1985 Art.8', freq: 12, status: 'pending', priority: 'high' },
+    { code: 'NS-12', req: 'Notificación incidentes INES ≥1 a CCHEN', reg: 'NS-06.0 §16', freq: 1, status: 'ok', priority: 'critical' },
+    { code: 'NS-13', req: 'Control radiofármacos — caducidad y trazabilidad', reg: 'DS 3/1985 §12', freq: 1, status: 'ok', priority: 'high' },
+    { code: 'NS-14', req: 'Programa ALARA documentado y auditado', reg: 'NS-06.0 §7', freq: 12, status: 'scheduled', priority: 'normal' },
+    { code: 'NS-15', req: 'Registros de administración I-131 (10 años)', reg: 'DS 133/1984 Art.72', freq: 12, status: 'ok', priority: 'high' },
+    { code: 'NS-16', req: 'Autorizaciones de desempeño personal vigentes', reg: 'DS 3/1985 Art.3', freq: 3, status: 'pending', priority: 'critical' },
+    { code: 'NS-17', req: 'Procedimientos escritos actualizados', reg: 'DS 133/1984 Art.15', freq: 12, status: 'ok', priority: 'normal' },
+  ];
+
+  for (const r of nsRequirements) {
+    await sql`
+      INSERT INTO compliance_requirements
+        (requirement, regulation, owner, frequency_months, status, reference_code, priority,
+         next_review_date)
+      VALUES
+        (${r.req}, ${r.reg}, 'OPR', ${r.freq}, ${r.status}, ${r.code}, ${r.priority},
+         (CURRENT_DATE + (${r.freq} || ' months')::INTERVAL)::DATE)
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  return NextResponse.json({ ok: true, tables: 21, compliance_requirements_seeded: nsRequirements.length });
 }
