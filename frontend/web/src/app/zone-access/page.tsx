@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  LogIn, LogOut, Users, RefreshCw, Plus, Trash2,
+  LogIn, LogOut, Users, RefreshCw, Plus, Trash2, Pencil,
   ShieldAlert, Clock, AlertTriangle, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -75,6 +75,7 @@ export default function ZoneAccessPage() {
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState(new Date().toISOString().slice(0, 10));
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Entry | null>(null);
   const [exitModal, setExitModal] = useState<Entry | null>(null);
   const [saving, setSaving] = useState(false);
   const [exitData, setExitData] = useState({ exit_dose_reading_usv: "", notes: "" });
@@ -114,16 +115,25 @@ export default function ZoneAccessPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch("/api/zone-access", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          entry_dose_reading_usv: form.entry_dose_reading_usv ? parseFloat(form.entry_dose_reading_usv) : null,
-          entry_datetime: form.entry_datetime || new Date().toISOString(),
-        }),
-      });
-      setShowModal(false);
+      const payload = {
+        ...form,
+        entry_dose_reading_usv: form.entry_dose_reading_usv ? parseFloat(form.entry_dose_reading_usv) : null,
+        entry_datetime: form.entry_datetime || new Date().toISOString(),
+      };
+      if (editing) {
+        await fetch(`/api/zone-access?id=${editing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/zone-access", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      closeEntryModal();
       setForm(f => ({ ...f, person_name: "", person_rut: "", person_role: "", purpose: "", dosimeter_code: "", entry_dose_reading_usv: "", notes: "" }));
       fetchData();
     } finally { setSaving(false); }
@@ -156,6 +166,26 @@ export default function ZoneAccessPage() {
     await fetch(`/api/zone-access?id=${id}`, { method: "DELETE" });
     fetchData();
   };
+
+  const openEdit = (e: Entry) => {
+    setEditing(e);
+    setForm({
+      zone_name: e.zone_name ?? "",
+      zone_type: e.zone_type ?? "controlada",
+      person_name: e.person_name ?? "",
+      person_rut: e.person_rut ?? "",
+      person_role: e.person_role ?? "",
+      purpose: e.purpose ?? "",
+      dosimeter_code: e.dosimeter_code ?? "",
+      entry_dose_reading_usv: e.entry_dose_reading_usv != null ? String(e.entry_dose_reading_usv) : "",
+      supervisor: e.supervisor ?? "",
+      notes: e.notes ?? "",
+      entry_datetime: e.entry_datetime ? e.entry_datetime.slice(0, 16) : new Date().toISOString().slice(0, 16),
+    });
+    setShowModal(true);
+  };
+
+  const closeEntryModal = () => { setShowModal(false); setEditing(null); };
 
   const kpis = [
     { label: "Dentro ahora", value: stats?.currently_inside ?? 0, color: "text-green-600", icon: Users },
@@ -303,9 +333,14 @@ export default function ZoneAccessPage() {
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-500">{e.supervisor ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleDelete(e.id)} className="text-gray-400 hover:text-red-600 p-1 rounded">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEdit(e)} className="text-gray-400 hover:text-blue-600 p-1 rounded" title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(e.id)} className="text-gray-400 hover:text-red-600 p-1 rounded" title="Eliminar">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -330,9 +365,9 @@ export default function ZoneAccessPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <LogIn className="w-5 h-5 text-blue-600" />
-                Registrar Ingreso a Zona
+                {editing ? "Editar Registro de Acceso" : "Registrar Ingreso a Zona"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={closeEntryModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <form onSubmit={handleEntry} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -412,11 +447,11 @@ export default function ZoneAccessPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={closeEntryModal}
                   className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? "Guardando…" : "Registrar Ingreso"}
+                  {saving ? "Guardando…" : editing ? "Actualizar Registro" : "Registrar Ingreso"}
                 </button>
               </div>
             </form>

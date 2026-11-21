@@ -149,6 +149,53 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ record: rows[0], result, deviation_pct }, { status: 201 });
 }
 
+export async function PATCH(req: NextRequest) {
+  await ensureTable();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  const body = await req.json() as Partial<{
+    instrument_name: string; instrument_code: string; check_source_name: string;
+    check_source_activity_kbq: number; reference_reading: number; actual_reading: number;
+    battery_ok: boolean; background_reading: number; performed_by: string; notes: string;
+  }>;
+
+  // Recompute result if readings change
+  let deviation_pct_new: number | null = null;
+  let result_new: string | null = null;
+  if (body.actual_reading != null || body.reference_reading != null) {
+    // Fetch current values to fill missing side
+    const { rows: cur } = await sql`SELECT actual_reading, reference_reading FROM instrument_operational_checks WHERE id = ${parseInt(id, 10)}`;
+    if (cur.length) {
+      const actual = body.actual_reading ?? Number(cur[0].actual_reading);
+      const ref = body.reference_reading !== undefined ? body.reference_reading : (cur[0].reference_reading != null ? Number(cur[0].reference_reading) : null);
+      const ev = evaluateResult(actual, ref);
+      deviation_pct_new = ev.deviation_pct;
+      result_new = ev.result;
+    }
+  }
+
+  const { rows } = await sql`
+    UPDATE instrument_operational_checks SET
+      instrument_name            = COALESCE(${body.instrument_name ?? null}, instrument_name),
+      instrument_code            = COALESCE(${body.instrument_code ?? null}, instrument_code),
+      check_source_name          = COALESCE(${body.check_source_name ?? null}, check_source_name),
+      check_source_activity_kbq  = COALESCE(${body.check_source_activity_kbq ?? null}::numeric, check_source_activity_kbq),
+      reference_reading          = COALESCE(${body.reference_reading ?? null}::numeric, reference_reading),
+      actual_reading             = COALESCE(${body.actual_reading ?? null}::numeric, actual_reading),
+      deviation_pct              = COALESCE(${deviation_pct_new ?? null}::numeric, deviation_pct),
+      result                     = COALESCE(${result_new ?? null}, result),
+      battery_ok                 = COALESCE(${body.battery_ok ?? null}::boolean, battery_ok),
+      background_reading         = COALESCE(${body.background_reading ?? null}::numeric, background_reading),
+      performed_by               = COALESCE(${body.performed_by ?? null}, performed_by),
+      notes                      = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${parseInt(id, 10)}
+    RETURNING *
+  `;
+  if (rows.length === 0) return NextResponse.json({ error: "not found" }, { status: 404 });
+  return NextResponse.json({ record: rows[0] });
+}
+
 export async function DELETE(req: NextRequest) {
   await ensureTable();
   const { searchParams } = new URL(req.url);

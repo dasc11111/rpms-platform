@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CheckCircle, AlertTriangle, Clock, Plus, Trash2, RefreshCw, Gauge, Battery, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle, Clock, Plus, Trash2, Pencil, RefreshCw, Gauge, Battery, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CheckRecord {
@@ -70,6 +70,7 @@ export default function OperationalCheckPage() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<CheckRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [form, setForm] = useState({
@@ -115,27 +116,56 @@ export default function OperationalCheckPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch("/api/instruments/operational-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instrument_id: parseInt(form.instrument_id) || 0,
-          instrument_name: form.instrument_name,
-          instrument_code: form.instrument_code || null,
-          check_source_name: form.check_source_name || null,
-          check_source_activity_kbq: form.check_source_activity_kbq ? parseFloat(form.check_source_activity_kbq) : null,
-          reference_reading: form.reference_reading ? parseFloat(form.reference_reading) : null,
-          actual_reading: parseFloat(form.actual_reading),
-          battery_ok: form.battery_ok,
-          background_reading: form.background_reading ? parseFloat(form.background_reading) : null,
-          performed_by: form.performed_by || null,
-          notes: form.notes || null,
-        }),
-      });
-      setShowModal(false);
+      const payload = {
+        instrument_id: parseInt(form.instrument_id) || 0,
+        instrument_name: form.instrument_name,
+        instrument_code: form.instrument_code || null,
+        check_source_name: form.check_source_name || null,
+        check_source_activity_kbq: form.check_source_activity_kbq ? parseFloat(form.check_source_activity_kbq) : null,
+        reference_reading: form.reference_reading ? parseFloat(form.reference_reading) : null,
+        actual_reading: parseFloat(form.actual_reading),
+        battery_ok: form.battery_ok,
+        background_reading: form.background_reading ? parseFloat(form.background_reading) : null,
+        performed_by: form.performed_by || null,
+        notes: form.notes || null,
+      };
+      if (editing) {
+        await fetch(`/api/instruments/operational-check?id=${editing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/instruments/operational-check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      closeModal();
       setForm({ instrument_id: "", instrument_name: "", instrument_code: "", check_source_name: "", check_source_activity_kbq: "", reference_reading: "", actual_reading: "", battery_ok: true, background_reading: "", performed_by: "", notes: "" });
       fetchData();
     } finally { setSaving(false); }
+  };
+
+  const closeModal = () => { setShowModal(false); setEditing(null); };
+
+  const openEdit = (r: CheckRecord) => {
+    setEditing(r);
+    setForm({
+      instrument_id: String(r.instrument_id),
+      instrument_name: r.instrument_name ?? "",
+      instrument_code: r.instrument_code ?? "",
+      check_source_name: r.check_source_name ?? "",
+      check_source_activity_kbq: "",
+      reference_reading: r.reference_reading != null ? String(r.reference_reading) : "",
+      actual_reading: r.actual_reading != null ? String(r.actual_reading) : "",
+      battery_ok: r.battery_ok !== false,
+      background_reading: r.background_reading != null ? String(r.background_reading) : "",
+      performed_by: r.performed_by ?? "",
+      notes: r.notes ?? "",
+    });
+    setShowModal(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -294,13 +324,19 @@ export default function OperationalCheckPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{r.performed_by ?? "—"}</td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          disabled={deleting === r.id}
-                          className="text-gray-400 hover:text-red-600 p-1 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => openEdit(r)} className="text-gray-400 hover:text-blue-600 p-1 rounded" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deleting === r.id}
+                            className="text-gray-400 hover:text-red-600 p-1 rounded"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -324,8 +360,8 @@ export default function OperationalCheckPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">Registrar Verificación Operacional</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-lg font-semibold">{editing ? "Editar Verificación Operacional" : "Registrar Verificación Operacional"}</h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -426,11 +462,11 @@ export default function OperationalCheckPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={closeModal}
                   className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? "Guardando…" : "Guardar Verificación"}
+                  {saving ? "Guardando…" : editing ? "Actualizar Verificación" : "Guardar Verificación"}
                 </button>
               </div>
             </form>

@@ -163,30 +163,41 @@ export default function TrainingPage() {
     setShowModal(true);
   };
 
+  const closeModal = () => { setShowModal(false); setEditId(null); };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const payload = {
+      course_code: form.course_code,
+      course_name: form.course_name,
+      category: form.category,
+      instructor: form.instructor || null,
+      scheduled_date: form.scheduled_date,
+      duration_hours: parseFloat(form.duration_hours) || 1,
+      status: form.status,
+      participants_registered: parseInt(form.participants_registered) || 0,
+      participants_attended: parseInt(form.participants_attended) || 0,
+      participants_passed: parseInt(form.participants_passed) || 0,
+      regulatory_basis: form.regulatory_basis || null,
+      certificate_valid_months: parseInt(form.certificate_valid_months) || 12,
+      notes: form.notes || null,
+    };
     try {
-      await fetch("/api/training", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          course_code: form.course_code,
-          course_name: form.course_name,
-          category: form.category,
-          instructor: form.instructor || null,
-          scheduled_date: form.scheduled_date,
-          duration_hours: parseFloat(form.duration_hours) || 1,
-          status: form.status,
-          participants_registered: parseInt(form.participants_registered) || 0,
-          participants_attended: parseInt(form.participants_attended) || 0,
-          participants_passed: parseInt(form.participants_passed) || 0,
-          regulatory_basis: form.regulatory_basis || null,
-          certificate_valid_months: parseInt(form.certificate_valid_months) || 12,
-          notes: form.notes || null,
-        }),
-      });
-      setShowModal(false);
+      if (editId !== null) {
+        await fetch(`/api/training?id=${editId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/training", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      closeModal();
       fetchData();
     } finally { setSaving(false); }
   };
@@ -356,7 +367,7 @@ export default function TrainingPage() {
               <h2 className="text-lg font-semibold">
                 {editId ? "Editar curso" : "Registrar curso de capacitación"}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -446,7 +457,7 @@ export default function TrainingPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={closeModal}
                   className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">

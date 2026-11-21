@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Activity, Gauge, Plus, Trash2, AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { Activity, Gauge, Plus, Trash2, Pencil, AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AreaRecord {
@@ -72,6 +72,7 @@ export default function AreaMonitoringPage() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<AreaRecord | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -84,6 +85,23 @@ export default function AreaMonitoringPage() {
     performed_by: "",
     notes: "",
   });
+
+  const closeModal = () => { setShowModal(false); setEditing(null); };
+
+  const openEdit = (r: AreaRecord) => {
+    setEditing(r);
+    setForm({
+      zone_name: r.zone_name ?? "",
+      location: r.location ?? "",
+      dose_rate_usv_h: r.dose_rate_usv_h != null ? String(r.dose_rate_usv_h) : "",
+      background_usv_h: r.background_usv_h != null ? String(r.background_usv_h) : "",
+      occupancy_factor: r.occupancy_factor != null ? String(r.occupancy_factor) : "1.0",
+      instrument_name: r.instrument_name ?? "",
+      performed_by: r.performed_by ?? "",
+      notes: r.notes ?? "",
+    });
+    setShowModal(true);
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -104,21 +122,30 @@ export default function AreaMonitoringPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch("/api/area-monitoring", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          zone_name: form.zone_name,
-          location: form.location,
-          dose_rate_usv_h: parseFloat(form.dose_rate_usv_h),
-          background_usv_h: form.background_usv_h ? parseFloat(form.background_usv_h) : null,
-          occupancy_factor: parseFloat(form.occupancy_factor),
-          instrument_name: form.instrument_name || null,
-          performed_by: form.performed_by || null,
-          notes: form.notes || null,
-        }),
-      });
-      setShowModal(false);
+      const payload = {
+        zone_name: form.zone_name,
+        location: form.location,
+        dose_rate_usv_h: parseFloat(form.dose_rate_usv_h),
+        background_usv_h: form.background_usv_h ? parseFloat(form.background_usv_h) : null,
+        occupancy_factor: parseFloat(form.occupancy_factor),
+        instrument_name: form.instrument_name || null,
+        performed_by: form.performed_by || null,
+        notes: form.notes || null,
+      };
+      if (editing) {
+        await fetch(`/api/area-monitoring?id=${editing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/area-monitoring", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      closeModal();
       setForm({ zone_name: "", location: "", dose_rate_usv_h: "", background_usv_h: "", occupancy_factor: "1.0", instrument_name: "", performed_by: "", notes: "" });
       fetchData();
     } finally {
@@ -269,13 +296,19 @@ export default function AreaMonitoringPage() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{r.performed_by ?? "—"}</td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          disabled={deleting === r.id}
-                          className="text-gray-400 hover:text-red-600 p-1 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => openEdit(r)} className="text-gray-400 hover:text-blue-600 p-1 rounded" title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deleting === r.id}
+                            className="text-gray-400 hover:text-red-600 p-1 rounded"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -299,8 +332,8 @@ export default function AreaMonitoringPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">Registrar Medición Ambiental</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-lg font-semibold">{editing ? "Editar Medición Ambiental" : "Registrar Medición Ambiental"}</h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -354,11 +387,11 @@ export default function AreaMonitoringPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={closeModal}
                   className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? "Guardando…" : "Guardar Medición"}
+                  {saving ? "Guardando…" : editing ? "Actualizar Medición" : "Guardar Medición"}
                 </button>
               </div>
             </form>
