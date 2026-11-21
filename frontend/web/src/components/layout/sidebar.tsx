@@ -71,6 +71,7 @@ const NAV = [
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
+  { href: "/environmental-monitoring", label: "Monitoreo Ambiental", icon: MapPin },
 
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
