@@ -66,3 +66,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { id, name, isotope, batch_number, supplier, activity_bq, calibration_datetime,
+            expiry_datetime, volume_ml, status, service, notes } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+    const concentration = volume_ml && volume_ml > 0 ? activity_bq / volume_ml : null;
+
+    const { rows } = await sql`
+      UPDATE radiopharmaceuticals SET
+        name                  = COALESCE(${name ?? null}, name),
+        isotope               = COALESCE(${isotope ?? null}, isotope),
+        batch_number          = COALESCE(${batch_number ?? null}, batch_number),
+        supplier              = COALESCE(${supplier ?? null}, supplier),
+        activity_bq           = COALESCE(${activity_bq ?? null}, activity_bq),
+        calibration_datetime  = COALESCE(${calibration_datetime ?? null}::timestamptz, calibration_datetime),
+        expiry_datetime       = COALESCE(${expiry_datetime ?? null}::timestamptz, expiry_datetime),
+        volume_ml             = COALESCE(${volume_ml ?? null}, volume_ml),
+        concentration_bq_ml   = COALESCE(${concentration}, concentration_bq_ml),
+        status                = COALESCE(${status ?? null}, status),
+        service               = COALESCE(${service ?? null}, service),
+        notes                 = COALESCE(${notes ?? null}, notes),
+        updated_at            = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+    return NextResponse.json({ radiopharmaceutical: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`UPDATE radiopharmaceuticals SET status = 'expired', updated_at = NOW() WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
