@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -105,4 +106,37 @@ ${"Nueva calibracion registrada: " + calibrationDate + (expiryDate ? " (vence " 
 `;
 
 return NextResponse.json({ calibration, documents: uploadedDocs });
+}
+
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const body = await request.json();
+  const calId = Number(body.id);
+  if (!instrumentId || !calId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE calibrations SET
+      calibration_date = COALESCE(${body.calibrationDate ?? null}::date, calibration_date),
+      expiry_date = COALESCE(${body.expiryDate ?? null}::date, expiry_date),
+      company_name = COALESCE(${body.companyName ?? null}, company_name),
+      company_id = COALESCE(${body.companyId ?? null}::int, company_id),
+      certificate_number = COALESCE(${body.certificateNumber ?? null}, certificate_number),
+      notes = COALESCE(${body.notes ?? null}, notes),
+      status = COALESCE(${body.status ?? null}, status)
+    WHERE id = ${calId} AND instrument_id = ${instrumentId} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Calibración no encontrada." }, { status: 404 });
+  return NextResponse.json({ ok: true, calibration: rows[0] });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const { searchParams } = new URL(request.url);
+  const calId = Number(searchParams.get("calId"));
+  if (!instrumentId || !calId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM calibrations WHERE id = ${calId} AND instrument_id = ${instrumentId} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Calibración no encontrada." }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

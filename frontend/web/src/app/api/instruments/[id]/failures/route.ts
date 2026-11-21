@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -70,4 +71,36 @@ VALUES (${instrumentId}, ${createdBy}, 'falla', NULL, ${"Falla registrada: " + d
 `;
 
 return NextResponse.json({ failure, documents: uploadedDocs });
+}
+
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const body = await request.json();
+  const failureId = Number(body.id);
+  if (!instrumentId || !failureId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE instrument_failures SET
+      failure_date = COALESCE(${body.failureDate ?? null}::date, failure_date),
+      description = COALESCE(${body.description ?? null}, description),
+      corrective_action = COALESCE(${body.correctiveAction ?? null}, corrective_action),
+      resolved_date = COALESCE(${body.resolvedDate ?? null}::date, resolved_date),
+      status = COALESCE(${body.status ?? null}, status),
+      reported_by = COALESCE(${body.reportedBy ?? null}, reported_by)
+    WHERE id = ${failureId} AND instrument_id = ${instrumentId} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Falla no encontrada." }, { status: 404 });
+  return NextResponse.json({ ok: true, failure: rows[0] });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const { searchParams } = new URL(request.url);
+  const failureId = Number(searchParams.get("failureId"));
+  if (!instrumentId || !failureId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM instrument_failures WHERE id = ${failureId} AND instrument_id = ${instrumentId} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Falla no encontrada." }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

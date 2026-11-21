@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureAcceptanceTables, logAcceptanceAudit, computeOverallResult, evaluateItemResult } from "@/lib/linac-acceptance";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -57,4 +58,35 @@ RETURNING id;
 
 await logAcceptanceAudit("create_linac_acceptance_test", actorEmail, { id: rows[0]!.id, linacId, overallResult, version });
   return NextResponse.json({ ok: true, id: rows[0]!.id, overallResult, version });
+}
+
+
+export async function PATCH(request: NextRequest) {
+  await ensureAcceptanceTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE linac_acceptance_tests SET
+      test_date = COALESCE(${body.testDate ?? null}::date, test_date),
+      performed_by = COALESCE(${body.performedBy ?? null}, performed_by),
+      company = COALESCE(${body.company ?? null}, company),
+      observations = COALESCE(${body.observations ?? null}, observations),
+      overall_result = COALESCE(${body.overallResult ?? null}, overall_result)
+    WHERE id = ${id} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Prueba de aceptación no encontrada." }, { status: 404 });
+  await logAcceptanceAudit("update_linac_acceptance_test", body.actorEmail || null, { id });
+  return NextResponse.json({ ok: true, test: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureAcceptanceTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM linac_acceptance_tests WHERE id = ${id} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Prueba de aceptación no encontrada." }, { status: 404 });
+  await logAcceptanceAudit("delete_linac_acceptance_test", null, { id });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

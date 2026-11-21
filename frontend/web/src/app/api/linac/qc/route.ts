@@ -3,6 +3,7 @@ import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
 import {
+import { NextRequest } from "next/server";
 ensureQcExtendedTables,
 computeDeviationPct,
 computeSemaphore,
@@ -110,4 +111,37 @@ await logLinacAudit("create_linac_qc_test", responsible, { linacId, periodicity,
 await logQcAudit("create_linac_qc_test", responsible, { linacId, periodicity, testName, status, semaphore, deviationPct, baselineId });
 
 return NextResponse.json({ ok: true, id: testId, semaphore, deviationPct, baseline });
+}
+
+
+export async function PATCH(request: NextRequest) {
+  await ensureLinacTables();
+  await ensureQcExtendedTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE linac_qc_tests SET
+      test_date = COALESCE(${body.testDate ?? null}::date, test_date),
+      measured_value = COALESCE(${body.measuredValue ?? null}::numeric, measured_value),
+      notes = COALESCE(${body.notes ?? null}, notes),
+      status = COALESCE(${body.status ?? null}, status),
+      responsible = COALESCE(${body.responsible ?? null}, responsible)
+    WHERE id = ${id} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Registro CQ no encontrado." }, { status: 404 });
+  await logLinacAudit("update_linac_qc_test", body.responsible || null, { id });
+  return NextResponse.json({ ok: true, test: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureLinacTables();
+  await ensureQcExtendedTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM linac_qc_tests WHERE id = ${id} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Registro CQ no encontrado." }, { status: 404 });
+  await logLinacAudit("delete_linac_qc_test", null, { id });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

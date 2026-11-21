@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -53,4 +54,18 @@ export async function POST(request: Request) {
 
   await logLinacAudit("upload_linac_document", uploadedBy, { linacId, category, title, version: nextVersion });
   return NextResponse.json({ ok: true, id: rows[0]!.id, version: nextVersion });
+}
+
+
+export async function DELETE(request: NextRequest) {
+  await ensureLinacTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`SELECT id, blob_url, title FROM linac_documents WHERE id = ${id}`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Documento no encontrado." }, { status: 404 });
+  if (rows[0].blob_url) { try { await del(rows[0].blob_url); } catch { /* ignore */ } }
+  await sql`DELETE FROM linac_documents WHERE id = ${id}`;
+  await logLinacAudit("delete_linac_document", null, { id, title: rows[0].title });
+  return NextResponse.json({ ok: true, deleted: { id } });
 }

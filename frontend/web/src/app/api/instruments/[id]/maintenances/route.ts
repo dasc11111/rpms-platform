@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -67,4 +68,36 @@ VALUES (${instrumentId}, ${createdBy}, 'mantenimiento', NULL, ${"Mantenimiento "
 `;
 
 return NextResponse.json({ maintenance, documents: uploadedDocs });
+}
+
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const body = await request.json();
+  const maintId = Number(body.id);
+  if (!instrumentId || !maintId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE instrument_maintenances SET
+      maintenance_date = COALESCE(${body.maintenanceDate ?? null}::date, maintenance_date),
+      maintenance_type = COALESCE(${body.maintenanceType ?? null}, maintenance_type),
+      description = COALESCE(${body.description ?? null}, description),
+      performed_by = COALESCE(${body.performedBy ?? null}, performed_by),
+      next_maintenance_date = COALESCE(${body.nextMaintenanceDate ?? null}::date, next_maintenance_date),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${maintId} AND instrument_id = ${instrumentId} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Mantenimiento no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, maintenance: rows[0] });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const instrumentId = Number(idParam);
+  const { searchParams } = new URL(request.url);
+  const maintId = Number(searchParams.get("maintId"));
+  if (!instrumentId || !maintId) return NextResponse.json({ ok: false, error: "ids son obligatorios." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM instrument_maintenances WHERE id = ${maintId} AND instrument_id = ${instrumentId} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Mantenimiento no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

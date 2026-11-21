@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureQualityControlTables } from "@/lib/quality-control-db";
 import { computeDeviationPercent, evaluateResultStatus } from "@/lib/quality-control";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -75,4 +76,39 @@ export async function POST(request: Request) {
   `;
 
   return NextResponse.json({ test: rows[0] });
+}
+
+
+export async function PATCH(request: NextRequest) {
+  await ensureQualityControlTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE quality_control_tests SET
+      test_type = COALESCE(${body.testType ?? null}, test_type),
+      test_date = COALESCE(${body.testDate ?? null}::date, test_date),
+      performed_by = COALESCE(${body.performedBy ?? null}, performed_by),
+      radionuclide = COALESCE(${body.radionuclide ?? null}, radionuclide),
+      measured_value = COALESCE(${body.measuredValue ?? null}::numeric, measured_value),
+      reference_value = COALESCE(${body.referenceValue ?? null}::numeric, reference_value),
+      unit = COALESCE(${body.unit ?? null}, unit),
+      tolerance_percent = COALESCE(${body.tolerancePercent ?? null}::numeric, tolerance_percent),
+      result_status = COALESCE(${body.resultStatus ?? null}, result_status),
+      corrective_action = COALESCE(${body.correctiveAction ?? null}, corrective_action),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id} RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Registro no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, test: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureQualityControlTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM quality_control_tests WHERE id = ${id} RETURNING id`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Registro no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
 }

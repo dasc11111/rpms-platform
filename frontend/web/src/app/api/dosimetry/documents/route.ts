@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -53,5 +55,23 @@ export async function GET() {
       documents: [],
       stats: { pdfCount: 0, excelCount: 0, recordsExtracted: 0, pendingValidation: 0, totalDocuments: 0 },
     });
+  }
+}
+
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  try {
+    const { rows } = await sql`SELECT id, blob_url FROM dosimetry_documents WHERE id = ${id}`;
+    if (!rows[0]) return NextResponse.json({ ok: false, error: "Documento no encontrado." }, { status: 404 });
+    if (rows[0].blob_url) {
+      try { await del(rows[0].blob_url); } catch { /* blob may already be gone */ }
+    }
+    await sql`DELETE FROM dosimetry_documents WHERE id = ${id}`;
+    return NextResponse.json({ ok: true, deleted: { id } });
+  } catch (err) {
+    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 });
   }
 }

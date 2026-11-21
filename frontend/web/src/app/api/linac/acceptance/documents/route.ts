@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { ensureAcceptanceTables, logAcceptanceAudit } from "@/lib/linac-acceptance";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -42,4 +43,18 @@ RETURNING id;
 
 await logAcceptanceAudit("upload_acceptance_document", uploadedBy, { acceptanceTestId, category, title });
   return NextResponse.json({ ok: true, id: rows[0]!.id });
+}
+
+
+export async function DELETE(request: NextRequest) {
+  await ensureAcceptanceTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`SELECT id, blob_url FROM linac_acceptance_documents WHERE id = ${id}`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Documento no encontrado." }, { status: 404 });
+  if (rows[0].blob_url) { try { await del(rows[0].blob_url); } catch { /* ignore */ } }
+  await sql`DELETE FROM linac_acceptance_documents WHERE id = ${id}`;
+  await logAcceptanceAudit("delete_acceptance_document", null, { id });
+  return NextResponse.json({ ok: true, deleted: { id } });
 }
