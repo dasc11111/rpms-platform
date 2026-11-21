@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
@@ -76,6 +76,47 @@ export default async function Dashboard() {
     .filter((s) => s.status === "proxima_vencer" || s.status === "vencida")
     .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
 
+  // KPIs de módulos secundarios (con fallback a 0 si la tabla no existe aún)
+  let equiposPendientes = 0;
+  let equiposFueraServicio = 0;
+  let incidentesAbiertos = 0;
+  let incidentesEnInvestigacion = 0;
+  let instrVencidos = 0;
+  let instrPorVencer = 0;
+
+  try {
+    const { rows: eqRows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'pending')::int        AS pending,
+        COUNT(*) FILTER (WHERE status = 'out_of_service')::int AS out_of_service
+      FROM equipment
+    `;
+    equiposPendientes = Number((eqRows[0] as any)?.pending ?? 0);
+    equiposFueraServicio = Number((eqRows[0] as any)?.out_of_service ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: incRows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'open')::int          AS open,
+        COUNT(*) FILTER (WHERE status = 'investigating')::int AS investigating
+      FROM incidents
+    `;
+    incidentesAbiertos = Number((incRows[0] as any)?.open ?? 0);
+    incidentesEnInvestigacion = Number((incRows[0] as any)?.investigating ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: insRows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'expired')::int   AS expired,
+        COUNT(*) FILTER (WHERE status = 'expiring')::int  AS expiring
+      FROM instruments
+    `;
+    instrVencidos = Number((insRows[0] as any)?.expired ?? 0);
+    instrPorVencer = Number((insRows[0] as any)?.expiring ?? 0);
+  } catch { /* tabla no creada */ }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -92,14 +133,12 @@ export default async function Dashboard() {
         <KPICard label="Autoriz. próx. vencer" value={totalProximaVencer} href="/workers" icon={UserCog} tone="warning" />
         <KPICard label="Autorización vencida" value={totalVencida} href="/workers" icon={ShieldX} tone="danger" />
         <KPICard label="Sin autorización" value={totalSinAutorizacion} href="/workers" icon={XCircle} tone="warning" />
-        <KPICard label="Dosím. pend. devolver" value={7} href="/dosimetry" icon={Package} tone="warning" />
-        <KPICard label="Dosím. extraviados" value={2} href="/dosimetry" icon={Search} tone="danger" />
-        <KPICard label="Equipos pendientes" value={5} href="/equipment" icon={Radio} />
-        <KPICard label="Equipos fuera servicio" value={2} href="/equipment" icon={Ban} tone="warning" />
-        <KPICard label="Blindajes pendientes" value={1} href="/compliance" icon={ShieldAlert} tone="warning" />
-        <KPICard label="QA pendientes" value={8} href="/equipment" icon={ClipboardCheck} tone="warning" />
-        <KPICard label="Inspecciones pendientes" value={4} href="/compliance" icon={FileWarning} tone="warning" />
-        <KPICard label="Incidentes abiertos" value={3} href="/incidents" icon={AlertTriangle} tone="danger" />
+        <KPICard label="Equipos pendientes QA" value={equiposPendientes} href="/equipment" icon={Radio} tone="warning" />
+        <KPICard label="Equipos fuera servicio" value={equiposFueraServicio} href="/equipment" icon={Ban} tone="danger" />
+        <KPICard label="Instrum. por vencer" value={instrPorVencer} href="/instruments" icon={ClipboardCheck} tone="warning" />
+        <KPICard label="Instrum. vencidos" value={instrVencidos} href="/instruments" icon={ShieldAlert} tone="danger" />
+        <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone="danger" />
+        <KPICard label="En investigación" value={incidentesEnInvestigacion} href="/incidents" icon={FileWarning} tone="warning" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">

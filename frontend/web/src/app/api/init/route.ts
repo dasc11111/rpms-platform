@@ -837,5 +837,41 @@ ON CONFLICT (radionuclido) DO NOTHING;
     `;
   }
 
+  // --- Modulo Cumplimiento (NS-06.0 / DS 133 / DS 3) ----------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS compliance_requirements (
+      id SERIAL PRIMARY KEY,
+      requirement TEXT NOT NULL,
+      regulation TEXT NOT NULL,
+      owner TEXT,
+      service TEXT,
+      frequency_months INTEGER,
+      last_review_date DATE,
+      next_review_date DATE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_compliance_next_review ON compliance_requirements(next_review_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_compliance_status ON compliance_requirements(status)`;
+
+  const { rows: complianceCount } = await sql`SELECT COUNT(*)::int AS count FROM compliance_requirements`;
+  if ((complianceCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO compliance_requirements (requirement, regulation, owner, frequency_months, last_review_date, next_review_date, status) VALUES
+      ('Verificación dosimetría personal', 'DS 3/1985 MINSAL', 'OPR', 3, '2026-07-01', '2026-10-01', 'ok'),
+      ('Inspección blindaje Sala Gamma', 'DS 3/1985 MINSAL', 'OPR', 12, '2025-10-01', '2026-10-01', 'pending'),
+      ('Auditoría interna programa ALARA', 'NS-06.0 CCHEN', 'Comité Radioprotección', 12, '2025-09-15', '2026-09-15', 'scheduled'),
+      ('Calibración instrumentos de medición', 'NS-06.0 CCHEN', 'Físico Médico', 12, '2025-11-01', '2026-11-01', 'ok'),
+      ('Revisión procedimientos escritos', 'DS 133/1984', 'OPR', 12, '2025-12-01', '2026-12-01', 'ok'),
+      ('Control de fuentes selladas', 'NS-06.0 CCHEN', 'Físico Médico', 6, '2026-05-01', '2026-11-01', 'pending'),
+      ('Pruebas de constancia equipos Rx', 'DS 3/1985 MINSAL', 'TM Radiodiagnóstico', 1, '2026-11-01', '2026-12-01', 'ok'),
+      ('Programa de mantenimiento preventivo', 'NS-06.0 CCHEN', 'Jefe de Servicio', 6, '2026-05-01', '2026-11-01', 'scheduled')
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
   return NextResponse.json({ ok: true });
 }
