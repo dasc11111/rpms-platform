@@ -1,7 +1,7 @@
 import { AlertTriangle, Ban, ClipboardCheck, FileWarning, FlaskConical, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, Zap, Calendar, ChevronRight } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
-import { AlertsPanel } from "@/components/dashboard/alerts-panel";
+import { AlertsPanel, type DynamicAlert } from "@/components/dashboard/alerts-panel";
 import { CopilotSuggestions } from "@/components/dashboard/copilot-suggestions";
 import { WorkersByService } from "@/components/dashboard/workers-by-service";
 import { ExpiringAuthorizationsTable } from "@/components/dashboard/expiring-authorizations-table";
@@ -240,11 +240,7 @@ export default async function Dashboard() {
   } catch { /* tabla no creada */ }
 
   // Alertas del sistema (motor de automatización §19)
-  interface AlertItem {
-    id: string; type: "danger" | "warning" | "info"; module: string;
-    title: string; detail: string; regulation?: string; action?: string;
-  }
-  let systemAlerts: AlertItem[] = [];
+  let systemAlerts: DynamicAlert[] = [];
   try {
     // Autorizaciones vencidas o próximas (30d)
     const { rows: authAlertRows } = await sql`
