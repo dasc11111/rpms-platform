@@ -163,6 +163,98 @@ export default async function Dashboard() {
     dosimetrosProblema = Number((dosRows[0] as any)?.problems ?? 0);
   } catch { /* tabla no creada */ }
 
+  // Alertas del sistema (motor de automatización §19)
+  interface AlertItem {
+    id: string; type: "danger" | "warning" | "info"; module: string;
+    title: string; detail: string; regulation?: string; action?: string;
+  }
+  let systemAlerts: AlertItem[] = [];
+  try {
+    // Autorizaciones vencidas o próximas (30d)
+    const { rows: authAlertRows } = await sql`
+      SELECT name, authorization_expiry_date::text
+      FROM workers
+      WHERE status <> 'inactive'
+        AND authorization_expiry_date IS NOT NULL
+        AND authorization_expiry_date <= CURRENT_DATE + INTERVAL '30 days'
+      ORDER BY authorization_expiry_date ASC LIMIT 5
+    `;
+    const today = new Date().toISOString().slice(0, 10);
+    for (const w of authAlertRows as { name: string; authorization_expiry_date: string }[]) {
+      const expired = w.authorization_expiry_date <= today;
+      systemAlerts.push({
+        id: `auth-${w.name}`,
+        type: expired ? "danger" : "warning",
+        module: "Trabajadores",
+        title: expired ? `Autorización vencida: ${w.name}` : `Autorización próxima a vencer: ${w.name}`,
+        detail: `Vence: ${w.authorization_expiry_date}`,
+        regulation: "DS 3/1985 Art. 3",
+        action: "/workers",
+      });
+    }
+  } catch { /* sin tabla */ }
+
+  try {
+    const { rows: qcFails } = await sql`
+      SELECT equipment_name, performed_at::text FROM qc_records
+      WHERE pass = false AND performed_at > NOW() - INTERVAL '7 days'
+      ORDER BY performed_at DESC LIMIT 3
+    `;
+    for (const q of qcFails as { equipment_name: string; performed_at: string }[]) {
+      systemAlerts.push({
+        id: `qc-${q.performed_at}`,
+        type: "danger",
+        module: "CC MN",
+        title: `CC MN fallido: ${q.equipment_name}`,
+        detail: q.performed_at.slice(0, 10),
+        regulation: "NS-06.0 §10",
+        action: "/quality-control",
+      });
+    }
+  } catch { /* sin tabla */ }
+
+  try {
+    const { rows: incAlerts } = await sql`
+      SELECT id, title, ines_level FROM incidents
+      WHERE ines_level >= 1 AND status <> 'closed'
+      ORDER BY ines_level DESC LIMIT 3
+    `;
+    for (const i of incAlerts as { id: number; title: string; ines_level: number }[]) {
+      systemAlerts.push({
+        id: `inc-${i.id}`,
+        type: i.ines_level >= 3 ? "danger" : "warning",
+        module: "Incidentes",
+        title: `Incidente INES ${i.ines_level}: ${i.title}`,
+        detail: "Notificar a CCHEN en 72h",
+        regulation: "NS-06.0 §16",
+        action: "/incidents",
+      });
+    }
+  } catch { /* sin tabla */ }
+
+  try {
+    const { rows: srcAlerts } = await sql`
+      SELECT source_code, isotope FROM radioactive_sources
+      WHERE next_inventory_date < CURRENT_DATE AND status = 'in_use' LIMIT 3
+    `;
+    for (const s of srcAlerts as { source_code: string; isotope: string }[]) {
+      systemAlerts.push({
+        id: `src-${s.source_code}`,
+        type: "danger",
+        module: "Fuentes",
+        title: `Inventario vencido: ${s.source_code} (${s.isotope})`,
+        detail: "Inventario periódico requerido",
+        regulation: "NS-06.0 §6",
+        action: "/sources",
+      });
+    }
+  } catch { /* sin tabla */ }
+
+  systemAlerts.sort((a, b) => {
+    const o = { danger: 0, warning: 1, info: 2 } as Record<string, number>;
+    return (o[a.type] ?? 2) - (o[b.type] ?? 2);
+  });
+
   // Dosis colectiva mensual (últimos 6 meses) para DoseChart
   interface DosePoint { month: string; dosis_total: number; trabajadores: number; dosis_max: number; }
   let doseData: DosePoint[] = [];
@@ -224,7 +316,7 @@ export default async function Dashboard() {
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Alertas regulatorias</h2>
-          <AlertsPanel />
+          <AlertsPanel alerts={systemAlerts} />
         </div>
         <div className="rounded-lg border border-border bg-surface p-4">
           <div className="mb-3 flex items-center gap-1.5">
