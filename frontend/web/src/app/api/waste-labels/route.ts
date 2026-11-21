@@ -282,3 +282,37 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ row: { ...label, dispensa_estado: dispensaEstado, fecha_estimada_liberacion: proyeccion.aplica ? proyeccion.fechaEstimadaLiberacion : null }, measurement: measRows[0], proyeccion }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE radioactive_waste_labels SET
+      ubicacion               = COALESCE(${body.ubicacion ?? null}, ubicacion),
+      contenedor              = COALESCE(${body.contenedor ?? null}, contenedor),
+      observaciones           = COALESCE(${body.observaciones ?? null}, observaciones),
+      dispensa_estado         = COALESCE(${body.dispensa_estado ?? null}, dispensa_estado),
+      updated_at              = now()
+    WHERE id = ${id}
+    RETURNING id, label_number, dispensa_estado
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Etiqueta no encontrada" }, { status: 404 });
+  return NextResponse.json({ row: rows[0] });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  // Soft delete via dispensa_estado
+  const { rows } = await sql`
+    UPDATE radioactive_waste_labels SET dispensa_estado = 'eliminado', updated_at = now()
+    WHERE id = ${id}
+    RETURNING id, label_number
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Etiqueta no encontrada" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

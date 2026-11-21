@@ -52,3 +52,38 @@ export async function POST(req: NextRequest) {
   `;
   return NextResponse.json({ row: rows[0] }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE waste_storage_locations SET
+      name        = COALESCE(${body.name ?? null}, name),
+      description = COALESCE(${body.description ?? null}, description),
+      capacity    = COALESCE(${body.capacity ?? null}::int, capacity),
+      sort_order  = COALESCE(${body.sort_order ?? null}::int, sort_order),
+      active      = COALESCE(${body.active ?? null}::boolean, active),
+      updated_at  = now()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Ubicación no encontrada" }, { status: 404 });
+  return NextResponse.json({ row: rows[0] });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  // Soft delete — deactivate rather than hard-delete to preserve history
+  const { rows } = await sql`
+    UPDATE waste_storage_locations SET active = false, updated_at = now()
+    WHERE id = ${id}
+    RETURNING id, name
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Ubicación no encontrada" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

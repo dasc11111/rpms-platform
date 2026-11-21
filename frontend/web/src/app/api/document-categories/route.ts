@@ -60,3 +60,38 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ category: rows[0] });
 }
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const name = typeof body.name === "string" ? body.name.trim() : null;
+  const sortOrder = typeof body.sortOrder === "number" ? body.sortOrder : null;
+
+  const { rows } = await sql`
+    UPDATE document_categories SET
+      name       = COALESCE(${name}, name),
+      sort_order = COALESCE(${sortOrder}, sort_order)
+    WHERE id = ${id}
+    RETURNING id, name, slug, parent_id, sort_order
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
+  return NextResponse.json({ category: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  // Only delete if no documents reference this category
+  const { rows: docs } = await sql`SELECT COUNT(*)::int AS n FROM documents WHERE category_id = ${id}`;
+  if (docs[0].n > 0) {
+    return NextResponse.json({ error: "No se puede eliminar una categoría con documentos asociados" }, { status: 409 });
+  }
+
+  const { rows } = await sql`DELETE FROM document_categories WHERE id = ${id} RETURNING id, name`;
+  if (!rows.length) return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

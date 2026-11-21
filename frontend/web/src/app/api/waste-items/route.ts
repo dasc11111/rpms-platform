@@ -82,3 +82,56 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ item }, { status: 201 });
 }
+
+export async function PATCH(request: Request) {
+  await ensureWasteExpertSchema();
+  const body = await request.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  // Fetch current item for status history
+  const { rows: cur } = await sql`SELECT estado FROM waste_items WHERE id = ${id}`;
+  if (!cur.length) return NextResponse.json({ error: "Residuo no encontrado" }, { status: 404 });
+  const estadoAnterior = cur[0].estado as string;
+  const estadoNuevo: string | null = body.estado ?? null;
+
+  const { rows } = await sql`
+    UPDATE waste_items SET
+      descripcion               = COALESCE(${body.descripcion ?? null}, descripcion),
+      ubicacion                 = COALESCE(${body.ubicacion ?? null}, ubicacion),
+      contenedor                = COALESCE(${body.contenedor ?? null}, contenedor),
+      area_almacenamiento       = COALESCE(${body.area_almacenamiento ?? null}, area_almacenamiento),
+      responsable               = COALESCE(${body.responsable ?? null}, responsable),
+      estado                    = COALESCE(${estadoNuevo}, estado),
+      actividad_inicial         = COALESCE(${body.actividad_inicial ?? null}, actividad_inicial),
+      unidad_actividad          = COALESCE(${body.unidad_actividad ?? null}, unidad_actividad),
+      updated_at                = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  if (estadoNuevo && estadoNuevo !== estadoAnterior) {
+    await sql`
+      INSERT INTO waste_item_status_history (waste_item_id, estado_anterior, estado_nuevo, motivo, usuario)
+      VALUES (${id}, ${estadoAnterior}, ${estadoNuevo}, ${body.motivo ?? 'Actualización manual'}, ${body.responsable ?? null})
+    `;
+  }
+
+  return NextResponse.json({ item: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  await ensureWasteExpertSchema();
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  // Soft delete — mark as eliminado
+  const { rows } = await sql`
+    UPDATE waste_items SET estado = 'eliminado', updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING id, item_code
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Residuo no encontrado" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

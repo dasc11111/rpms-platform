@@ -174,3 +174,32 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ test, readings: readingRows });
 }
+
+export async function PATCH(request: Request) {
+  const body = await request.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE qc_activimetro_tests SET
+      observaciones    = COALESCE(${body.observaciones ?? null}, observaciones),
+      corrective_action = COALESCE(${body.corrective_action ?? null}, corrective_action),
+      result_status    = COALESCE(${body.result_status ?? null}, result_status),
+      opr_reviewed_by  = COALESCE(${body.opr_reviewed_by ?? null}, opr_reviewed_by)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+  return NextResponse.json({ test: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  await sql`DELETE FROM qc_activimetro_readings WHERE test_id = ${id}`;
+  const { rows } = await sql`DELETE FROM qc_activimetro_tests WHERE id = ${id} RETURNING id`;
+  if (!rows.length) return NextResponse.json({ error: "Registro no encontrado" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

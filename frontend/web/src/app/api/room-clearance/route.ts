@@ -228,3 +228,34 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ row: evaluation, points: allPoints }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  await ensureRoomClearanceSchema();
+  const body = await req.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE room_clearance_evaluations SET
+      observaciones    = COALESCE(${body.observaciones ?? null}, observaciones),
+      resultado_global = COALESCE(${body.resultado_global ?? null}, resultado_global),
+      responsable_opr  = COALESCE(${body.responsable_opr ?? null}, responsable_opr),
+      updated_at       = NOW()
+    WHERE id = ${id}
+    RETURNING id, resultado_global, updated_at
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Evaluación no encontrada" }, { status: 404 });
+  return NextResponse.json({ row: rows[0] });
+}
+
+export async function DELETE(req: NextRequest) {
+  await ensureRoomClearanceSchema();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  await sql`DELETE FROM room_clearance_points WHERE evaluation_id = ${id}`;
+  const { rows } = await sql`DELETE FROM room_clearance_evaluations WHERE id = ${id} RETURNING id`;
+  if (!rows.length) return NextResponse.json({ error: "Evaluación no encontrada" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

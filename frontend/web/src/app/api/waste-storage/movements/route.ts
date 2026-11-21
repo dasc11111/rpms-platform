@@ -105,3 +105,13 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ row: rows[0] }, { status: 201 });
 }
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`DELETE FROM waste_inventory_movements WHERE id = ${id} RETURNING id`;
+  if (!rows.length) return NextResponse.json({ error: "Movimiento no encontrado" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

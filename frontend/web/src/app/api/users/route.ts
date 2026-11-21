@@ -70,3 +70,65 @@ export async function POST(req: NextRequest) {
         throw err;
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  const actor = await requireSuperAdmin(req);
+  if (!actor) return NextResponse.json({ error: "Acceso restringido" }, { status: 403 });
+
+  const body = await req.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const name = body.name !== undefined ? (body.name || "").toString().trim() || null : undefined;
+  const role = body.role !== undefined ? body.role.toString() : undefined;
+  const status = body.status !== undefined ? body.status.toString() : undefined;
+  let newHash: string | undefined;
+
+  if (role !== undefined && role !== "admin" && role !== "user") {
+    return NextResponse.json({ error: "Rol invalido" }, { status: 400 });
+  }
+  if (status !== undefined && !["active", "inactive", "locked"].includes(status)) {
+    return NextResponse.json({ error: "Estado invalido" }, { status: 400 });
+  }
+
+  if (body.password !== undefined) {
+    const pw = body.password.toString();
+    if (!isValidPassword(pw)) return NextResponse.json({ error: "La contrasena debe tener al menos 10 caracteres" }, { status: 400 });
+    newHash = hashPassword(pw);
+  }
+
+  await ensureAuthSchema();
+  const { rows } = await sql`
+    UPDATE users SET
+      name           = COALESCE(${name !== undefined ? name : null}, CASE WHEN ${name !== undefined} THEN NULL ELSE name END),
+      role           = COALESCE(${role ?? null}, role),
+      status         = COALESCE(${status ?? null}, status),
+      password_hash  = COALESCE(${newHash ?? null}, password_hash),
+      updated_at     = NOW()
+    WHERE id = ${id}
+      AND role != 'super_admin'
+    RETURNING id, email, name, role, status, updated_at
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Usuario no encontrado o protegido" }, { status: 404 });
+  await logAudit({ actorEmail: actor.email, action: "user_updated", category: "users", success: true, details: { id, role, status } });
+  return NextResponse.json({ user: rows[0] });
+}
+
+export async function DELETE(req: NextRequest) {
+  const actor = await requireSuperAdmin(req);
+  if (!actor) return NextResponse.json({ error: "Acceso restringido" }, { status: 403 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  await ensureAuthSchema();
+  const { rows } = await sql`
+    DELETE FROM users
+    WHERE id = ${id} AND role != 'super_admin'
+    RETURNING id, email
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Usuario no encontrado o protegido" }, { status: 404 });
+  await logAudit({ actorEmail: actor.email, action: "user_deleted", category: "users", success: true, details: { id, email: rows[0].email } });
+  return NextResponse.json({ deleted: rows[0] });
+}
