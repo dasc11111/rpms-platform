@@ -58,6 +58,7 @@ const NAV = [
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
+  { href: "/reports/annual-cchen", label: "Informe Anual CCHEN", icon: FileText },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
