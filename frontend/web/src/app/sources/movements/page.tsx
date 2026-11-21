@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ArrowRightLeft, Plus, Trash2, RefreshCw, Package, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Repeat } from "lucide-react";
+import { ArrowRightLeft, Plus, Trash2, Pencil, RefreshCw, Package, AlertTriangle, ArrowUpCircle, ArrowDownCircle, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Movement {
@@ -56,6 +56,7 @@ export default function SourceMovementsPage() {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Movement | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [form, setForm] = useState({
@@ -75,6 +76,8 @@ export default function SourceMovementsPage() {
     notes: "",
   });
 
+  const closeModal = () => { setShowModal(false); setEditing(null); };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -92,32 +95,80 @@ export default function SourceMovementsPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const EMPTY_FORM = {
+    source_id: "",
+    source_name: "",
+    isotope: "",
+    serial_number: "",
+    movement_type: "prestamo",
+    movement_date: new Date().toISOString().slice(0, 10),
+    origin_location: "",
+    destination_location: "",
+    responsible: "",
+    authorized_by: "",
+    document_ref: "",
+    expected_return_date: "",
+    activity_gbq: "",
+    notes: "",
+  };
+
+  const openEdit = (m: Movement) => {
+    setEditing(m);
+    setForm({
+      source_id: String(m.source_id ?? ""),
+      source_name: m.source_name ?? "",
+      isotope: m.isotope ?? "",
+      serial_number: m.serial_number ?? "",
+      movement_type: m.movement_type ?? "prestamo",
+      movement_date: m.movement_date ? m.movement_date.slice(0, 10) : "",
+      origin_location: m.origin_location ?? "",
+      destination_location: m.destination_location ?? "",
+      responsible: m.responsible ?? "",
+      authorized_by: m.authorized_by ?? "",
+      document_ref: m.document_ref ?? "",
+      expected_return_date: m.expected_return_date ? m.expected_return_date.slice(0, 10) : "",
+      activity_gbq: m.activity_gbq != null ? String(m.activity_gbq) : "",
+      notes: m.notes ?? "",
+    });
+    setShowModal(true);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await fetch("/api/sources/movements", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source_id: parseInt(form.source_id) || 0,
-          source_name: form.source_name,
-          isotope: form.isotope || null,
-          serial_number: form.serial_number || null,
-          movement_type: form.movement_type,
-          movement_date: form.movement_date,
-          origin_location: form.origin_location || null,
-          destination_location: form.destination_location || null,
-          responsible: form.responsible || null,
-          authorized_by: form.authorized_by || null,
-          document_ref: form.document_ref || null,
-          expected_return_date: form.expected_return_date || null,
-          activity_gbq: form.activity_gbq ? parseFloat(form.activity_gbq) : null,
-          notes: form.notes || null,
-        }),
-      });
+      const payload = {
+        source_id: parseInt(form.source_id) || 0,
+        source_name: form.source_name,
+        isotope: form.isotope || null,
+        serial_number: form.serial_number || null,
+        movement_type: form.movement_type,
+        movement_date: form.movement_date,
+        origin_location: form.origin_location || null,
+        destination_location: form.destination_location || null,
+        responsible: form.responsible || null,
+        authorized_by: form.authorized_by || null,
+        document_ref: form.document_ref || null,
+        expected_return_date: form.expected_return_date || null,
+        activity_gbq: form.activity_gbq ? parseFloat(form.activity_gbq) : null,
+        notes: form.notes || null,
+      };
+      if (editing) {
+        await fetch(`/api/sources/movements?id=${editing.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        await fetch("/api/sources/movements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
       setShowModal(false);
-      setForm(f => ({ ...f, source_id: "", source_name: "", isotope: "", serial_number: "", origin_location: "", destination_location: "", responsible: "", authorized_by: "", document_ref: "", expected_return_date: "", activity_gbq: "", notes: "" }));
+      setEditing(null);
+      setForm(EMPTY_FORM);
       fetchData();
     } finally { setSaving(false); }
   };
@@ -151,7 +202,7 @@ export default function SourceMovementsPage() {
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => { setEditing(null); setForm(f => ({ ...f, source_id: "", source_name: "", isotope: "", serial_number: "", origin_location: "", destination_location: "", responsible: "", authorized_by: "", document_ref: "", expected_return_date: "", activity_gbq: "", notes: "", movement_date: new Date().toISOString().slice(0, 10) })); setShowModal(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
           >
             <Plus className="w-4 h-4" /> Registrar Movimiento
@@ -271,13 +322,23 @@ export default function SourceMovementsPage() {
                       ) : "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleDelete(m.id)}
-                        disabled={deleting === m.id}
-                        className="text-gray-400 hover:text-red-600 p-1 rounded"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="text-gray-400 hover:text-blue-600 p-1 rounded"
+                          title="Editar"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(m.id)}
+                          disabled={deleting === m.id}
+                          className="text-gray-400 hover:text-red-600 p-1 rounded"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -299,8 +360,8 @@ export default function SourceMovementsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">Registrar Movimiento IMAR</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <h2 className="text-lg font-semibold">{editing ? "Editar Movimiento IMAR" : "Registrar Movimiento IMAR"}</h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -402,11 +463,11 @@ export default function SourceMovementsPage() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={closeModal}
                   className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                  {saving ? "Guardando…" : "Guardar Movimiento"}
+                  {saving ? "Guardando…" : editing ? "Actualizar Movimiento" : "Guardar Movimiento"}
                 </button>
               </div>
             </form>
