@@ -1114,19 +1114,21 @@ ON CONFLICT (radionuclido) DO NOTHING;
   await sql`CREATE INDEX IF NOT EXISTS idx_qc_equipment ON qc_records(equipment_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_qc_performed ON qc_records(performed_at DESC)`;
 
-  // Seed QC: registros de demostración
+  // Seed QC: registros de demostración (solo si tabla vacía)
   try {
-    await sql`
-      INSERT INTO qc_records (equipment_id, equipment_name, qc_type, performed_at, performed_by, result, pass, next_due_at)
-      VALUES
-        ('captus3000', 'Tiroidímetro Captus 3000', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Background: 320 cpm; Eficiencia Cs-137: 98.2% (ref: 100%)', true, now()),
-        ('atomlab500', 'Calibrador de Dosis Atomlab 500', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Background: 2.1 μCi; Exactitud Co-57: 99.1% (cert: 100 μCi)', true, now()),
-        ('gammacamara', 'Gamma Cámara SPECT/CT', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Uniformidad intrínseca: 2.1% UFOV (tol: <3%)', true, now()),
-        ('gammacamara', 'Gamma Cámara SPECT/CT', 'weekly', now() - INTERVAL '7 days', 'T.M. Diego Solís', 'Sensibilidad: 98.4% (ref 100%); Resolución: 3.8 mm FWHM', true, now() + INTERVAL '7 days'),
-        ('captus3000', 'Tiroidímetro Captus 3000', 'monthly', now() - INTERVAL '30 days', 'T.M. Diego Solís', 'Resolución energética: 9.8% FWHM a 662 keV (tol: <12%)', true, now() + INTERVAL '30 days')
-      ON CONFLICT DO NOTHING
-    `;
-  } catch { /* seed ya existe */ }
+    const { rows: qcCount } = await sql`SELECT COUNT(*)::int AS n FROM qc_records`;
+    if ((qcCount[0] as { n: number })?.n === 0) {
+      await sql`
+        INSERT INTO qc_records (equipment_id, equipment_name, qc_type, performed_at, performed_by, result, pass, next_due_at)
+        VALUES
+          ('captus3000', 'Tiroidímetro Captus 3000', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Background: 320 cpm; Eficiencia Cs-137: 98.2% (ref: 100%)', true, now()),
+          ('atomlab500', 'Calibrador de Dosis Atomlab 500', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Background: 2.1 μCi; Exactitud Co-57: 99.1% (cert: 100 μCi)', true, now()),
+          ('gammacamara', 'Gamma Cámara SPECT/CT', 'daily', now() - INTERVAL '1 day', 'T.M. Diego Solís', 'Uniformidad intrínseca: 2.1% UFOV (tol: <3%)', true, now()),
+          ('gammacamara', 'Gamma Cámara SPECT/CT', 'weekly', now() - INTERVAL '7 days', 'T.M. Diego Solís', 'Sensibilidad: 98.4% (ref 100%); Resolución: 3.8 mm FWHM', true, now() + INTERVAL '7 days'),
+          ('captus3000', 'Tiroidímetro Captus 3000', 'monthly', now() - INTERVAL '30 days', 'T.M. Diego Solís', 'Resolución energética: 9.8% FWHM a 662 keV (tol: <12%)', true, now() + INTERVAL '30 days')
+      `;
+    }
+  } catch { /* seed skip */ }
 
   return NextResponse.json({ ok: true });
 }

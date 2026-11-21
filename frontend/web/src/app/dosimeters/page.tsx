@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import { KPICard } from "@/components/ui/kpi-card";
+import { KPICard } from "@/components/dashboard/kpi-card";
 import { Activity, AlertTriangle, CheckCircle, Package } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -79,12 +79,13 @@ export default async function DosimetersPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KPICard title="Total" value={totalAll} icon={Package} tone="default" />
-        <KPICard title="En Uso" value={totalActive} icon={Activity} tone={totalActive > 0 ? "info" : "default"} />
-        <KPICard title="Devueltos" value={totalReturned} icon={CheckCircle} tone="default" />
+        <KPICard label="Total" value={totalAll} href="/dosimeters" icon={Package} tone="default" />
+        <KPICard label="En Uso" value={totalActive} href="/dosimeters" icon={Activity} tone={totalActive > 0 ? "info" : "default"} />
+        <KPICard label="Devueltos" value={totalReturned} href="/dosimeters" icon={CheckCircle} tone="default" />
         <KPICard
-          title="Extraviados/Dañados"
+          label="Extraviados/Dañados"
           value={totalLostDamaged}
+          href="/dosimeters"
           icon={AlertTriangle}
           tone={totalLostDamaged > 0 ? "danger" : "default"}
         />

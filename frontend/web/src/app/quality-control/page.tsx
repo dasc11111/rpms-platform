@@ -1,5 +1,6 @@
+import type { ComponentType } from "react";
 import { sql } from "@/lib/db";
-import { KPICard } from "@/components/ui/kpi-card";
+import { KPICard } from "@/components/dashboard/kpi-card";
 import { CheckCircle, XCircle, Clock, Activity, Zap, Radio } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -125,27 +126,31 @@ export default async function QualityControlPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KPICard
-          title="Total Pruebas"
+          label="Total Pruebas"
           value={totalTests}
+          href="/quality-control"
           icon={Activity}
           tone="default"
         />
         <KPICard
-          title="Aprobadas"
+          label="Aprobadas"
           value={passCount}
-          suffix={passRate !== null ? `(${passRate}%)` : ""}
+          href="/quality-control"
           icon={CheckCircle}
+          hint={passRate !== null ? `${passRate}%` : undefined}
           tone={passRate !== null && passRate >= 95 ? "success" : passRate !== null && passRate >= 85 ? "warning" : "danger"}
         />
         <KPICard
-          title="Fallidas"
+          label="Fallidas"
           value={failCount}
+          href="/quality-control"
           icon={XCircle}
           tone={failCount === 0 ? "default" : "danger"}
         />
         <KPICard
-          title="Vencidas"
+          label="Vencidas"
           value={overdueCount}
+          href="/quality-control"
           icon={Clock}
           tone={overdueCount === 0 ? "default" : "warning"}
         />
@@ -167,7 +172,7 @@ export default async function QualityControlPage() {
           const eqFails = eqRecords.filter((r) => !r.pass).length;
           const lastRecord = eqRecords[0];
 
-          const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+          const iconMap: Record<string, ComponentType<{ className?: string }>> = {
             captus3000: Zap,
             atomlab500: Activity,
             gammacamara: Radio,
