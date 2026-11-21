@@ -1,293 +1,569 @@
-import { Users, ShieldCheck, AlertTriangle, ShieldAlert, FileText, FileSpreadsheet, ClipboardCheck, Package, Search } from "lucide-react";
-import Link from "next/link";
-import { KPICard } from "@/components/dashboard/kpi-card";
-import { LevelKpiCard } from "@/components/dosimetry/level-kpi-card";
-import { DoseReportModal } from "@/components/dosimetry/dose-report-modal";
-import { NotReturnedTable } from "@/components/dosimetry/not-returned-table";
-import { QuarterlyTable } from "@/components/dosimetry/quarterly-table";
-import { AnnualSummaryTable } from "@/components/dosimetry/annual-summary-table";
-import { LateReturnsTable } from "@/components/dosimetry/late-returns-table";
-import { sql } from "@/lib/db";
+"use client";
+
+import { useState, useEffect, useCallback, type ComponentType } from "react";
 import {
-  getAnnualSummary,
-  getNotReturned,
-  getLateReturns,
-  DOSE_QUALITATIVE_CODES,
-  DOSIMETER_KIND_CODES,
-  RADIATION_CODES,
-  ANNUAL_STATUS_CODES,
-} from "@/lib/dosimetry";
+  Activity, Plus, Pencil, Trash2, X, Save, Search, RefreshCw,
+  AlertTriangle, CheckCircle2, TrendingUp, Users, ShieldCheck,
+  BarChart3, Calendar, type LucideProps,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-
-type Row = {
+interface Reading {
   id: number;
-  worker_rut: string;
+  worker_rut: string | null;
   worker_name: string;
-  departamento: string | null;
-  year: number;
-  quarter: number;
-  period_label: string;
-  dose_body: string;
-  dose_lens: string;
-  dose_skin: string;
-  accum_60m_body: string;
-  level: string;
-  source_document_id: number | null;
-  blob_url: string | null;
-};
-
-type DocRow = {
-  id: number;
-  filename: string;
-  blob_url: string;
-  source_type: string;
-  period_label: string | null;
-  year: number | null;
-  uploaded_by: string | null;
-  uploaded_at: string;
-  used_ocr: boolean;
-  records_count: number;
+  dosimeter_type: string;
+  period: string;
+  dose: number;
+  dose_unit: string;
   status: string;
+  body_region: string;
+  badge_number: string | null;
+  lab_report_id: string | null;
+  measured_at: string | null;
+  notes: string | null;
+  category?: string;
+  service?: string;
+}
+
+interface WorkerSummary {
+  worker_rut: string | null;
+  worker_name: string;
+  category: string | null;
+  total_dose_wb: number;
+  total_dose_ext: number | null;
+  periods_measured: number;
+  max_single_dose: number;
+  first_period: string;
+  last_period: string;
+  annual_limit: number;
+  limit_pct: number;
+  alert: "ok" | "warning" | "exceeded";
+}
+
+const BODY_REGIONS: Record<string, string> = {
+  whole_body: "Cuerpo completo",
+  extremities: "Extremidades",
+  lens: "Cristalino",
+  skin: "Piel",
 };
 
-const TABS: { key: string; label: string }[] = [
-  { key: "trimestre", label: "Reportes por trimestre" },
-  { key: "anual", label: "Resumen anual" },
-  { key: "no-devueltos", label: "No devueltos" },
-  { key: "fuera-plazo", label: "Devueltos fuera de plazo" },
-];
+const DOSIMETER_TYPES = ["TLD", "OSL", "Film", "MOSFET", "Electrónico", "Dedo", "Muñeca"];
 
-async function getData(): Promise<Row[]> {
-  try {
-    await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS source_document_id INT`;
-    const { rows } = await sql`
-      SELECT q.id, q.worker_rut, q.worker_name, q.departamento, q.year, q.quarter, q.period_label,
-             q.dose_body, q.dose_lens, q.dose_skin, q.accum_60m_body, q.level,
-             q.source_document_id, d.blob_url
-      FROM dosimetry_quarterly q
-      LEFT JOIN dosimetry_documents d ON d.id = q.source_document_id
-      ORDER BY q.year DESC, q.quarter DESC, q.worker_name ASC
-    `;
-    return rows as Row[];
-  } catch {
-    return [];
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: ComponentType<LucideProps> }> = {
+  read:         { label: "Leído",       color: "bg-green-100 text-green-800",  icon: CheckCircle2 },
+  pending:      { label: "Pendiente",   color: "bg-amber-100 text-amber-800",  icon: AlertTriangle },
+  lost:         { label: "Extraviado",  color: "bg-red-100 text-red-800",      icon: X },
+  not_worn:     { label: "No portado",  color: "bg-gray-100 text-gray-600",    icon: X },
+  damaged:      { label: "Dañado",      color: "bg-orange-100 text-orange-800",icon: AlertTriangle },
+};
+
+const DEFAULT_FORM = {
+  worker_rut: "", worker_name: "", dosimeter_type: "TLD", period: "",
+  dose: "0", dose_unit: "mSv", status: "read", body_region: "whole_body",
+  badge_number: "", lab_report_id: "", measured_at: "", notes: "",
+};
+
+// Genera lista de períodos (últimos 24 meses en formato YYYY-MM)
+function generatePeriods() {
+  const periods = [];
+  const now = new Date();
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    periods.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
+  return periods;
 }
 
-async function getDocuments(): Promise<{ docs: DocRow[]; stats: { pdfCount: number; excelCount: number; recordsExtracted: number; pendingValidation: number } }> {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS dosimetry_documents (
-        id SERIAL PRIMARY KEY,
-        filename TEXT NOT NULL,
-        blob_url TEXT,
-        mime_type TEXT,
-        size_bytes INT,
-        file_hash TEXT UNIQUE,
-        source_type TEXT DEFAULT 'pdf',
-        provider TEXT,
-        period_label TEXT,
-        year INT,
-        uploaded_by TEXT,
-        uploaded_at TIMESTAMP DEFAULT now(),
-        used_ocr BOOLEAN DEFAULT false,
-        records_count INT DEFAULT 0,
-        status TEXT DEFAULT 'processed'
-      )
-    `;
-    const { rows } = await sql`
-      SELECT id, filename, blob_url, source_type, period_label, year, uploaded_by, uploaded_at, used_ocr, records_count, status
-      FROM dosimetry_documents
-      ORDER BY uploaded_at DESC
-      LIMIT 20
-    `;
-    const docs = rows as DocRow[];
-    const pdfCount = docs.filter((d) => d.source_type === "pdf").length;
-    const excelCount = docs.filter((d) => d.source_type === "xlsx" || d.source_type === "csv").length;
-    const recordsExtracted = docs.reduce((acc, d) => acc + (Number(d.records_count) || 0), 0);
-    const pendingValidation = docs.filter((d) => d.status === "pending").length;
-    return { docs, stats: { pdfCount, excelCount, recordsExtracted, pendingValidation } };
-  } catch {
-    return { docs: [], stats: { pdfCount: 0, excelCount: 0, recordsExtracted: 0, pendingValidation: 0 } };
-  }
-}
+export default function DosimetryPage() {
+  const [view, setView] = useState<"summary" | "readings">("summary");
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [summaries, setSummaries] = useState<WorkerSummary[]>([]);
+  const [readings, setReadings] = useState<Reading[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterAlert, setFilterAlert] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Reading | null>(null);
+  const [form, setForm] = useState({ ...DEFAULT_FORM });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState({ total: 0, exceeded: 0, warning: 0 });
+  const periods = generatePeriods();
 
-export default async function DosimetryPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const sp = await searchParams;
-  const tab = sp?.tab && TABS.some((t) => t.key === sp.tab) ? sp.tab : "trimestre";
+  const loadSummary = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/dosimetry?summary=1&year=${year}`);
+      const data = await res.json();
+      setSummaries(data.workers ?? []);
+      setStats(data.stats ?? { total: 0, exceeded: 0, warning: 0 });
+    } catch { /* silent */ } finally { setLoading(false); }
+  }, [year]);
 
-  let all: Row[] = [];
-  let docs: DocRow[] = [];
-  let stats = { pdfCount: 0, excelCount: 0, recordsExtracted: 0, pendingValidation: 0 };
-  let annualRows: Awaited<ReturnType<typeof getAnnualSummary>> = [];
-  let notReturnedRows: Awaited<ReturnType<typeof getNotReturned>> = [];
-  let lateRows: Awaited<ReturnType<typeof getLateReturns>> = [];
+  const loadReadings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/dosimetry?year=${year}`);
+      const data = await res.json();
+      setReadings(data.readings ?? []);
+    } catch { /* silent */ } finally { setLoading(false); }
+  }, [year]);
 
-  if (tab === "trimestre") {
-    all = await getData();
-    const docData = await getDocuments();
-    docs = docData.docs;
-    stats = docData.stats;
-  } else if (tab === "anual") {
-    try { annualRows = await getAnnualSummary(); } catch { annualRows = []; }
-  } else if (tab === "no-devueltos") {
-    try { notReturnedRows = await getNotReturned(); } catch { notReturnedRows = []; }
-  } else if (tab === "fuera-plazo") {
-    try { lateRows = await getLateReturns(); } catch { lateRows = []; }
-  }
+  useEffect(() => {
+    if (view === "summary") loadSummary();
+    else loadReadings();
+  }, [view, year, loadSummary, loadReadings]);
 
-  const latest = all[0];
-  const latestLabel = latest?.period_label ?? null;
+  const openCreate = () => {
+    setEditing(null);
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    setForm({
+      ...DEFAULT_FORM,
+      period: `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`,
+    });
+    setError(null); setShowModal(true);
+  };
+  const openEdit = (r: Reading) => {
+    setEditing(r);
+    setForm({
+      worker_rut: r.worker_rut ?? "",
+      worker_name: r.worker_name,
+      dosimeter_type: r.dosimeter_type,
+      period: r.period,
+      dose: String(r.dose),
+      dose_unit: r.dose_unit ?? "mSv",
+      status: r.status,
+      body_region: r.body_region ?? "whole_body",
+      badge_number: r.badge_number ?? "",
+      lab_report_id: r.lab_report_id ?? "",
+      measured_at: r.measured_at?.slice(0, 10) ?? "",
+      notes: r.notes ?? "",
+    });
+    setError(null); setShowModal(true);
+  };
 
-  const countByLevel = (lvl: string) => all.filter((r) => r.level === lvl).length;
-  const totalWorkers = new Set(all.map((r) => r.worker_rut)).size;
+  const handleSave = async (ev: { preventDefault: () => void }) => {
+    ev.preventDefault();
+    setSaving(true); setError(null);
+    try {
+      const payload = {
+        worker_rut: form.worker_rut || null,
+        worker_name: form.worker_name,
+        dosimeter_type: form.dosimeter_type,
+        period: form.period,
+        dose: parseFloat(form.dose) || 0,
+        dose_unit: form.dose_unit,
+        status: form.status,
+        body_region: form.body_region,
+        badge_number: form.badge_number || null,
+        lab_report_id: form.lab_report_id || null,
+        measured_at: form.measured_at || null,
+        notes: form.notes || null,
+      };
+      let res: Response;
+      if (editing) {
+        res = await fetch("/api/dosimetry", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editing.id, ...payload }),
+        });
+      } else {
+        res = await fetch("/api/dosimetry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? "Error"); }
+      setShowModal(false);
+      if (view === "summary") loadSummary(); else loadReadings();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (r: Reading) => {
+    if (!confirm(`¿Eliminar lectura de ${r.worker_name} (${r.period})?`)) return;
+    await fetch(`/api/dosimetry?id=${r.id}`, { method: "DELETE" });
+    if (view === "summary") loadSummary(); else loadReadings();
+  };
+
+  const alertColor = (alert: string) =>
+    alert === "exceeded" ? "text-red-600 font-bold" :
+    alert === "warning"  ? "text-amber-600 font-semibold" :
+    "text-green-700";
+
+  const alertBadge = (alert: string) =>
+    alert === "exceeded" ? "bg-red-100 text-red-800" :
+    alert === "warning"  ? "bg-amber-100 text-amber-800" :
+    "bg-green-100 text-green-800";
+
+  const filteredSummaries = summaries.filter(w => {
+    if (filterAlert !== "all" && w.alert !== filterAlert) return false;
+    if (!search) return true;
+    return w.worker_name.toLowerCase().includes(search.toLowerCase());
+  });
+
+  const filteredReadings = readings.filter(r => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return [r.worker_name, r.worker_rut, r.period, r.badge_number].some(v => v?.toLowerCase().includes(q));
+  });
+
+  const availableYears = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
 
   return (
-    <div className="mx-auto max-w-[1400px] p-6">
-      <h1 className="text-lg font-semibold mb-1">Dosimetria</h1>
-      <p className="mb-4 text-xs text-muted-foreground">
-        {latestLabel ? `Ultimo periodo cargado: ${latestLabel}` : "Planilla oficial Resumen - 908.xlsm"} · Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv
-      </p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Activity className="h-8 w-8 text-blue-500" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dosimetría Individual</h1>
+            <p className="text-sm text-muted-foreground">Dosis ocupacional TOE · DS 3/1985 MINSAL Art. 7</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <select value={year} onChange={e => setYear(e.target.value)}
+            className="px-3 py-2 rounded-lg border bg-background text-sm">
+            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button onClick={() => { if (view === "summary") loadSummary(); else loadReadings(); }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background text-sm hover:bg-muted">
+            <RefreshCw className="h-4 w-4" />
+          </button>
+          <button onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Nueva lectura
+          </button>
+        </div>
+      </div>
 
-      <DoseReportModal />
-
-      <div className="mb-4 flex flex-wrap gap-1 border-b border-border">
-        {TABS.map((t) => (
-          <Link
-            key={t.key}
-            href={`/dosimetry?tab=${t.key}`}
-            className={
-              tab === t.key
-                ? "border-b-2 border-accent px-3 py-2 text-xs font-medium text-foreground"
-                : "border-b-2 border-transparent px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
-            }
-          >
-            {t.label}
-          </Link>
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "TOE monitoreados", value: stats.total, icon: Users, color: "text-blue-500" },
+          { label: "Dosis excedida", value: stats.exceeded, icon: AlertTriangle, color: stats.exceeded > 0 ? "text-red-500" : "text-muted-foreground" },
+          { label: "En seguimiento", value: stats.warning, icon: ShieldCheck, color: stats.warning > 0 ? "text-amber-500" : "text-muted-foreground" },
+          { label: "Año en curso", value: year, icon: Calendar, color: "text-purple-500" },
+        ].map(k => (
+          <div key={k.label} className="bg-card border rounded-xl p-4 flex items-center gap-3">
+            <k.icon className={cn("h-8 w-8", k.color)} />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{k.value}</p>
+              <p className="text-xs text-muted-foreground">{k.label}</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      <details className="mb-4 rounded-lg border border-border bg-surface p-4">
-        <summary className="cursor-pointer text-sm font-semibold">Glosario de siglas (hoja &quot;siglas&quot; de la planilla oficial)</summary>
-        <div className="mt-3 grid grid-cols-1 gap-4 text-xs md:grid-cols-2">
+      {/* Alerta DS 3/1985 */}
+      {stats.exceeded > 0 && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="mb-1 font-medium text-foreground">Codigos de dosis / estado del dosimetro</p>
-            <ul className="space-y-1 text-muted-foreground">
-              {Object.entries(DOSE_QUALITATIVE_CODES).map(([code, desc]) => (
-                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1 font-medium text-foreground">Tipo de dosimetro</p>
-            <ul className="space-y-1 text-muted-foreground">
-              {Object.entries(DOSIMETER_KIND_CODES).map(([code, desc]) => (
-                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1 font-medium text-foreground">Tipo de radiacion</p>
-            <ul className="space-y-1 text-muted-foreground">
-              {Object.entries(RADIATION_CODES).map(([code, desc]) => (
-                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1 font-medium text-foreground">Estado anual del trabajador</p>
-            <ul className="space-y-1 text-muted-foreground">
-              {Object.entries(ANNUAL_STATUS_CODES).map(([code, desc]) => (
-                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
-              ))}
-            </ul>
+            <p className="font-semibold text-red-800">
+              {stats.exceeded} trabajador{stats.exceeded > 1 ? "es" : ""} con dosis anual excedida
+            </p>
+            <p className="text-sm text-red-700 mt-0.5">
+              DS 3/1985 Art. 7: Categoría A ≤ 50 mSv/año · Categoría B ≤ 15 mSv/año. Notificar SEREMI y CCHEN.
+            </p>
           </div>
         </div>
-      </details>
+      )}
 
-      {tab === "trimestre" && (
-        <>
-          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-            <KPICard label="Trabajadores monitoreados" value={totalWorkers} href="/dosimetry" icon={Users} />
-            <LevelKpiCard label="Nivel de registro" level="registro" rows={all} icon={<ShieldCheck className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
-            <LevelKpiCard label="Nivel de investigacion" level="investigacion" rows={all} icon={<AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
-            <LevelKpiCard label="Nivel de intervencion" level="intervencion" rows={all} icon={<ShieldAlert className="h-3.5 w-3.5 text-danger" strokeWidth={2} />} tone="danger" />
-          </div>
+      {/* Tabs */}
+      <div className="flex gap-1 bg-muted rounded-lg p-1 w-fit">
+        {[
+          { key: "summary", label: "Resumen anual", icon: BarChart3 },
+          { key: "readings", label: "Lecturas", icon: Activity },
+        ].map(t => (
+          <button key={t.key} onClick={() => setView(t.key as "summary" | "readings")}
+            className={cn("flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
+              view === t.key ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground")}>
+            <t.icon className="h-4 w-4" />{t.label}
+          </button>
+        ))}
+      </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-            <KPICard label="PDFs importados" value={stats.pdfCount} href="/dosimetry" icon={FileText} />
-            <KPICard label="Excel/CSV importados" value={stats.excelCount} href="/dosimetry" icon={FileSpreadsheet} />
-            <KPICard label="Registros extraidos" value={stats.recordsExtracted} href="/dosimetry" icon={ClipboardCheck} />
-            <KPICard label="Pendientes de validacion" value={stats.pendingValidation} href="/dosimetry" icon={AlertTriangle} tone="warning" />
-          </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar trabajador, RUT, período…"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border bg-background text-sm" />
+        </div>
+        {view === "summary" && (
+          <select value={filterAlert} onChange={e => setFilterAlert(e.target.value)}
+            className="px-3 py-2 rounded-lg border bg-background text-sm">
+            <option value="all">Todos</option>
+            <option value="exceeded">Excedido</option>
+            <option value="warning">En seguimiento</option>
+            <option value="ok">Normal</option>
+          </select>
+        )}
+      </div>
 
-          <div className="mb-6">
-            <QuarterlyTable rows={all} />
-          </div>
-
-          <h2 className="mb-2 text-sm font-semibold">Documentos importados</h2>
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <table className="w-full">
-              <thead className="border-b border-border bg-muted/40 text-left text-xs">
-                <tr>
-                  <th className="px-3 py-2">Archivo</th>
-                  <th className="px-3 py-2">Tipo</th>
-                  <th className="px-3 py-2">Periodo</th>
-                  <th className="px-3 py-2">Cargado por</th>
-                  <th className="px-3 py-2">Fecha</th>
-                  <th className="px-3 py-2 text-right">Registros</th>
-                  <th className="px-3 py-2">OCR</th>
-                  <th className="px-3 py-2">Estado</th>
-                  <th className="px-3 py-2"></th>
+      {/* Summary Table */}
+      {view === "summary" && (
+        <div className="bg-card border rounded-xl overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Trabajador</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cat.</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Dosis WB (mSv)</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Límite</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">% Límite</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Períodos</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Último per.</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Cargando…</td></tr>
+              ) : filteredSummaries.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Sin datos para {year}</td></tr>
+              ) : filteredSummaries.map((w, i) => (
+                <tr key={i} className="border-b last:border-0 hover:bg-muted/30">
+                  <td className="px-4 py-3">
+                    <div className="font-medium">{w.worker_name}</div>
+                    {w.worker_rut && <div className="text-xs text-muted-foreground font-mono">{w.worker_rut}</div>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {w.category && (
+                      <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold",
+                        w.category === "A" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800")}>
+                        Cat. {w.category}
+                      </span>
+                    )}
+                  </td>
+                  <td className={cn("px-4 py-3 text-right font-mono font-semibold", alertColor(w.alert))}>
+                    {Number(w.total_dose_wb ?? 0).toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                    {w.annual_limit}
+                  </td>
+                  <td className="px-4 py-3 min-w-32">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-muted rounded-full h-2">
+                        <div className={cn("h-2 rounded-full transition-all",
+                          w.alert === "exceeded" ? "bg-red-500" :
+                          w.alert === "warning"  ? "bg-amber-500" : "bg-green-500")}
+                          style={{ width: `${Math.min(100, w.limit_pct ?? 0)}%` }} />
+                      </div>
+                      <span className={cn("text-xs font-mono", alertColor(w.alert))}>
+                        {(w.limit_pct ?? 0).toFixed(1)}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">{w.periods_measured}</td>
+                  <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{w.last_period}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", alertBadge(w.alert))}>
+                      {w.alert === "exceeded" ? "⚠ Excedido" : w.alert === "warning" ? "Seguimiento" : "Normal"}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-sm">
-                {docs.map((d) => (
-                  <tr key={d.id} className="hover:bg-muted/40">
-                    <td className="px-3 py-2.5 font-medium">{d.filename}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground uppercase">{d.source_type}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{d.period_label || "-"}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{d.uploaded_by || "-"}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{new Date(d.uploaded_at).toLocaleDateString("es-CL")}</td>
-                    <td className="px-3 py-2.5 text-right text-muted-foreground">{d.records_count}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{d.used_ocr ? "Si" : "No"}</td>
-                    <td className="px-3 py-2.5 text-muted-foreground">{d.status}</td>
-                    <td className="px-3 py-2.5">
-                      {d.blob_url && (
-                        <a href={d.blob_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                          Ver Reporte Original
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {docs.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
-                      No hay documentos importados todavia.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      {tab === "anual" && <AnnualSummaryTable rows={annualRows} />}
-
-      {tab === "no-devueltos" && (
-        <div>
-          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-2">
-            <KPICard label="Pendientes de devolver" value={notReturnedRows.filter((r) => !r.extraviado).length} href="/dosimetry?tab=no-devueltos" icon={Package} tone="warning" />
-            <KPICard label="Extraviados" value={notReturnedRows.filter((r) => r.extraviado).length} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
-          </div>
-          <NotReturnedTable initialRows={notReturnedRows} />
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {tab === "fuera-plazo" && <LateReturnsTable rows={lateRows} />}
+      {/* Readings Table */}
+      {view === "readings" && (
+        <div className="bg-card border rounded-xl overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Trabajador</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Período</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Dosímetro</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Región</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Dosis</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Estado</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">N° Badge</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Cargando…</td></tr>
+              ) : filteredReadings.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-16 text-muted-foreground">Sin lecturas para {year}</td></tr>
+              ) : filteredReadings.map(r => {
+                const stCfg = STATUS_CONFIG[r.status] ?? STATUS_CONFIG.pending;
+                const StIcon = stCfg.icon;
+                return (
+                  <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{r.worker_name}</div>
+                      {r.worker_rut && <div className="text-xs text-muted-foreground font-mono">{r.worker_rut}</div>}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs">{r.period}</td>
+                    <td className="px-4 py-3">{r.dosimeter_type}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {BODY_REGIONS[r.body_region] ?? r.body_region}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={cn("font-mono font-semibold",
+                        r.dose > 5 ? "text-red-600" : r.dose > 1 ? "text-amber-600" : "text-foreground")}>
+                        {Number(r.dose).toFixed(3)}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-1">{r.dose_unit ?? "mSv"}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium w-fit", stCfg.color)}>
+                        <StIcon className="h-3 w-3" />{stCfg.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.badge_number ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleDelete(r)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-background border rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-background">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-500" />
+                <h2 className="text-lg font-semibold">{editing ? "Editar lectura" : "Nueva lectura dosimétrica"}</h2>
+              </div>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-muted rounded-lg"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={handleSave} className="p-6 space-y-5">
+              {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
+
+              {/* Trabajador */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Trabajador</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">RUT</label>
+                    <input value={form.worker_rut} onChange={e => setForm(f => ({ ...f, worker_rut: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm font-mono" placeholder="12.345.678-9" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Nombre *</label>
+                    <input required value={form.worker_name} onChange={e => setForm(f => ({ ...f, worker_name: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Dosímetro */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Dosímetro</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Período *</label>
+                    <select required value={form.period} onChange={e => setForm(f => ({ ...f, period: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm font-mono">
+                      <option value="">Seleccionar…</option>
+                      {periods.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Tipo de dosímetro</label>
+                    <select value={form.dosimeter_type} onChange={e => setForm(f => ({ ...f, dosimeter_type: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                      {DOSIMETER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Región corporal</label>
+                    <select value={form.body_region} onChange={e => setForm(f => ({ ...f, body_region: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                      {Object.entries(BODY_REGIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">N° Badge / Código</label>
+                    <input value={form.badge_number} onChange={e => setForm(f => ({ ...f, badge_number: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Medición */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Medición</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Dosis *</label>
+                    <input required type="number" step="0.001" min="0" value={form.dose}
+                      onChange={e => setForm(f => ({ ...f, dose: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Unidad</label>
+                    <select value={form.dose_unit} onChange={e => setForm(f => ({ ...f, dose_unit: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                      <option value="mSv">mSv</option>
+                      <option value="µSv">µSv</option>
+                      <option value="mGy">mGy</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Estado</label>
+                    <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                      {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha medición</label>
+                    <input type="date" value={form.measured_at} onChange={e => setForm(f => ({ ...f, measured_at: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium mb-1">N° Informe laboratorio</label>
+                    <input value={form.lab_report_id} onChange={e => setForm(f => ({ ...f, lab_report_id: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border bg-background text-sm font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Notas</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  rows={2} className="w-full px-3 py-2 rounded-lg border bg-background text-sm resize-none" />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-lg border hover:bg-muted text-sm">Cancelar</button>
+                <button type="submit" disabled={saving}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium disabled:opacity-50">
+                  <Save className="h-4 w-4" />
+                  {saving ? "Guardando…" : editing ? "Guardar cambios" : "Registrar lectura"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
-  }
+}
