@@ -1,329 +1,293 @@
-import { sql } from "@/lib/db";
-import type { ComponentType } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  TrendingUp,
-  Users,
-  ShieldAlert,
-} from "lucide-react";
+import { Users, ShieldCheck, AlertTriangle, ShieldAlert, FileText, FileSpreadsheet, ClipboardCheck, Package, Search } from "lucide-react";
+import Link from "next/link";
 import { KPICard } from "@/components/dashboard/kpi-card";
+import { LevelKpiCard } from "@/components/dosimetry/level-kpi-card";
+import { DoseReportModal } from "@/components/dosimetry/dose-report-modal";
+import { NotReturnedTable } from "@/components/dosimetry/not-returned-table";
+import { QuarterlyTable } from "@/components/dosimetry/quarterly-table";
+import { AnnualSummaryTable } from "@/components/dosimetry/annual-summary-table";
+import { LateReturnsTable } from "@/components/dosimetry/late-returns-table";
+import { sql } from "@/lib/db";
+import {
+  getAnnualSummary,
+  getNotReturned,
+  getLateReturns,
+  DOSE_QUALITATIVE_CODES,
+  DOSIMETER_KIND_CODES,
+  RADIATION_CODES,
+  ANNUAL_STATUS_CODES,
+} from "@/lib/dosimetry";
 
 export const dynamic = "force-dynamic";
 
-// Límites anuales DS 3/1985 MINSAL (mSv) — ICRP 103
-const LIMITS = {
-  ANNUAL_BODY_OCC: 20,       // Trabajadores ocupacionales: cuerpo entero 20 mSv/año
-  ANNUAL_BODY_PUBLIC: 1,     // Público general: 1 mSv/año
-  ANNUAL_LENS: 20,           // Cristalino: 20 mSv/año (ICRP 118)
-  ANNUAL_SKIN: 500,          // Piel: 500 mSv/año
-  QUARTERLY_NI_1: 1.25,      // NI-1 (Nivel de Investigación 1): 1.25 mSv/trimestre (25% del límite trimestral 5 mSv)
-  QUARTERLY_NI_2: 3.75,      // NI-2 (Nivel de Investigación 2): 3.75 mSv/trimestre (75%)
-  QUARTERLY_BODY_OCC: 5,     // Límite trimestral: 5 mSv/trimestre (20 mSv/4)
-};
-
-type LevelType = "normal" | "ni1" | "ni2" | "exceeded";
-
-function getLevel(dose: number): LevelType {
-  if (dose >= LIMITS.QUARTERLY_BODY_OCC) return "exceeded";
-  if (dose >= LIMITS.QUARTERLY_NI_2) return "ni2";
-  if (dose >= LIMITS.QUARTERLY_NI_1) return "ni1";
-  return "normal";
-}
-
-const LEVEL_LABEL: Record<LevelType, { label: string; cls: string }> = {
-  normal:   { label: "Normal",         cls: "text-green-700 bg-green-50" },
-  ni1:      { label: "NI-1 Invest.",   cls: "text-amber-700 bg-amber-50" },
-  ni2:      { label: "NI-2 Acción",    cls: "text-orange-700 bg-orange-50" },
-  exceeded: { label: "Supera límite",  cls: "text-red-700 bg-red-50" },
-};
-
-interface DosRow {
+type Row = {
+  id: number;
   worker_rut: string;
   worker_name: string;
+  departamento: string | null;
   year: number;
   quarter: number;
   period_label: string;
-  dose_body: number;
-  dose_lens: number;
-  dose_skin: number;
-  accum_year_body: number;
-  accum_12m_body: number;
-  accum_60m_body: number;
+  dose_body: string;
+  dose_lens: string;
+  dose_skin: string;
+  accum_60m_body: string;
   level: string;
+  source_document_id: number | null;
+  blob_url: string | null;
+};
+
+type DocRow = {
+  id: number;
+  filename: string;
+  blob_url: string;
+  source_type: string;
+  period_label: string | null;
+  year: number | null;
+  uploaded_by: string | null;
+  uploaded_at: string;
+  used_ocr: boolean;
+  records_count: number;
+  status: string;
+};
+
+const TABS: { key: string; label: string }[] = [
+  { key: "trimestre", label: "Reportes por trimestre" },
+  { key: "anual", label: "Resumen anual" },
+  { key: "no-devueltos", label: "No devueltos" },
+  { key: "fuera-plazo", label: "Devueltos fuera de plazo" },
+];
+
+async function getData(): Promise<Row[]> {
+  try {
+    await sql`ALTER TABLE dosimetry_quarterly ADD COLUMN IF NOT EXISTS source_document_id INT`;
+    const { rows } = await sql`
+      SELECT q.id, q.worker_rut, q.worker_name, q.departamento, q.year, q.quarter, q.period_label,
+             q.dose_body, q.dose_lens, q.dose_skin, q.accum_60m_body, q.level,
+             q.source_document_id, d.blob_url
+      FROM dosimetry_quarterly q
+      LEFT JOIN dosimetry_documents d ON d.id = q.source_document_id
+      ORDER BY q.year DESC, q.quarter DESC, q.worker_name ASC
+    `;
+    return rows as Row[];
+  } catch {
+    return [];
+  }
 }
 
-export default async function DosimetryPage() {
-  // Lazy migration: ensure dosimetry_quarterly table exists
+async function getDocuments(): Promise<{ docs: DocRow[]; stats: { pdfCount: number; excelCount: number; recordsExtracted: number; pendingValidation: number } }> {
   try {
     await sql`
-      CREATE TABLE IF NOT EXISTS dosimetry_quarterly (
+      CREATE TABLE IF NOT EXISTS dosimetry_documents (
         id SERIAL PRIMARY KEY,
-        worker_rut VARCHAR(12) NOT NULL,
-        worker_name VARCHAR(200) NOT NULL,
-        year INT NOT NULL,
-        quarter INT NOT NULL CHECK (quarter BETWEEN 1 AND 4),
-        period_label VARCHAR(20),
-        dose_body NUMERIC(8,3) DEFAULT 0,
-        dose_lens NUMERIC(8,3) DEFAULT 0,
-        dose_skin NUMERIC(8,3) DEFAULT 0,
-        accum_year_body NUMERIC(8,3) DEFAULT 0,
-        accum_12m_body NUMERIC(8,3) DEFAULT 0,
-        accum_60m_body NUMERIC(8,3) DEFAULT 0,
-        level VARCHAR(20) DEFAULT 'normal',
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE (worker_rut, year, quarter)
+        filename TEXT NOT NULL,
+        blob_url TEXT,
+        mime_type TEXT,
+        size_bytes INT,
+        file_hash TEXT UNIQUE,
+        source_type TEXT DEFAULT 'pdf',
+        provider TEXT,
+        period_label TEXT,
+        year INT,
+        uploaded_by TEXT,
+        uploaded_at TIMESTAMP DEFAULT now(),
+        used_ocr BOOLEAN DEFAULT false,
+        records_count INT DEFAULT 0,
+        status TEXT DEFAULT 'processed'
       )
     `;
-  } catch { /* already exists */ }
-
-  // Seed demo data if table is empty
-  let seeded = false;
-  try {
-    const { rows: cnt } = await sql`SELECT COUNT(*)::int AS n FROM dosimetry_quarterly`;
-    if (Number((cnt[0] as any)?.n ?? 0) === 0) {
-      const demoWorkers = [
-        { rut: "12345678-9", name: "Juan Pérez González" },
-        { rut: "98765432-1", name: "María Silva Muñoz" },
-        { rut: "11223344-5", name: "Carlos Torres Riquelme" },
-        { rut: "55667788-9", name: "Ana López Fuentes" },
-      ];
-      const currentYear = new Date().getFullYear();
-      for (const w of demoWorkers) {
-        for (let q = 1; q <= 4; q++) {
-          const dose = parseFloat((Math.random() * 2.5).toFixed(3));
-          const level = getLevel(dose);
-          const accum = parseFloat((dose * q * 0.9).toFixed(3));
-          await sql`
-            INSERT INTO dosimetry_quarterly
-              (worker_rut, worker_name, year, quarter, period_label,
-               dose_body, dose_lens, dose_skin,
-               accum_year_body, accum_12m_body, accum_60m_body, level)
-            VALUES
-              (${w.rut}, ${w.name}, ${currentYear}, ${q},
-               ${"T" + q + "-" + currentYear},
-               ${dose}, ${parseFloat((dose * 0.3).toFixed(3))}, ${parseFloat((dose * 0.5).toFixed(3))},
-               ${accum}, ${accum}, ${accum},
-               ${level})
-            ON CONFLICT DO NOTHING
-          `;
-        }
-      }
-      seeded = true;
-    }
-  } catch { /* table may not exist yet */ }
-
-  let rows: DosRow[] = [];
-  let totalWorkers = 0;
-  let countNI1 = 0;
-  let countNI2 = 0;
-  let countExceeded = 0;
-
-  try {
-    const { rows: dbRows } = await sql`
-      SELECT worker_rut, worker_name, year, quarter, period_label,
-             dose_body::float, dose_lens::float, dose_skin::float,
-             accum_year_body::float, accum_12m_body::float, accum_60m_body::float,
-             level
-      FROM dosimetry_quarterly
-      ORDER BY year DESC, quarter DESC, worker_name ASC
-      LIMIT 200
+    const { rows } = await sql`
+      SELECT id, filename, blob_url, source_type, period_label, year, uploaded_by, uploaded_at, used_ocr, records_count, status
+      FROM dosimetry_documents
+      ORDER BY uploaded_at DESC
+      LIMIT 20
     `;
-    rows = dbRows as DosRow[];
+    const docs = rows as DocRow[];
+    const pdfCount = docs.filter((d) => d.source_type === "pdf").length;
+    const excelCount = docs.filter((d) => d.source_type === "xlsx" || d.source_type === "csv").length;
+    const recordsExtracted = docs.reduce((acc, d) => acc + (Number(d.records_count) || 0), 0);
+    const pendingValidation = docs.filter((d) => d.status === "pending").length;
+    return { docs, stats: { pdfCount, excelCount, recordsExtracted, pendingValidation } };
+  } catch {
+    return { docs: [], stats: { pdfCount: 0, excelCount: 0, recordsExtracted: 0, pendingValidation: 0 } };
+  }
+}
 
-    // KPI counts from latest quarter for each worker
-    const latestByWorker = new Map<string, DosRow>();
-    for (const r of rows) {
-      const key = r.worker_rut;
-      if (!latestByWorker.has(key)) latestByWorker.set(key, r);
-    }
-    totalWorkers = latestByWorker.size;
-    for (const r of latestByWorker.values()) {
-      const lv = r.level as LevelType;
-      if (lv === "ni1") countNI1++;
-      else if (lv === "ni2") countNI2++;
-      else if (lv === "exceeded") countExceeded++;
-    }
-  } catch { /* tabla no creada */ }
+export default async function DosimetryPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const sp = await searchParams;
+  const tab = sp?.tab && TABS.some((t) => t.key === sp.tab) ? sp.tab : "trimestre";
 
-  // Group by worker for the main table
-  const byWorker = new Map<string, DosRow[]>();
-  for (const r of rows) {
-    const existing = byWorker.get(r.worker_rut) ?? [];
-    existing.push(r);
-    byWorker.set(r.worker_rut, existing);
+  let all: Row[] = [];
+  let docs: DocRow[] = [];
+  let stats = { pdfCount: 0, excelCount: 0, recordsExtracted: 0, pendingValidation: 0 };
+  let annualRows: Awaited<ReturnType<typeof getAnnualSummary>> = [];
+  let notReturnedRows: Awaited<ReturnType<typeof getNotReturned>> = [];
+  let lateRows: Awaited<ReturnType<typeof getLateReturns>> = [];
+
+  if (tab === "trimestre") {
+    all = await getData();
+    const docData = await getDocuments();
+    docs = docData.docs;
+    stats = docData.stats;
+  } else if (tab === "anual") {
+    try { annualRows = await getAnnualSummary(); } catch { annualRows = []; }
+  } else if (tab === "no-devueltos") {
+    try { notReturnedRows = await getNotReturned(); } catch { notReturnedRows = []; }
+  } else if (tab === "fuera-plazo") {
+    try { lateRows = await getLateReturns(); } catch { lateRows = []; }
   }
 
-  const workerList = Array.from(byWorker.entries()).map(([rut, records]) => ({
-    rut,
-    name: records[0]!.worker_name,
-    records: records.sort((a, b) => a.year - b.year || a.quarter - b.quarter),
-    latestLevel: (records[0]!.level as LevelType) ?? "normal",
-  }));
+  const latest = all[0];
+  const latestLabel = latest?.period_label ?? null;
+
+  const countByLevel = (lvl: string) => all.filter((r) => r.level === lvl).length;
+  const totalWorkers = new Set(all.map((r) => r.worker_rut)).size;
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dosimetría Personal — Seguimiento Trimestral</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Niveles de Investigación (NI) según DS 3/1985 MINSAL · ICRP 103 · NS-06.0 §11
-          {seeded && <span className="ml-2 text-accent">(datos demo inicializados)</span>}
-        </p>
+    <div className="mx-auto max-w-[1400px] p-6">
+      <h1 className="text-lg font-semibold mb-1">Dosimetria</h1>
+      <p className="mb-4 text-xs text-muted-foreground">
+        {latestLabel ? `Ultimo periodo cargado: ${latestLabel}` : "Planilla oficial Resumen - 908.xlsm"} · Niveles de referencia (dosis cuerpo entero por trimestre): Registro ≥ 0,1 mSv · Investigacion ≥ 1,6 mSv · Intervencion ≥ 5 mSv
+      </p>
+
+      <DoseReportModal />
+
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-border">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={`/dosimetry?tab=${t.key}`}
+            className={
+              tab === t.key
+                ? "border-b-2 border-accent px-3 py-2 text-xs font-medium text-foreground"
+                : "border-b-2 border-transparent px-3 py-2 text-xs text-muted-foreground hover:text-foreground"
+            }
+          >
+            {t.label}
+          </Link>
+        ))}
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-        <KPICard label="Trabajadores" value={totalWorkers} href="/dosimetry" icon={Users as ComponentType<{ className?: string }>} />
-        <KPICard label="NI-1 (Investigar)" value={countNI1} href="/dosimetry" icon={TrendingUp as ComponentType<{ className?: string }>} tone={countNI1 > 0 ? "warning" : "default"} />
-        <KPICard label="NI-2 (Acción)" value={countNI2} href="/dosimetry" icon={AlertTriangle as ComponentType<{ className?: string }>} tone={countNI2 > 0 ? "danger" : "default"} />
-        <KPICard label="Supera límite" value={countExceeded} href="/dosimetry" icon={ShieldAlert as ComponentType<{ className?: string }>} tone={countExceeded > 0 ? "danger" : "default"} />
-        <KPICard label="Lím. anual (mSv)" value={LIMITS.ANNUAL_BODY_OCC} href="/dosimetry" icon={Activity as ComponentType<{ className?: string }>} hint="DS 3/1985" />
-        <KPICard label="Lím. trim. (mSv)" value={LIMITS.QUARTERLY_BODY_OCC} href="/dosimetry" icon={CheckCircle2 as ComponentType<{ className?: string }>} hint="20 mSv / 4" />
-      </div>
-
-      {/* Alerta si hay NI-2 o superados */}
-      {(countNI2 > 0 || countExceeded > 0) && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-          <strong>⚠ Acción requerida:</strong> {countExceeded > 0 && `${countExceeded} trabajador(es) superan el límite trimestral (5 mSv). Notificar al OPR e investigar causa inmediata.`}
-          {countNI2 > 0 && ` ${countNI2} trabajador(es) en NI-2 requieren revisión de prácticas y reducción de dosis.`}
-          {" "}Regulación: NS-06.0 §11, DS 3/1985 Art. 15.
-        </div>
-      )}
-
-      {/* Tabla de límites de referencia */}
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="font-semibold mb-3">Límites de Dosis y Niveles de Investigación — DS 3/1985 MINSAL</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-border text-left text-muted-foreground">
-                <th className="pb-2 pr-4 font-medium">Nivel</th>
-                <th className="pb-2 pr-4 font-medium">Umbral trimestral</th>
-                <th className="pb-2 pr-4 font-medium">Acción requerida</th>
-                <th className="pb-2 font-medium">Base regulatoria</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              <tr className="text-green-700">
-                <td className="py-1.5 pr-4 font-medium">Normal</td>
-                <td className="py-1.5 pr-4">&lt; 1.25 mSv/trim</td>
-                <td className="py-1.5 pr-4">Ninguna</td>
-                <td className="py-1.5 text-muted-foreground">DS 3/1985 Art. 3</td>
-              </tr>
-              <tr className="text-amber-700">
-                <td className="py-1.5 pr-4 font-medium">NI-1 — Investigar</td>
-                <td className="py-1.5 pr-4">≥ 1.25 mSv/trim (25%)</td>
-                <td className="py-1.5 pr-4">Revisar procedimientos, registrar causa</td>
-                <td className="py-1.5 text-muted-foreground">NS-06.0 §11.3</td>
-              </tr>
-              <tr className="text-orange-700">
-                <td className="py-1.5 pr-4 font-medium">NI-2 — Acción</td>
-                <td className="py-1.5 pr-4">≥ 3.75 mSv/trim (75%)</td>
-                <td className="py-1.5 pr-4">Investigación formal OPR, restricción actividades</td>
-                <td className="py-1.5 text-muted-foreground">NS-06.0 §11.4</td>
-              </tr>
-              <tr className="text-red-700">
-                <td className="py-1.5 pr-4 font-medium">Supera límite</td>
-                <td className="py-1.5 pr-4">≥ 5 mSv/trim</td>
-                <td className="py-1.5 pr-4">Notificar CCHEN, suspender exposición, investigación</td>
-                <td className="py-1.5 text-muted-foreground">DS 3/1985 · NS-06.0 §16</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Tabla dosimétrica por trabajador */}
-      <div className="rounded-xl border border-border bg-surface">
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-semibold">Registros Trimestrales por Trabajador</h2>
-          <div className="flex gap-2">
-            <a
-              href="/api/reports/generate?type=dosimetry_quarterly&format=csv"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
-            >
-              ↓ Exportar CSV
-            </a>
-            <a
-              href="/api/reports/generate?type=dosimetry_monthly&format=csv"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors"
-            >
-              ↓ Lecturas CSV
-            </a>
+      <details className="mb-4 rounded-lg border border-border bg-surface p-4">
+        <summary className="cursor-pointer text-sm font-semibold">Glosario de siglas (hoja &quot;siglas&quot; de la planilla oficial)</summary>
+        <div className="mt-3 grid grid-cols-1 gap-4 text-xs md:grid-cols-2">
+          <div>
+            <p className="mb-1 font-medium text-foreground">Codigos de dosis / estado del dosimetro</p>
+            <ul className="space-y-1 text-muted-foreground">
+              {Object.entries(DOSE_QUALITATIVE_CODES).map(([code, desc]) => (
+                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-medium text-foreground">Tipo de dosimetro</p>
+            <ul className="space-y-1 text-muted-foreground">
+              {Object.entries(DOSIMETER_KIND_CODES).map(([code, desc]) => (
+                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-medium text-foreground">Tipo de radiacion</p>
+            <ul className="space-y-1 text-muted-foreground">
+              {Object.entries(RADIATION_CODES).map(([code, desc]) => (
+                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-1 font-medium text-foreground">Estado anual del trabajador</p>
+            <ul className="space-y-1 text-muted-foreground">
+              {Object.entries(ANNUAL_STATUS_CODES).map(([code, desc]) => (
+                <li key={code}><span className="font-medium text-foreground">{code}</span>: {desc}</li>
+              ))}
+            </ul>
           </div>
         </div>
-        {workerList.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Sin datos dosimétricos. Ingrese lecturas en el módulo de dosimetría o ejecute{" "}
-            <a href="/api/init" className="text-accent underline">/api/init</a> para datos demo.
+      </details>
+
+      {tab === "trimestre" && (
+        <>
+          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+            <KPICard label="Trabajadores monitoreados" value={totalWorkers} href="/dosimetry" icon={Users} />
+            <LevelKpiCard label="Nivel de registro" level="registro" rows={all} icon={<ShieldCheck className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
+            <LevelKpiCard label="Nivel de investigacion" level="investigacion" rows={all} icon={<AlertTriangle className="h-3.5 w-3.5 text-warning" strokeWidth={2} />} tone="warning" />
+            <LevelKpiCard label="Nivel de intervencion" level="intervencion" rows={all} icon={<ShieldAlert className="h-3.5 w-3.5 text-danger" strokeWidth={2} />} tone="danger" />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="px-4 py-2 font-medium">Trabajador</th>
-                  <th className="px-3 py-2 font-medium">RUT</th>
-                  <th className="px-3 py-2 font-medium">Período</th>
-                  <th className="px-3 py-2 font-medium text-right">Cuerpo (mSv)</th>
-                  <th className="px-3 py-2 font-medium text-right">Cristalino</th>
-                  <th className="px-3 py-2 font-medium text-right">Piel</th>
-                  <th className="px-3 py-2 font-medium text-right">Acum. año</th>
-                  <th className="px-3 py-2 font-medium text-right">Acum. 12m</th>
-                  <th className="px-3 py-2 font-medium">Nivel</th>
+
+          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+            <KPICard label="PDFs importados" value={stats.pdfCount} href="/dosimetry" icon={FileText} />
+            <KPICard label="Excel/CSV importados" value={stats.excelCount} href="/dosimetry" icon={FileSpreadsheet} />
+            <KPICard label="Registros extraidos" value={stats.recordsExtracted} href="/dosimetry" icon={ClipboardCheck} />
+            <KPICard label="Pendientes de validacion" value={stats.pendingValidation} href="/dosimetry" icon={AlertTriangle} tone="warning" />
+          </div>
+
+          <div className="mb-6">
+            <QuarterlyTable rows={all} />
+          </div>
+
+          <h2 className="mb-2 text-sm font-semibold">Documentos importados</h2>
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <table className="w-full">
+              <thead className="border-b border-border bg-muted/40 text-left text-xs">
+                <tr>
+                  <th className="px-3 py-2">Archivo</th>
+                  <th className="px-3 py-2">Tipo</th>
+                  <th className="px-3 py-2">Periodo</th>
+                  <th className="px-3 py-2">Cargado por</th>
+                  <th className="px-3 py-2">Fecha</th>
+                  <th className="px-3 py-2 text-right">Registros</th>
+                  <th className="px-3 py-2">OCR</th>
+                  <th className="px-3 py-2">Estado</th>
+                  <th className="px-3 py-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
-                {workerList.flatMap(({ rut, name, records }) =>
-                  records.map((r, idx) => {
-                    const lv = r.level as LevelType;
-                    const { label, cls } = LEVEL_LABEL[lv] ?? LEVEL_LABEL.normal;
-                    const rowBg =
-                      lv === "exceeded"
-                        ? "bg-red-50/40"
-                        : lv === "ni2"
-                        ? "bg-orange-50/30"
-                        : lv === "ni1"
-                        ? "bg-amber-50/20"
-                        : "";
-                    return (
-                      <tr key={`${rut}-${r.year}-${r.quarter}`} className={rowBg}>
-                        <td className="px-4 py-1.5 font-medium">{idx === 0 ? name : ""}</td>
-                        <td className="px-3 py-1.5 font-mono text-muted-foreground">{idx === 0 ? rut : ""}</td>
-                        <td className="px-3 py-1.5 font-mono">{r.period_label ?? `T${r.quarter}-${r.year}`}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{Number(r.dose_body).toFixed(3)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{Number(r.dose_lens).toFixed(3)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{Number(r.dose_skin).toFixed(3)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{Number(r.accum_year_body).toFixed(3)}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{Number(r.accum_12m_body).toFixed(3)}</td>
-                        <td className="px-3 py-1.5">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}`}>
-                            {label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
+              <tbody className="divide-y divide-border text-sm">
+                {docs.map((d) => (
+                  <tr key={d.id} className="hover:bg-muted/40">
+                    <td className="px-3 py-2.5 font-medium">{d.filename}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground uppercase">{d.source_type}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{d.period_label || "-"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{d.uploaded_by || "-"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{new Date(d.uploaded_at).toLocaleDateString("es-CL")}</td>
+                    <td className="px-3 py-2.5 text-right text-muted-foreground">{d.records_count}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{d.used_ocr ? "Si" : "No"}</td>
+                    <td className="px-3 py-2.5 text-muted-foreground">{d.status}</td>
+                    <td className="px-3 py-2.5">
+                      {d.blob_url && (
+                        <a href={d.blob_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                          Ver Reporte Original
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {docs.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                      No hay documentos importados todavia.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Pie regulatorio */}
-      <div className="rounded-xl border border-border bg-surface p-5 text-xs text-muted-foreground">
-        <h3 className="font-semibold text-foreground mb-2">Base Regulatoria</h3>
-        <div className="grid gap-1 md:grid-cols-2">
-          <div>• DS 3/1985 MINSAL: Límite anual 20 mSv cuerpo entero, 20 mSv cristalino, 500 mSv piel</div>
-          <div>• NS-06.0 CCHEN §11: Programa de vigilancia dosimétrica individual</div>
-          <div>• ICRP 103 (2007): Sistema de protección radiológica — limitación de dosis</div>
-          <div>• ICRP 118 (2012): Límite cristalino 20 mSv/año (revisado de 150 mSv)</div>
-          <div>• NS-06.0 §11.3: NI-1 al 25% del límite trimestral (1.25 mSv)</div>
-          <div>• NS-06.0 §11.4: NI-2 al 75% del límite trimestral (3.75 mSv)</div>
+      {tab === "anual" && <AnnualSummaryTable rows={annualRows} />}
+
+      {tab === "no-devueltos" && (
+        <div>
+          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-2">
+            <KPICard label="Pendientes de devolver" value={notReturnedRows.filter((r) => !r.extraviado).length} href="/dosimetry?tab=no-devueltos" icon={Package} tone="warning" />
+            <KPICard label="Extraviados" value={notReturnedRows.filter((r) => r.extraviado).length} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
+          </div>
+          <NotReturnedTable initialRows={notReturnedRows} />
         </div>
-      </div>
+      )}
+
+      {tab === "fuera-plazo" && <LateReturnsTable rows={lateRows} />}
     </div>
   );
-}
+  }

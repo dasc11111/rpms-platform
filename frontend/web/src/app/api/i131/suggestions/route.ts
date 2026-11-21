@@ -27,5 +27,5 @@ export async function GET(req: NextRequest) {
     LIMIT ${limit}
   `;
 
-  return NextResponse.json({ values: rows.map((r: Record<string, unknown>) => r["value"]), rows });
+  return NextResponse.json({ values: rows.map((r) => r.value), rows });
 }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Download, Loader2, FileSpreadsheet, FileText } from "lucide-react";
 import { daysRemaining, getAuthStatus, AUTH_STATUS_LABEL } from "@/lib/authorization";
+import { composeWorkerName } from "@/lib/worker-name";
 
 /**
  * Exportacion completa de trabajadores (XLSX o CSV), incluyendo Curso PR y
@@ -10,11 +11,15 @@ import { daysRemaining, getAuthStatus, AUTH_STATUS_LABEL } from "@/lib/authoriza
  * (incluye activos, suspendidos e inactivos). La libreria xlsx se carga de
  * forma diferida (dynamic import) solo cuando el usuario elige Excel, para no
  * afectar el tamaño del bundle inicial ni el rendimiento de la pagina.
+ * El nombre se exporta siempre como "Apellido Paterno Apellido Materno Nombres".
  */
 
 type ExportWorker = {
   rut: string;
   name: string;
+  last_name_1?: string | null;
+  last_name_2?: string | null;
+  first_names?: string | null;
   role: string | null;
   service: string | null;
   category: string | null;
@@ -56,7 +61,7 @@ function toRow(w: ExportWorker): (string | number)[] {
   const days = daysRemaining(w.authorization_expiry_date);
   const authStatus = getAuthStatus(days);
   return [
-    w.rut ?? "", w.dv ?? "", w.name ?? "", w.role ?? "", w.service ?? "", w.unit ?? "",
+    w.rut ?? "", w.dv ?? "", composeWorkerName(w), w.role ?? "", w.service ?? "", w.unit ?? "",
     w.estamento ?? "", w.contract_type ?? "", w.category ?? "", Number(w.annual_dose ?? 0),
     w.sex ?? "", w.birth_date ?? "", w.phone ?? "", w.email ?? "", w.address ?? "",
     statusLabel(w.status),

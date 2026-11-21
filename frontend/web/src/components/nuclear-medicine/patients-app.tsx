@@ -1,0 +1,230 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Search, Syringe, DoorOpen, Trash2, AlertTriangle, ScanLine } from "lucide-react";
+
+type PatientRow = {
+  run_normalizado: string;
+  paciente_run: string;
+  paciente_nombre: string;
+  total_administraciones: number;
+  total_liberaciones: number;
+  total_residuos: number;
+  total_petct: number;
+  variantes_run: number;
+  ultima_actividad: string | null;
+  primera_actividad: string | null;
+};
+
+type TimelineRow = {
+  origen: "i131" | "room_release" | "residuo" | "petct";
+  id: number;
+  event_date: string | null;
+  paciente_nombre: string;
+  paciente_run: string;
+  detalle_principal: string | null;
+  valor: string | number | null;
+  unidad: string | null;
+  responsable: string | null;
+  contexto: string | null;
+  observaciones: string | null;
+};
+
+const ORIGEN_LABEL: Record<TimelineRow["origen"], string> = {
+  i131: "Administracion I-131",
+  room_release: "Liberacion de Sala",
+  residuo: "Gestion de Residuos Radiactivos (Rotulo)",
+  petct: "Examen PET/CT",
+};
+
+function formatDate(d: string | null) {
+  if (!d) return "-";
+  try {
+    return new Date(d).toLocaleDateString("es-CL");
+  } catch {
+    return d;
+  }
+}
+
+export function PatientsApp() {
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<PatientRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<TimelineRow[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+    fetch(`/api/nuclear-medicine/patients?${params.toString()}`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => setRows(data.rows ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [q]);
+
+  function openPatient(run: string) {
+    setSelected(run);
+    setTimelineLoading(true);
+    fetch(`/api/nuclear-medicine/patients/timeline?run=${encodeURIComponent(run)}`)
+      .then((r) => r.json())
+      .then((data) => setTimeline(data.rows ?? []))
+      .catch(() => setTimeline([]))
+      .finally(() => setTimelineLoading(false));
+  }
+
+  // Fase 2 (migracion/reciclaje): permite llegar directo a un paciente desde
+  // los modulos de origen (Administracion I-131, Liberacion de Sala) via
+  // enlace ?run=... sin duplicar la logica de busqueda ni los datos.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const run = params.get("run");
+    if (run) {
+      setQ(run);
+      openPatient(run);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="mx-auto max-w-[1400px] p-6">
+      <div className="mb-1 flex items-baseline justify-between">
+        <h1 className="text-lg font-semibold tracking-tight">Pacientes y Tratamientos</h1>
+      </div>
+      <p className="mb-4 max-w-3xl text-xs text-muted-foreground">
+        Vista de trazabilidad de solo lectura (Fase 1-3): combina Administracion de I-131, Liberacion de
+        Sala y Gestion de Residuos Radiactivos usando el RUN del paciente como llave comun. No permite
+        crear, editar ni eliminar registros; los datos se administran desde cada modulo de origen. Si el
+        RUN de un mismo paciente esta escrito con distinto formato (con o sin puntos/guion) en cada
+        modulo, esta vista lo agrupa igual para mostrar la trazabilidad completa; el dato original no se
+        modifica. Contaminacion no se incluye aqui porque sus registros son por area/punto de medicion y
+        no estan asociados a un paciente especifico en la estructura de datos actual.
+      </p>
+
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por RUN o nombre..."
+            className="w-full rounded-md border border-border bg-surface py-1.5 pl-8 pr-3 text-xs outline-none focus:border-accent"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-border bg-surface p-3">
+          <h2 className="mb-2 text-xs font-semibold text-muted-foreground">
+            Pacientes ({rows.length}){loading ? " — cargando..." : ""}
+          </h2>
+          <div className="max-h-[560px] overflow-y-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-surface text-muted-foreground">
+                <tr className="text-left">
+                  <th className="py-1.5 pr-2 font-medium">Paciente</th>
+                  <th className="py-1.5 pr-2 font-medium">RUN</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">I-131</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">Lib. Sala</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">Residuos</th>
+                  <th className="py-1.5 pr-2 font-medium text-center">PET/CT</th>
+                  <th className="py-1.5 pr-2 font-medium">Ultima actividad</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr
+                    key={r.run_normalizado}
+                    onClick={() => openPatient(r.paciente_run)}
+                    className={`cursor-pointer border-t border-border/60 hover:bg-muted/40 ${
+                      selected === r.paciente_run ? "bg-accent-subtle" : ""
+                    }`}
+                  >
+                    <td className="py-1.5 pr-2">{r.paciente_nombre || "—"}</td>
+                    <td className="py-1.5 pr-2">
+                      <span className="inline-flex items-center gap-1">
+                        {r.paciente_run}
+                        {r.variantes_run > 1 && (
+                          <span
+                            title="Este RUN aparece con mas de un formato entre los modulos de origen (ej. con y sin puntos/guion). Se agrupo para esta vista sin modificar el dato original."
+                            className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-500"
+                          >
+                            <AlertTriangle className="h-2.5 w-2.5" strokeWidth={2.5} />
+                            {r.variantes_run} formatos
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_administraciones}</td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_liberaciones}</td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_residuos}</td>
+                    <td className="py-1.5 pr-2 text-center">{r.total_petct ?? 0}</td>
+                    <td className="py-1.5 pr-2">{formatDate(r.ultima_actividad)}</td>
+                  </tr>
+                ))}
+                {!loading && rows.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-6 text-center text-muted-foreground">
+                      Sin pacientes con RUN registrado en I-131, Liberacion de Sala o Residuos.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-surface p-3">
+          <h2 className="mb-2 text-xs font-semibold text-muted-foreground">
+            {selected ? `Linea de tiempo — ${selected}` : "Selecciona un paciente"}
+          </h2>
+          {!selected && (
+            <p className="py-6 text-center text-xs text-muted-foreground">
+              Haz clic en un paciente de la lista para ver su trazabilidad.
+            </p>
+          )}
+          {selected && timelineLoading && (
+            <p className="py-6 text-center text-xs text-muted-foreground">Cargando...</p>
+          )}
+          {selected && !timelineLoading && (
+            <div className="max-h-[560px] space-y-2 overflow-y-auto">
+              {timeline.map((t) => (
+                <div key={`${t.origen}-${t.id}`} className="flex items-start gap-2 rounded-md border border-border/60 p-2">
+                  {t.origen === "i131" ? (
+                    <Syringe className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  ) : t.origen === "room_release" ? (
+                    <DoorOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  ) : t.origen === "petct" ? (
+                    <ScanLine className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  ) : (
+                    <Trash2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2} />
+                  )}
+                  <div className="min-w-0 flex-1 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{ORIGEN_LABEL[t.origen]}</span>
+                      <span className="text-muted-foreground">{formatDate(t.event_date)}</span>
+                    </div>
+                    <p className="mt-0.5 text-muted-foreground">
+                      {t.detalle_principal ?? "—"}
+                      {t.valor !== null && t.valor !== undefined ? ` · ${t.valor} ${t.unidad ?? ""}` : ""}
+                    </p>
+                    {t.contexto && <p className="text-muted-foreground">{t.contexto}</p>}
+                    {t.responsable && <p className="text-muted-foreground">Responsable: {t.responsable}</p>}
+                  </div>
+                </div>
+              ))}
+              {timeline.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">Sin eventos para este paciente.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,195 +1,137 @@
-import { sql } from "@/lib/db";
+import Link from "next/link";
+import { Tag, PackageCheck, PackageX, Users, AlertTriangle, CalendarClock } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
-import { Activity, AlertTriangle, CheckCircle, Package } from "lucide-react";
+import { sql } from "@/lib/db";
+import { DOSIMETER_TYPE_LABELS, DOSIMETER_STATUS_LABELS, DOSIMETER_STATUS_COLORS, DosimeterRow, isOverdue, daysOverdue, getCurrentQuarter, quarterLabel } from "@/lib/dosimeters";
+import { ensureDosimeterTables } from "@/lib/dosimeters-db";
+import { rutMatchKey } from "@/lib/rut";
+import { DosimeterFormModal } from "@/components/dosimeters/dosimeter-form-modal";
+import { DosimeterAssignModal } from "@/components/dosimeters/dosimeter-assign-modal";
+import { DosimeterReturnModal } from "@/components/dosimeters/dosimeter-return-modal";
+import { DosimetersSubnav } from "@/components/dosimeters/dosimeters-subnav";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-interface Dosimeter {
-  id: number;
-  serial_number: string;
-  worker_rut: string | null;
-  worker_name: string | null;
-  dosimeter_type: string;
-  status: string;
-  issued_at: string | null;
-  returned_at: string | null;
-  period_start: string | null;
-  period_end: string | null;
-  notes: string | null;
+function fmtDate(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "-";
+  const d = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toISOString().slice(0, 10);
 }
 
-function statusLabel(s: string) {
-  const map: Record<string, { label: string; cls: string }> = {
-    active: { label: "En uso", cls: "text-emerald-700 bg-emerald-50" },
-    returned: { label: "Devuelto", cls: "text-blue-700 bg-blue-50" },
-    lost: { label: "Extraviado", cls: "text-red-700 bg-red-50" },
-    damaged: { label: "Dañado", cls: "text-amber-700 bg-amber-50" },
-  };
-  return map[s] ?? { label: s, cls: "text-muted-foreground bg-muted" };
+async function getDosimeters(): Promise<DosimeterRow[]> {
+  await ensureDosimeterTables();
+  const { rows } = await sql`SELECT * FROM dosimeters ORDER BY code ASC`;
+  return rows as DosimeterRow[];
 }
 
-function typeLabel(t: string) {
-  const map: Record<string, string> = {
-    tld: "TLD",
-    osl: "OSL",
-    film: "Película",
-    electronic: "Electrónico",
-    ring: "Anillo",
-    extremity: "Extremidad",
-  };
-  return map[t] ?? t;
+async function getActiveWorkerRuts(): Promise<string[]> {
+  try {
+    const { rows } = await sql`SELECT rut FROM workers WHERE status <> 'inactive'`;
+    return (rows as { rut: string }[]).map((r) => r.rut);
+  } catch {
+    return [];
+  }
 }
 
 export default async function DosimetersPage() {
-  let dosimeters: Dosimeter[] = [];
-  let totalActive = 0;
-  let totalReturned = 0;
-  let totalLostDamaged = 0;
-  let totalAll = 0;
+  const dosimeters = await getDosimeters();
+  const activeWorkerRuts = await getActiveWorkerRuts();
 
-  try {
-    const r = await sql`
-      SELECT d.id, d.serial_number, d.worker_rut, d.dosimeter_type,
-             d.status, d.issued_at::text, d.returned_at::text,
-             d.period_start::text, d.period_end::text, d.notes,
-             w.name as worker_name
-      FROM dosimeters d
-      LEFT JOIN workers w ON w.rut = d.worker_rut
-      ORDER BY d.issued_at DESC NULLS LAST
-      LIMIT 200
-    `;
-    dosimeters = r.rows as Dosimeter[];
-    totalAll = dosimeters.length;
-    totalActive = dosimeters.filter((d) => d.status === "active").length;
-    totalReturned = dosimeters.filter((d) => d.status === "returned").length;
-    totalLostDamaged = dosimeters.filter((d) => d.status === "lost" || d.status === "damaged").length;
-  } catch {
-    // tabla no existe aún
-  }
+  const total = dosimeters.length;
+  const disponibles = dosimeters.filter((d) => d.status === "disponible").length;
+  const asignados = dosimeters.filter((d) => d.status === "asignado").length;
+  const extraviados = dosimeters.filter((d) => d.status === "extraviado").length;
+  const fueraDePlazo = dosimeters.filter((d) => isOverdue(d)).length;
+
+  const assignedWorkerKeys = new Set(
+    dosimeters.filter((d) => d.status === "asignado" && d.worker_rut).map((d) => rutMatchKey(d.worker_rut as string))
+  );
+  const workersWithoutDosimeter = activeWorkerRuts.filter((rut) => !assignedWorkerKeys.has(rutMatchKey(rut))).length;
+
+  const { year, quarter } = getCurrentQuarter();
+  const currentQuarterLabel = quarterLabel(year, quarter);
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Gestión de Dosímetros</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Control de asignación, devolución y estado de dosímetros personales.
-          DS 3/1985 MINSAL — control dosimétrico trabajadores ocupacionalmente expuestos.
-        </p>
+    <div className="mx-auto max-w-[1400px] p-6">
+      <h1 className="text-lg font-semibold mb-1">Dosimetros</h1>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Asignacion y control de dosimetros fisicos por codigo XA · Recambio vigente: {currentQuarterLabel}
+      </p>
+
+      <DosimetersSubnav active="listado" />
+
+      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+        <KPICard label="Dosimetros registrados" value={total} href="/dosimeters" icon={Tag} />
+        <KPICard label="Disponibles" value={disponibles} href="/dosimeters" icon={PackageCheck} />
+        <KPICard label="Asignados" value={asignados} href="/dosimeters" icon={Users} />
+        <KPICard label="Extraviados" value={extraviados} href="/dosimeters" icon={PackageX} tone="danger" />
+      </div>
+      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+        <KPICard label="Fuera de plazo de devolucion" value={fueraDePlazo} href="/dosimeters" icon={AlertTriangle} tone="danger" />
+        <KPICard label="Trabajadores sin dosimetro" value={workersWithoutDosimeter} href="/dosimeters" icon={Users} tone="warning" />
+        <KPICard label="Trimestre vigente" value={quarter} href="/dosimeters" icon={CalendarClock} hint={`Ano ${year}`} />
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KPICard label="Total" value={totalAll} href="/dosimeters" icon={Package} tone="default" />
-        <KPICard label="En Uso" value={totalActive} href="/dosimeters" icon={Activity} tone={totalActive > 0 ? "info" : "default"} />
-        <KPICard label="Devueltos" value={totalReturned} href="/dosimeters" icon={CheckCircle} tone="default" />
-        <KPICard
-          label="Extraviados/Dañados"
-          value={totalLostDamaged}
-          href="/dosimeters"
-          icon={AlertTriangle}
-          tone={totalLostDamaged > 0 ? "danger" : "default"}
-        />
-      </div>
+      <DosimeterFormModal />
 
-      {totalLostDamaged > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <strong>⚠ {totalLostDamaged} dosímetro(s) extraviado(s) o dañado(s).</strong>{" "}
-          Notificar a CCHEN según NS-06.0 y registrar en el libro de novedades.
-        </div>
-      )}
-
-      {/* Tabla */}
-      {dosimeters.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center text-muted-foreground">
-          <Package className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No hay dosímetros registrados.</p>
-          <p className="text-xs mt-1">Use la API POST /api/dosimeters para registrar dosímetros.</p>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-border bg-surface overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr className="text-xs text-muted-foreground">
-                <th className="px-4 py-3 text-left font-medium">N° Serie</th>
-                <th className="px-4 py-3 text-left font-medium">Tipo</th>
-                <th className="px-4 py-3 text-left font-medium">Trabajador</th>
-                <th className="px-4 py-3 text-left font-medium">RUT</th>
-                <th className="px-4 py-3 text-left font-medium">Emisión</th>
-                <th className="px-4 py-3 text-left font-medium">Período</th>
-                <th className="px-4 py-3 text-left font-medium">Devolución</th>
-                <th className="px-4 py-3 text-left font-medium">Estado</th>
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <table className="w-full">
+          <thead className="border-b border-border bg-muted/40 text-left text-xs">
+            <tr>
+              <th className="px-3 py-2">Codigo XA</th>
+              <th className="px-3 py-2">Tipo</th>
+              <th className="px-3 py-2">Trabajador</th>
+              <th className="px-3 py-2">Servicio</th>
+              <th className="px-3 py-2">Unidad</th>
+              <th className="px-3 py-2">Entrega</th>
+              <th className="px-3 py-2">Devolucion estimada</th>
+              <th className="px-3 py-2">Estado</th>
+              <th className="px-3 py-2 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border text-sm">
+            {dosimeters.map((d) => {
+              const overdue = isOverdue(d);
+              const overdueDays = overdue ? daysOverdue(d.estimated_return_date) : null;
+              return (
+                <tr key={d.id} className="hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-mono text-xs">
+                    <Link href={`/dosimeters/${d.id}`} className="hover:text-accent hover:underline">
+                      {d.code}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{DOSIMETER_TYPE_LABELS[d.type]}</td>
+                  <td className="px-3 py-2.5">{d.worker_name ?? "-"}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{d.service ?? "-"}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{d.unit ?? "-"}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{fmtDate(d.delivery_date)}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{fmtDate(d.estimated_return_date)}</td>
+                  <td className="px-3 py-2.5">
+                    <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium", DOSIMETER_STATUS_COLORS[d.status])}>
+                      {DOSIMETER_STATUS_LABELS[d.status]}
+                    </span>
+                    {overdue && <span className="ml-1.5 text-[11px] text-danger">+{overdueDays}d</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    <div className="flex justify-end gap-1.5">
+                      <DosimeterAssignModal dosimeterId={d.id} code={d.code} />
+                      <DosimeterReturnModal dosimeterId={d.id} code={d.code} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {dosimeters.length === 0 && (
+              <tr>
+                <td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">
+                  No hay dosimetros registrados todavia. Agrega uno para comenzar.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {dosimeters.map((d) => {
-                const st = statusLabel(d.status);
-                return (
-                  <tr key={d.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-4 py-2.5 font-mono text-xs">{d.serial_number}</td>
-                    <td className="px-4 py-2.5">{typeLabel(d.dosimeter_type)}</td>
-                    <td className="px-4 py-2.5">{d.worker_name ?? "—"}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{d.worker_rut ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
-                      {d.issued_at ? new Date(d.issued_at).toLocaleDateString("es-CL") : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground">
-                      {d.period_start && d.period_end
-                        ? `${new Date(d.period_start).toLocaleDateString("es-CL")} – ${new Date(d.period_end).toLocaleDateString("es-CL")}`
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
-                      {d.returned_at ? new Date(d.returned_at).toLocaleDateString("es-CL") : "—"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex text-xs font-medium px-2 py-0.5 rounded-full ${st.cls}`}>
-                        {st.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Límites de dosis */}
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <h3 className="font-semibold mb-3">Límites de Dosis — DS 3/1985 MINSAL / ICRP 103</h3>
-        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
-          <div>
-            <p className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Categoría A (≥ 6 mSv/año)</p>
-            <ul className="space-y-1">
-              {[
-                "Dosis efectiva: 20 mSv/año promedio 5 años (máx 50 mSv/año)",
-                "Cristalino: 20 mSv/año (ICRP 103)",
-                "Piel / extremidades: 500 mSv/año",
-                "Mujer embarazada: 1 mSv durante embarazo",
-              ].map((l) => (
-                <li key={l} className="flex gap-2 text-xs">
-                  <span className="text-accent">▸</span>
-                  <span>{l}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="font-medium text-xs mb-2 text-muted-foreground uppercase tracking-wide">Categoría B (1–6 mSv/año)</p>
-            <ul className="space-y-1">
-              {[
-                "Dosis efectiva: 6 mSv/año",
-                "Monitoreo trimestral mínimo",
-                "Registro anual obligatorio",
-                "Notificación a CCHEN: > 1 mSv trimestral",
-              ].map((l) => (
-                <li key={l} className="flex gap-2 text-xs">
-                  <span className="text-accent">▸</span>
-                  <span>{l}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -27,5 +27,5 @@ ORDER BY usage_count DESC, last_used_at DESC
 LIMIT ${limit}
 `;
 
-return NextResponse.json({ values: rows.map((r: Record<string, unknown>) => r["value"]), rows });
+return NextResponse.json({ values: rows.map((r) => r.value), rows });
 }

@@ -6,7 +6,9 @@ import { daysRemaining, getAuthStatus, AUTH_STATUS_LABEL, formatDaysRemaining } 
 
 const emptyForm = {
   rut: "",
-  name: "",
+  last_name_1: "",
+  last_name_2: "",
+  first_names: "",
   role: "",
   service: "",
   category: "",
@@ -30,9 +32,13 @@ const emptyForm = {
 
 type FormState = typeof emptyForm;
 
+const nameFields: { key: keyof FormState; label: string; required?: boolean }[] = [
+  { key: "last_name_1", label: "Apellido paterno", required: true },
+  { key: "last_name_2", label: "Apellido materno" },
+  { key: "first_names", label: "Nombres", required: true },
+];
+
 const fields: { key: keyof FormState; label: string; required?: boolean }[] = [
-  { key: "rut", label: "RUT (ej: 12.345.678-9)", required: true },
-  { key: "name", label: "Nombre completo", required: true },
   { key: "role", label: "Cargo / descripción" },
   { key: "service", label: "Servicio" },
   { key: "unit", label: "Unidad" },
@@ -127,9 +133,43 @@ export function WorkerFormModal() {
           Si el RUT ingresado corresponde a un trabajador dado de baja anteriormente, sus datos se
           restaurarán automáticamente y volverá a quedar activo (modo recordar).
         </p>
+
+        <label className="mb-2.5 block text-[11px]">
+          <span className="mb-1 block text-muted-foreground">
+            RUT (ej: 12.345.678-9)
+            <span className="text-danger"> *</span>
+          </span>
+          <input
+            type="text"
+            value={form.rut}
+            onChange={(e) => update("rut", e.target.value)}
+            className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+          />
+        </label>
+
+        <p className="mb-1 text-[11px] font-medium text-muted-foreground">
+          Nombre (formato Apellido Paterno Apellido Materno Nombres)
+        </p>
+        <div className="mb-2.5 grid grid-cols-2 gap-2.5">
+          {nameFields.map((f) => (
+            <label key={f.key} className={f.key === "first_names" ? "col-span-2 text-[11px]" : "text-[11px]"}>
+              <span className="mb-1 block text-muted-foreground">
+                {f.label}
+                {f.required && <span className="text-danger"> *</span>}
+              </span>
+              <input
+                type="text"
+                value={form[f.key] as string}
+                onChange={(e) => update(f.key, e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent"
+              />
+            </label>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 gap-2.5">
           {fields.map((f) => (
-            <label key={f.key} className={f.key === "name" || f.key === "address" ? "col-span-2 text-[11px]" : "text-[11px]"}>
+            <label key={f.key} className={f.key === "address" ? "col-span-2 text-[11px]" : "text-[11px]"}>
               <span className="mb-1 block text-muted-foreground">
                 {f.label}
                 {f.required && <span className="text-danger"> *</span>}

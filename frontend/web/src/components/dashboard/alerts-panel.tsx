@@ -2,141 +2,67 @@ import Link from "next/link";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Severity = "critical" | "high" | "medium" | "info";
-
-interface Alert {
+export interface DashboardAlert {
   id: string;
-  severity: Severity;
+  severity: "critical" | "high" | "medium" | "info";
   title: string;
   description: string;
-  dueLabel: string;
+  dueLabel?: string;
   href: string;
 }
 
-// Alertas dinámicas que llegan desde el dashboard server component
-export interface DynamicAlert {
-  id: string;
-  type: "danger" | "warning" | "info";
-  module: string;
-  title: string;
-  detail: string;
-  regulation?: string;
-  action?: string;
-}
-
-// Convierte alertas dinámicas al formato interno del panel
-function toAlert(a: DynamicAlert): Alert {
-  return {
-    id: a.id,
-    severity: a.type === "danger" ? "critical" : a.type === "warning" ? "high" : "info",
-    title: a.title,
-    description: a.regulation ? `${a.module} · ${a.regulation}` : a.module,
-    dueLabel: a.detail,
-    href: a.action ?? "/compliance",
-  };
-}
-
-const STATIC_ALERTS: Alert[] = [
-  {
-    id: "a1",
-    severity: "critical",
-    title: "Reporte trimestral SEREMI Q3-2026",
-    description: "Envío obligatorio de comunicación de dosis del trimestre.",
-    dueLabel: "vence en 3 días",
-    href: "/compliance/reports/seremi-q3-2026",
-  },
-  {
-    id: "a2",
-    severity: "high",
-    title: "Renovación autorización OPR: 2 personas",
-    description: "Curso obligatorio de recertificación en agosto.",
-    dueLabel: "vence en 47 días",
-    href: "/workers?filter=authorization_expiring",
-  },
-  {
-    id: "a3",
-    severity: "medium",
-    title: "Residuo I-131 lote #22",
-    description: "Lista para disposición tras período de decaimiento.",
-    dueLabel: "acción sugerida hoy",
-    href: "/sources/waste/lot-22",
-  },
-  {
-    id: "a4",
-    severity: "info",
-    title: "3 documentos clasificados por Copilot",
-    description: "Requieren confirmación humana.",
-    dueLabel: "sin urgencia",
-    href: "/documents?status=pending_review",
-  },
-];
-
-const ICON: Record<Severity, typeof AlertCircle> = {
+const ICON = {
   critical: AlertCircle,
   high: AlertTriangle,
   medium: AlertTriangle,
   info: Info,
 };
 
-const TONE: Record<Severity, string> = {
-  critical: "text-danger bg-danger-subtle",
-  high: "text-warning bg-warning-subtle",
-  medium: "text-warning bg-warning-subtle",
-  info: "text-info bg-info-subtle",
+const TONE: Record<DashboardAlert["severity"], string> = {
+  critical: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30",
+  high: "text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30",
+  medium: "text-yellow-500 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20",
+  info: "text-accent bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30",
 };
 
-interface AlertsPanelProps {
-  /** Alertas dinámicas desde el servidor. Si no se pasan, usa datos de muestra. */
-  alerts?: DynamicAlert[];
+interface Props {
+  alerts?: DashboardAlert[];
 }
 
-export function AlertsPanel({ alerts }: AlertsPanelProps) {
-  const items: Alert[] =
-    alerts && alerts.length > 0
-      ? alerts.map(toAlert)
-      : STATIC_ALERTS;
+export function AlertsPanel({ alerts }: Props) {
+  const items = alerts ?? [];
 
   if (items.length === 0) {
     return (
-      <p className="py-4 text-center text-xs text-green-600 font-medium">
-        ✓ Sin alertas regulatorias activas
-      </p>
+      <div className="flex items-center gap-2 rounded-md border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
+        <AlertCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <span className="text-sm text-green-700 dark:text-green-400">Sin alertas regulatorias activas.</span>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-2">
-      {items.map((alert) => {
-        const Icon = ICON[alert.severity];
+      {items.map((a) => {
+        const Icon = ICON[a.severity];
         return (
           <Link
-            key={alert.id}
-            href={alert.href}
-            className="group flex items-start gap-2.5 rounded-md border border-border bg-surface p-2.5 transition-colors hover:border-accent"
+            href={a.href}
+            key={a.id}
+            className="group flex items-start gap-2.5 rounded-md border border-border bg-surface p-2.5 hover:border-accent"
           >
-            <span
-              className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-                TONE[alert.severity],
-              )}
-            >
+            <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-md", TONE[a.severity])}>
               <Icon className="h-3.5 w-3.5" strokeWidth={2} />
             </span>
-            <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate text-sm font-medium text-foreground">{alert.title}</span>
-                <span className={cn(
-                  "shrink-0 text-[10px] font-medium",
-                  alert.severity === "critical" && "text-danger",
-                  alert.severity === "high" && "text-warning",
-                  alert.severity === "medium" && "text-warning",
-                  alert.severity === "info" && "text-muted-foreground",
-                )}>
-                  {alert.dueLabel}
-                </span>
-              </div>
-              <span className="text-[11px] text-muted-foreground">{alert.description}</span>
+            <div className="flex flex-1 flex-col">
+              <span className="text-sm font-medium">{a.title}</span>
+              <span className="text-[11px] text-muted-foreground">{a.description}</span>
             </div>
+            {a.dueLabel && (
+              <span className="ml-2 shrink-0 self-center rounded-full border border-border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {a.dueLabel}
+              </span>
+            )}
           </Link>
         );
       })}

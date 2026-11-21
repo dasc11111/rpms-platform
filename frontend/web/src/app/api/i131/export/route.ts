@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
 
   if (format === "csv") {
     const header = COLUMNS.map((c) => csvEscape(c.label)).join(";");
-    const lines = (rows as Record<string, unknown>[]).map((r) => COLUMNS.map((c) => csvEscape(r[c.key])).join(";"));
+    const lines = rows.map((r) => COLUMNS.map((c) => csvEscape(r[c.key])).join(";"));
     const csv = "\uFEFF" + [header, ...lines].join("\n");
     return new NextResponse(csv, {
       headers: {
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (format === "xlsx") {
-    const data = (rows as Record<string, unknown>[]).map((r) => {
+    const data = rows.map((r) => {
       const obj: Record<string, unknown> = {};
       for (const c of COLUMNS) obj[c.label] = r[c.key];
       return obj;
@@ -146,7 +146,7 @@ export async function GET(req: NextRequest) {
     };
     doc.text("Administración de I-131 — Reporte", 40, 30);
     const head = [COLUMNS.map((c) => c.label)];
-    const body = (rows as Record<string, unknown>[]).map((r) => COLUMNS.map((c) => String(r[c.key] ?? "")));
+    const body = rows.map((r) => COLUMNS.map((c) => (r[c.key] ?? "").toString()));
     doc.autoTable({
       head,
       body,

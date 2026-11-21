@@ -1,105 +1,78 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { ensureQualityControlTables } from "@/lib/quality-control-db";
+import { computeDeviationPercent, evaluateResultStatus } from "@/lib/quality-control";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const equipment = searchParams.get("equipment");
-  const passFilter = searchParams.get("status"); // "pass" | "fail" | null
-  const type = searchParams.get("type");
+export async function GET(request: Request) {
+  await ensureQualityControlTables();
+  const { searchParams } = new URL(request.url);
+  const instrumentId = searchParams.get("instrumentId");
+  const testType = searchParams.get("testType");
+  const resultStatus = searchParams.get("resultStatus");
 
-  try {
-    // Build query with conditional filters using template literal branches
-    const rows = equipment && type
-      ? (await sql`
-          SELECT id, equipment_id, equipment_name, qc_type, performed_at::text,
-                 performed_by, result, pass, notes, values_json,
-                 next_due_at::text, created_at::text
-          FROM qc_records
-          WHERE equipment_id = ${equipment} AND qc_type = ${type}
-          ORDER BY performed_at DESC LIMIT 200
-        `).rows
-      : equipment
-      ? (await sql`
-          SELECT id, equipment_id, equipment_name, qc_type, performed_at::text,
-                 performed_by, result, pass, notes, values_json,
-                 next_due_at::text, created_at::text
-          FROM qc_records
-          WHERE equipment_id = ${equipment}
-          ORDER BY performed_at DESC LIMIT 200
-        `).rows
-      : type
-      ? (await sql`
-          SELECT id, equipment_id, equipment_name, qc_type, performed_at::text,
-                 performed_by, result, pass, notes, values_json,
-                 next_due_at::text, created_at::text
-          FROM qc_records
-          WHERE qc_type = ${type}
-          ORDER BY performed_at DESC LIMIT 200
-        `).rows
-      : (await sql`
-          SELECT id, equipment_id, equipment_name, qc_type, performed_at::text,
-                 performed_by, result, pass, notes, values_json,
-                 next_due_at::text, created_at::text
-          FROM qc_records
-          ORDER BY performed_at DESC LIMIT 200
-        `).rows;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
 
-    const filtered = passFilter === "pass"
-      ? rows.filter((r: { pass: boolean }) => r.pass)
-      : passFilter === "fail"
-      ? rows.filter((r: { pass: boolean }) => !r.pass)
-      : rows;
-
-    return NextResponse.json({ data: filtered });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  if (instrumentId) {
+    params.push(Number(instrumentId));
+    conditions.push(`instrument_id = $${params.length}`);
   }
+  if (testType) {
+    params.push(testType);
+    conditions.push(`test_type = $${params.length}`);
+  }
+  if (resultStatus) {
+    params.push(resultStatus);
+    conditions.push(`result_status = $${params.length}`);
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const query = `SELECT * FROM quality_control_tests ${where} ORDER BY test_date DESC, id DESC LIMIT 2000`;
+  const { rows } = await sql.query(query, params);
+
+  return NextResponse.json({ tests: rows, total: rows.length });
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json() as {
-      equipment_id: string;
-      equipment_name: string;
-      qc_type: string;
-      performed_at?: string;
-      performed_by: string;
-      result?: string;
-      pass?: boolean;
-      notes?: string;
-      values_json?: Record<string, unknown>;
-      next_due_at?: string;
-    };
-    const {
-      equipment_id,
-      equipment_name,
-      qc_type,
-      performed_at,
-      performed_by,
-      result,
-      notes,
-      values_json,
-      next_due_at,
-    } = body;
-    const passVal = body.pass ?? true;
+export async function POST(request: Request) {
+  await ensureQualityControlTables();
+  const body = await request.json();
 
-    const r = await sql`
-      INSERT INTO qc_records (
-        equipment_id, equipment_name, qc_type, performed_at,
-        performed_by, result, pass, notes, values_json, next_due_at
-      ) VALUES (
-        ${equipment_id}, ${equipment_name}, ${qc_type},
-        ${performed_at ?? new Date().toISOString()},
-        ${performed_by}, ${result ?? null}, ${passVal},
-        ${notes ?? null}, ${values_json ? JSON.stringify(values_json) : null},
-        ${next_due_at ?? null}
-      )
-      RETURNING id
-    `;
-    return NextResponse.json({ id: r.rows[0]!.id }, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  const instrumentId = body.instrumentId ? Number(body.instrumentId) : null;
+  const instrumentCode = body.instrumentCode || null;
+  const instrumentName = body.instrumentName || null;
+  const testType = String(body.testType || "").trim();
+  const testDate = body.testDate || null;
+  const performedBy = body.performedBy || null;
+  const radionuclide = body.radionuclide || null;
+  const measuredValue = body.measuredValue !== undefined && body.measuredValue !== "" ? Number(body.measuredValue) : null;
+  const referenceValue = body.referenceValue !== undefined && body.referenceValue !== "" ? Number(body.referenceValue) : null;
+  const unit = body.unit || null;
+  const tolerancePercent = body.tolerancePercent !== undefined && body.tolerancePercent !== "" ? Number(body.tolerancePercent) : null;
+  const notes = body.notes || null;
+  const createdBy = body.createdBy || "Usuario RPMS";
+  const correctiveAction = body.correctiveAction || null;
+
+  if (!testType || !testDate) {
+    return NextResponse.json({ error: "test_type_and_date_required" }, { status: 400 });
   }
+
+  const deviationPercent = computeDeviationPercent(measuredValue, referenceValue);
+  const resultStatus = body.resultStatus || evaluateResultStatus(deviationPercent, tolerancePercent);
+
+  const { rows } = await sql`
+    INSERT INTO quality_control_tests (
+      instrument_id, instrument_code, instrument_name, test_type, test_date, performed_by, radionuclide,
+      measured_value, reference_value, unit, tolerance_percent, deviation_percent, result_status,
+      corrective_action, notes, created_by
+    ) VALUES (
+      ${instrumentId}, ${instrumentCode}, ${instrumentName}, ${testType}, ${testDate}, ${performedBy}, ${radionuclide},
+      ${measuredValue}, ${referenceValue}, ${unit}, ${tolerancePercent}, ${deviationPercent}, ${resultStatus},
+      ${correctiveAction}, ${notes}, ${createdBy}
+    )
+    RETURNING *
+  `;
+
+  return NextResponse.json({ test: rows[0] });
 }

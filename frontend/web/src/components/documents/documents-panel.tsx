@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, RefreshCw, Trash2, Upload, Search, ArrowUpDown, Eye, X } from "lucide-react";
+import { Download, RefreshCw, Trash2, Upload, Search, ArrowUpDown, Eye, X, FileSearch } from "lucide-react";
 import { formatBytes } from "@/lib/documents";
 import type { DocumentSortField, SortDir } from "@/lib/documents";
 
@@ -14,6 +14,13 @@ type DocumentRow = {
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+type FullTextMatch = {
+  documentId: number;
+  documentName: string;
+  page: number;
+  snippet: string;
 };
 
 function isPreviewable(mime: string | null): "image" | "pdf" | "text" | null {
@@ -101,6 +108,12 @@ export function DocumentsPanel({
   const [error, setError] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<DocumentRow | null>(null);
 
+  const [fullTextQuery, setFullTextQuery] = useState("");
+  const [fullTextResults, setFullTextResults] = useState<FullTextMatch[] | null>(null);
+  const [fullTextLoading, setFullTextLoading] = useState(false);
+  const [fullTextError, setFullTextError] = useState<string | null>(null);
+  const [fullTextProgress, setFullTextProgress] = useState<{ done: number; total: number } | null>(null);
+
   const load = useCallback(async () => {
     if (!categoryId) return;
     setLoading(true);
@@ -125,6 +138,13 @@ export function DocumentsPanel({
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    setFullTextQuery("");
+    setFullTextResults(null);
+    setFullTextError(null);
+    setFullTextProgress(null);
+  }, [categoryId]);
 
   function toggleSort(field: DocumentSortField) {
     if (sortBy === field) {
@@ -189,6 +209,35 @@ export function DocumentsPanel({
     }
   }
 
+  async function runFullTextSearch() {
+    if (!categoryId || !fullTextQuery.trim()) return;
+    setFullTextLoading(true);
+    setFullTextResults(null);
+    setFullTextError(null);
+    setFullTextProgress(null);
+    try {
+      let iterations = 0;
+      let lastMatches: FullTextMatch[] = [];
+      while (iterations < 40) {
+        iterations++;
+        const params = new URLSearchParams({ categoryId: String(categoryId), q: fullTextQuery.trim() });
+        const res = await fetch(`/api/documents/fulltext-search?${params.toString()}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        lastMatches = data.matches ?? [];
+        const total = data.totalCandidates ?? 0;
+        const pending = data.pendingCount ?? 0;
+        setFullTextProgress({ done: total - pending, total });
+        if (!pending) break;
+      }
+      setFullTextResults(lastMatches);
+    } catch {
+      setFullTextError("No se pudo completar la búsqueda de texto completo.");
+    } finally {
+      setFullTextLoading(false);
+    }
+  }
+
   if (!categoryId) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
@@ -226,6 +275,77 @@ export function DocumentsPanel({
       </div>
 
       {error && <p className="mb-2 text-xs text-danger">{error}</p>}
+
+      <div className="mb-3 rounded-lg border border-border bg-surface p-3">
+        <div className="mb-2 flex items-center gap-1.5">
+          <FileSearch className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">Búsqueda de texto completo en el contenido de los PDF de esta carpeta</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            value={fullTextQuery}
+            onChange={(e) => setFullTextQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") runFullTextSearch();
+            }}
+            placeholder="Palabra o frase a buscar dentro del contenido de los PDF..."
+            className="h-8 flex-1 rounded-md border border-border bg-background px-2 text-xs outline-none focus:ring-1 focus:ring-foreground/20"
+          />
+          <button
+            type="button"
+            onClick={runFullTextSearch}
+            disabled={fullTextLoading || !fullTextQuery.trim()}
+            className="h-8 rounded-md border border-border bg-surface px-3 text-xs font-medium hover:bg-muted/60 disabled:opacity-50"
+          >
+            {fullTextLoading ? "Buscando..." : "Buscar"}
+          </button>
+          {fullTextResults && (
+            <button
+              type="button"
+              onClick={() => {
+                setFullTextResults(null);
+                setFullTextQuery("");
+                setFullTextProgress(null);
+              }}
+              className="h-8 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted/60"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+        {fullTextLoading && fullTextProgress && fullTextProgress.total > 0 && (
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Indexando contenido de los PDF de esta carpeta... ({fullTextProgress.done}/{fullTextProgress.total})
+          </p>
+        )}
+        {fullTextError && <p className="mt-1.5 text-xs text-danger">{fullTextError}</p>}
+        {fullTextResults && (
+          <div className="mt-2 max-h-72 overflow-auto rounded-md border border-border">
+            {fullTextResults.length === 0 ? (
+              <p className="p-3 text-xs text-muted-foreground">
+                Sin coincidencias en el contenido de los PDF de esta carpeta.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border text-xs">
+                {fullTextResults.map((m, i) => (
+                  <li key={`${m.documentId}-${m.page}-${i}`} className="p-2.5">
+                    <a
+                      href={`/api/documents/${m.documentId}/download#page=${m.page}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium hover:underline"
+                    >
+                      {m.documentName}
+                    </a>
+                    <span className="ml-1.5 text-muted-foreground">— página {m.page}</span>
+                    <p className="mt-0.5 text-muted-foreground">{m.snippet}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full">

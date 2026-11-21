@@ -1,21 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Search, Settings2, Table2 } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, MapPin, Search, Settings2, Table2 } from "lucide-react";
 import { ContaminationSearchPanel, EMPTY_FILTERS, type ContaminationFilters } from "./contamination-search-panel";
 import { ContaminationDashboard } from "./contamination-dashboard";
 import { ContaminationRecordsTable } from "./contamination-records-table";
 import { ContaminationFormModal } from "./contamination-form-modal";
 import { ContaminationLimitsPanel } from "./contamination-limits-panel";
+import { ContaminationPointsPanel } from "./contamination-points-panel";
+import { RoomClearanceApp } from "./room-clearance-app";
 import type { ContaminationRecord } from "@/lib/contamination";
 
-type Tab = "dashboard" | "registros";
+type Tab = "dashboard" | "registros" | "liberacion";
 
 export function ContaminationApp() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [filters, setFilters] = useState<ContaminationFilters>(EMPTY_FILTERS);
   const [searchOpen, setSearchOpen] = useState(false);
   const [limitsOpen, setLimitsOpen] = useState(false);
+  const [pointsOpen, setPointsOpen] = useState(false);
   const [version, setVersion] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ContaminationRecord | null>(null);
@@ -38,13 +41,21 @@ export function ContaminationApp() {
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg font-semibold">Registro de Contaminación</h1>
+          <h1 className="text-lg font-semibold">Contaminación</h1>
           <p className="text-xs text-muted-foreground">
             Monitoreo de contaminación superficial en Medicina Nuclear: registro, cálculo automático, clasificación
             por semáforo y estadísticas.
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPointsOpen((s) => !s)}
+            className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
+              pointsOpen ? "border-accent bg-accent-subtle" : "border-border hover:bg-muted"
+            }`}
+          >
+            <MapPin className="h-4 w-4" /> Puntos de medición
+          </button>
           <button
             onClick={() => setLimitsOpen((s) => !s)}
             className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm ${
@@ -81,7 +92,17 @@ export function ContaminationApp() {
         >
           <Table2 className="h-4 w-4" /> Registros
         </button>
+        <button
+          onClick={() => setTab("liberacion")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 ${
+            tab === "liberacion" ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+          }`}
+        >
+          <ClipboardCheck className="h-4 w-4" /> Liberación de Sala
+        </button>
       </div>
+
+      <ContaminationPointsPanel open={pointsOpen} />
 
       <ContaminationLimitsPanel open={limitsOpen} />
 
@@ -94,8 +115,10 @@ export function ContaminationApp() {
 
       {tab === "dashboard" ? (
         <ContaminationDashboard filters={filters} version={version} />
-      ) : (
+      ) : tab === "registros" ? (
         <ContaminationRecordsTable filters={filters} version={version} onNew={openNew} onEdit={openEdit} onChanged={bump} />
+      ) : (
+        <RoomClearanceApp />
       )}
 
       <ContaminationFormModal open={modalOpen} onClose={() => setModalOpen(false)} record={editing} onSaved={bump} />

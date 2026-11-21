@@ -11,6 +11,11 @@ import {
   ESTADO_OPTIONS,
   type ContaminationRecord,
 } from "@/lib/contamination";
+import {
+  CONTAMINATION_POINT_CATEGORIES,
+  CONTAMINATION_POINT_CATEGORY_LABELS,
+  type ContaminationMeasurementPoint,
+} from "@/lib/contamination-points-db";
 
 type FormState = {
   monitor_year: string;
@@ -120,12 +125,21 @@ export function ContaminationFormModal({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<unknown[] | null>(null);
+  const [quickPoints, setQuickPoints] = useState<ContaminationMeasurementPoint[]>([]);
 
   useEffect(() => {
     if (open) {
       setForm(record ? recordToForm(record) : EMPTY);
       setError(null);
       setDuplicateInfo(null);
+      // Lista predefinida y editable de puntos de medicion (Seccion 12 del
+      // Prompt Maestro de Medicina Nuclear), administrable desde el boton
+      // "Puntos de medicion" de ContaminationApp. Se ofrece como seleccion
+      // rapida (Seccion 11); el campo sigue aceptando texto libre.
+      fetch("/api/contamination/measurement-points")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => setQuickPoints(data?.rows ?? []))
+        .catch(() => setQuickPoints([]));
     }
   }, [open, record]);
 
@@ -350,6 +364,44 @@ export function ContaminationFormModal({
                 </select>
               </div>
             </div>
+
+            {quickPoints.length > 0 && (
+              <div className="rounded-md border border-dashed border-border p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                  Selección rápida de punto de medición (lista configurable)
+                </p>
+                <div className="space-y-2">
+                  {CONTAMINATION_POINT_CATEGORIES.map((cat) => {
+                    const items = quickPoints.filter((p) => p.categoria === cat);
+                    if (items.length === 0) return null;
+                    return (
+                      <div key={cat}>
+                        <p className="mb-1 text-[10px] uppercase text-muted-foreground">
+                          {CONTAMINATION_POINT_CATEGORY_LABELS[cat]}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {items.map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() => set("punto_medicion", p.nombre)}
+                              className={`rounded-full border px-2.5 py-1 text-xs ${
+                                form.punto_medicion === p.nombre
+                                  ? "border-accent bg-accent-subtle font-medium"
+                                  : "border-border hover:bg-muted"
+                              }`}
+                              title={p.notas ?? undefined}
+                            >
+                              {p.nombre}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-md border border-border p-3">
               <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">Instrumento y radionúclido</p>

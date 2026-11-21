@@ -1,0 +1,624 @@
+import Link from "next/link";
+import {
+  Syringe,
+  Biohazard,
+  Trash2,
+  Recycle,
+  Users,
+  AlertTriangle,
+  BarChart3,
+  ShieldAlert,
+  BookOpen,
+  ExternalLink,
+  Radiation,
+  ClipboardCheck,
+  Truck,
+  Gauge,
+  ScanLine,
+  Orbit,
+  Atom,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Zap,
+  HeartPulse,
+} from "lucide-react";
+import { sql } from "@/lib/db";
+
+type ModuleCard = {
+  href: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  status: "activo" | "proximo";
+  phase?: string;
+};
+
+// Fase D+ (Medicina Nuclear) - Gestion de Desechos Radiactivos: el modulo
+// anterior (/waste-management) fue reemplazado como entrada principal por el
+// nuevo Sistema Experto (/waste-expert), construido bajo el PROMPT MAESTRO
+// DEFINITIVO especifico de desechos (Motores 1-5: fisica nuclear, metrologia
+// ISO 11929, contaminacion superficial, tasa de dosis y decision regulatoria
+// trazable por ficha individual). Ese prompt instruyo explicitamente
+// reemplazar el modulo anterior. Conforme a la Seccion 1 (conservar, no
+// borrar) y a la Seccion 60 (proponer fusion, no eliminar sin justificacion)
+// de este Prompt Maestro de Medicina Nuclear, /waste-management NO se elimino:
+// se mantiene enlazado por separado porque Liberacion de Sala
+// (/room-release/label/[id]) depende de su funcion de etiqueta imprimible,
+// que aun no fue incorporada al Sistema Experto.
+const NUCLEO_OPERACIONAL: ModuleCard[] = [
+  {
+    href: "/i131",
+    label: "Administracion de I-131",
+    description: "Registro de administraciones de radiofarmacos, dosis, pacientes y restricciones post-tratamiento.",
+    icon: Syringe,
+    status: "activo",
+  },
+  {
+    href: "/contamination",
+    label: "Contaminacion",
+    description: "Monitoreo, limites y registro historico de contaminacion superficial y personal.",
+    icon: Biohazard,
+    status: "activo",
+  },
+  {
+    href: "/room-release",
+    label: "Liberacion de Sala",
+    description: "Criterios y actas de liberacion de habitaciones tras hospitalizacion con radiofarmacos.",
+    icon: Trash2,
+    status: "activo",
+  },
+  {
+    href: "/waste-expert",
+    label: "Gestion de Desechos Radiactivos (Sistema Experto)",
+    description: "Evaluacion individual de residuos por ficha: decaimiento (Bateman), metrologia ISO 11929, contaminacion superficial, tasa de dosis y decision regulatoria trazable. Reemplaza al modulo anterior de gestion de residuos.",
+    icon: Recycle,
+    status: "activo",
+    phase: "Fase D (nuevo)",
+  },
+  {
+    href: "/waste-management",
+    label: "Etiquetas de Residuos (modulo anterior)",
+    description: "Modulo anterior de gestion de residuos. Se mantiene enlazado unicamente por su funcion de etiqueta imprimible, utilizada tambien por Liberacion de Sala, mientras se incorpora al Sistema Experto.",
+    icon: Gauge,
+    status: "activo",
+    phase: "legado",
+  },
+];
+
+// Fase 23 (Medicina Nuclear) — Registro de Exámenes PET/CT: registro
+// individual de exámenes PET/CT con radiofármaco, dosis administrada (MBq),
+// uptake, estado del examen, alertas en tiempo real y trazabilidad por
+// paciente. Integrado con el módulo de Trazabilidad (Fase 24) para que los
+// exámenes PET/CT aparezcan en la línea de tiempo del paciente.
+const PETCT_EXAMENES: ModuleCard[] = [
+  {
+    href: "/petct",
+    label: "Registro de Exámenes PET/CT",
+    description: "Registro individual de exámenes: radiofármaco, dosis administrada (MBq), uptake, estado del examen y alertas en tiempo real (captacion vencida, alta retrasada). DS 133/1984 Art. 22-26, IAEA HHS No. 1.",
+    icon: ScanLine,
+    status: "activo",
+    phase: "Fase 23 (nuevo)",
+  },
+  {
+    href: "/petct/dashboard",
+    label: "Dashboard PET/CT",
+    description: "Panel analítico: exámenes por estado, distribución de radiofármacos, carga de trabajo y alertas activas del servicio PET/CT.",
+    icon: BarChart3,
+    status: "activo",
+    phase: "Fase 23C (nuevo)",
+  },
+];
+
+const TRAZABILIDAD: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/patients",
+    label: "Pacientes y Tratamientos",
+    description: "Vista de trazabilidad de solo lectura: combina I-131, Liberacion de Sala, Residuos y Examenes PET/CT por RUN del paciente. No crea ni modifica registros.",
+    icon: Users,
+    status: "activo",
+    phase: "Fase 1 + 24 (actualizado)",
+  },
+];
+
+const REFERENCIAS_CRITERIOS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/references",
+    label: "Referencias Tecnicas y Criterios Radiologicos",
+    description: "Catalogo trazable de referencias ARPANSA, IAEA, ICRP y criterios radiologicos citados por normativa chilena o procedimientos internos. No calcula ni aplica valores automaticamente.",
+    icon: BookOpen,
+    status: "activo",
+    phase: "Fase 13 (nuevo)",
+  },
+];
+
+const ANALITICA: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/dashboard",
+    label: "Dashboard de Medicina Nuclear",
+    description: "Vista consolidada de solo lectura: agrega los indicadores ya calculados por I-131, Contaminacion, Liberacion de Sala y Residuos. No crea ni modifica registros.",
+    icon: BarChart3,
+    status: "activo",
+    phase: "Fase 8 (nuevo)",
+  },
+];
+
+// Fase 10 (Medicina Nuclear) - Alertas: vista de solo lectura que agrega
+// alertas ya clasificadas por los modulos existentes (Contaminacion,
+// Liberacion de Sala, Gestion de Residuos, Instrumentos y Calibracion,
+// Transporte). No define nuevos limites, formulas ni clasificaciones (ver
+// seccion 55 del prompt maestro, no invencion). No consulta datos de
+// Control de Calidad (seccion 2, exclusion absoluta).
+const ALERTAS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/alerts",
+    label: "Alertas de Medicina Nuclear",
+    description: "Alertas criticas, medias e informativas que agregan los niveles ya calculados por Contaminacion, Liberacion de Sala, Residuos, Instrumentos y Transporte.",
+    icon: ShieldAlert,
+    status: "activo",
+    phase: "Fase 10 (nuevo)",
+  },
+];
+
+// Fase 15 (Medicina Nuclear) - ARPANSA RPS 14.2, Seccion 15 (Base DETECTORES).
+// Reutiliza el modulo general de Instrumentos y Calibracion ya existente en
+// la plataforma (compartido entre todas las areas), extendido con campos
+// opcionales especificos de MN (radionuclido, eficiencia, area activa,
+// geometria). No se creo un modulo ni una tabla nueva, para cumplir con las
+// reglas 2/32 y 16/32 de Fase 0 (no duplicar, priorizar reciclaje de codigo).
+const INSTRUMENTOS: ModuleCard[] = [
+  {
+    href: "/instruments",
+    label: "Instrumentos y Detectores",
+    description: "Modulo compartido de Instrumentos y Calibracion de la plataforma, extendido con datos de detectores de Medicina Nuclear (radionuclido, eficiencia, area activa, geometria).",
+    icon: Radiation,
+    status: "activo",
+    phase: "Fase 15",
+  },
+];
+
+// Fase 16 (Medicina Nuclear) - ARPANSA RPS 14.2. CONTROL DE CALIDAD es un modulo
+// nuevo (pruebas internas de constancia, exactitud, linealidad, geometria,
+// uniformidad, resolucion y sensibilidad, complementarias a la calibracion
+// externa del modulo Instrumentos y Calibracion). TRANSPORTE reutiliza el
+// modulo /transport ya existente en la plataforma (I-131 y Mo-99/Tc-99m),
+// que hasta ahora no estaba enlazado desde este hub. No se duplico codigo
+// en ninguno de los dos casos (reglas 2/32 y 16/32 de Fase 0).
+//
+// Fase 19/20/21/22 (Prompt maestro CC): el Control de Calidad "tal cual" del
+// documento fuente (Activimetro) y de IAEA TECDOC-602 (Gammacamara, SPECT) o
+// de IAEA Human Health Series No. 1 (PET/CT) se implemento como modulos
+// independientes propios, enlazados aqui de forma explicita para que no
+// queden accesibles solo por URL directa.
+const CALIDAD_Y_TRANSPORTE: ModuleCard[] = [
+  {
+    href: "/quality-control",
+    label: "Control de Calidad",
+    description: "Pruebas internas de constancia, exactitud, linealidad y geometria para activimetros y equipos de deteccion, complementarias a la calibracion externa.",
+    icon: ClipboardCheck,
+    status: "activo",
+    phase: "Fase 16",
+  },
+  {
+    href: "/quality-control/activimetro",
+    label: "Control de Calidad - Modulo 1: Activimetro",
+    description: "Precision, exactitud, linealidad, respuesta de fondo y geometria/volumen del activimetro, con multiples lecturas, calculo automatico y avisos de vencimiento (documento QA proporcionado por el usuario + IAEA TECDOC-602).",
+    icon: Gauge,
+    status: "activo",
+    phase: "Fase 19 (nuevo)",
+  },
+  {
+    href: "/quality-control/gammacamara",
+    label: "Control de Calidad - Modulo 2: Gammacamara",
+    description: "Uniformidad (intrinseca/extrinseca), resolucion espacial y sensibilidad de la gammacamara planar, conforme a IAEA TECDOC-602, con avisos de vencimiento.",
+    icon: ScanLine,
+    status: "activo",
+    phase: "Fase 20 (nuevo)",
+  },
+  {
+    href: "/quality-control/spect",
+    label: "Control de Calidad - Modulo 3: SPECT",
+    description: "Centro de Rotacion (COR) y Uniformidad Tomografica especificas de la adquisicion tomografica SPECT, conforme a IAEA TECDOC-602, con avisos de vencimiento.",
+    icon: Orbit,
+    status: "activo",
+    phase: "Fase 21 (nuevo)",
+  },
+  {
+    href: "/quality-control/petct",
+    label: "Control de Calidad - Modulo 4: PET/CT",
+    description: "Calibracion Cruzada (exactitud cuantitativa/SUV) y Uniformidad de Imagen especificas de PET, conforme a IAEA Human Health Series No. 1, con avisos de vencimiento. No incluye control de calidad del componente CT.",
+    icon: Atom,
+    status: "activo",
+    phase: "Fase 22 (nuevo)",
+  },
+  {
+    href: "/transport",
+    label: "Transporte de Material Radiactivo",
+    description: "Modulo existente de la plataforma para despachos de I-131 y generadores Mo-99/Tc-99m: dosis, senaletica, choferes y documentos de autorizacion.",
+    icon: Truck,
+    status: "activo",
+    phase: "Fase 16",
+  },
+];
+
+const EMERGENCIAS: ModuleCard[] = [
+  {
+    href: "/nuclear-medicine/incidents",
+    label: "Emergencias e Incidentes (MN)",
+    description: "Registro cualitativo de derrames, perdida de material, exposiciones y notificacion de incidentes. Severidad clasificada manualmente, sin umbrales numericos automaticos.",
+    icon: AlertTriangle,
+    status: "activo",
+    phase: "Fase 12 (nuevo)",
+  },
+];
+
+// Fase 25 (Linac) — Aceleradores Lineales (CML): inventario de unidades Linac,
+// autorizaciones, control de calidad (QC) y mantención periódica. DS 133/1984,
+// IAEA Safety Reports No. 38. Módulo independiente con tablas propias
+// (linac_units, linac_qc_alerts, linac_maintenance_alerts).
+const LINAC: ModuleCard[] = [
+  {
+    href: "/linac",
+    label: "Aceleradores Lineales (CML)",
+    description: "Inventario de unidades Linac con autorizaciones, acceptance testing, commissioning, baseline, QC, mantención, incidentes y auditorías. DS 133/1984, IAEA Safety Reports No. 38.",
+    icon: Zap,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+];
+
+// Fase 25 (Radioterapia) — SIGR: instalaciones de radioterapia con
+// autorización, auditorías, incidentes abiertos y acciones correctivas
+// pendientes. DS 133/1984 Cap. IV, IAEA Safety Standards Series SS-115.
+const RADIOTERAPIA: ModuleCard[] = [
+  {
+    href: "/radioterapia",
+    label: "Instalaciones de Radioterapia (SIGR)",
+    description: "Instalaciones de radioterapia con estado de autorización, auditorías, incidentes abiertos, acciones correctivas, vencimientos y gestión integral. DS 133/1984 Cap. IV, IAEA SS-115.",
+    icon: HeartPulse,
+    status: "activo",
+    phase: "Fase 25 (nuevo)",
+  },
+];
+
+function ModuleGrid({ items }: { items: ModuleCard[] }) {
+  return (
+    <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((m) => {
+        const Icon = m.icon;
+        if (m.status === "activo") {
+          return (
+            <Link
+              key={m.href}
+              href={m.href}
+              className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4 hover:bg-muted/40"
+            >
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 text-accent" strokeWidth={2} />
+                <span className="text-sm font-medium">{m.label}</span>
+                {m.phase && (
+                  <span className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium bg-accent-subtle text-foreground">
+                    {m.phase}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{m.description}</p>
+            </Link>
+          );
+        }
+        return (
+          <div
+            key={m.label}
+            className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-surface/50 p-4 opacity-70"
+          >
+            <div className="flex items-center gap-2">
+              <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+              <span className="text-sm font-medium">{m.label}</span>
+              {m.phase && (
+                <span className="ml-auto rounded px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground">
+                  {m.phase}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">{m.description}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export const dynamic = "force-dynamic";
+
+// ─── KPI strip types ──────────────────────────────────────────────────────────
+
+type KpiStatus = "ok" | "warning" | "danger" | "neutral";
+
+interface NmKpi {
+  label: string;
+  value: number | string;
+  status: KpiStatus;
+  href?: string;
+  detail?: string;
+}
+
+function NmKpiCard({ kpi }: { kpi: NmKpi }) {
+  const bg: Record<KpiStatus, string> = {
+    ok: "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800",
+    warning: "bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800",
+    danger: "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800",
+    neutral: "bg-surface border-border",
+  };
+  const txt: Record<KpiStatus, string> = {
+    ok: "text-green-700 dark:text-green-400",
+    warning: "text-yellow-700 dark:text-yellow-400",
+    danger: "text-red-700 dark:text-red-400",
+    neutral: "text-foreground",
+  };
+  const icon = kpi.status === "ok" ? (
+    <CheckCircle className="h-4 w-4 text-green-500" />
+  ) : kpi.status === "warning" ? (
+    <Clock className="h-4 w-4 text-yellow-500" />
+  ) : kpi.status === "danger" ? (
+    <XCircle className="h-4 w-4 text-red-500" />
+  ) : null;
+
+  const inner = (
+    <div className={`rounded-lg border p-3 ${bg[kpi.status]}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className={`text-[11px] font-medium opacity-80 ${txt[kpi.status]} truncate`}>{kpi.label}</p>
+          <p className={`mt-0.5 text-xl font-bold ${txt[kpi.status]}`}>{kpi.value}</p>
+          {kpi.detail && <p className={`mt-0.5 text-[10px] opacity-70 ${txt[kpi.status]}`}>{kpi.detail}</p>}
+        </div>
+        {icon}
+      </div>
+    </div>
+  );
+
+  if (kpi.href) {
+    return <Link href={kpi.href} className="block hover:opacity-90 transition-opacity">{inner}</Link>;
+  }
+  return inner;
+}
+
+export default async function NuclearMedicinePage() {
+  // ─── Real-time KPIs ─────────────────────────────────────────────────────────
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  let adminHoy = 0;
+  let adminMes = 0;
+  let enSala = 0;
+  let contamAbiertos = 0;
+  let residuosPendientes = 0;
+  let incidentesAbiertos = 0;
+
+  try {
+    const { rows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE admin_date = CURRENT_DATE)::int AS admin_hoy,
+        COUNT(*) FILTER (WHERE admin_year = ${year} AND admin_month = ${month})::int AS admin_mes
+      FROM i131_administrations
+    `;
+    adminHoy = Number((rows[0] as any)?.admin_hoy ?? 0);
+    adminMes = Number((rows[0] as any)?.admin_mes ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM room_release_records WHERE status = 'en_sala'
+    `;
+    enSala = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM contamination_records
+      WHERE estado = 'ABIERTO' AND monitor_date >= CURRENT_DATE - INTERVAL '30 days'
+    `;
+    contamAbiertos = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM radioactive_waste_labels WHERE status = 'pendiente'
+    `;
+    residuosPendientes = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  try {
+    const { rows } = await sql`
+      SELECT COUNT(*)::int AS count FROM nm_incidents WHERE status = 'abierto'
+    `;
+    incidentesAbiertos = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  let petctHoy = 0;
+  let petctActivos = 0;
+  try {
+    const { rows } = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE injection_datetime::date = CURRENT_DATE)::int AS hoy,
+        COUNT(*) FILTER (WHERE state IN ('en_espera', 'en_examen'))::int AS activos
+      FROM petct_examinations
+    `;
+    petctHoy = Number((rows[0] as any)?.hoy ?? 0);
+    petctActivos = Number((rows[0] as any)?.activos ?? 0);
+  } catch {}
+
+  // Fase 25 — Linac y Radioterapia KPIs
+  let linacQcAlerts = 0;
+  let linacMaintAlerts = 0;
+  let rtIncidentes = 0;
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM linac_qc_alerts WHERE status = 'abierta'`;
+    linacQcAlerts = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM linac_maintenance_alerts WHERE status = 'abierta'`;
+    linacMaintAlerts = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+  try {
+    const { rows } = await sql`SELECT COUNT(*)::int AS count FROM rt_incidents WHERE status = 'abierto'`;
+    rtIncidentes = Number((rows[0] as any)?.count ?? 0);
+  } catch {}
+
+  const kpis: NmKpi[] = [
+    {
+      label: "Administraciones hoy",
+      value: adminHoy,
+      status: "neutral",
+      href: "/i131",
+      detail: `${adminMes} este mes`,
+    },
+    {
+      label: "Pacientes en sala",
+      value: enSala,
+      status: enSala > 0 ? "warning" : "ok",
+      href: "/room-release",
+      detail: enSala > 0 ? "Pendientes de liberación" : "Sin hospitalizaciones activas",
+    },
+    {
+      label: "Contam. abiertas (30 d)",
+      value: contamAbiertos,
+      status: contamAbiertos > 0 ? "danger" : "ok",
+      href: "/contamination",
+      detail: contamAbiertos > 0 ? "Requieren acción correctiva" : "Sin eventos abiertos",
+    },
+    {
+      label: "Residuos pendientes",
+      value: residuosPendientes,
+      status: residuosPendientes > 5 ? "warning" : residuosPendientes > 0 ? "neutral" : "ok",
+      href: "/waste-expert",
+      detail: residuosPendientes > 0 ? "Sin liberar / en almacenamiento" : "Sin residuos pendientes",
+    },
+    {
+      label: "Incidentes abiertos",
+      value: incidentesAbiertos,
+      status: incidentesAbiertos > 0 ? "danger" : "ok",
+      href: "/nuclear-medicine/incidents",
+      detail: incidentesAbiertos > 0 ? "Requieren cierre" : "Sin incidentes abiertos",
+    },
+    {
+      label: "Exámenes PET/CT hoy",
+      value: petctHoy,
+      status: "neutral",
+      href: "/petct",
+      detail: petctActivos > 0 ? `${petctActivos} activo${petctActivos > 1 ? "s" : ""}` : "Sin pacientes activos",
+    },
+    {
+      label: "Alertas QC Linac",
+      value: linacQcAlerts,
+      status: linacQcAlerts > 0 ? "danger" : "ok",
+      href: "/linac",
+      detail: linacQcAlerts > 0 ? "Controles vencidos o fallidos" : "Sin alertas QC",
+    },
+    {
+      label: "Mantención Linac",
+      value: linacMaintAlerts,
+      status: linacMaintAlerts > 0 ? "warning" : "ok",
+      href: "/linac",
+      detail: linacMaintAlerts > 0 ? "Mantenciones pendientes" : "Sin alertas mantención",
+    },
+    {
+      label: "Incidentes RT",
+      value: rtIncidentes,
+      status: rtIncidentes > 0 ? "danger" : "ok",
+      href: "/radioterapia",
+      detail: rtIncidentes > 0 ? "Incidentes SIGR abiertos" : "Sin incidentes abiertos",
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-[1400px] p-6">
+      <div className="mb-1 flex items-baseline justify-between">
+        <h1 className="text-lg font-semibold tracking-tight">Medicina Nuclear</h1>
+      </div>
+      <p className="mb-4 max-w-3xl text-xs text-muted-foreground">
+        Punto de entrada unificado para los modulos de Medicina Nuclear. Los modulos existentes se mantienen
+        operativos sin cambios; esta vista los organiza conforme al mapeo realizado en la Fase 0 (auditoria),
+        usando ARPANSA RPS 14.2 como referencia tecnica estructural, no como normativa chilena.
+      </p>
+
+      {/* KPI strip — real-time operational summary */}
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-9">
+        {kpis.map((kpi) => (
+          <NmKpiCard key={kpi.label} kpi={kpi} />
+        ))}
+      </div>
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Nucleo operacional (en produccion)</h2>
+      </div>
+      <ModuleGrid items={NUCLEO_OPERACIONAL} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Exámenes PET/CT (en producción)</h2>
+      </div>
+      <ModuleGrid items={PETCT_EXAMENES} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Trazabilidad</h2>
+      </div>
+      <ModuleGrid items={TRAZABILIDAD} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Analitica</h2>
+      </div>
+      <ModuleGrid items={ANALITICA} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Alertas</h2>
+      </div>
+      <ModuleGrid items={ALERTAS} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Referencias y criterios</h2>
+      </div>
+      <ModuleGrid items={REFERENCIAS_CRITERIOS} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Instrumentos y Calibracion (modulo compartido de la plataforma)</h2>
+      </div>
+      <ModuleGrid items={INSTRUMENTOS} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Control de Calidad y Transporte</h2>
+      </div>
+      <ModuleGrid items={CALIDAD_Y_TRANSPORTE} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Emergencias e Incidentes (en produccion)</h2>
+      </div>
+      <ModuleGrid items={EMERGENCIAS} />
+
+      {/* Fase 25 — Linac y Radioterapia */}
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Aceleradores Lineales — CML (en producción)</h2>
+      </div>
+      <ModuleGrid items={LINAC} />
+
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Radioterapia — SIGR (en producción)</h2>
+      </div>
+      <ModuleGrid items={RADIOTERAPIA} />
+
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="mb-2 text-sm font-semibold">Documentacion de referencia</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          ARPANSA RPS 14.2 (Radiation Protection in Nuclear Medicine) es la referencia tecnica estructural
+          utilizada para auditar y disenar esta seccion. No debe interpretarse como normativa chilena; los
+          requisitos regulatorios vigentes estan en Documentos, Medicina Nuclear, Normativa Nacional.
+        </p>
+        <Link
+          href="/documents"
+          className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline"
+        >
+          Ir a Documentos <ExternalLink className="h-3 w-3" strokeWidth={2} />
+        </Link>
+      </div>
+    </div>
+  );
+}

@@ -1,79 +1,18 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, FlaskConical, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, Zap, Calendar, ChevronRight } from "lucide-react";
+import { Activity, AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, Package, PauseCircle, Radio, Radiation, ScanLine, Search, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, AlertCircle, Info, Zap, HeartPulse } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
-import { AlertsPanel, type DynamicAlert } from "@/components/dashboard/alerts-panel";
-import { CopilotSuggestions } from "@/components/dashboard/copilot-suggestions";
+import { AlertsPanel, type DashboardAlert } from "@/components/dashboard/alerts-panel";
+import { CopilotSuggestions, type CopilotSuggestion } from "@/components/dashboard/copilot-suggestions";
 import { WorkersByService } from "@/components/dashboard/workers-by-service";
 import { ExpiringAuthorizationsTable } from "@/components/dashboard/expiring-authorizations-table";
 import { sql } from "@/lib/db";
 import { buildAuthSummary, type WorkerAuthSummary } from "@/lib/authorization";
+import { computeDosimeterAlerts, ALERT_SEVERITY_LABEL, ALERT_SEVERITY_CLASS } from "@/lib/dosimeter-alerts";
+import { getNotReturned } from "@/lib/dosimetry";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
-
-// Panel de vencimientos próximos 90 días con datos reales
-function VencimientosPanel({
-  autorizaciones,
-  calibraciones,
-  compliance,
-  fuentes,
-}: {
-  autorizaciones: number;
-  calibraciones: number;
-  compliance: number;
-  fuentes: number;
-}) {
-  const items = [
-    { label: "Autorizaciones desempeño", count: autorizaciones, href: "/workers", warn: autorizaciones > 0 },
-    { label: "Calibraciones instrumentos", count: calibraciones, href: "/instruments", warn: calibraciones > 0 },
-    { label: "Requisitos normativos NS-06.0", count: compliance, href: "/compliance", warn: compliance > 0 },
-    { label: "Inventarios fuentes radiactivas", count: fuentes, href: "/sources", warn: fuentes > 0 },
-  ];
-  const total = autorizaciones + calibraciones + compliance + fuentes;
-
-  return (
-    <div className="rounded-lg border border-border bg-surface p-4">
-      <div className="mb-3 flex items-center gap-1.5">
-        <Calendar className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
-        <h2 className="text-sm font-semibold">Vencimientos próximos 90 días</h2>
-        {total > 0 && (
-          <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
-            {total} pendiente{total !== 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
-      <div className="space-y-1.5">
-        {items.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs hover:bg-muted/50 transition-colors"
-          >
-            <span className={item.warn && item.count > 0 ? "text-amber-700 font-medium" : "text-muted-foreground"}>
-              {item.label}
-            </span>
-            <div className="flex items-center gap-1">
-              <span
-                className={`font-semibold tabular-nums ${
-                  item.count === 0
-                    ? "text-green-600"
-                    : item.warn
-                    ? "text-amber-700"
-                    : "text-foreground"
-                }`}
-              >
-                {item.count}
-              </span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            </div>
-          </a>
-        ))}
-      </div>
-      {total === 0 && (
-        <p className="mt-2 text-center text-xs text-green-600 font-medium">✓ Sin vencimientos pendientes</p>
-      )}
-    </div>
-  );
-}
 
 export default async function Dashboard() {
   const now = new Date().toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short" });
@@ -104,13 +43,6 @@ export default async function Dashboard() {
     .map(([service, count]) => ({ service, count }))
     .sort((a, b) => b.count - a.count || a.service.localeCompare(b.service));
 
-  // Curso de Proteccion Radiologica (Curso PR) y Autorizaciones de Desempeno:
-  // una sola consulta liviana; todo el resto (dias restantes, semaforo, estado
-  // y KPIs) se DERIVA en memoria con funciones puras de src/lib/authorization.ts.
-  // Esto evita N+1 queries y mantiene el Dashboard 100% automatico: al ser un
-  // Server Component "force-dynamic", cada vez que un modulo llama router.refresh()
-  // tras crear/editar/eliminar un registro, esta pagina se vuelve a renderizar
-  // desde cero contra la base de datos, sin necesidad de ningun boton "Actualizar".
   const { rows: authRows } = await sql`
     SELECT rut, name, email, course_pr_completed, authorization_number, authorization_expiry_date
     FROM workers
@@ -141,215 +73,379 @@ export default async function Dashboard() {
     .filter((s) => s.status === "proxima_vencer" || s.status === "vencida")
     .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
 
-  // KPIs de módulos secundarios (con fallback a 0 si la tabla no existe aún)
-  let equiposPendientes = 0;
-  let equiposFueraServicio = 0;
-  let incidentesAbiertos = 0;
-  let incidentesEnInvestigacion = 0;
-  let instrVencidos = 0;
-  let instrPorVencer = 0;
+  const dosimeterAlerts = await computeDosimeterAlerts();
+  const topDosimeterAlerts = dosimeterAlerts.slice(0, 6);
 
+  // Hoja 'No devueltos' de la planilla oficial: se reutiliza el mismo calculo
+  // en vivo que alimenta la vista de Dosimetria, para que el KPI del
+  // Dashboard nunca quede desincronizado del detalle.
+  let pendingReturnCount = 0;
+  let lostCount = 0;
   try {
-    const { rows: eqRows } = await sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'pending')::int        AS pending,
-        COUNT(*) FILTER (WHERE status = 'out_of_service')::int AS out_of_service
-      FROM equipment
-    `;
-    equiposPendientes = Number((eqRows[0] as any)?.pending ?? 0);
-    equiposFueraServicio = Number((eqRows[0] as any)?.out_of_service ?? 0);
-  } catch { /* tabla no creada */ }
+    const notReturned = await getNotReturned();
+    pendingReturnCount = notReturned.filter((r) => !r.extraviado).length;
+    lostCount = notReturned.filter((r) => r.extraviado).length;
+  } catch {}
 
+  // Incidentes abiertos (real DB)
+  let incidentesAbiertos = 0;
   try {
     const { rows: incRows } = await sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'open')::int          AS open,
-        COUNT(*) FILTER (WHERE status = 'investigating')::int AS investigating
-      FROM incidents
+      SELECT COUNT(*)::int as count FROM nm_incidents WHERE status = 'abierto'
     `;
-    incidentesAbiertos = Number((incRows[0] as any)?.open ?? 0);
-    incidentesEnInvestigacion = Number((incRows[0] as any)?.investigating ?? 0);
-  } catch { /* tabla no creada */ }
+    incidentesAbiertos = Number((incRows[0] as any)?.count ?? 0);
+  } catch {}
 
-  try {
-    const { rows: insRows } = await sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'expired')::int   AS expired,
-        COUNT(*) FILTER (WHERE status = 'expiring')::int  AS expiring
-      FROM instruments
-    `;
-    instrVencidos = Number((insRows[0] as any)?.expired ?? 0);
-    instrPorVencer = Number((insRows[0] as any)?.expiring ?? 0);
-  } catch { /* tabla no creada */ }
-
-  // KPIs de nuevos módulos — fuentes, radiofármacos, blindajes, QC MN, dosímetros
-  let fuentesInventarioVencido = 0;
-  let radiofarmacosExpiring = 0;
-  let blindajesEnRevision = 0;
-  let qcFallidos = 0;
-  let dosimetrosProblema = 0;
-
-  try {
-    const { rows: srcRows } = await sql`
-      SELECT COUNT(*)::int AS overdue FROM radioactive_sources
-      WHERE next_inventory_date < CURRENT_DATE AND status IN ('in_use','stored')
-    `;
-    fuentesInventarioVencido = Number((srcRows[0] as any)?.overdue ?? 0);
-  } catch { /* tabla no creada */ }
-
-  try {
-    const { rows: rfRows } = await sql`
-      SELECT COUNT(*)::int AS expiring FROM radiopharmaceuticals
-      WHERE status = 'active' AND expiry_datetime < now() + INTERVAL '24 hours'
-    `;
-    radiofarmacosExpiring = Number((rfRows[0] as any)?.expiring ?? 0);
-  } catch { /* tabla no creada */ }
-
-  try {
-    const { rows: shRows } = await sql`
-      SELECT COUNT(*)::int AS review FROM shielding WHERE status IN ('review','failed')
-    `;
-    blindajesEnRevision = Number((shRows[0] as any)?.review ?? 0);
-  } catch { /* tabla no creada */ }
-
-  try {
-    const { rows: qcRows } = await sql`
-      SELECT COUNT(*)::int AS fails FROM qc_records
-      WHERE pass = false AND performed_at > now() - INTERVAL '30 days'
-    `;
-    qcFallidos = Number((qcRows[0] as any)?.fails ?? 0);
-  } catch { /* tabla no creada */ }
-
-  try {
-    const { rows: dosRows } = await sql`
-      SELECT COUNT(*)::int AS problems FROM dosimeters
-      WHERE status IN ('lost','damaged')
-    `;
-    dosimetrosProblema = Number((dosRows[0] as any)?.problems ?? 0);
-  } catch { /* tabla no creada */ }
-
-  // Vencimientos próximos 90 días — compliance
-  let vencimientosCompliance = 0;
+  // Cumplimiento normativo (real DB)
+  let complianceVencido = 0;
+  let compliancePendiente = 0;
   try {
     const { rows: compRows } = await sql`
-      SELECT COUNT(*)::int AS cnt FROM compliance_requirements
-      WHERE next_review_date <= CURRENT_DATE + INTERVAL '90 days'
-        AND status NOT IN ('ok')
+      SELECT status, COUNT(*)::int as count FROM compliance_requirements GROUP BY status
     `;
-    vencimientosCompliance = Number((compRows[0] as any)?.cnt ?? 0);
-  } catch { /* tabla no creada */ }
-
-  // Alertas del sistema (motor de automatización §19)
-  let systemAlerts: DynamicAlert[] = [];
-  try {
-    // Autorizaciones vencidas o próximas (30d)
-    const { rows: authAlertRows } = await sql`
-      SELECT name, authorization_expiry_date::text
-      FROM workers
-      WHERE status <> 'inactive'
-        AND authorization_expiry_date IS NOT NULL
-        AND authorization_expiry_date <= CURRENT_DATE + INTERVAL '30 days'
-      ORDER BY authorization_expiry_date ASC LIMIT 5
-    `;
-    const today = new Date().toISOString().slice(0, 10);
-    for (const w of authAlertRows as { name: string; authorization_expiry_date: string }[]) {
-      const expired = w.authorization_expiry_date <= today;
-      systemAlerts.push({
-        id: `auth-${w.name}`,
-        type: expired ? "danger" : "warning",
-        module: "Trabajadores",
-        title: expired ? `Autorización vencida: ${w.name}` : `Autorización próxima a vencer: ${w.name}`,
-        detail: `Vence: ${w.authorization_expiry_date}`,
-        regulation: "DS 3/1985 Art. 3",
-        action: "/workers",
-      });
+    for (const r of compRows as any[]) {
+      if (r.status === "vencido") complianceVencido = Number(r.count ?? 0);
+      if (r.status === "pendiente") compliancePendiente = Number(r.count ?? 0);
     }
-  } catch { /* sin tabla */ }
+  } catch {}
 
+  // Instrumentos (real DB)
+  let instrumentosMantenimiento = 0;
+  let instrumentosFueraServicio = 0;
+  let instrumentosCalibVencida = 0;
+  let calibracionesProx90 = 0;
   try {
-    const { rows: qcFails } = await sql`
-      SELECT equipment_name, performed_at::text FROM qc_records
-      WHERE pass = false AND performed_at > NOW() - INTERVAL '7 days'
-      ORDER BY performed_at DESC LIMIT 3
+    const { rows: instrRows } = await sql`
+      SELECT status, COUNT(*)::int as count FROM instruments GROUP BY status
     `;
-    for (const q of qcFails as { equipment_name: string; performed_at: string }[]) {
-      systemAlerts.push({
-        id: `qc-${q.performed_at}`,
-        type: "danger",
-        module: "CC MN",
-        title: `CC MN fallido: ${q.equipment_name}`,
-        detail: q.performed_at.slice(0, 10),
-        regulation: "NS-06.0 §10",
-        action: "/quality-control",
-      });
+    for (const r of instrRows as any[]) {
+      if (r.status === "en_mantenimiento") instrumentosMantenimiento = Number(r.count ?? 0);
+      if (r.status === "fuera_servicio") instrumentosFueraServicio = Number(r.count ?? 0);
     }
-  } catch { /* sin tabla */ }
+    const { rows: calibRows } = await sql`
+      SELECT COUNT(*)::int as count FROM instruments i
+      WHERE i.status = 'operativo'
+        AND NOT EXISTS (
+          SELECT 1 FROM calibrations c
+          WHERE c.instrument_id = i.id AND c.expiry_date >= CURRENT_DATE
+        )
+    `;
+    instrumentosCalibVencida = Number((calibRows[0] as any)?.count ?? 0);
+    // Calibraciones próximas a vencer (90 días)
+    const { rows: calibProxRows } = await sql`
+      SELECT COUNT(DISTINCT i.id)::int as count FROM instruments i
+      JOIN LATERAL (
+        SELECT expiry_date FROM calibrations c WHERE c.instrument_id = i.id
+        ORDER BY c.calibration_date DESC LIMIT 1
+      ) lc ON true
+      WHERE lc.expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '90 days'
+    `;
+    calibracionesProx90 = Number((calibProxRows[0] as any)?.count ?? 0);
+  } catch {}
+
+  // Control de Calidad — pruebas vencidas (PET/CT + Activímetro + Gammacamara + SPECT)
+  let qcPetctVencidas = 0;
+  let qcActivimetroVencidas = 0;
+  let qcGammacamaraVencidas = 0;
+  let qcSpectVencidas = 0;
+  try {
+    // PET/CT: union de las tres tablas reales (pet/ct/joint), filtrar is_finalized
+    const { rows: petctDue } = await sql`
+      WITH all_tests AS (
+        SELECT equipment_id, test_code AS test_type, performed_at
+        FROM qc_petct_pet_tests WHERE is_finalized = true
+        UNION ALL
+        SELECT equipment_id, test_code, performed_at
+        FROM qc_petct_ct_tests WHERE is_finalized = true
+        UNION ALL
+        SELECT equipment_id, test_code, performed_at
+        FROM qc_petct_joint_tests WHERE is_finalized = true
+      ),
+      latest AS (
+        SELECT equipment_id, test_type, MAX(performed_at) AS last_performed
+        FROM all_tests GROUP BY equipment_id, test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_petct_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_performed + (t.frequency_days * INTERVAL '1 day')) < NOW()
+    `;
+    qcPetctVencidas = Number((petctDue[0] as any)?.count ?? 0);
+  } catch {}
 
   try {
-    const { rows: incAlerts } = await sql`
-      SELECT id, title, ines_level FROM incidents
-      WHERE ines_level >= 1 AND status <> 'closed'
-      ORDER BY ines_level DESC LIMIT 3
+    // Activímetro: tabla qc_activimetro_tests con instrument_id/test_type/test_date
+    const { rows: activDue } = await sql`
+      WITH latest AS (
+        SELECT instrument_id, test_type, MAX(test_date) AS last_test_date
+        FROM qc_activimetro_tests
+        WHERE instrument_id IS NOT NULL
+        GROUP BY instrument_id, test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_activimetro_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
     `;
-    for (const i of incAlerts as { id: number; title: string; ines_level: number }[]) {
-      systemAlerts.push({
-        id: `inc-${i.id}`,
-        type: i.ines_level >= 3 ? "danger" : "warning",
-        module: "Incidentes",
-        title: `Incidente INES ${i.ines_level}: ${i.title}`,
-        detail: "Notificar a CCHEN en 72h",
-        regulation: "NS-06.0 §16",
-        action: "/incidents",
-      });
-    }
-  } catch { /* sin tabla */ }
+    qcActivimetroVencidas = Number((activDue[0] as any)?.count ?? 0);
+  } catch {}
 
   try {
-    const { rows: srcAlerts } = await sql`
-      SELECT source_code, isotope FROM radioactive_sources
-      WHERE next_inventory_date < CURRENT_DATE AND status = 'in_use' LIMIT 3
+    // Gammacamara: contar combinaciones instrumento+prueba+modo con última prueba vencida
+    const { rows: gammaDue } = await sql`
+      WITH latest AS (
+        SELECT r.instrument_id, r.test_type, r.test_mode, MAX(r.test_date) AS last_test_date
+        FROM qc_gammacamara_tests r
+        WHERE r.instrument_id IS NOT NULL
+        GROUP BY r.instrument_id, r.test_type, r.test_mode
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_gammacamara_tolerances t ON t.test_type = l.test_type AND t.test_mode = l.test_mode AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
     `;
-    for (const s of srcAlerts as { source_code: string; isotope: string }[]) {
-      systemAlerts.push({
-        id: `src-${s.source_code}`,
-        type: "danger",
-        module: "Fuentes",
-        title: `Inventario vencido: ${s.source_code} (${s.isotope})`,
-        detail: "Inventario periódico requerido",
-        regulation: "NS-06.0 §6",
-        action: "/sources",
-      });
-    }
-  } catch { /* sin tabla */ }
+    qcGammacamaraVencidas = Number((gammaDue[0] as any)?.count ?? 0);
+  } catch {}
 
-  systemAlerts.sort((a, b) => {
-    const o = { danger: 0, warning: 1, info: 2 } as Record<string, number>;
-    return (o[a.type] ?? 2) - (o[b.type] ?? 2);
-  });
-
-  // Dosis colectiva mensual (últimos 6 meses) para DoseChart
-  interface DosePoint { month: string; dosis_total: number; trabajadores: number; dosis_max: number; }
-  let doseData: DosePoint[] = [];
   try {
-    const { rows: doseRows } = await sql`
-      SELECT
-        TO_CHAR(DATE_TRUNC('month', month_year), 'Mon YY') AS month,
-        ROUND(SUM(total_dose_msv)::numeric, 2)::float AS dosis_total,
-        COUNT(DISTINCT worker_rut)::int AS trabajadores,
-        ROUND(MAX(total_dose_msv)::numeric, 2)::float AS dosis_max
-      FROM worker_dose_summary_monthly
-      WHERE month_year >= DATE_TRUNC('month', now()) - INTERVAL '5 months'
-      GROUP BY DATE_TRUNC('month', month_year)
-      ORDER BY DATE_TRUNC('month', month_year) ASC
+    // SPECT: contar combinaciones instrumento+prueba con última prueba vencida
+    const { rows: spectDue } = await sql`
+      WITH latest AS (
+        SELECT r.instrument_id, r.test_type, MAX(r.test_date) AS last_test_date
+        FROM qc_spect_tests r
+        WHERE r.instrument_id IS NOT NULL
+        GROUP BY r.instrument_id, r.test_type
+      )
+      SELECT COUNT(*) AS count
+      FROM latest l
+      JOIN qc_spect_tolerances t ON t.test_type = l.test_type AND t.active = true
+      WHERE t.frequency_days IS NOT NULL
+        AND (l.last_test_date + (t.frequency_days * INTERVAL '1 day')) < NOW()
     `;
-    doseData = doseRows as DosePoint[];
-  } catch { /* tabla no creada aún */ }
+    qcSpectVencidas = Number((spectDue[0] as any)?.count ?? 0);
+  } catch {}
+
+  // Fase 24D — Exámenes PET/CT: exámenes realizados hoy y pacientes activos
+  // (en espera o en examen). Fallback gracioso si petct_examinations no existe.
+  let petctExamenesHoy = 0;
+  let petctPacientesActivos = 0;
+  try {
+    const { rows: petctHoyRows } = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM petct_examinations
+      WHERE injection_datetime::date = CURRENT_DATE
+    `;
+    petctExamenesHoy = Number((petctHoyRows[0] as any)?.count ?? 0);
+
+    const { rows: petctActivosRows } = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM petct_examinations
+      WHERE state IN ('en_espera', 'en_examen')
+    `;
+    petctPacientesActivos = Number((petctActivosRows[0] as any)?.count ?? 0);
+  } catch {}
+
+  // Fase 26B — Linac y Radioterapia KPIs en dashboard principal
+  let linacQcAlerts = 0;
+  let linacMaintenanceAlerts = 0;
+  let rtIncidentesAbiertos = 0;
+  try {
+    const { rows: lqcRows } = await sql`SELECT COUNT(*)::int AS count FROM linac_qc_alerts WHERE status = 'abierta'`;
+    linacQcAlerts = Number((lqcRows[0] as any)?.count ?? 0);
+    const { rows: lmaRows } = await sql`SELECT COUNT(*)::int AS count FROM linac_maintenance_alerts WHERE status = 'abierta'`;
+    linacMaintenanceAlerts = Number((lmaRows[0] as any)?.count ?? 0);
+    const { rows: rtRows } = await sql`SELECT COUNT(*)::int AS count FROM rt_incidents WHERE status = 'abierto'`;
+    rtIncidentesAbiertos = Number((rtRows[0] as any)?.count ?? 0);
+  } catch {}
+
+  // ── Build real dashboard alerts from DB data ────────────────────────────────
+  const dashboardAlerts: DashboardAlert[] = [];
+
+  if (totalVencida > 0) {
+    dashboardAlerts.push({
+      id: "auth-vencida",
+      severity: "critical",
+      title: `${totalVencida} autorización${totalVencida > 1 ? "es" : ""} vencida${totalVencida > 1 ? "s" : ""}`,
+      description: "Trabajadores con autorización OPR vencida requieren acción inmediata.",
+      href: "/workers",
+    });
+  }
+
+  if (complianceVencido > 0) {
+    dashboardAlerts.push({
+      id: "compliance-vencido",
+      severity: "critical",
+      title: `${complianceVencido} requisito${complianceVencido > 1 ? "s" : ""} normativo${complianceVencido > 1 ? "s" : ""} vencido${complianceVencido > 1 ? "s" : ""}`,
+      description: "Requisitos DS 133/1984 / DS 3/1985 / Ley 18.302 vencidos sin renovar.",
+      href: "/compliance",
+    });
+  }
+
+  if (instrumentosCalibVencida > 0) {
+    dashboardAlerts.push({
+      id: "calib-vencida",
+      severity: instrumentosCalibVencida > 2 ? "critical" : "high",
+      title: `${instrumentosCalibVencida} instrumento${instrumentosCalibVencida > 1 ? "s" : ""} sin calibración vigente`,
+      description: "Instrumentos operativos sin certificado de calibración activo.",
+      href: "/instruments",
+    });
+  }
+
+  if (totalProximaVencer > 0) {
+    dashboardAlerts.push({
+      id: "auth-proxima",
+      severity: "high",
+      title: `${totalProximaVencer} autorización${totalProximaVencer > 1 ? "es" : ""} próxima a vencer`,
+      description: "Gestionar renovación de autorizaciones OPR antes del vencimiento.",
+      dueLabel: "≤ 90 días",
+      href: "/workers",
+    });
+  }
+
+  if (compliancePendiente > 0) {
+    dashboardAlerts.push({
+      id: "compliance-pendiente",
+      severity: "medium",
+      title: `${compliancePendiente} requisito${compliancePendiente > 1 ? "s" : ""} normativo${compliancePendiente > 1 ? "s" : ""} pendiente${compliancePendiente > 1 ? "s" : ""}`,
+      description: "Requieren revisión y actualización de evidencia.",
+      href: "/compliance",
+    });
+  }
+
+  if (calibracionesProx90 > 0) {
+    dashboardAlerts.push({
+      id: "calib-proxima",
+      severity: "medium",
+      title: `${calibracionesProx90} calibración${calibracionesProx90 > 1 ? "es" : ""} próxima${calibracionesProx90 > 1 ? "s" : ""} a vencer`,
+      description: "Coordinar calibración de instrumentos antes del vencimiento.",
+      dueLabel: "≤ 90 días",
+      href: "/instruments",
+    });
+  }
+
+  if (qcPetctVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-petct-vencidas",
+      severity: qcPetctVencidas > 3 ? "critical" : "high",
+      title: `${qcPetctVencidas} prueba${qcPetctVencidas > 1 ? "s" : ""} de QC PET/CT vencida${qcPetctVencidas > 1 ? "s" : ""}`,
+      description: "Controles de calidad PET/CT fuera de frecuencia establecida.",
+      href: "/quality-control/petct/compliance",
+    });
+  }
+
+  if (qcActivimetroVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-activimetro-vencidas",
+      severity: "high",
+      title: `${qcActivimetroVencidas} prueba${qcActivimetroVencidas > 1 ? "s" : ""} de QC Activímetro vencida${qcActivimetroVencidas > 1 ? "s" : ""}`,
+      description: "Controles de calidad del activímetro fuera de frecuencia establecida.",
+      href: "/quality-control/activimetro/dashboard",
+    });
+  }
+
+  if (qcGammacamaraVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-gammacamara-vencidas",
+      severity: qcGammacamaraVencidas > 3 ? "critical" : "high",
+      title: `${qcGammacamaraVencidas} prueba${qcGammacamaraVencidas > 1 ? "s" : ""} de QC Gammacámara vencida${qcGammacamaraVencidas > 1 ? "s" : ""}`,
+      description: "Pruebas de uniformidad, resolución o sensibilidad fuera de frecuencia IAEA TECDOC-602.",
+      href: "/quality-control/gammacamara",
+    });
+  }
+
+  if (qcSpectVencidas > 0) {
+    dashboardAlerts.push({
+      id: "qc-spect-vencidas",
+      severity: qcSpectVencidas > 3 ? "critical" : "high",
+      title: `${qcSpectVencidas} prueba${qcSpectVencidas > 1 ? "s" : ""} de QC SPECT vencida${qcSpectVencidas > 1 ? "s" : ""}`,
+      description: "Centro de rotación o uniformidad tomográfica SPECT fuera de frecuencia IAEA TECDOC-602.",
+      href: "/quality-control/spect",
+    });
+  }
+
+  // ── Build copilot suggestions based on real data ──────────────────────────
+  const copilotSuggestions: CopilotSuggestion[] = [];
+
+  if (incidentesAbiertos > 0) {
+    copilotSuggestions.push({
+      id: "close-incidents",
+      title: `Revisar ${incidentesAbiertos} incidente${incidentesAbiertos > 1 ? "s" : ""} abierto${incidentesAbiertos > 1 ? "s" : ""}`,
+      action: "Verificar estado de investigación y acciones correctivas.",
+      href: "/incidents",
+    });
+  }
+
+  if (pendingReturnCount > 0) {
+    copilotSuggestions.push({
+      id: "dosimetros-devolver",
+      title: `Gestionar ${pendingReturnCount} dosímetro${pendingReturnCount > 1 ? "s" : ""} pendiente${pendingReturnCount > 1 ? "s" : ""} de devolución`,
+      action: "Contactar trabajadores o laboratorio de dosimetría.",
+      href: "/dosimetry",
+    });
+  }
+
+  if (complianceVencido > 0 || compliancePendiente > 0) {
+    copilotSuggestions.push({
+      id: "compliance-action",
+      title: "Actualizar requisitos normativos",
+      action: `${complianceVencido} vencidos y ${compliancePendiente} pendientes requieren atención.`,
+      href: "/compliance",
+    });
+  }
+
+  if (instrumentosCalibVencida > 0) {
+    copilotSuggestions.push({
+      id: "calibration-action",
+      title: `Programar calibración para ${instrumentosCalibVencida} instrumento${instrumentosCalibVencida > 1 ? "s" : ""}`,
+      action: "Coordinar con el proveedor de calibración acreditado.",
+      href: "/instruments",
+    });
+  }
+
+  if (qcPetctVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-petct-action",
+      title: `Realizar ${qcPetctVencidas} control${qcPetctVencidas > 1 ? "es" : ""} de calidad PET/CT vencido${qcPetctVencidas > 1 ? "s" : ""}`,
+      action: "Revisar pruebas PET, CT e interacción con el Físico Médico responsable.",
+      href: "/quality-control/petct/compliance",
+    });
+  }
+
+  if (qcActivimetroVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-activimetro-action",
+      title: `Realizar ${qcActivimetroVencidas} control${qcActivimetroVencidas > 1 ? "es" : ""} de calidad de activímetro vencido${qcActivimetroVencidas > 1 ? "s" : ""}`,
+      action: "Registrar pruebas de constancia, linealidad y exactitud del activímetro.",
+      href: "/quality-control/activimetro/dashboard",
+    });
+  }
+
+  if (qcGammacamaraVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-gammacamara-action",
+      title: `Realizar ${qcGammacamaraVencidas} control${qcGammacamaraVencidas > 1 ? "es" : ""} de calidad de gammacámara vencido${qcGammacamaraVencidas > 1 ? "s" : ""}`,
+      action: "Registrar pruebas de uniformidad, resolución y sensibilidad según IAEA TECDOC-602.",
+      href: "/quality-control/gammacamara",
+    });
+  }
+
+  if (qcSpectVencidas > 0) {
+    copilotSuggestions.push({
+      id: "qc-spect-action",
+      title: `Realizar ${qcSpectVencidas} control${qcSpectVencidas > 1 ? "es" : ""} de calidad SPECT vencido${qcSpectVencidas > 1 ? "s" : ""}`,
+      action: "Verificar centro de rotación y uniformidad tomográfica con el Físico Médico.",
+      href: "/quality-control/spect",
+    });
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">Sistema de Protección Radiológica</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Buenos días, Javiera.</h1>
           <p className="text-xs text-muted-foreground">Estado a {now}</p>
         </div>
       </div>
@@ -361,42 +457,86 @@ export default async function Dashboard() {
         <KPICard label="Autoriz. próx. vencer" value={totalProximaVencer} href="/workers" icon={UserCog} tone="warning" />
         <KPICard label="Autorización vencida" value={totalVencida} href="/workers" icon={ShieldX} tone="danger" />
         <KPICard label="Sin autorización" value={totalSinAutorizacion} href="/workers" icon={XCircle} tone="warning" />
-        <KPICard label="Equipos pendientes QA" value={equiposPendientes} href="/equipment" icon={Radio} tone="warning" />
-        <KPICard label="Equipos fuera servicio" value={equiposFueraServicio} href="/equipment" icon={Ban} tone="danger" />
-        <KPICard label="Instrum. por vencer" value={instrPorVencer} href="/instruments" icon={ClipboardCheck} tone="warning" />
-        <KPICard label="Instrum. vencidos" value={instrVencidos} href="/instruments" icon={ShieldAlert} tone="danger" />
-        <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone="danger" />
-        <KPICard label="En investigación" value={incidentesEnInvestigacion} href="/incidents" icon={FileWarning} tone="warning" />
-        <KPICard label="Inv. fuentes vencido" value={fuentesInventarioVencido} href="/sources" icon={Zap} tone={fuentesInventarioVencido > 0 ? "danger" : "default"} />
-        <KPICard label="Radiofárm. por vencer" value={radiofarmacosExpiring} href="/radiopharmacy" icon={FlaskConical} tone={radiofarmacosExpiring > 0 ? "warning" : "default"} />
-        <KPICard label="Blindajes en revisión" value={blindajesEnRevision} href="/shielding" icon={ShieldAlert} tone={blindajesEnRevision > 0 ? "warning" : "default"} />
-        <KPICard label="CC MN fallidos (30d)" value={qcFallidos} href="/quality-control" icon={ShieldAlert} tone={qcFallidos > 0 ? "danger" : "default"} />
-        <KPICard label="Dosímetros con problema" value={dosimetrosProblema} href="/dosimeters" icon={AlertTriangle} tone={dosimetrosProblema > 0 ? "danger" : "default"} />
+        <KPICard label="Dosím. pend. devolver" value={pendingReturnCount} href="/dosimetry?tab=no-devueltos" icon={Package} tone="warning" />
+        <KPICard label="Dosím. extraviados" value={lostCount} href="/dosimetry?tab=no-devueltos" icon={Search} tone="danger" />
+        <KPICard label="Instrumentos en mantención" value={instrumentosMantenimiento} href="/instruments" icon={Radio} tone={instrumentosMantenimiento > 0 ? "warning" : undefined} />
+        <KPICard label="Instrumentos fuera servicio" value={instrumentosFueraServicio} href="/instruments" icon={Ban} tone={instrumentosFueraServicio > 0 ? "danger" : undefined} />
+        <KPICard label="Req. normativos vencidos" value={complianceVencido} href="/compliance" icon={ShieldAlert} tone={complianceVencido > 0 ? "danger" : undefined} />
+        <KPICard label="Req. normativos pendientes" value={compliancePendiente} href="/compliance" icon={FileWarning} tone={compliancePendiente > 0 ? "warning" : undefined} />
+        <KPICard label="Calibraciones vencidas" value={instrumentosCalibVencida} href="/instruments" icon={ClipboardCheck} tone={instrumentosCalibVencida > 0 ? "warning" : undefined} />
+        <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone={incidentesAbiertos > 0 ? "danger" : undefined} />
+        <KPICard label="QC PET/CT vencidas" value={qcPetctVencidas} href="/quality-control/petct/compliance" icon={Activity} tone={qcPetctVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC Activímetro vencidas" value={qcActivimetroVencidas} href="/quality-control/activimetro/dashboard" icon={Activity} tone={qcActivimetroVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC Gammacámara vencidas" value={qcGammacamaraVencidas} href="/quality-control/gammacamara" icon={Activity} tone={qcGammacamaraVencidas > 0 ? "danger" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="QC SPECT vencidas" value={qcSpectVencidas} href="/quality-control/spect" icon={Activity} tone={qcSpectVencidas > 0 ? "warning" : undefined} hint="pruebas sin realizar" />
+        <KPICard label="Exámenes PET/CT hoy" value={petctExamenesHoy} href="/petct" icon={ScanLine} hint="realizados hoy" />
+        <KPICard label="Pacientes PET/CT activos" value={petctPacientesActivos} href="/petct" icon={ScanLine} tone={petctPacientesActivos > 0 ? "warning" : undefined} hint="en espera o en examen" />
+        <KPICard label="Alertas QC Linac" value={linacQcAlerts} href="/linac" icon={Zap} tone={linacQcAlerts > 0 ? "danger" : undefined} hint="controles vencidos o fallidos" />
+        <KPICard label="Alertas Mantención Linac" value={linacMaintenanceAlerts} href="/linac" icon={Zap} tone={linacMaintenanceAlerts > 0 ? "warning" : undefined} hint="mantenciones pendientes" />
+        <KPICard label="Incidentes Radioterapia" value={rtIncidentesAbiertos} href="/radioterapia" icon={HeartPulse} tone={rtIncidentesAbiertos > 0 ? "danger" : undefined} hint="incidentes abiertos SIGR" />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Dosis colectiva mensual</h2>
-          <DoseChart data={doseData} />
+          <DoseChart />
         </div>
-        <VencimientosPanel
-          autorizaciones={totalProximaVencer + totalVencida}
-          calibraciones={instrVencidos + instrPorVencer}
-          compliance={vencimientosCompliance}
-          fuentes={fuentesInventarioVencido}
-        />
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <h2 className="text-sm font-semibold mb-3">Vencimientos próximos 90 días</h2>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">Autorizaciones: {totalProximaVencer + totalVencida} · Calibraciones: {calibracionesProx90} · Req. normativos vencidos: {complianceVencido}</p>
+          </div>
+        </div>
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold mb-3">Alertas regulatorias</h2>
-          <AlertsPanel alerts={systemAlerts} />
+          <AlertsPanel alerts={dashboardAlerts} />
         </div>
         <div className="rounded-lg border border-border bg-surface p-4">
           <div className="mb-3 flex items-center gap-1.5">
             <Radiation className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
             <h2 className="text-sm font-semibold">Copilot — Recomendado hoy</h2>
           </div>
-          <CopilotSuggestions />
+          <CopilotSuggestions suggestions={copilotSuggestions} />
         </div>
+      </div>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Alertas dosimétricas</h2>
+          {dosimeterAlerts.length > 6 && (
+            <Link href="/dosimeters/alerts" className="text-xs text-accent hover:underline">
+              Ver todas ({dosimeterAlerts.length})
+            </Link>
+          )}
+        </div>
+        {topDosimeterAlerts.length > 0 ? (
+          <div className="space-y-2">
+            {topDosimeterAlerts.map((a) => (
+              <Link
+                key={a.id}
+                href={a.href}
+                className="flex items-start gap-2 rounded-md border border-border/60 p-2 text-xs hover:bg-muted/40"
+              >
+                {a.severity === "alta" ? (
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={2} />
+                ) : (
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" strokeWidth={2} />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{a.title}</span>
+                    <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-medium", ALERT_SEVERITY_CLASS[a.severity])}>
+                      {ALERT_SEVERITY_LABEL[a.severity]}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-muted-foreground">{a.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">Sin alertas dosimétricas activas.</p>
+        )}
       </div>
       <div className="mb-4 rounded-lg border border-border bg-surface p-4">
         <h2 className="text-sm font-semibold mb-1">Autorizaciones próximas a vencer</h2>

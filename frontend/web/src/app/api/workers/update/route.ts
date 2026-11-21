@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { normalizeRut, cleanRut } from "@/lib/rut";
+import { composeWorkerName } from "@/lib/worker-name";
 
 export const dynamic = "force-dynamic";
 
@@ -7,30 +9,58 @@ function toBool(v: unknown): boolean {
   return v === true || v === "true" || v === "on" || v === "1" || v === 1;
 }
 
+async function ensureNameColumns() {
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_1 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS last_name_2 TEXT`;
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS first_names TEXT`;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
+  await ensureNameColumns();
+
   const originalRut = String(body.original_rut ?? "").trim();
-  const rut = String(body.rut ?? "").trim();
-  const name = String(body.name ?? "").trim();
+  const rutInput = String(body.rut ?? "").trim();
+  const lastName1 = String(body.last_name_1 ?? "").trim() || null;
+  const lastName2 = String(body.last_name_2 ?? "").trim() || null;
+  const firstNames = String(body.first_names ?? "").trim() || null;
+  const name = composeWorkerName({
+    last_name_1: lastName1,
+    last_name_2: lastName2,
+    first_names: firstNames,
+    name: body.name,
+  });
 
   if (!originalRut) {
     return NextResponse.json({ error: "Falta el RUT original del trabajador." }, { status: 400 });
   }
-  if (!rut || !name) {
+  if (!rutInput || !name) {
     return NextResponse.json({ error: "RUT y nombre son obligatorios." }, { status: 400 });
   }
+
+  const normalized = normalizeRut(rutInput);
+  if (!normalized.ok) {
+    return NextResponse.json({ error: normalized.error }, { status: 400 });
+  }
+  const rut = normalized.rut;
+  const rutKey = cleanRut(rut);
 
   const { rows: existingRows } = await sql`SELECT rut FROM workers WHERE rut = ${originalRut} LIMIT 1`;
   if (existingRows.length === 0) {
     return NextResponse.json({ error: "No se encontró el trabajador a editar." }, { status: 404 });
   }
 
-  if (rut !== originalRut) {
-    const { rows: conflictRows } = await sql`SELECT rut FROM workers WHERE rut = ${rut} LIMIT 1`;
-    if (conflictRows.length > 0) {
-      return NextResponse.json({ error: "Ya existe otro trabajador con ese RUT." }, { status: 409 });
-    }
+  // Comparacion tolerante: si el RUT cambio, verificar que no choque con otro
+  // trabajador ya existente (aunque este guardado con distinto formato).
+  const { rows: conflictRows } = await sql`
+    SELECT rut FROM workers
+    WHERE regexp_replace(UPPER(rut), '[^0-9K]', '', 'g') = ${rutKey}
+      AND rut <> ${originalRut}
+    LIMIT 1
+  `;
+  if (conflictRows.length > 0) {
+    return NextResponse.json({ error: "Ya existe otro trabajador con ese RUT." }, { status: 409 });
   }
 
   const role = String(body.role ?? "").trim() || null;
@@ -59,6 +89,9 @@ export async function POST(request: Request) {
     UPDATE workers SET
       rut = ${rut},
       name = ${name},
+      last_name_1 = ${lastName1},
+      last_name_2 = ${lastName2},
+      first_names = ${firstNames},
       role = ${role},
       service = ${service},
       category = ${category},

@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Search, Table2 } from "lucide-react";
+import { LayoutDashboard, Search, Shield, Table2 } from "lucide-react";
 import { I131SearchPanel, EMPTY_FILTERS, type I131Filters } from "./i131-search-panel";
 import { I131Dashboard } from "./i131-dashboard";
 import { I131RecordsTable } from "./i131-records-table";
 import { I131FormModal } from "./i131-form-modal";
+import { I131IsolationPanel } from "./i131-isolation-panel";
 import type { I131Record } from "@/lib/i131";
 
-type Tab = "dashboard" | "registros";
+type Tab = "dashboard" | "registros" | "aislamiento";
 
 export function I131App() {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -70,6 +71,14 @@ export function I131App() {
         >
           <Table2 className="h-4 w-4" /> Registros
         </button>
+        <button
+          onClick={() => setTab("aislamiento")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 ${
+            tab === "aislamiento" ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+          }`}
+        >
+          <Shield className="h-4 w-4" /> Aislamiento
+        </button>
       </div>
 
       <I131SearchPanel
@@ -81,8 +90,10 @@ export function I131App() {
 
       {tab === "dashboard" ? (
         <I131Dashboard filters={filters} version={version} />
-      ) : (
+      ) : tab === "registros" ? (
         <I131RecordsTable filters={filters} version={version} onNew={openNew} onEdit={openEdit} onChanged={bump} />
+      ) : (
+        <I131IsolationPanel />
       )}
 
       <I131FormModal
