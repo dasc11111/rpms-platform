@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList,
   FileText, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn,
+  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -56,6 +56,7 @@ const NAV = [
 
   // ── Gestión Normativa ─────────────────────────────────
   { href: "/incidents", label: "Incidentes", icon: AlertTriangle },
+  { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
 
