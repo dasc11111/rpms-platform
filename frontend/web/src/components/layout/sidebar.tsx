@@ -72,6 +72,7 @@ const NAV = [
   { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
   { href: "/environmental-monitoring", label: "Monitoreo Ambiental", icon: MapPin },
+  { href: "/licenses", label: "Autorizaciones CCHEN", icon: FileText },
 
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
