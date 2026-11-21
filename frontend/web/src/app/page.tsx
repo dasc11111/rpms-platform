@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle } from "lucide-react";
+import { AlertTriangle, Ban, ClipboardCheck, FileWarning, FlaskConical, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, Zap } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
@@ -117,6 +117,34 @@ export default async function Dashboard() {
     instrPorVencer = Number((insRows[0] as any)?.expiring ?? 0);
   } catch { /* tabla no creada */ }
 
+  // KPIs de nuevos módulos — fuentes, radiofármacos, blindajes
+  let fuentesInventarioVencido = 0;
+  let radiofarmacosExpiring = 0;
+  let blindajesEnRevision = 0;
+
+  try {
+    const { rows: srcRows } = await sql`
+      SELECT COUNT(*)::int AS overdue FROM radioactive_sources
+      WHERE next_inventory_date < CURRENT_DATE AND status IN ('in_use','stored')
+    `;
+    fuentesInventarioVencido = Number((srcRows[0] as any)?.overdue ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: rfRows } = await sql`
+      SELECT COUNT(*)::int AS expiring FROM radiopharmaceuticals
+      WHERE status = 'active' AND expiry_datetime < now() + INTERVAL '24 hours'
+    `;
+    radiofarmacosExpiring = Number((rfRows[0] as any)?.expiring ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: shRows } = await sql`
+      SELECT COUNT(*)::int AS review FROM shielding WHERE status IN ('review','failed')
+    `;
+    blindajesEnRevision = Number((shRows[0] as any)?.review ?? 0);
+  } catch { /* tabla no creada */ }
+
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
@@ -139,6 +167,9 @@ export default async function Dashboard() {
         <KPICard label="Instrum. vencidos" value={instrVencidos} href="/instruments" icon={ShieldAlert} tone="danger" />
         <KPICard label="Incidentes abiertos" value={incidentesAbiertos} href="/incidents" icon={AlertTriangle} tone="danger" />
         <KPICard label="En investigación" value={incidentesEnInvestigacion} href="/incidents" icon={FileWarning} tone="warning" />
+        <KPICard label="Inv. fuentes vencido" value={fuentesInventarioVencido} href="/sources" icon={Zap} tone={fuentesInventarioVencido > 0 ? "danger" : "default"} />
+        <KPICard label="Radiofárm. por vencer" value={radiofarmacosExpiring} href="/radiopharmacy" icon={FlaskConical} tone={radiofarmacosExpiring > 0 ? "warning" : "default"} />
+        <KPICard label="Blindajes en revisión" value={blindajesEnRevision} href="/shielding" icon={ShieldAlert} tone={blindajesEnRevision > 0 ? "warning" : "default"} />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">

@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { Wrench, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 

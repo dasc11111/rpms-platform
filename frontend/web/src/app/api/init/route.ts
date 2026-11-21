@@ -873,5 +873,174 @@ ON CONFLICT (radionuclido) DO NOTHING;
     `;
   }
 
+  // --- ICRP Category en workers (categoria A/B segun exposicion ocupacional) ---
+  await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS icrp_category CHAR(1) CHECK (icrp_category IN ('A','B'))`;
+
+  // --- Dosimetros fisicos (tracking de dosimetros individuales emitidos) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS dosimeters (
+      id SERIAL PRIMARY KEY,
+      worker_rut TEXT NOT NULL REFERENCES workers(rut) ON DELETE CASCADE,
+      worker_name TEXT,
+      dosimeter_type TEXT NOT NULL DEFAULT 'TLD',
+      serial_code TEXT UNIQUE,
+      issued_at DATE NOT NULL DEFAULT CURRENT_DATE,
+      returned_at DATE,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','returned','lost','damaged')),
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dosimeters_worker ON dosimeters(worker_rut)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dosimeters_status ON dosimeters(status)`;
+
+  // --- Enriquecer tabla incidents con campos INES y referencia ---
+  await sql`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS ines_level INT CHECK (ines_level BETWEEN 0 AND 7)`;
+  await sql`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS reference_code TEXT UNIQUE`;
+  await sql`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS workers_involved JSONB DEFAULT '[]'`;
+  await sql`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS location TEXT`;
+  await sql`ALTER TABLE incidents ADD COLUMN IF NOT EXISTS environmental_impact BOOLEAN DEFAULT false`;
+
+  // --- Acciones correctivas de incidentes (tabla hija) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS incident_actions (
+      id SERIAL PRIMARY KEY,
+      incident_id INT NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+      action_description TEXT NOT NULL,
+      responsible TEXT,
+      due_date DATE,
+      completed_at DATE,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','completed','cancelled')),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_incident_actions_incident ON incident_actions(incident_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_incident_actions_status ON incident_actions(status)`;
+
+  // --- Fuentes radiactivas selladas (NS-06.0 control de fuentes) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS radioactive_sources (
+      id SERIAL PRIMARY KEY,
+      source_code TEXT UNIQUE NOT NULL,
+      isotope TEXT NOT NULL,
+      half_life_days NUMERIC NOT NULL,
+      activity_bq_initial NUMERIC NOT NULL,
+      activity_reference_date DATE NOT NULL,
+      category_iaea INT CHECK (category_iaea BETWEEN 1 AND 5),
+      manufacturer TEXT,
+      serial_number TEXT,
+      acquisition_date DATE,
+      location TEXT,
+      status TEXT NOT NULL DEFAULT 'in_use' CHECK (status IN ('in_use','stored','returned','disposed','lost')),
+      last_inventory_date DATE,
+      next_inventory_date DATE,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_sources_isotope ON radioactive_sources(isotope)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_sources_status ON radioactive_sources(status)`;
+
+  const { rows: sourcesCount } = await sql`SELECT COUNT(*)::int AS count FROM radioactive_sources`;
+  if ((sourcesCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO radioactive_sources (source_code, isotope, half_life_days, activity_bq_initial, activity_reference_date, category_iaea, manufacturer, location, status, last_inventory_date, next_inventory_date) VALUES
+      ('SRC-MN-001', 'Tc-99m', 0.25, 37000000000, '2026-11-01', 3, 'IRE ELiT', 'Radiofarmacia MN', 'in_use', '2026-11-01', '2026-12-01'),
+      ('SRC-MN-002', 'I-131', 8.02, 185000000000, '2026-10-15', 3, 'IRE ELiT', 'Sala Tiroides', 'in_use', '2026-10-15', '2026-11-15'),
+      ('SRC-CO-001', 'Co-57', 271.74, 3700000, '2024-01-01', 5, 'Eckert & Ziegler', 'Sala Gamma', 'in_use', '2026-10-01', '2027-04-01')
+      ON CONFLICT (source_code) DO NOTHING
+    `;
+  }
+
+  // --- Radiofármacos (lotes, actividad, calibración) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS radiopharmaceuticals (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      isotope TEXT NOT NULL,
+      half_life_days NUMERIC NOT NULL,
+      batch_number TEXT UNIQUE NOT NULL,
+      supplier TEXT,
+      activity_bq NUMERIC NOT NULL,
+      calibration_datetime TIMESTAMPTZ NOT NULL,
+      expiry_datetime TIMESTAMPTZ NOT NULL,
+      volume_ml NUMERIC,
+      concentration_bq_ml NUMERIC,
+      status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','expired','depleted','returned')),
+      service TEXT,
+      received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_radiopharm_isotope ON radiopharmaceuticals(isotope)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_radiopharm_status ON radiopharmaceuticals(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_radiopharm_expiry ON radiopharmaceuticals(expiry_datetime)`;
+
+  // --- Enriquecer waste_records con campos del schema canonico ---
+  await sql`ALTER TABLE waste_records ADD COLUMN IF NOT EXISTS half_life_days NUMERIC`;
+  await sql`ALTER TABLE waste_records ADD COLUMN IF NOT EXISTS activity_bq NUMERIC`;
+  await sql`ALTER TABLE waste_records ADD COLUMN IF NOT EXISTS waste_code TEXT UNIQUE`;
+  await sql`ALTER TABLE waste_records ADD COLUMN IF NOT EXISTS ready_for_disposal_at DATE`;
+  await sql`ALTER TABLE waste_records ADD COLUMN IF NOT EXISTS iaea_category INT CHECK (iaea_category BETWEEN 1 AND 5)`;
+
+  // --- Blindajes (shielding) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS shielding (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      room TEXT NOT NULL,
+      service TEXT,
+      material TEXT NOT NULL DEFAULT 'Pb',
+      thickness_mm NUMERIC,
+      lead_equivalent_mm NUMERIC,
+      surface_area_m2 NUMERIC,
+      design_dose_rate_usv_h NUMERIC,
+      measured_dose_rate_usv_h NUMERIC,
+      last_measurement_date DATE,
+      next_measurement_date DATE,
+      status TEXT NOT NULL DEFAULT 'ok' CHECK (status IN ('ok','review','failed')),
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_shielding_room ON shielding(room)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_shielding_status ON shielding(status)`;
+
+  const { rows: shieldingCount } = await sql`SELECT COUNT(*)::int AS count FROM shielding`;
+  if ((shieldingCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO shielding (name, room, service, material, thickness_mm, lead_equivalent_mm, status, last_measurement_date, next_measurement_date) VALUES
+      ('Pared Norte Sala Gamma', 'Sala Gamma', 'Medicina Nuclear', 'Pb+Hormigón', 150, 2.5, 'ok', '2026-06-01', '2027-06-01'),
+      ('Puerta blindada Sala Gamma', 'Sala Gamma', 'Medicina Nuclear', 'Pb', 10, 10.0, 'ok', '2026-06-01', '2027-06-01'),
+      ('Pared Sala Tiroides', 'Sala Tiroides', 'Medicina Nuclear', 'Pb+Hormigón', 100, 2.0, 'ok', '2026-08-01', '2027-08-01'),
+      ('Blindaje Calibrador', 'Radiofarmacia', 'Medicina Nuclear', 'Pb', 50, 50.0, 'ok', '2026-10-01', '2027-10-01')
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  // --- Vista materializada: resumen mensual de dosis por trabajador ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS worker_dose_summary_monthly (
+      id SERIAL PRIMARY KEY,
+      worker_rut TEXT NOT NULL,
+      worker_name TEXT,
+      year INT NOT NULL,
+      month INT NOT NULL,
+      dose_body NUMERIC DEFAULT 0,
+      dose_lens NUMERIC DEFAULT 0,
+      dose_extremity NUMERIC DEFAULT 0,
+      accum_ytd NUMERIC DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE(worker_rut, year, month)
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_dose_summary_worker ON worker_dose_summary_monthly(worker_rut)`;
+
   return NextResponse.json({ ok: true });
 }

@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { sql } from "@/lib/db";
 import { Trash2, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 
