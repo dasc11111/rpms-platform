@@ -1,197 +1,411 @@
-import { sql } from "@/lib/db";
-import { AlertCircle, Plus, RadioIcon } from "lucide-react";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Zap, Plus, Pencil, Trash2, X, Save, Search, AlertTriangle,
+  CheckCircle2, Clock, Package, RadioIcon, Shield, RefreshCw,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-function calcActivityNow(activityBqInitial: number, halfLifeDays: number, referenceDate: string): number {
-  const refDate = new Date(referenceDate);
-  const now = new Date();
-  const daysDiff = (now.getTime() - refDate.getTime()) / (1000 * 60 * 60 * 24);
-  return activityBqInitial * Math.pow(0.5, daysDiff / halfLifeDays);
-}
-
-function formatBq(bq: number): string {
-  if (bq >= 1e12) return `${(bq / 1e12).toFixed(2)} TBq`;
-  if (bq >= 1e9) return `${(bq / 1e9).toFixed(2)} GBq`;
-  if (bq >= 1e6) return `${(bq / 1e6).toFixed(2)} MBq`;
-  if (bq >= 1e3) return `${(bq / 1e3).toFixed(2)} kBq`;
-  return `${bq.toFixed(0)} Bq`;
-}
-
-function iaeaCategoryLabel(cat: number | null): string {
-  if (!cat) return "—";
-  const labels: Record<number, string> = { 1: "Cat.1 Peligrosa", 2: "Cat.2 Alta", 3: "Cat.3 Media", 4: "Cat.4 Baja", 5: "Cat.5 Mínima" };
-  return labels[cat] ?? `Cat.${cat}`;
-}
-
-type Source = {
+interface Source {
   id: number;
   source_code: string;
   isotope: string;
-  half_life_days: string;
-  activity_bq_initial: string;
+  half_life_days: number;
+  activity_bq_initial: number;
   activity_reference_date: string;
   category_iaea: number | null;
   manufacturer: string | null;
   serial_number: string | null;
   location: string | null;
   status: string;
-  last_inventory_date: string | null;
   next_inventory_date: string | null;
   notes: string | null;
+  updated_at?: string;
+}
+
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  in_use:    { label: "En uso",        color: "bg-green-100 text-green-800" },
+  stored:    { label: "Almacenada",    color: "bg-blue-100 text-blue-800" },
+  borrowed:  { label: "Prestada",      color: "bg-amber-100 text-amber-800" },
+  disposed:  { label: "Dados de baja", color: "bg-gray-100 text-gray-700" },
+  lost:      { label: "Pérdida",       color: "bg-red-100 text-red-800" },
 };
 
-export default async function SourcesPage() {
-  let sources: Source[] = [];
-  let dbError = false;
+const IAEA_CONFIG: Record<number, { label: string; color: string }> = {
+  1: { label: "Cat. 1 — Peligrosa",  color: "bg-red-100 text-red-800" },
+  2: { label: "Cat. 2 — Alta",       color: "bg-orange-100 text-orange-800" },
+  3: { label: "Cat. 3 — Media",      color: "bg-amber-100 text-amber-800" },
+  4: { label: "Cat. 4 — Baja",       color: "bg-yellow-100 text-yellow-700" },
+  5: { label: "Cat. 5 — Mínima",     color: "bg-green-100 text-green-700" },
+};
 
-  try {
-    const { rows } = await sql<Source>`
-      SELECT id, source_code, isotope, half_life_days::text, activity_bq_initial::text,
-             activity_reference_date::text, category_iaea, manufacturer, serial_number,
-             location, status, last_inventory_date::text, next_inventory_date::text, notes
-      FROM radioactive_sources
-      ORDER BY next_inventory_date ASC NULLS LAST, isotope
-    `;
-    sources = rows;
-  } catch {
-    dbError = true;
-  }
+function calcActivityNow(bqInitial: number, halfLifeDays: number, refDate: string): number {
+  const days = (Date.now() - new Date(refDate).getTime()) / 86400000;
+  return bqInitial * Math.pow(0.5, days / halfLifeDays);
+}
 
-  const inUse = sources.filter((s) => s.status === "in_use").length;
-  const stored = sources.filter((s) => s.status === "stored").length;
-  const overdue = sources.filter((s) => {
-    if (!s.next_inventory_date) return false;
-    return new Date(s.next_inventory_date) < new Date();
-  }).length;
+function formatBq(bq: number): string {
+  if (bq >= 1e12) return `${(bq / 1e12).toFixed(2)} TBq`;
+  if (bq >= 1e9)  return `${(bq / 1e9).toFixed(2)} GBq`;
+  if (bq >= 1e6)  return `${(bq / 1e6).toFixed(2)} MBq`;
+  if (bq >= 1e3)  return `${(bq / 1e3).toFixed(2)} kBq`;
+  return `${bq.toFixed(0)} Bq`;
+}
 
-  const statusColors: Record<string, string> = {
-    in_use: "text-blue-400",
-    stored: "text-emerald-400",
-    returned: "text-muted-foreground",
-    disposed: "text-muted-foreground",
-    lost: "text-red-400",
+function inventoryStatus(d: string | null): "ok" | "due" | "overdue" {
+  if (!d) return "due";
+  const diff = (new Date(d).getTime() - Date.now()) / 86400000;
+  if (diff < 0) return "overdue";
+  if (diff < 30) return "due";
+  return "ok";
+}
+
+const DEFAULT_FORM = {
+  source_code: "", isotope: "", half_life_days: "", activity_bq_initial: "",
+  activity_reference_date: new Date().toISOString().slice(0, 10),
+  category_iaea: "", manufacturer: "", serial_number: "", location: "",
+  status: "in_use", next_inventory_date: "", notes: "",
+};
+
+export default function SourcesPage() {
+  const [sources, setSources] = useState<Source[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<Source | null>(null);
+  const [form, setForm] = useState<typeof DEFAULT_FORM>({ ...DEFAULT_FORM });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/sources");
+      const data = await res.json();
+      setSources(data.sources ?? []);
+    } catch { /* silent */ } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setEditing(null); setForm({ ...DEFAULT_FORM }); setError(null); setShowModal(true); };
+  const openEdit = (s: Source) => {
+    setEditing(s);
+    setForm({
+      source_code: s.source_code,
+      isotope: s.isotope,
+      half_life_days: String(s.half_life_days),
+      activity_bq_initial: String(s.activity_bq_initial),
+      activity_reference_date: s.activity_reference_date.slice(0, 10),
+      category_iaea: s.category_iaea != null ? String(s.category_iaea) : "",
+      manufacturer: s.manufacturer ?? "",
+      serial_number: s.serial_number ?? "",
+      location: s.location ?? "",
+      status: s.status,
+      next_inventory_date: s.next_inventory_date?.slice(0, 10) ?? "",
+      notes: s.notes ?? "",
+    });
+    setError(null);
+    setShowModal(true);
   };
 
-  const statusLabels: Record<string, string> = {
-    in_use: "En uso",
-    stored: "Almacenada",
-    returned: "Devuelta",
-    disposed: "Eliminada",
-    lost: "Extraviada",
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true); setError(null);
+    try {
+      const payload = {
+        source_code: form.source_code.trim(),
+        isotope: form.isotope.trim(),
+        half_life_days: parseFloat(form.half_life_days),
+        activity_bq_initial: parseFloat(form.activity_bq_initial),
+        activity_reference_date: form.activity_reference_date,
+        category_iaea: form.category_iaea ? parseInt(form.category_iaea) : null,
+        manufacturer: form.manufacturer || null,
+        serial_number: form.serial_number || null,
+        location: form.location || null,
+        status: form.status,
+        next_inventory_date: form.next_inventory_date || null,
+        notes: form.notes || null,
+      };
+      const res = await fetch("/api/sources" + (editing ? "" : ""), {
+        method: editing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editing ? { id: editing.id, ...payload } : payload),
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? "Error"); }
+      setShowModal(false);
+      load();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async (s: Source) => {
+    if (!confirm(`¿Eliminar fuente ${s.source_code} (${s.isotope})?`)) return;
+    await fetch(`/api/sources?id=${s.id}`, { method: "DELETE" });
+    load();
+  };
+
+  const filtered = sources.filter(s => {
+    const matchSearch = !search || [s.source_code, s.isotope, s.manufacturer, s.serial_number, s.location]
+      .some(v => v?.toLowerCase().includes(search.toLowerCase()));
+    const matchStatus = filterStatus === "all" || s.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const counts = {
+    total: sources.length,
+    in_use: sources.filter(s => s.status === "in_use").length,
+    overdue: sources.filter(s => inventoryStatus(s.next_inventory_date) === "overdue").length,
+    cat1_2: sources.filter(s => s.category_iaea != null && s.category_iaea <= 2).length,
   };
 
   return (
-    <div className="mx-auto max-w-[1400px] p-6">
-      <div className="mb-4 flex items-baseline justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">Fuentes Radiactivas</h1>
-          <p className="text-xs text-muted-foreground">Control de fuentes selladas — NS-06.0 CCHEN</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Zap className="h-8 w-8 text-yellow-500" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Inventario de Fuentes Radiactivas</h1>
+            <p className="text-sm text-muted-foreground">NS-04 CCHEN · DS 3/1985 MINSAL</p>
+          </div>
         </div>
-        <button
-          type="button"
-          className="flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground hover:opacity-90"
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-          Nueva fuente
-        </button>
+        <div className="flex gap-2">
+          <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background text-sm hover:bg-muted">
+            <RefreshCw className="h-4 w-4" /> Actualizar
+          </button>
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 text-sm font-medium">
+            <Plus className="h-4 w-4" /> Nueva Fuente
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total fuentes", value: sources.length, color: "text-foreground" },
-          { label: "En uso", value: inUse, color: "text-blue-400" },
-          { label: "Almacenadas", value: stored, color: "text-emerald-400" },
-          { label: "Inventario vencido", value: overdue, color: overdue > 0 ? "text-red-400" : "text-muted-foreground" },
-        ].map((k) => (
-          <div key={k.label} className="rounded-lg border border-border bg-surface p-3">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{k.label}</p>
-            <p className={`mt-0.5 text-2xl font-bold tabular-nums ${k.color}`}>{k.value}</p>
+          { label: "Total fuentes", value: counts.total, icon: Package, color: "text-blue-500" },
+          { label: "En uso", value: counts.in_use, icon: RadioIcon, color: "text-green-500" },
+          { label: "Inventario vencido", value: counts.overdue, icon: AlertTriangle, color: counts.overdue > 0 ? "text-red-500" : "text-muted-foreground" },
+          { label: "Cat. 1-2 (alta peligrosidad)", value: counts.cat1_2, icon: Shield, color: counts.cat1_2 > 0 ? "text-orange-500" : "text-muted-foreground" },
+        ].map(k => (
+          <div key={k.label} className="bg-card border rounded-xl p-4 flex items-center gap-3">
+            <k.icon className={cn("h-8 w-8", k.color)} />
+            <div>
+              <p className="text-2xl font-bold text-foreground">{k.value}</p>
+              <p className="text-xs text-muted-foreground">{k.label}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {dbError && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-400">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>
-            Base de datos no inicializada.{" "}
-            <a href="/api/init" className="underline">
-              Inicializar
-            </a>
-          </span>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por código, isótopo, ubicación…"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border bg-background text-sm"
+          />
+        </div>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+          className="px-3 py-2 rounded-lg border bg-background text-sm">
+          <option value="all">Todos los estados</option>
+          {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+            <option key={v} value={v}>{c.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="bg-card border rounded-xl overflow-hidden">
+        {loading ? (
+          <div className="text-center py-16 text-muted-foreground">Cargando…</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            <Package className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <p>No se encontraron fuentes</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs text-muted-foreground uppercase tracking-wide">
+                <tr>
+                  <th className="px-4 py-3 text-left">Código</th>
+                  <th className="px-4 py-3 text-left">Isótopo</th>
+                  <th className="px-4 py-3 text-left">Actividad actual</th>
+                  <th className="px-4 py-3 text-left">Cat. IAEA</th>
+                  <th className="px-4 py-3 text-left">Ubicación</th>
+                  <th className="px-4 py-3 text-left">Estado</th>
+                  <th className="px-4 py-3 text-left">Próx. inventario</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filtered.map(s => {
+                  const actNow = calcActivityNow(s.activity_bq_initial, s.half_life_days, s.activity_reference_date);
+                  const invSt = inventoryStatus(s.next_inventory_date);
+                  const statusCfg = STATUS_CONFIG[s.status] ?? { label: s.status, color: "bg-gray-100 text-gray-700" };
+                  const iaeaCfg = s.category_iaea != null ? IAEA_CONFIG[s.category_iaea] : null;
+                  return (
+                    <tr key={s.id} className={cn("hover:bg-muted/30", invSt === "overdue" && "bg-red-50/50")}>
+                      <td className="px-4 py-3 font-mono font-medium text-foreground">{s.source_code}</td>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-foreground">{s.isotope}</span>
+                        {s.manufacturer && <span className="block text-xs text-muted-foreground">{s.manufacturer}</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-sm">{formatBq(actNow)}</span>
+                        <span className="block text-xs text-muted-foreground">Inicial: {formatBq(s.activity_bq_initial)}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {iaeaCfg ? (
+                          <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", iaeaCfg.color)}>{iaeaCfg.label}</span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{s.location ?? "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", statusCfg.color)}>{statusCfg.label}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.next_inventory_date ? (
+                          <span className={cn("flex items-center gap-1 text-xs",
+                            invSt === "overdue" ? "text-red-600 font-semibold" :
+                            invSt === "due" ? "text-amber-600" : "text-green-700")}>
+                            {invSt === "overdue" ? <AlertTriangle className="h-3 w-3" /> :
+                             invSt === "due" ? <Clock className="h-3 w-3" /> :
+                             <CheckCircle2 className="h-3 w-3" />}
+                            {new Date(s.next_inventory_date).toLocaleDateString("es-CL")}
+                          </span>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openEdit(s)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleDelete(s)} className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-background border rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-background">
+              <h2 className="text-lg font-semibold">{editing ? "Editar Fuente" : "Nueva Fuente Radiactiva"}</h2>
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-muted rounded-lg"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Código fuente *</label>
+                  <input required value={form.source_code} onChange={e => setForm(f => ({ ...f, source_code: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" placeholder="FT-001" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Isótopo *</label>
+                  <input required value={form.isotope} onChange={e => setForm(f => ({ ...f, isotope: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" placeholder="Co-57, Tc-99m…" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Vida media (días) *</label>
+                  <input required type="number" step="any" min="0" value={form.half_life_days}
+                    onChange={e => setForm(f => ({ ...f, half_life_days: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" placeholder="271.74" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Actividad inicial (Bq) *</label>
+                  <input required type="number" step="any" min="0" value={form.activity_bq_initial}
+                    onChange={e => setForm(f => ({ ...f, activity_bq_initial: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" placeholder="3.7e10" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fecha referencia actividad *</label>
+                  <input required type="date" value={form.activity_reference_date}
+                    onChange={e => setForm(f => ({ ...f, activity_reference_date: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Categoría IAEA</label>
+                  <select value={form.category_iaea} onChange={e => setForm(f => ({ ...f, category_iaea: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                    <option value="">— Sin categoría —</option>
+                    {[1,2,3,4,5].map(c => <option key={c} value={c}>{IAEA_CONFIG[c].label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fabricante</label>
+                  <input value={form.manufacturer} onChange={e => setForm(f => ({ ...f, manufacturer: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">N° Serie</label>
+                  <input value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Ubicación</label>
+                  <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Estado</label>
+                  <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm">
+                    {Object.entries(STATUS_CONFIG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Próx. inventario</label>
+                  <input type="date" value={form.next_inventory_date} onChange={e => setForm(f => ({ ...f, next_inventory_date: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border bg-background text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notas</label>
+                <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  rows={2} className="w-full px-3 py-2 rounded-lg border bg-background text-sm resize-none" />
+              </div>
+
+              {/* Activity preview */}
+              {form.activity_bq_initial && form.half_life_days && form.activity_reference_date && (
+                <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                  <span className="font-medium">Actividad actual estimada: </span>
+                  <span className="font-mono text-yellow-700">
+                    {formatBq(calcActivityNow(parseFloat(form.activity_bq_initial), parseFloat(form.half_life_days), form.activity_reference_date))}
+                  </span>
+                  <span className="text-muted-foreground ml-2">(calculado por decaimiento radiactivo)</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg border hover:bg-muted text-sm">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 text-sm font-medium disabled:opacity-50">
+                  <Save className="h-4 w-4" />
+                  {saving ? "Guardando…" : editing ? "Guardar cambios" : "Registrar fuente"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <table className="w-full">
-          <thead className="border-b border-border bg-muted/40 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2">Código</th>
-              <th className="px-3 py-2">Isótopo</th>
-              <th className="px-3 py-2">Vida media</th>
-              <th className="px-3 py-2">Actividad actual</th>
-              <th className="px-3 py-2">Categoría IAEA</th>
-              <th className="px-3 py-2">Ubicación</th>
-              <th className="px-3 py-2">Estado</th>
-              <th className="px-3 py-2">Próx. inventario</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border text-xs">
-            {sources.length === 0 && !dbError && (
-              <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
-                  <RadioIcon className="mx-auto mb-2 h-8 w-8 opacity-20" />
-                  No hay fuentes registradas
-                </td>
-              </tr>
-            )}
-            {sources.map((s) => {
-              const activityNow = calcActivityNow(
-                parseFloat(s.activity_bq_initial),
-                parseFloat(s.half_life_days),
-                s.activity_reference_date,
-              );
-              const isOverdue = s.next_inventory_date && new Date(s.next_inventory_date) < new Date();
-
-              return (
-                <tr key={s.id} className="hover:bg-muted/20">
-                  <td className="px-3 py-2 font-mono text-[11px]">{s.source_code}</td>
-                  <td className="px-3 py-2 font-semibold">{s.isotope}</td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {parseFloat(s.half_life_days) >= 1
-                      ? `${parseFloat(s.half_life_days).toFixed(1)} d`
-                      : `${(parseFloat(s.half_life_days) * 24).toFixed(1)} h`}
-                  </td>
-                  <td className="px-3 py-2 tabular-nums">{formatBq(activityNow)}</td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                        s.category_iaea && s.category_iaea <= 2
-                          ? "bg-red-500/15 text-red-400"
-                          : s.category_iaea === 3
-                            ? "bg-amber-500/15 text-amber-400"
-                            : "bg-muted/40 text-muted-foreground"
-                      }`}
-                    >
-                      {iaeaCategoryLabel(s.category_iaea)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">{s.location ?? "—"}</td>
-                  <td className={`px-3 py-2 font-medium ${statusColors[s.status] ?? ""}`}>
-                    {statusLabels[s.status] ?? s.status}
-                  </td>
-                  <td className={`px-3 py-2 ${isOverdue ? "text-red-400 font-semibold" : "text-muted-foreground"}`}>
-                    {s.next_inventory_date ?? "—"}
-                    {isOverdue && " ⚠"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
