@@ -873,6 +873,57 @@ ON CONFLICT (radionuclido) DO NOTHING;
     `;
   }
 
+  // --- Modulo Capacitacion (NS-06.0 §17) ------------------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS trainings (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      training_type TEXT NOT NULL DEFAULT 'otro',
+      regulation TEXT,
+      instructor TEXT,
+      training_date DATE,
+      expiry_date DATE,
+      duration_hours NUMERIC,
+      participants_count INT,
+      status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','scheduled','completed','cancelled')),
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_trainings_date ON trainings(training_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_trainings_status ON trainings(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_trainings_type ON trainings(training_type)`;
+
+  const { rows: trainingsCount } = await sql`SELECT COUNT(*)::int AS count FROM trainings`;
+  if ((trainingsCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO trainings (title, training_type, regulation, instructor, training_date, expiry_date, duration_hours, participants_count, status) VALUES
+      ('Curso Protección Radiológica — Categoría A', 'curso_pr', 'DS 3/1985 MINSAL · NS-06.0', 'CCHEN - Instituto de Física', '2024-05-15', '2029-05-15', 24, 8, 'completed'),
+      ('Inducción Radioprotección Medicina Nuclear', 'induccion', 'NS-06.0 §17', 'OPR Hospital', '2026-03-01', '2028-03-01', 8, 12, 'completed'),
+      ('Simulacro Derrame Radiactivo 2026', 'simulacro', 'NS-06.0 Anexo C', 'OPR + Comité Radioprotección', '2026-06-10', null, 4, 15, 'completed'),
+      ('Actualización Procedimiento I-131', 'actualizacion', 'NS-06.0 §17', 'Jefe Servicio MN', '2026-09-20', null, 2, 6, 'completed'),
+      ('Simulacro Emergencia 2027 — Programado', 'simulacro', 'NS-06.0', 'OPR Hospital', '2027-06-01', null, 4, null, 'scheduled')
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  // --- Tabla training_participants (registro individual de asistentes) ---
+  await sql`
+    CREATE TABLE IF NOT EXISTS training_participants (
+      id SERIAL PRIMARY KEY,
+      training_id INT NOT NULL REFERENCES trainings(id) ON DELETE CASCADE,
+      worker_rut TEXT NOT NULL,
+      worker_name TEXT,
+      passed BOOLEAN,
+      score NUMERIC,
+      certificate_number TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_training_participants_training ON training_participants(training_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_training_participants_worker ON training_participants(worker_rut)`;
+
   // --- ICRP Category en workers (categoria A/B segun exposicion ocupacional) ---
   await sql`ALTER TABLE workers ADD COLUMN IF NOT EXISTS icrp_category CHAR(1) CHECK (icrp_category IN ('A','B'))`;
 
