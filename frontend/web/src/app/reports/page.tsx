@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
-import { BarChart3, FileText, Users, AlertTriangle, Activity, Shield, Package } from "lucide-react";
+import type { ComponentType } from "react";
+import { FileText, Users, AlertTriangle, Activity, Shield, Package, Download, FileSpreadsheet } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,14 @@ export default async function ReportsPage() {
   const year = new Date().getFullYear();
   const month = new Date().toLocaleDateString("es-CL", { month: "long" });
 
-  const REPORT_TYPES = [
+  const period = new Date().toISOString().slice(0, 7); // "2026-11"
+
+  const REPORT_TYPES: {
+    id: string; name: string; desc: string;
+    icon: ComponentType<{ className?: string }>;
+    regulacion: string; frecuencia: string; estado: string; ok: boolean;
+    apiType: string; jsonHref: string; csvHref: string;
+  }[] = [
     {
       id: "dosimetrico",
       name: "Informe Dosimétrico Mensual",
@@ -103,6 +111,9 @@ export default async function ReportsPage() {
       frecuencia: "Mensual",
       estado: "Disponible",
       ok: true,
+      apiType: "dosimetry_monthly",
+      jsonHref: `/api/reports/generate?type=dosimetry_monthly&period=${period}`,
+      csvHref: `/api/reports/generate?type=dosimetry_monthly&period=${period}&format=csv`,
     },
     {
       id: "cumplimiento",
@@ -113,6 +124,9 @@ export default async function ReportsPage() {
       frecuencia: "Trimestral",
       estado: compliancePct !== null && compliancePct < 80 ? "Atención" : "Disponible",
       ok: compliancePct === null || compliancePct >= 80,
+      apiType: "compliance_matrix",
+      jsonHref: `/api/reports/generate?type=compliance_matrix`,
+      csvHref: `/api/reports/generate?type=compliance_matrix&format=csv`,
     },
     {
       id: "incidentes",
@@ -123,16 +137,22 @@ export default async function ReportsPage() {
       frecuencia: "Mensual",
       estado: openIncidents > 0 ? "Con alertas" : "Disponible",
       ok: openIncidents === 0,
+      apiType: "incident_summary",
+      jsonHref: `/api/reports/generate?type=incident_summary`,
+      csvHref: `/api/reports/generate?type=incident_summary&format=csv`,
     },
     {
       id: "trabajadores",
-      name: "Estado Autorizaciones y Capacitación",
+      name: "Registro de Trabajadores",
       desc: `${totalWorkers} trabajadores. Curso PR: ${coursePct}%. Autorizaciones vigentes: ${authPct}%.`,
       icon: Users,
       regulacion: "NS-06.0 §8 CCHEN · DS 133/1984",
       frecuencia: "Mensual",
       estado: authPct < 80 ? "Atención" : "Disponible",
       ok: authPct >= 80,
+      apiType: "worker_registry",
+      jsonHref: `/api/reports/generate?type=worker_registry`,
+      csvHref: `/api/reports/generate?type=worker_registry&format=csv`,
     },
     {
       id: "qc",
@@ -143,6 +163,9 @@ export default async function ReportsPage() {
       frecuencia: "Mensual",
       estado: qcFailLast30 > 0 ? "Con fallas" : "Disponible",
       ok: qcFailLast30 === 0,
+      apiType: "qc_summary",
+      jsonHref: `/api/reports/generate?type=qc_summary`,
+      csvHref: `/api/reports/generate?type=qc_summary&format=csv`,
     },
     {
       id: "fuentes",
@@ -153,16 +176,22 @@ export default async function ReportsPage() {
       frecuencia: "Semestral",
       estado: sourcesOverdue > 0 ? "Con alertas" : "Disponible",
       ok: sourcesOverdue === 0,
+      apiType: "source_inventory",
+      jsonHref: `/api/reports/generate?type=source_inventory`,
+      csvHref: `/api/reports/generate?type=source_inventory&format=csv`,
     },
     {
-      id: "dosimetros",
-      name: "Control de Dosímetros",
-      desc: `${dosimetersIssue} dosímetros con problemas (extraviados/dañados). Registro de asignaciones y devoluciones.`,
-      icon: Package,
-      regulacion: "DS 3/1985 MINSAL · NS-06.0",
-      frecuencia: "Mensual",
-      estado: dosimetersIssue > 0 ? "Con alertas" : "Disponible",
-      ok: dosimetersIssue === 0,
+      id: "dosimetros_trim",
+      name: "Dosimetría Trimestral Acumulada",
+      desc: "Dosis acumulada por trimestre, niveles de investigación (NI) y comparación con límites ICRP 103.",
+      icon: FileSpreadsheet,
+      regulacion: "DS 3/1985 MINSAL · NS-06.0 §11",
+      frecuencia: "Trimestral",
+      estado: "Disponible",
+      ok: true,
+      apiType: "dosimetry_quarterly",
+      jsonHref: `/api/reports/generate?type=dosimetry_quarterly`,
+      csvHref: `/api/reports/generate?type=dosimetry_quarterly&format=csv`,
     },
   ];
 
@@ -252,6 +281,27 @@ export default async function ReportsPage() {
                     <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
                       <span>📋 {rep.regulacion}</span>
                       <span>🗓 {rep.frecuencia}</span>
+                    </div>
+                    {/* Botones de exportación */}
+                    <div className="flex gap-2 mt-3">
+                      <a
+                        href={rep.csvHref}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        title="Descargar CSV"
+                      >
+                        <Download className="h-3 w-3" />
+                        CSV
+                      </a>
+                      <a
+                        href={rep.jsonHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                        title="Ver JSON"
+                      >
+                        <FileText className="h-3 w-3" />
+                        JSON
+                      </a>
                     </div>
                   </div>
                 </div>

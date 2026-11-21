@@ -1,4 +1,4 @@
-import { AlertTriangle, Ban, ClipboardCheck, FileWarning, FlaskConical, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, Zap } from "lucide-react";
+import { AlertTriangle, Ban, ClipboardCheck, FileWarning, FlaskConical, GraduationCap, PauseCircle, Radio, Radiation, ShieldAlert, ShieldCheck, ShieldX, UserCog, Users, XCircle, Zap, Calendar, ChevronRight } from "lucide-react";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { DoseChart } from "@/components/dashboard/dose-chart";
 import { AlertsPanel } from "@/components/dashboard/alerts-panel";
@@ -9,6 +9,71 @@ import { sql } from "@/lib/db";
 import { buildAuthSummary, type WorkerAuthSummary } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
+
+// Panel de vencimientos próximos 90 días con datos reales
+function VencimientosPanel({
+  autorizaciones,
+  calibraciones,
+  compliance,
+  fuentes,
+}: {
+  autorizaciones: number;
+  calibraciones: number;
+  compliance: number;
+  fuentes: number;
+}) {
+  const items = [
+    { label: "Autorizaciones desempeño", count: autorizaciones, href: "/workers", warn: autorizaciones > 0 },
+    { label: "Calibraciones instrumentos", count: calibraciones, href: "/instruments", warn: calibraciones > 0 },
+    { label: "Requisitos normativos NS-06.0", count: compliance, href: "/compliance", warn: compliance > 0 },
+    { label: "Inventarios fuentes radiactivas", count: fuentes, href: "/sources", warn: fuentes > 0 },
+  ];
+  const total = autorizaciones + calibraciones + compliance + fuentes;
+
+  return (
+    <div className="rounded-lg border border-border bg-surface p-4">
+      <div className="mb-3 flex items-center gap-1.5">
+        <Calendar className="h-3.5 w-3.5 text-accent" strokeWidth={2} />
+        <h2 className="text-sm font-semibold">Vencimientos próximos 90 días</h2>
+        {total > 0 && (
+          <span className="ml-auto rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+            {total} pendiente{total !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1.5">
+        {items.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="flex items-center justify-between rounded-md px-2.5 py-1.5 text-xs hover:bg-muted/50 transition-colors"
+          >
+            <span className={item.warn && item.count > 0 ? "text-amber-700 font-medium" : "text-muted-foreground"}>
+              {item.label}
+            </span>
+            <div className="flex items-center gap-1">
+              <span
+                className={`font-semibold tabular-nums ${
+                  item.count === 0
+                    ? "text-green-600"
+                    : item.warn
+                    ? "text-amber-700"
+                    : "text-foreground"
+                }`}
+              >
+                {item.count}
+              </span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            </div>
+          </a>
+        ))}
+      </div>
+      {total === 0 && (
+        <p className="mt-2 text-center text-xs text-green-600 font-medium">✓ Sin vencimientos pendientes</p>
+      )}
+    </div>
+  );
+}
 
 export default async function Dashboard() {
   const now = new Date().toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short" });
@@ -163,6 +228,17 @@ export default async function Dashboard() {
     dosimetrosProblema = Number((dosRows[0] as any)?.problems ?? 0);
   } catch { /* tabla no creada */ }
 
+  // Vencimientos próximos 90 días — compliance
+  let vencimientosCompliance = 0;
+  try {
+    const { rows: compRows } = await sql`
+      SELECT COUNT(*)::int AS cnt FROM compliance_requirements
+      WHERE next_review_date <= CURRENT_DATE + INTERVAL '90 days'
+        AND status NOT IN ('ok')
+    `;
+    vencimientosCompliance = Number((compRows[0] as any)?.cnt ?? 0);
+  } catch { /* tabla no creada */ }
+
   // Alertas del sistema (motor de automatización §19)
   interface AlertItem {
     id: string; type: "danger" | "warning" | "info"; module: string;
@@ -306,12 +382,12 @@ export default async function Dashboard() {
           <h2 className="text-sm font-semibold mb-3">Dosis colectiva mensual</h2>
           <DoseChart data={doseData} />
         </div>
-        <div className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="text-sm font-semibold mb-3">Vencimientos próximos 90 días</h2>
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">Autorizaciones: {totalProximaVencer + totalVencida} · Licencias: 5 · Calibraciones: 18 · QA: 7</p>
-          </div>
-        </div>
+        <VencimientosPanel
+          autorizaciones={totalProximaVencer + totalVencida}
+          calibraciones={instrVencidos + instrPorVencer}
+          compliance={vencimientosCompliance}
+          fuentes={fuentesInventarioVencido}
+        />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
