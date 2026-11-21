@@ -145,3 +145,62 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true, inserted, skipped, errors });
 }
+
+export async function PATCH(request: Request) {
+  await ensureNameColumns();
+  const body = await request.json().catch(() => ({}));
+  const { rut, ...fields } = body as {
+    rut: string; name?: string; last_name_1?: string; last_name_2?: string; first_names?: string;
+    role?: string; service?: string; category?: string; status?: string; annual_dose?: number;
+    sex?: string; address?: string; phone?: string; email?: string; birth_date?: string;
+    estamento?: string; contract_type?: string; unit?: string;
+    course_pr_completed?: boolean; course_pr_date?: string;
+    authorization_number?: string; authorization_issue_date?: string; authorization_expiry_date?: string;
+    notes?: string;
+  };
+  if (!rut) return NextResponse.json({ error: "rut requerido" }, { status: 400 });
+  const name = fields.name ? composeWorkerName({
+    last_name_1: fields.last_name_1 ?? null, last_name_2: fields.last_name_2 ?? null,
+    first_names: fields.first_names ?? null, name: fields.name,
+  }) : undefined;
+  const { rows } = await sql`
+    UPDATE workers SET
+      name = COALESCE(${name ?? null}, name),
+      last_name_1 = COALESCE(${fields.last_name_1 ?? null}, last_name_1),
+      last_name_2 = COALESCE(${fields.last_name_2 ?? null}, last_name_2),
+      first_names = COALESCE(${fields.first_names ?? null}, first_names),
+      role = COALESCE(${fields.role ?? null}, role),
+      service = COALESCE(${fields.service ?? null}, service),
+      category = COALESCE(${fields.category ?? null}, category),
+      status = COALESCE(${fields.status ?? null}, status),
+      annual_dose = COALESCE(${fields.annual_dose ?? null}, annual_dose),
+      sex = COALESCE(${fields.sex ?? null}, sex),
+      address = COALESCE(${fields.address ?? null}, address),
+      phone = COALESCE(${fields.phone ?? null}, phone),
+      email = COALESCE(${fields.email ?? null}, email),
+      birth_date = COALESCE(${fields.birth_date ?? null}, birth_date),
+      estamento = COALESCE(${fields.estamento ?? null}, estamento),
+      contract_type = COALESCE(${fields.contract_type ?? null}, contract_type),
+      unit = COALESCE(${fields.unit ?? null}, unit),
+      course_pr_completed = COALESCE(${fields.course_pr_completed ?? null}, course_pr_completed),
+      course_pr_date = COALESCE(${fields.course_pr_date ?? null}, course_pr_date),
+      authorization_number = COALESCE(${fields.authorization_number ?? null}, authorization_number),
+      authorization_issue_date = COALESCE(${fields.authorization_issue_date ?? null}, authorization_issue_date),
+      authorization_expiry_date = COALESCE(${fields.authorization_expiry_date ?? null}, authorization_expiry_date),
+      notes = COALESCE(${fields.notes ?? null}, notes),
+      updated_at = NOW()
+    WHERE rut = ${rut}
+    RETURNING rut, name, role, service, category, status, annual_dose, authorization_expiry_date
+  `;
+  if (!rows[0]) return NextResponse.json({ error: "Trabajador no encontrado" }, { status: 404 });
+  return NextResponse.json({ worker: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const rut = searchParams.get("rut");
+  if (!rut) return NextResponse.json({ error: "rut requerido" }, { status: 400 });
+  // Soft delete: set status to inactive
+  await sql`UPDATE workers SET status = 'inactive', updated_at = NOW() WHERE rut = ${rut}`;
+  return NextResponse.json({ ok: true });
+}
