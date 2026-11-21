@@ -126,7 +126,7 @@ const stamp = new Date().toISOString().slice(0, 10);
 
 if (format === "csv") {
   const header = COLUMNS.map((c) => csvEscape(c.label)).join(";");
-  const lines = rows.map((r) => COLUMNS.map((c) => csvEscape(r[c.key])).join(";"));
+  const lines = (rows as Record<string, unknown>[]).map((r) => COLUMNS.map((c) => csvEscape(r[c.key])).join(";"));
   const csv = "\uFEFF" + [header, ...lines].join("\n");
   return new NextResponse(csv, {
     headers: {
@@ -137,7 +137,7 @@ if (format === "csv") {
 }
 
 if (format === "xlsx") {
-  const data = rows.map((r) => {
+  const data = (rows as Record<string, unknown>[]).map((r) => {
     const obj: Record<string, unknown> = {};
     for (const c of COLUMNS) obj[c.label] = r[c.key];
     return obj;
@@ -164,7 +164,7 @@ if (format === "pdf") {
   };
   doc.text("Registro de Contaminación — Reporte", 40, 30);
   const head = [COLUMNS.map((c) => c.label)];
-  const body = rows.map((r) => COLUMNS.map((c) => (r[c.key] ?? "").toString()));
+  const body = (rows as Record<string, unknown>[]).map((r) => COLUMNS.map((c) => String(r[c.key] ?? "")));
   doc.autoTable({
     head,
     body,

@@ -14,10 +14,10 @@
     "jsx": "preserve",
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true

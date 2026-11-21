@@ -693,5 +693,149 @@ ON CONFLICT (radionuclido) DO NOTHING;
     `;
   }
   
+  // --- Tabla dosimetry_quarterly (creada aqui para garantizar que exista
+  // antes del primer uso del modulo de dosimetria, aunque los endpoints
+  // /api/dosimetry/manual e import-quarterly tambien la crean con IF NOT EXISTS)
+  await sql`
+    CREATE TABLE IF NOT EXISTS dosimetry_quarterly (
+      id SERIAL PRIMARY KEY,
+      worker_rut TEXT NOT NULL,
+      worker_name TEXT,
+      institucion TEXT,
+      departamento TEXT,
+      year INT NOT NULL,
+      quarter INT NOT NULL,
+      period_label TEXT NOT NULL,
+      dose_body NUMERIC DEFAULT 0,
+      dose_lens NUMERIC DEFAULT 0,
+      dose_skin NUMERIC DEFAULT 0,
+      accum_year_body NUMERIC DEFAULT 0,
+      accum_12m_body NUMERIC DEFAULT 0,
+      accum_60m_body NUMERIC DEFAULT 0,
+      accum_60m_lens NUMERIC DEFAULT 0,
+      accum_60m_skin NUMERIC DEFAULT 0,
+      level TEXT,
+      updated_at TIMESTAMP DEFAULT now(),
+      UNIQUE(worker_rut, year, quarter)
+    )
+  `;
+
+  // --- Modulo Incidentes ---------------------------------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS incidents (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      incident_date DATE NOT NULL,
+      service TEXT,
+      severity TEXT NOT NULL DEFAULT 'low',
+      status TEXT NOT NULL DEFAULT 'open',
+      reported_by TEXT,
+      assigned_to TEXT,
+      root_cause TEXT,
+      corrective_action TEXT,
+      closed_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_incidents_date ON incidents(incident_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity)`;
+
+  // --- Modulo Residuos Radiactivos ----------------------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS waste_records (
+      id SERIAL PRIMARY KEY,
+      waste_date DATE NOT NULL,
+      waste_year INTEGER NOT NULL,
+      waste_month INTEGER NOT NULL,
+      radionuclido TEXT NOT NULL DEFAULT 'TC-99M',
+      descripcion TEXT NOT NULL,
+      cantidad_mci NUMERIC,
+      cantidad_gbq NUMERIC,
+      tipo_residuo TEXT NOT NULL DEFAULT 'solido',
+      contenedor TEXT,
+      ubicacion TEXT,
+      estado TEXT NOT NULL DEFAULT 'almacenado',
+      decaimiento_previsto DATE,
+      eliminado_at DATE,
+      responsable TEXT,
+      observaciones TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_date ON waste_records(waste_date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_radionuclido ON waste_records(radionuclido)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_waste_estado ON waste_records(estado)`;
+
+  // --- Modulo Equipos -------------------------------------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS equipment (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      model TEXT,
+      serial_number TEXT,
+      service TEXT,
+      room TEXT,
+      status TEXT NOT NULL DEFAULT 'operational',
+      last_qa_date DATE,
+      next_qa_date DATE,
+      qa_frequency_months INTEGER DEFAULT 3,
+      last_maintenance_date DATE,
+      next_maintenance_date DATE,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment(status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_equipment_service ON equipment(service)`;
+
+  const { rows: equipmentCount } = await sql`SELECT COUNT(*)::int AS count FROM equipment`;
+  if ((equipmentCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO equipment (name, type, model, service, room, status, last_qa_date, next_qa_date) VALUES
+      ('GE Discovery NM/CT 670', 'Gamma cámara SPECT/CT', 'Discovery NM/CT 670', 'Medicina Nuclear', 'Sala Gamma', 'operational', '2026-10-01', '2027-01-01'),
+      ('Captus 3000', 'Tiroidémetro', 'Captus 3000W', 'Medicina Nuclear', 'Sala Tiroides', 'operational', '2026-09-15', '2026-12-15'),
+      ('Atomlab 500', 'Calibrador de dosis', 'Atomlab 500', 'Medicina Nuclear', 'Radiofarmacia', 'operational', '2026-11-01', '2027-02-01')
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
+  // --- Modulo Instrumentos --------------------------------------------------
+  await sql`
+    CREATE TABLE IF NOT EXISTS instruments (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      serial_number TEXT,
+      model TEXT,
+      last_calibration_date DATE,
+      next_calibration_date DATE,
+      calibration_frequency_months INTEGER DEFAULT 12,
+      status TEXT NOT NULL DEFAULT 'ok',
+      certificate_number TEXT,
+      notes TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS idx_instruments_status ON instruments(status)`;
+
+  const { rows: instrCount } = await sql`SELECT COUNT(*)::int AS count FROM instruments`;
+  if ((instrCount[0]?.count ?? 0) === 0) {
+    await sql`
+      INSERT INTO instruments (name, type, serial_number, last_calibration_date, next_calibration_date, status) VALUES
+      ('Cámara de ionización Fluke 451P', 'Monitor de radiación ambiente', 'SN-88213', '2026-02-10', '2027-02-10', 'ok'),
+      ('Contador Geiger-Müller RadEye', 'Monitor de contaminación superficial', 'SN-44120', '2025-11-05', '2026-11-05', 'ok'),
+      ('Sonda de contaminación superficial', 'Detector de contaminación', 'SN-90871', '2025-08-01', '2026-08-01', 'expiring'),
+      ('Dosímetro de área TLD', 'Dosímetro de área', 'SN-12903', '2025-05-15', '2026-05-15', 'expired')
+      ON CONFLICT DO NOTHING
+    `;
+  }
+
   return NextResponse.json({ ok: true });
 }
