@@ -31,15 +31,18 @@ export async function GET(req: NextRequest) {
     `;
     report.poe = workers[0];
 
-    // Top dose workers
+    // Top dose workers — compatible con dosimetry_readings (nueva tabla)
+    const yearStr = String(year);
     const { rows: topDose } = await sql`
-      SELECT w.name, w.rut, w.role,
-        ROUND(SUM(COALESCE(dr.dose_whole_body_msv, 0))::numeric, 2) AS heff_msv
-      FROM workers w
-      JOIN dosimetry_records dr ON dr.worker_id = w.id AND dr.year = ${year}
-      WHERE w.status <> 'inactive'
-      GROUP BY w.name, w.rut, w.role
-      HAVING SUM(COALESCE(dr.dose_whole_body_msv, 0)) > 0
+      SELECT d.worker_name AS name, d.worker_rut AS rut, w.role,
+        ROUND(SUM(d.dose)::numeric, 3) AS heff_msv
+      FROM dosimetry_readings d
+      LEFT JOIN workers w ON w.rut = d.worker_rut
+      WHERE (d.period LIKE ${yearStr + '-%'} OR d.period LIKE ${'%/' + yearStr} OR d.period LIKE ${yearStr + '%'})
+        AND (d.body_region = 'whole_body' OR d.body_region IS NULL)
+        AND d.status NOT IN ('lost', 'not_worn', 'damaged')
+      GROUP BY d.worker_name, d.worker_rut, w.role
+      HAVING SUM(d.dose) > 0
       ORDER BY heff_msv DESC
       LIMIT 10
     `;
@@ -49,18 +52,25 @@ export async function GET(req: NextRequest) {
     report.top_dose_workers = [];
   }
 
-  // 3. DOSIMETRÍA RESUMEN ANUAL
+  // 3. DOSIMETRÍA RESUMEN ANUAL — dosimetry_readings (nueva tabla)
   try {
+    const yearStr = String(year);
     const { rows: doseStats } = await sql`
       SELECT
-        COUNT(DISTINCT worker_id) AS workers_monitored,
-        ROUND(AVG(dose_whole_body_msv)::numeric, 3) AS avg_heff_msv,
-        ROUND(MAX(dose_whole_body_msv)::numeric, 3) AS max_heff_msv,
-        COUNT(*) FILTER (WHERE dose_whole_body_msv >= 20) AS exceeded_annual_limit,
-        COUNT(*) FILTER (WHERE dose_whole_body_msv >= 15 AND dose_whole_body_msv < 20) AS investigation_level,
-        COUNT(*) AS total_records
-      FROM dosimetry_records
-      WHERE year = ${year}
+        COUNT(DISTINCT worker_name) AS workers_monitored,
+        ROUND(AVG(d.total_dose)::numeric, 3) AS avg_heff_msv,
+        ROUND(MAX(d.total_dose)::numeric, 3) AS max_heff_msv,
+        COUNT(*) FILTER (WHERE d.total_dose >= 50) AS exceeded_cat_a,
+        COUNT(*) FILTER (WHERE d.total_dose >= 15 AND d.total_dose < 50) AS investigation_level,
+        COUNT(*) AS workers_total
+      FROM (
+        SELECT worker_name, SUM(dose) AS total_dose
+        FROM dosimetry_readings
+        WHERE (period LIKE ${yearStr + '-%'} OR period LIKE ${'%/' + yearStr} OR period LIKE ${yearStr + '%'})
+          AND (body_region = 'whole_body' OR body_region IS NULL)
+          AND status NOT IN ('lost', 'not_worn', 'damaged')
+        GROUP BY worker_name
+      ) d
     `;
     report.dosimetry = doseStats[0];
   } catch { report.dosimetry = null; }
