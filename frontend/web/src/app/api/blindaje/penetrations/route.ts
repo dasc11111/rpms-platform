@@ -63,3 +63,44 @@ await logBlindajeAudit(
 
 return NextResponse.json({ ok: true, penetration: penetrationRow });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajePenetrationsTable();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_penetrations SET
+      barrier_id = COALESCE(${body.barrier_id ?? null}, barrier_id),
+      code = COALESCE(${body.code ?? null}, code),
+      name = COALESCE(${body.name ?? null}, name),
+      location = COALESCE(${body.location ?? null}, location),
+      penetration_type = COALESCE(${body.penetration_type ?? null}, penetration_type),
+      diameter_cm = COALESCE(${body.diameter_cm ?? null}::numeric, diameter_cm),
+      width_cm = COALESCE(${body.width_cm ?? null}::numeric, width_cm),
+      height_cm = COALESCE(${body.height_cm ?? null}::numeric, height_cm),
+      fill_material = COALESCE(${body.fill_material ?? null}, fill_material),
+      offset_cm = COALESCE(${body.offset_cm ?? null}::numeric, offset_cm),
+      result_value = COALESCE(${body.result_value ?? null}::numeric, result_value),
+      result_unit = COALESCE(${body.result_unit ?? null}, result_unit),
+      result_status = COALESCE(${body.result_status ?? null}, result_status),
+      source_document = COALESCE(${body.source_document ?? null}, source_document),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Penetración no encontrada." }, { status: 404 });
+  await logBlindajeAudit("blindaje_penetrations", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de penetración", rows[0].project_id);
+  return NextResponse.json({ ok: true, penetration: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajePenetrationsTable();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_penetrations WHERE id = ${id} RETURNING id, project_id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Penetración no encontrada." }, { status: 404 });
+  await logBlindajeAudit("blindaje_penetrations", id, null, null, null, null, "Eliminación de penetración", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

@@ -56,3 +56,42 @@ export async function POST(req: NextRequest) {
     })),
   });
 }
+
+export async function PATCH(req: NextRequest) {
+  await ensureTransportTables();
+  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const payload = await verifySession(token);
+  if (!payload || (payload.role !== "super_admin" && payload.role !== "admin")) {
+    return NextResponse.json({ error: "Acceso restringido" }, { status: 403 });
+  }
+  const body = await req.json().catch(() => ({}));
+  const code = String(body.code || "").trim().toUpperCase();
+  if (!code) return NextResponse.json({ error: "code es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE transport_radionuclides SET
+      label = COALESCE(${body.label ?? null}, label),
+      activity_label = COALESCE(${body.activityLabel ?? null}, activity_label),
+      allows_multiple = COALESCE(${body.allowsMultiple != null ? Boolean(body.allowsMultiple) : null}::boolean, allows_multiple)
+    WHERE code = ${code}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ error: "Radionúclido no encontrado." }, { status: 404 });
+  await logTransportAudit("update_radionuclide", payload.email || null, { code });
+  return NextResponse.json({ ok: true, radionuclide: rows[0] });
+}
+
+export async function DELETE(req: NextRequest) {
+  await ensureTransportTables();
+  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const payload = await verifySession(token);
+  if (!payload || (payload.role !== "super_admin" && payload.role !== "admin")) {
+    return NextResponse.json({ error: "Acceso restringido" }, { status: 403 });
+  }
+  const { searchParams } = new URL(req.url);
+  const code = String(searchParams.get("code") || "").trim().toUpperCase();
+  if (!code) return NextResponse.json({ error: "code es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM transport_radionuclides WHERE code = ${code} RETURNING code, label`;
+  if (!rows[0]) return NextResponse.json({ error: "Radionúclido no encontrado." }, { status: 404 });
+  await logTransportAudit("delete_radionuclide", payload.email || null, { code });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

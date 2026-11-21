@@ -56,3 +56,44 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ criterio: rows[0] }, { status: 201 });
   }
+
+import { NextRequest } from "next/server";
+
+export async function PATCH(request: NextRequest) {
+  await ensureWasteExpertSchema();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE waste_contamination_criteria SET
+      jurisdiccion = COALESCE(${body.jurisdiccion ?? null}, jurisdiccion),
+      documento_fuente = COALESCE(${body.documento_fuente ?? null}, documento_fuente),
+      version = COALESCE(${body.version ?? null}, version),
+      fecha_vigencia_desde = COALESCE(${body.fecha_vigencia_desde ?? null}::date, fecha_vigencia_desde),
+      fecha_vigencia_hasta = COALESCE(${body.fecha_vigencia_hasta ?? null}::date, fecha_vigencia_hasta),
+      clase = COALESCE(${body.clase ?? null}, clase),
+      radionuclide_code = COALESCE(${body.radionuclide_code ?? null}, radionuclide_code),
+      tipo_superficie = COALESCE(${body.tipo_superficie ?? null}, tipo_superficie),
+      tipo_criterio = COALESCE(${body.tipo_criterio ?? null}, tipo_criterio),
+      parametro = COALESCE(${body.parametro ?? null}, parametro),
+      valor = COALESCE(${body.valor ?? null}::numeric, valor),
+      unidad = COALESCE(${body.unidad ?? null}, unidad),
+      condicion_aplicacion = COALESCE(${body.condicion_aplicacion ?? null}, condicion_aplicacion),
+      active = COALESCE(${body.active ?? null}::boolean, active),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ error: "Criterio no encontrado." }, { status: 404 });
+  return NextResponse.json({ criterio: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureWasteExpertSchema();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM waste_contamination_criteria WHERE id = ${id} RETURNING id, tipo_superficie, documento_fuente`;
+  if (!rows[0]) return NextResponse.json({ error: "Criterio no encontrado." }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}

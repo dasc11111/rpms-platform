@@ -62,3 +62,41 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok: true, pir });
   }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_pir SET
+      code = COALESCE(${body.code ?? null}, code),
+      name = COALESCE(${body.name ?? null}, name),
+      description = COALESCE(${body.description ?? null}, description),
+      coordinates = COALESCE(${body.coordinates ?? null}, coordinates),
+      distance_m = COALESCE(${body.distance_m ?? null}::numeric, distance_m),
+      area_type = COALESCE(${body.area_type ?? null}, area_type),
+      occupancy_type = COALESCE(${body.occupancy_type ?? null}, occupancy_type),
+      occupancy_factor = COALESCE(${body.occupancy_factor ?? null}::numeric, occupancy_factor),
+      design_criterion_value = COALESCE(${body.design_criterion_value ?? null}::numeric, design_criterion_value),
+      design_criterion_unit = COALESCE(${body.design_criterion_unit ?? null}, design_criterion_unit),
+      design_criterion_source = COALESCE(${body.design_criterion_source ?? null}, design_criterion_source),
+      result_status = COALESCE(${body.result_status ?? null}, result_status)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Punto de interés no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_pir", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de punto de interés", rows[0].project_id);
+  return NextResponse.json({ ok: true, pir: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_pir WHERE id = ${id} RETURNING id, project_id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Punto de interés no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_pir", id, null, null, null, null, "Eliminación de punto de interés", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

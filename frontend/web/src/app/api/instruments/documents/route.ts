@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
@@ -37,4 +38,34 @@ const uploaded: Record<string, unknown>[] = [];
   }
 
 return NextResponse.json({ documents: uploaded });
+}
+
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const ownerType = String(searchParams.get("ownerType") || "");
+  const ownerId = Number(searchParams.get("ownerId") || 0);
+  if (!VALID_OWNER_TYPES.includes(ownerType) || !ownerId) {
+    return NextResponse.json({ error: "invalid_owner" }, { status: 400 });
+  }
+  const { rows } = await sql`
+    SELECT id, owner_type, owner_id, category, original_name, blob_url, size_bytes, mime_type, uploaded_by, uploaded_at
+    FROM instrument_documents
+    WHERE owner_type = ${ownerType} AND owner_id = ${ownerId}
+    ORDER BY uploaded_at DESC
+  `;
+  return NextResponse.json({ documents: rows });
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`SELECT id, blob_url FROM instrument_documents WHERE id = ${id}`;
+  if (!rows[0]) return NextResponse.json({ error: "Documento no encontrado." }, { status: 404 });
+  if (rows[0].blob_url) {
+    try { await del(rows[0].blob_url); } catch { /* blob may not exist */ }
+  }
+  await sql`DELETE FROM instrument_documents WHERE id = ${id}`;
+  return NextResponse.json({ ok: true, deleted: { id } });
 }

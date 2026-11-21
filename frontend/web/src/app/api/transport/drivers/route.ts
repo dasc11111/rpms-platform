@@ -15,3 +15,45 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ ok: true, drivers: rows });
 }
+
+import { NextRequest } from "next/server";
+
+export async function POST(request: NextRequest) {
+  await ensureTransportTables();
+  const body = await request.json();
+  const name = String(body.name || "").trim();
+  if (!name) return NextResponse.json({ ok: false, error: "El nombre es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    INSERT INTO transport_drivers (name, company)
+    VALUES (${name}, ${body.company || null})
+    ON CONFLICT (name) DO UPDATE SET company = EXCLUDED.company
+    RETURNING *
+  `;
+  return NextResponse.json({ ok: true, driver: rows[0] });
+}
+
+export async function PATCH(request: NextRequest) {
+  await ensureTransportTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE transport_drivers SET
+      name = COALESCE(${body.name ?? null}, name),
+      company = COALESCE(${body.company ?? null}, company)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Conductor no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, driver: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureTransportTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM transport_drivers WHERE id = ${id} RETURNING id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Conductor no encontrado." }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

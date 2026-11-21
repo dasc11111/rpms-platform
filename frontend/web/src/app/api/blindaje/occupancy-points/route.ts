@@ -64,3 +64,41 @@ await logBlindajeAudit(
 
 return NextResponse.json({ ok: true, occupancy_point: occupancyPointRow });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeOccupancyPointsTable();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_occupancy_points SET
+      barrier_id = COALESCE(${body.barrier_id ?? null}, barrier_id),
+      code = COALESCE(${body.code ?? null}, code),
+      name = COALESCE(${body.name ?? null}, name),
+      location = COALESCE(${body.location ?? null}, location),
+      occupancy_type = COALESCE(${body.occupancy_type ?? null}, occupancy_type),
+      occupancy_factor_t = COALESCE(${body.occupancy_factor_t ?? null}::numeric, occupancy_factor_t),
+      distance_m = COALESCE(${body.distance_m ?? null}::numeric, distance_m),
+      beam_component = COALESCE(${body.beam_component ?? null}, beam_component),
+      result_value = COALESCE(${body.result_value ?? null}::numeric, result_value),
+      result_unit = COALESCE(${body.result_unit ?? null}, result_unit),
+      result_status = COALESCE(${body.result_status ?? null}, result_status),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Punto de ocupación no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_occupancy_points", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de punto de ocupación", rows[0].project_id);
+  return NextResponse.json({ ok: true, point: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeOccupancyPointsTable();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_occupancy_points WHERE id = ${id} RETURNING id, project_id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Punto de ocupación no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_occupancy_points", id, null, null, null, null, "Eliminación de punto de ocupación", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

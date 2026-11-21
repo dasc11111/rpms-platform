@@ -56,3 +56,33 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok: true, equipment });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_equipment SET
+      manufacturer = COALESCE(${body.manufacturer ?? null}, manufacturer),
+      model = COALESCE(${body.model ?? null}, model),
+      equipment_type = COALESCE(${body.equipment_type ?? null}, equipment_type),
+      parameters = COALESCE(${body.parameters ? JSON.stringify(body.parameters) : null}::jsonb, parameters)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Equipo no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_equipment", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de equipo", rows[0].project_id);
+  return NextResponse.json({ ok: true, equipment: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_equipment WHERE id = ${id} RETURNING id, project_id, model`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Equipo no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_equipment", id, null, null, null, null, "Eliminación de equipo", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

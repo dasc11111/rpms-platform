@@ -53,3 +53,36 @@ await logBlindajeAudit(
 
 return NextResponse.json({ ok: true, material });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_materials SET
+      name = COALESCE(${body.name ?? null}, name),
+      density_g_cm3 = COALESCE(${body.density_g_cm3 ?? null}::numeric, density_g_cm3),
+      material_type = COALESCE(${body.material_type ?? null}, material_type),
+      hvl_primary_mm = COALESCE(${body.hvl_primary_mm ?? null}::numeric, hvl_primary_mm),
+      hvl_scatter_mm = COALESCE(${body.hvl_scatter_mm ?? null}::numeric, hvl_scatter_mm),
+      reference = COALESCE(${body.reference ?? null}, reference),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Material no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_materials", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de material", null);
+  return NextResponse.json({ ok: true, material: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_materials WHERE id = ${id} RETURNING id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Material no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_materials", id, null, null, null, null, "Eliminación de material", null);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

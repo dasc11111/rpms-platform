@@ -54,3 +54,31 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ ok: true, workload });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeTables();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_workload SET
+      input_mode = COALESCE(${body.input_mode ?? null}, input_mode),
+      data = COALESCE(${body.data ? JSON.stringify(body.data) : null}::jsonb, data)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Carga de trabajo no encontrada." }, { status: 404 });
+  await logBlindajeAudit("blindaje_workload", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de carga de trabajo", rows[0].project_id);
+  return NextResponse.json({ ok: true, workload: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeTables();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_workload WHERE id = ${id} RETURNING id, project_id, input_mode`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Carga de trabajo no encontrada." }, { status: 404 });
+  await logBlindajeAudit("blindaje_workload", id, null, null, null, null, "Eliminación de carga de trabajo", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

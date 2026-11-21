@@ -63,3 +63,43 @@ await logBlindajeAudit(
 
 return NextResponse.json({ ok: true, maze: mazeRow });
 }
+
+export async function PATCH(request: NextRequest) {
+  await ensureBlindajeMazesTable();
+  const body = await request.json();
+  const id = Number(body.id);
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`
+    UPDATE blindaje_mazes SET
+      barrier_id = COALESCE(${body.barrier_id ?? null}, barrier_id),
+      code = COALESCE(${body.code ?? null}, code),
+      name = COALESCE(${body.name ?? null}, name),
+      location = COALESCE(${body.location ?? null}, location),
+      leg_count = COALESCE(${body.leg_count ?? null}::int, leg_count),
+      last_leg_length_m = COALESCE(${body.last_leg_length_m ?? null}::numeric, last_leg_length_m),
+      maze_width_cm = COALESCE(${body.maze_width_cm ?? null}::numeric, maze_width_cm),
+      maze_height_cm = COALESCE(${body.maze_height_cm ?? null}::numeric, maze_height_cm),
+      wall_material = COALESCE(${body.wall_material ?? null}, wall_material),
+      result_value = COALESCE(${body.result_value ?? null}::numeric, result_value),
+      result_unit = COALESCE(${body.result_unit ?? null}, result_unit),
+      result_status = COALESCE(${body.result_status ?? null}, result_status),
+      source_document = COALESCE(${body.source_document ?? null}, source_document),
+      notes = COALESCE(${body.notes ?? null}, notes)
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Laberinto no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_mazes", id, null, null, JSON.stringify(rows[0]), body.user_name || null, "Actualización de laberinto", rows[0].project_id);
+  return NextResponse.json({ ok: true, maze: rows[0] });
+}
+
+export async function DELETE(request: NextRequest) {
+  await ensureBlindajeMazesTable();
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  if (!id) return NextResponse.json({ ok: false, error: "id es obligatorio." }, { status: 400 });
+  const { rows } = await sql`DELETE FROM blindaje_mazes WHERE id = ${id} RETURNING id, project_id, name`;
+  if (!rows[0]) return NextResponse.json({ ok: false, error: "Laberinto no encontrado." }, { status: 404 });
+  await logBlindajeAudit("blindaje_mazes", id, null, null, null, null, "Eliminación de laberinto", rows[0].project_id);
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}
