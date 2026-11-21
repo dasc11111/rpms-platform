@@ -254,6 +254,29 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #11: instrument operational check failures (NS-06.0 §8.3)
+  try {
+    const { rows: instrFail } = await sql`
+      SELECT DISTINCT ON (instrument_id) instrument_name, instrument_code, result, check_date
+      FROM instrument_operational_checks
+      WHERE result = 'fail'
+        AND check_date >= now() - interval '7 days'
+      ORDER BY instrument_id, check_date DESC
+      LIMIT 5
+    `;
+    for (const ins of instrFail as { instrument_name: string; instrument_code: string; result: string; check_date: string }[]) {
+      alerts.push({
+        id: `instr-fail-${ins.instrument_name}`,
+        type: "danger",
+        module: "Instrumentos",
+        title: `Verificación fallida: ${ins.instrument_name}${ins.instrument_code ? ` (${ins.instrument_code})` : ""}`,
+        detail: `Desviación > ±10% — instrumento fuera de servicio hasta mantención. Última verif.: ${new Date(ins.check_date).toLocaleDateString("es-CL")}`,
+        regulation: "NS-06.0 §8.3 — CCHEN",
+        action: "/instruments/operational-check",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);

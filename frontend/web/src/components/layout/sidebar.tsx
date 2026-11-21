@@ -41,6 +41,7 @@ const NAV = [
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/instruments", label: "Instrumentos", icon: Wrench },
+  { href: "/instruments/operational-check", label: "Verif. Operacional", icon: CheckSquare },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
 
   // ── Radioterapia / Linac ───────────────────────────────
