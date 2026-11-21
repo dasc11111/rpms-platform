@@ -70,6 +70,7 @@ const NAV = [
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
+  { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
 
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
