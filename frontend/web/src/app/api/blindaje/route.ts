@@ -39,3 +39,43 @@ const project = rows[0];
 
 return NextResponse.json({ ok: true, project });
 }
+
+export async function PATCH(request: Request) {
+  await ensureBlindajeTables();
+  const body = await request.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE blindaje_projects SET
+      name              = COALESCE(${body.name ?? null}, name),
+      institution       = COALESCE(${body.institution ?? null}, institution),
+      service           = COALESCE(${body.service ?? null}, service),
+      unit              = COALESCE(${body.unit ?? null}, unit),
+      address           = COALESCE(${body.address ?? null}, address),
+      city              = COALESCE(${body.city ?? null}, city),
+      responsible       = COALESCE(${body.responsible ?? null}, responsible),
+      opr_name          = COALESCE(${body.opr_name ?? null}, opr_name),
+      medical_physicist = COALESCE(${body.medical_physicist ?? null}, medical_physicist),
+      facility_type     = COALESCE(${body.facility_type ?? null}, facility_type),
+      project_number    = COALESCE(${body.project_number ?? null}, project_number),
+      version           = COALESCE(${body.version ?? null}, version),
+      updated_at        = now()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows.length) return NextResponse.json({ ok: false, error: "Proyecto no encontrado" }, { status: 404 });
+  await logBlindajeAudit("blindaje_projects", id, null, null, JSON.stringify(rows[0]), body.updated_by || null, "Actualización de proyecto");
+  return NextResponse.json({ ok: true, project: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  await ensureBlindajeTables();
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ ok: false, error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`DELETE FROM blindaje_projects WHERE id = ${id} RETURNING id, name`;
+  if (!rows.length) return NextResponse.json({ ok: false, error: "Proyecto no encontrado" }, { status: 404 });
+  return NextResponse.json({ ok: true, deleted: rows[0] });
+}

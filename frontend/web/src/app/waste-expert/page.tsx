@@ -1,34 +1,52 @@
-import { sql } from "@/lib/db";
-import { ensureWasteExpertSchema } from "@/lib/waste-expert-db";
-import { WasteExpertDashboard, type WasteItemRow, type RadionuclideOption } from "@/components/waste-expert/waste-expert-dashboard";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import {
+  WasteExpertDashboard,
+  type WasteItemRow,
+  type RadionuclideOption,
+} from "@/components/waste-expert/waste-expert-dashboard";
 
-// Fase D - Sistema Experto de Gestion de Desechos Radiactivos: dashboard y
-// listado de fichas individuales (Seccion 40 del Prompt Maestro Definitivo).
-// No modifica ni reemplaza el modulo anterior en /waste-management.
-export default async function WasteExpertPage() {
-  await ensureWasteExpertSchema();
+export default function WasteExpertPage() {
+  const [items, setItems] = useState<WasteItemRow[]>([]);
+  const [radionuclides, setRadionuclides] = useState<RadionuclideOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const { rows: items } = await sql`
-SELECT wi.*, rn.half_life_days, rn.name AS radionuclide_name, rn.symbol AS radionuclide_symbol
-FROM waste_items wi
-LEFT JOIN radionuclides rn ON rn.code = wi.radionuclide_code
-ORDER BY wi.created_at DESC
-`;
+  useEffect(() => {
+    async function load() {
+      try {
+        const [itemsRes, rnRes] = await Promise.all([
+          fetch("/api/waste-items"),
+          fetch("/api/radionuclides?active=true"),
+        ]);
+        const itemsData = await itemsRes.json();
+        const rnData = await rnRes.json();
+        setItems(itemsData.items ?? []);
+        setRadionuclides(rnData.rows ?? []);
+      } catch {
+        setError("Error al cargar datos");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
-const { rows: radionuclides } = await sql`
-SELECT code, name, symbol, half_life_days FROM radionuclides WHERE active = true ORDER BY sort_order, code
-`;
+  if (loading)
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
 
-const serializedItems = items.map((row: Record<string, unknown>) => ({
-  ...row,
-  fecha_hora_generacion: row.fecha_hora_generacion ? new Date(row.fecha_hora_generacion).toISOString() : null,
-  fecha_teorica_cumplimiento: row.fecha_teorica_cumplimiento ? new Date(row.fecha_teorica_cumplimiento).toISOString() : null,
-  fecha_verificacion: row.fecha_verificacion ? new Date(row.fecha_verificacion).toISOString() : null,
-  fecha_liberacion_autorizada: row.fecha_liberacion_autorizada ? new Date(row.fecha_liberacion_autorizada).toISOString() : null,
-  created_at: row.created_at ? new Date(row.created_at).toISOString() : null,
-}));
+  if (error)
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-destructive">
+        {error}
+      </div>
+    );
 
-return <WasteExpertDashboard items={serializedItems as WasteItemRow[]} radionuclides={radionuclides as RadionuclideOption[]} />;
+  return <WasteExpertDashboard items={items} radionuclides={radionuclides} />;
 }
