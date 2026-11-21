@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { put } from "@vercel/blob";
 import { sql } from "@/lib/db";
 import { ensureLinacTables, logLinacAudit } from "@/lib/linac";
 import {
-import { NextRequest } from "next/server";
 ensureQcExtendedTables,
 computeDeviationPct,
 computeSemaphore,
