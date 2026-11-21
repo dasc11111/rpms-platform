@@ -179,7 +179,36 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
-  // 8. Zonas clasificadas con monitoreo vencido
+  // 8. Trabajadores con dosis anuales ≥ 15 mSv (nivel investigación DS 3/1985)
+  try {
+    const currentYear = new Date().getFullYear();
+    const { rows: doseRows } = await sql`
+      SELECT
+        w.name,
+        ROUND(SUM(COALESCE(dr.dose_whole_body_msv, 0))::numeric, 2) AS heff_msv
+      FROM workers w
+      JOIN dosimetry_records dr ON dr.worker_id = w.id AND dr.year = ${currentYear}
+      WHERE w.status <> 'inactive'
+      GROUP BY w.name
+      HAVING SUM(COALESCE(dr.dose_whole_body_msv, 0)) >= 15
+      ORDER BY heff_msv DESC
+      LIMIT 5
+    `;
+    for (const d of doseRows as { name: string; heff_msv: string }[]) {
+      const heff = parseFloat(d.heff_msv);
+      alerts.push({
+        id: `dose-${d.name}`,
+        type: heff >= 20 ? "danger" : "warning",
+        module: "Dosimetría",
+        title: `${heff >= 20 ? "Límite superado" : "Nivel investigación"}: ${d.name}`,
+        detail: `Heff ${currentYear}: ${heff} mSv / 20 mSv límite anual`,
+        regulation: "DS 3/1985 Art. 7 — CCHEN",
+        action: "/dosimetry/worker-history",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
+  // 9. Zonas clasificadas con monitoreo vencido
   try {
     const { rows: zoneRows } = await sql`
       SELECT name, zone_type, next_survey_date::text
