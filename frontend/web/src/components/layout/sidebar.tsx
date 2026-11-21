@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Tag, Activity, AlertTriangle, Award, BarChart3, Bell, Biohazard, CalendarClock, ClipboardList,
+  Tag, Activity, AlertTriangle, Award, BarChart3, Bell, Biohazard, CalendarClock, ClipboardList, Search,
   FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/alerts", label: "Alertas del Sistema", icon: Bell },
   { href: "/expiries", label: "Vencimientos", icon: CalendarClock },
+  { href: "/search", label: "Búsqueda Global", icon: Search },
   { href: "/workers", label: "Trabajadores", icon: Users },
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
