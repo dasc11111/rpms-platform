@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Tag, Activity, AlertTriangle, BarChart3, Biohazard, ClipboardList,
-  FileText, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
+  FileText, Flame, FlaskConical, GraduationCap, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen,
 } from "lucide-react";
@@ -55,6 +55,7 @@ const NAV = [
   { href: "/transport", label: "Transporte Radiactivo", icon: Truck },
 
   // ── Gestión Normativa ─────────────────────────────────
+  { href: "/emergency", label: "Plan de Contingencia", icon: Flame },
   { href: "/incidents", label: "Incidentes", icon: AlertTriangle },
   { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
