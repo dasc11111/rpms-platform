@@ -307,6 +307,31 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #13: personas en zona radiológica > 8h sin registrar egreso (posible olvido)
+  try {
+    const { rows: longStay } = await sql`
+      SELECT person_name, zone_name, zone_type, entry_datetime,
+             EXTRACT(EPOCH FROM (NOW() - entry_datetime))/3600 AS hours_inside
+      FROM zone_access_log
+      WHERE exit_datetime IS NULL
+        AND entry_datetime < NOW() - INTERVAL '8 hours'
+      ORDER BY entry_datetime ASC
+      LIMIT 5
+    `;
+    for (const p of longStay as { person_name: string; zone_name: string; zone_type: string; entry_datetime: string; hours_inside: number }[]) {
+      const h = Math.round(p.hours_inside);
+      alerts.push({
+        id: `zone-stay-${p.person_name}-${p.entry_datetime}`,
+        type: p.zone_type === "controlada" ? "danger" : "warning",
+        module: "Control de Acceso",
+        title: `Persona en zona sin egreso: ${p.person_name}`,
+        detail: `${p.zone_name} (${p.zone_type}) · ${h}h desde ingreso · Verificar egreso o exposición acumulada`,
+        regulation: "DS 3/1985 MINSAL Art.15 / NS-06.0 CCHEN",
+        action: "/zone-access",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
