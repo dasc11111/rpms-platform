@@ -1,9 +1,7 @@
-import { ensureLinacTables } from "@/lib/linac";
+"use client";
+
 import { LinacApp } from "@/components/linac/linac-app";
 
-export const dynamic = "force-dynamic";
-
-export default async function LinacPage() {
-  await ensureLinacTables();
+export default function LinacPage() {
   return <LinacApp />;
 }

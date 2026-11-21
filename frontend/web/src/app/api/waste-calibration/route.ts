@@ -69,3 +69,38 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ calibration: rows[0] }, { status: 201 });
   }
+
+export async function PATCH(request: Request) {
+  await ensureWasteExpertSchema();
+  const body = await request.json().catch(() => ({}));
+  const id = body.id ? Number(body.id) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`
+    UPDATE waste_calibration_matrix SET
+      eficiencia             = COALESCE(${body.eficiencia ?? null}, eficiencia),
+      factor_calibracion     = COALESCE(${body.factor_calibracion ?? null}, factor_calibracion),
+      area_efectiva_cm2      = COALESCE(${body.area_efectiva_cm2 ?? null}, area_efectiva_cm2),
+      fecha_calibracion      = COALESCE(${body.fecha_calibracion ?? null}, fecha_calibracion),
+      fecha_vigencia_hasta   = COALESCE(${body.fecha_vigencia_hasta ?? null}, fecha_vigencia_hasta),
+      vigente                = COALESCE(${body.vigente ?? null}::boolean, vigente),
+      documento_fuente       = COALESCE(${body.documento_fuente ?? null}, documento_fuente),
+      notes                  = COALESCE(${body.notes ?? null}, notes),
+      updated_at             = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  if (!rows.length) return NextResponse.json({ error: "Calibración no encontrada" }, { status: 404 });
+  return NextResponse.json({ calibration: rows[0] });
+}
+
+export async function DELETE(request: Request) {
+  await ensureWasteExpertSchema();
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id") ? Number(searchParams.get("id")) : null;
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+
+  const { rows } = await sql`DELETE FROM waste_calibration_matrix WHERE id = ${id} RETURNING id`;
+  if (!rows.length) return NextResponse.json({ error: "Calibración no encontrada" }, { status: 404 });
+  return NextResponse.json({ deleted: rows[0] });
+}
