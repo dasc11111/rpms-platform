@@ -277,6 +277,36 @@ export async function GET() {
     }
   } catch { /* tabla no existe aún */ }
 
+  // Check #12: fuentes en préstamo con fecha de retorno vencida (IMAR)
+  try {
+    const { rows: overdueLoans } = await sql`
+      SELECT DISTINCT ON (source_id) source_name, isotope, destination_location, expected_return_date
+      FROM source_movements
+      WHERE movement_type = 'prestamo'
+        AND expected_return_date IS NOT NULL
+        AND expected_return_date < CURRENT_DATE
+        AND id NOT IN (
+          SELECT sm2.id FROM source_movements sm2
+          WHERE sm2.movement_type = 'devolucion'
+            AND sm2.source_id = source_movements.source_id
+            AND sm2.movement_date >= source_movements.movement_date
+        )
+      ORDER BY source_id, movement_date DESC
+      LIMIT 5
+    `;
+    for (const l of overdueLoans as { source_name: string; isotope: string | null; destination_location: string | null; expected_return_date: string }[]) {
+      alerts.push({
+        id: `imar-loan-${l.source_name}`,
+        type: "danger",
+        module: "Movimientos IMAR",
+        title: `Préstamo IMAR vencido: ${l.source_name}${l.isotope ? ` (${l.isotope})` : ""}`,
+        detail: `Retorno esperado: ${new Date(l.expected_return_date).toLocaleDateString("es-CL")} · Destino: ${l.destination_location ?? "s/d"}`,
+        regulation: "NS-04 CCHEN — Registro de Movimientos de Material Radiactivo",
+        action: "/sources/movements",
+      });
+    }
+  } catch { /* tabla no existe aún */ }
+
   // Sort: danger first, then warning, then info
   const sortOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => sortOrder[a.type] - sortOrder[b.type]);
