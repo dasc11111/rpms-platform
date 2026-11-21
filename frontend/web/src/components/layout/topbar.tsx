@@ -1,6 +1,6 @@
 "use client";
 import { Bell, Bot, LogOut, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CommandBar } from "@/components/search/command-bar";
 import { CopilotPanel } from "@/components/layout/copilot-panel";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -8,18 +8,53 @@ import { useAuth } from "@/components/auth/auth-provider";
 export function Topbar() {
   const [open, setOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
   const { user, logout } = useAuth();
+
+  // Poll alert count every 5 minutes
+  useEffect(() => {
+    async function fetchCount() {
+      try {
+        const res = await fetch("/api/alerts", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          setAlertCount(Array.isArray(data) ? data.filter((a: { type: string }) => a.type === "danger" || a.type === "warning").length : 0);
+        }
+      } catch { /* ignore */ }
+    }
+    fetchCount();
+    const id = setInterval(fetchCount, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur">
-        <button type="button" onClick={() => setOpen(true)} className="flex h-9 flex-1 max-w-md items-center gap-2 rounded-md border border-border bg-background px-2.5 text-sm text-muted-foreground hover:border-accent">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="flex h-9 flex-1 max-w-md items-center gap-2 rounded-md border border-border bg-background px-2.5 text-sm text-muted-foreground hover:border-accent"
+        >
           <Search className="h-4 w-4" strokeWidth={2} />
           <span>Buscar trabajadores, equipos, documentos...</span>
         </button>
-        <button type="button" className="relative rounded-md p-2 text-muted-foreground hover:bg-muted" aria-label="Notificaciones">
+
+        {/* Notification bell with dynamic count */}
+        <button
+          type="button"
+          onClick={() => setCopilotOpen((v) => !v)}
+          className="relative rounded-md p-2 text-muted-foreground hover:bg-muted"
+          aria-label={`Notificaciones${alertCount > 0 ? ` (${alertCount})` : ""}`}
+        >
           <Bell className="h-4 w-4" strokeWidth={2} />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger" />
+          {alertCount > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[9px] font-bold text-white leading-none">
+              {alertCount > 9 ? "9+" : alertCount}
+            </span>
+          )}
         </button>
+
+        {/* Copilot button */}
         <div className="relative">
           <button
             type="button"
@@ -28,9 +63,15 @@ export function Topbar() {
           >
             <Bot className="h-3.5 w-3.5" />
             Copilot
+            {alertCount > 0 && (
+              <span className="rounded-full bg-danger px-1 py-0.5 text-[9px] font-bold text-white leading-none">
+                {alertCount > 9 ? "9+" : alertCount}
+              </span>
+            )}
           </button>
           <CopilotPanel open={copilotOpen} onClose={() => setCopilotOpen(false)} />
         </div>
+
         {user && (
           <div className="flex items-center gap-2 border-l border-border pl-3">
             <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
