@@ -65,6 +65,7 @@ const NAV = [
   { href: "/training", label: "Capacitación", icon: GraduationCap },
 
   // ── Documentos y Reportes ─────────────────────────────
+  { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/reports/annual-cchen", label: "Informe Anual CCHEN", icon: FileText },
