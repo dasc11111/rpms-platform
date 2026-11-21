@@ -1,19 +1,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, AlertTriangle, BarChart3, Biohazard, FileText, FlaskConical, GraduationCap, Home, Radio, Settings, Shield, ShieldAlert, Syringe, Trash2, Users, Wrench, Zap } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Biohazard, FileText, FlaskConical, GraduationCap, Home, Package, Radio, Settings, Shield, ShieldAlert, Syringe, Trash2, Users, Wrench, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/workers", label: "Trabajadores", icon: Users },
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
+  { href: "/dosimeters", label: "Dosímetros", icon: Package },
   { href: "/i131", label: "Administración I-131", icon: Syringe },
   { href: "/contamination", label: "Reg. Contaminación", icon: Biohazard },
   { href: "/waste", label: "Residuos Radiactivos", icon: Trash2 },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
   { href: "/radiopharmacy", label: "Radiofarmacia", icon: FlaskConical },
   { href: "/shielding", label: "Blindajes", icon: Shield },
+  { href: "/quality-control", label: "Control de Calidad MN", icon: ShieldAlert },
   { href: "/equipment", label: "Equipos", icon: Radio },
   { href: "/instruments", label: "Instrumentos", icon: Wrench },
   { href: "/training", label: "Capacitación", icon: GraduationCap },

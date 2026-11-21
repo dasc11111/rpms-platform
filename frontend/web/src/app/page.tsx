@@ -117,10 +117,12 @@ export default async function Dashboard() {
     instrPorVencer = Number((insRows[0] as any)?.expiring ?? 0);
   } catch { /* tabla no creada */ }
 
-  // KPIs de nuevos módulos — fuentes, radiofármacos, blindajes
+  // KPIs de nuevos módulos — fuentes, radiofármacos, blindajes, QC MN, dosímetros
   let fuentesInventarioVencido = 0;
   let radiofarmacosExpiring = 0;
   let blindajesEnRevision = 0;
+  let qcFallidos = 0;
+  let dosimetrosProblema = 0;
 
   try {
     const { rows: srcRows } = await sql`
@@ -143,6 +145,22 @@ export default async function Dashboard() {
       SELECT COUNT(*)::int AS review FROM shielding WHERE status IN ('review','failed')
     `;
     blindajesEnRevision = Number((shRows[0] as any)?.review ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: qcRows } = await sql`
+      SELECT COUNT(*)::int AS fails FROM qc_records
+      WHERE pass = false AND performed_at > now() - INTERVAL '30 days'
+    `;
+    qcFallidos = Number((qcRows[0] as any)?.fails ?? 0);
+  } catch { /* tabla no creada */ }
+
+  try {
+    const { rows: dosRows } = await sql`
+      SELECT COUNT(*)::int AS problems FROM dosimeters
+      WHERE status IN ('lost','damaged')
+    `;
+    dosimetrosProblema = Number((dosRows[0] as any)?.problems ?? 0);
   } catch { /* tabla no creada */ }
 
   return (
@@ -170,6 +188,8 @@ export default async function Dashboard() {
         <KPICard label="Inv. fuentes vencido" value={fuentesInventarioVencido} href="/sources" icon={Zap} tone={fuentesInventarioVencido > 0 ? "danger" : "default"} />
         <KPICard label="Radiofárm. por vencer" value={radiofarmacosExpiring} href="/radiopharmacy" icon={FlaskConical} tone={radiofarmacosExpiring > 0 ? "warning" : "default"} />
         <KPICard label="Blindajes en revisión" value={blindajesEnRevision} href="/shielding" icon={ShieldAlert} tone={blindajesEnRevision > 0 ? "warning" : "default"} />
+        <KPICard label="CC MN fallidos (30d)" value={qcFallidos} href="/quality-control" icon={ShieldAlert} tone={qcFallidos > 0 ? "danger" : "default"} />
+        <KPICard label="Dosímetros con problema" value={dosimetrosProblema} href="/dosimeters" icon={AlertTriangle} tone={dosimetrosProblema > 0 ? "danger" : "default"} />
       </div>
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-surface p-4">
