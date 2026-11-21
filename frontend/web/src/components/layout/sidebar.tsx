@@ -14,6 +14,7 @@ const NAV = [
   // ── Core ──────────────────────────────────────────────
   { href: "/", label: "Dashboard", icon: Home },
   { href: "/alerts", label: "Alertas del Sistema", icon: Bell },
+  { href: "/notifications", label: "Notificaciones", icon: Bell },
   { href: "/expiries", label: "Vencimientos", icon: CalendarClock },
   { href: "/search", label: "Búsqueda Global", icon: Search },
   { href: "/workers", label: "Trabajadores", icon: Users },
