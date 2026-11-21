@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, CalendarClock, ClipboardList, Search,
+  Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, Building2, CalendarClock, ClipboardList, Search,
   FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
@@ -80,6 +80,7 @@ const NAV = [
 
   // ── Documentos y Reportes ─────────────────────────────
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
+  { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/reports/annual-cchen", label: "Informe Anual CCHEN", icon: FileText },
