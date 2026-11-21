@@ -19,6 +19,7 @@ const NAV = [
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
 
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
+  { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
 
   // ── Medicina Nuclear ───────────────────────────────────
   { href: "/nuclear-medicine", label: "Medicina Nuclear", icon: Stethoscope },
