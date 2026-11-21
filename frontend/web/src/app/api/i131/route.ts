@@ -204,3 +204,48 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ row: rows[0] }, { status: 201 });
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const { id, ...fields } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const { rows } = await sql`
+      UPDATE i131_administrations SET
+        admin_date              = COALESCE(${(fields.admin_date as string) ?? null}::timestamptz, admin_date),
+        paciente_nombre         = COALESCE(${(fields.paciente_nombre as string) ?? null}, paciente_nombre),
+        paciente_run            = COALESCE(${(fields.paciente_run as string) ?? null}, paciente_run),
+        ficha_clinica           = COALESCE(${(fields.ficha_clinica as string) ?? null}, ficha_clinica),
+        radiofarmaco            = COALESCE(${(fields.radiofarmaco as string) ?? null}, radiofarmaco),
+        diagnostico             = COALESCE(${(fields.diagnostico as string) ?? null}, diagnostico),
+        tipo_examen             = COALESCE(${(fields.tipo_examen as string) ?? null}, tipo_examen),
+        medico_solicitante      = COALESCE(${(fields.medico_solicitante as string) ?? null}, medico_solicitante),
+        dosis_administrada      = COALESCE(${fields.dosis_administrada != null ? Number(fields.dosis_administrada) : null}, dosis_administrada),
+        tasa_dosis              = COALESCE(${fields.tasa_dosis != null ? Number(fields.tasa_dosis) : null}, tasa_dosis),
+        responsable             = COALESCE(${(fields.responsable as string) ?? null}, responsable),
+        notas                   = COALESCE(${(fields.notas as string) ?? null}, notas),
+        tipo_procedimiento      = COALESCE(${(fields.tipo_procedimiento as string) ?? null}, tipo_procedimiento),
+        identidad_confirmada    = COALESCE(${fields.identidad_confirmada != null ? Boolean(fields.identidad_confirmada) : null}, identidad_confirmada),
+        embarazo_descartado     = COALESCE(${fields.embarazo_descartado != null ? Boolean(fields.embarazo_descartado) : null}, embarazo_descartado),
+        updated_at              = NOW()
+      WHERE id = ${Number(id)}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Administración no encontrada" }, { status: 404 });
+    return NextResponse.json({ row: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    await sql`DELETE FROM i131_administrations WHERE id = ${Number(id)}`;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}

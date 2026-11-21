@@ -85,3 +85,54 @@ export async function POST(request: Request) {
   await logNmIncidentAudit("create_nm_incident", actorEmail, { id: rows[0]!.id, category: body.category });
   return NextResponse.json({ ok: true, id: rows[0]!.id });
 }
+
+export async function PATCH(request: Request) {
+  try {
+    await ensureNmIncidentsTables();
+    const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+    const { id, actorEmail, ...fields } = body;
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    const actor = (actorEmail as string) || "sistema";
+    const { rows } = await sql`
+      UPDATE nm_incidents SET
+        event_date              = COALESCE(${(fields.eventDate as string) ?? null}::date, event_date),
+        event_time              = COALESCE(${(fields.eventTime as string) ?? null}, event_time),
+        category                = COALESCE(${(fields.category as string) ?? null}, category),
+        severity                = COALESCE(${(fields.severity as string) ?? null}, severity),
+        is_near_miss            = COALESCE(${fields.isNearMiss != null ? Boolean(fields.isNearMiss) : null}, is_near_miss),
+        location                = COALESCE(${(fields.location as string) ?? null}, location),
+        person_involved         = COALESCE(${(fields.personInvolved as string) ?? null}, person_involved),
+        description             = COALESCE(${(fields.description as string) ?? null}, description),
+        immediate_actions       = COALESCE(${(fields.immediateActions as string) ?? null}, immediate_actions),
+        notification_status     = COALESCE(${(fields.notificationStatus as string) ?? null}, notification_status),
+        notified_to             = COALESCE(${(fields.notifiedTo as string) ?? null}, notified_to),
+        investigation_status    = COALESCE(${(fields.investigationStatus as string) ?? null}, investigation_status),
+        corrective_actions      = COALESCE(${(fields.correctiveActions as string) ?? null}, corrective_actions),
+        responsible             = COALESCE(${(fields.responsible as string) ?? null}, responsible),
+        status                  = COALESCE(${(fields.status as string) ?? null}, status),
+        updated_at              = NOW()
+      WHERE id = ${Number(id)}
+      RETURNING *
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Incidente no encontrado" }, { status: 404 });
+    await logNmIncidentAudit("update_nm_incident", actor, { id });
+    return NextResponse.json({ ok: true, row: rows[0] });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await ensureNmIncidentsTables();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+    const actorEmail = searchParams.get("actorEmail") || "sistema";
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    await sql`UPDATE nm_incidents SET status = 'cerrado', updated_at = NOW() WHERE id = ${Number(id)}`;
+    await logNmIncidentAudit("close_nm_incident", actorEmail, { id });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
+}
