@@ -50,6 +50,7 @@ const NAV = [
   { href: "/waste-contamination-criteria", label: "Criterios Contaminación", icon: ShieldAlert },
   { href: "/waste-release-criteria", label: "Criterios Liberación", icon: Recycle },
   { href: "/waste-items", label: "Fichas de Residuos", icon: Trash2 },
+  { href: "/waste-labels", label: "Rótulos de Residuos", icon: Tag },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
