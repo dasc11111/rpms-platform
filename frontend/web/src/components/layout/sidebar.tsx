@@ -92,6 +92,7 @@ const NAV = [
   { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
+  { href: "/annual-report", label: "Informe Anual Integrado", icon: FileText },
   { href: "/reports/annual-cchen", label: "Informe Anual CCHEN", icon: FileText },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
