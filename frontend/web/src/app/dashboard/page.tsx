@@ -1,403 +1,374 @@
 "use client";
-
-import { useState, useEffect, useCallback } from "react";
-import {
-  Activity, AlertCircle, AlertTriangle, Award, Bell, CheckCircle2,
-  Flame, GraduationCap, HeartPulse, Loader2, RefreshCw, Shield,
-  ShieldAlert, Trash2, Users, Wrench, Zap, Info, Clock,
-} from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import {
+  Activity, AlertTriangle, Atom, Award, Bell, Biohazard, ChevronRight,
+  Flame, GraduationCap, Radio, RefreshCw, ShieldCheck, Tag, Trash2,
+  TrendingDown, Users, Wrench, CheckCircle2, XCircle, AlertCircle,
+} from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface SummaryData {
+// ── types ──────────────────────────────────────────────────────────────────
+interface Alert {
+  level: "critical" | "warning" | "info";
+  module: string;
+  message: string;
+  count: number;
+  href: string;
+}
+interface DosePoint { month: string; avg_dose: number; max_dose: number; records: number }
+interface IncidentPoint { month: string; count: number; ines_1_plus: number }
+interface DashData {
   generated_at: string;
-  health: { status: "ok" | "warning" | "danger"; danger_signals: number; warning_signals: number };
-  workers:     { active: string; suspended: string; inactive: string; expired_auth: string; expiring_soon: string } | null;
-  dosimetry:   { workers_this_month: string; collective_dose: string; avg_dose: string; max_dose: string; above_annual_limit: string } | null;
-  instruments: { total: string; calibrated: string; expired: string; expiring_soon: string } | null;
-  incidents:   { last_30_days: string; high_severity: string; open: string; high_severity_30d: string } | null;
-  compliance:  { total: string; compliant: string; overdue: string; pending: string; critical_pending: string; pct: string } | null;
-  training:    { pending_renewals: string; completed_this_year: string; workers_with_pending: string } | null;
-  sources:     { total: string; in_use: string; stored: string; decommissioned: string; isotopes: string } | null;
-  waste:       { total: string; pending_auth: string; in_storage: string; regulated: string } | null;
-  notifications: { unread: string; danger: string; warning: string } | null;
-  i131:        { last_24h: string; last_30_days: string; hospitalized_now: string } | null;
-  emergency:   { active_plans: string; overdue_drills: string } | null;
+  year: number;
+  program_score: number;
+  program_status: "good" | "attention" | "warning" | "critical";
+  critical_alerts: Alert[];
+  modules: {
+    dosimetry: { total_records:number; this_month:number; over_limit:number; approaching_limit:number; avg_dose_msv:number; max_dose_msv:number; collective_dose_msv:number };
+    workers:   { total:number; oer:number; oer_b:number; with_dosimetry:number; medical_expired:number; medical_expiring:number };
+    sources:   { total:number; in_use:number; stored:number; auth_expired:number; auth_expiring:number; leak_test_overdue:number; leak_test_failed:number };
+    incidents: { total_year:number; open:number; ines_1_plus:number; cchen_pending:number; this_month:number };
+    reports:   { in_progress:number; submitted:number; approved:number; overdue:number };
+    training:  { total_year:number; completed:number; planned:number; total_participants:number; overdue:number };
+    equipment: { total:number; calibration_overdue:number; calibration_soon:number; out_of_service:number };
+    waste:     { total:number; stored:number; transferred:number; total_activity_gbq:number };
+  };
+  trends: { dose_history: DosePoint[]; incident_history: IncidentPoint[] };
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ── helpers ────────────────────────────────────────────────────────────────
+const SCORE_CFG = {
+  good:      { label: "Óptimo",    color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200", ring: "stroke-emerald-500" },
+  attention: { label: "Atención",  color: "text-amber-600",   bg: "bg-amber-50   border-amber-200",   ring: "stroke-amber-500"   },
+  warning:   { label: "Alerta",    color: "text-orange-600",  bg: "bg-orange-50  border-orange-200",  ring: "stroke-orange-500"  },
+  critical:  { label: "Crítico",   color: "text-red-600",     bg: "bg-red-50     border-red-200",     ring: "stroke-red-500"     },
+};
+const ALERT_CFG = {
+  critical: { icon: XCircle,       bg: "bg-red-50    border-red-200",    text: "text-red-700",    badge: "bg-red-100    text-red-800"    },
+  warning:  { icon: AlertCircle,   bg: "bg-amber-50  border-amber-200",  text: "text-amber-700",  badge: "bg-amber-100  text-amber-800"  },
+  info:     { icon: Bell,          bg: "bg-blue-50   border-blue-200",   text: "text-blue-700",   badge: "bg-blue-100   text-blue-800"   },
+};
 
-function n(v: string | undefined | null, fallback = "—"): string | number {
-  if (v == null) return fallback;
-  const num = parseInt(String(v));
-  return isNaN(num) ? fallback : num;
+function fmtMonth(ym: string) {
+  const [y, m] = ym.split("-");
+  return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("es-CL", { month: "short", year: "2-digit" });
+}
+function fmtTs(iso: string) {
+  return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 }
 
-function f(v: string | undefined | null, decimals = 1): string {
-  if (v == null) return "—";
-  const num = parseFloat(String(v));
-  return isNaN(num) ? "—" : num.toFixed(decimals);
-}
-
-// ─── Components ──────────────────────────────────────────────────────────────
-
-function ModuleCard({
-  title, href, icon: Icon, iconColor = "text-blue-600",
-  status = "ok", children,
-}: {
-  title: string; href: string;
-  icon: React.ComponentType<{ className?: string }>; iconColor?: string;
-  status?: "ok" | "warning" | "danger" | "neutral";
-  children: React.ReactNode;
-}) {
+// ── MiniBar chart ──────────────────────────────────────────────────────────
+function MiniBar({ data, keys, colors }: { data: Array<Record<string,number|string>>; keys: string[]; colors: string[] }) {
+  if (!data.length) return <p className="text-xs text-muted-foreground text-center py-4">Sin datos</p>;
+  const maxVal = Math.max(...data.flatMap(d => keys.map(k => Number(d[k] ?? 0))), 1);
   return (
-    <Link href={href} className="block group">
-      <div className={cn(
-        "rounded-xl border p-4 h-full transition-all hover:shadow-md",
-        status === "danger"  ? "border-red-300 bg-red-50/50"    :
-        status === "warning" ? "border-amber-300 bg-amber-50/50" :
-        status === "ok"      ? "border-green-300 bg-green-50/30" :
-        "border-border bg-card"
-      )}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center",
-              status === "danger"  ? "bg-red-100" :
-              status === "warning" ? "bg-amber-100" :
-              status === "ok"      ? "bg-green-100" : "bg-blue-100"
-            )}>
-              <Icon className={cn("w-4 h-4",
-                status === "danger"  ? "text-red-600"   :
-                status === "warning" ? "text-amber-600"  :
-                status === "ok"      ? "text-green-600"  : iconColor
-              )} />
-            </div>
-            <span className="text-sm font-semibold">{title}</span>
+    <div className="flex items-end gap-1 h-16">
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+          <div className="flex items-end gap-0.5 w-full" style={{ height: 48 }}>
+            {keys.map((k, ki) => {
+              const h = Math.max(2, Math.round((Number(d[k] ?? 0) / maxVal) * 48));
+              return <div key={k} className={`flex-1 rounded-sm ${colors[ki]}`} style={{ height: h }} title={`${k}: ${d[k]}`} />;
+            })}
           </div>
-          {status === "danger"  && <AlertCircle  className="w-4 h-4 text-red-500" />}
-          {status === "warning" && <AlertTriangle className="w-4 h-4 text-amber-500" />}
-          {status === "ok"      && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+          <span className="text-[9px] text-muted-foreground">{fmtMonth(String(d.month))}</span>
         </div>
-        <div className="space-y-1">{children}</div>
-      </div>
-    </Link>
+      ))}
+    </div>
   );
 }
 
-function KV({ label, value, alert = false }: { label: string; value: string | number; alert?: boolean }) {
+// ── ScoreDial ──────────────────────────────────────────────────────────────
+function ScoreDial({ score, status }: { score: number; status: keyof typeof SCORE_CFG }) {
+  const cfg = SCORE_CFG[status];
+  const r = 36; const circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
   return (
-    <div className="flex justify-between items-baseline">
-      <span className="text-xs text-muted-foreground truncate">{label}</span>
-      <span className={cn("text-xs font-mono font-semibold ml-2 shrink-0", alert ? "text-red-700" : "text-foreground")}>
-        {value}
+    <div className="flex flex-col items-center gap-2">
+      <svg width={96} height={96} className="-rotate-90">
+        <circle cx={48} cy={48} r={r} fill="none" stroke="currentColor" strokeWidth={8} className="text-muted/30" />
+        <circle cx={48} cy={48} r={r} fill="none" strokeWidth={8} strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" className={cfg.ring} />
+      </svg>
+      <div className="-mt-16 flex flex-col items-center">
+        <span className={`text-2xl font-bold ${cfg.color}`}>{score}</span>
+        <span className="text-[10px] text-muted-foreground">/ 100</span>
+      </div>
+      <span className={`mt-8 text-xs font-semibold px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color}`}>
+        {cfg.label}
       </span>
     </div>
   );
 }
 
-function HealthBadge({ status }: { status: "ok" | "warning" | "danger" }) {
-  const cfg = {
-    ok:      { label: "OPERATIVO",   cls: "bg-green-100 text-green-800 border-green-300" },
-    warning: { label: "ATENCIÓN",    cls: "bg-amber-100 text-amber-800 border-amber-300" },
-    danger:  { label: "ALERTA",      cls: "bg-red-100 text-red-800 border-red-300" },
-  }[status];
+// ── ModuleCard ─────────────────────────────────────────────────────────────
+function ModuleCard({ icon: Icon, label, kpis, href, hasIssue }: {
+  icon: React.ComponentType<{className?:string}>;
+  label: string;
+  kpis: Array<{ label: string; value: string | number; alert?: boolean }>;
+  href: string;
+  hasIssue?: boolean;
+}) {
   return (
-    <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border", cfg.cls)}>
-      <span className={cn("w-2 h-2 rounded-full",
-        status === "ok" ? "bg-green-500 animate-pulse" :
-        status === "warning" ? "bg-amber-500 animate-pulse" : "bg-red-500 animate-pulse"
-      )} />
-      {cfg.label}
-    </span>
+    <Link href={href} className={`block rounded-lg border p-4 hover:shadow-md transition-shadow ${hasIssue ? "border-red-300 bg-red-50/40" : "border-border bg-surface"}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <Icon className={`h-4 w-4 ${hasIssue ? "text-red-500" : "text-accent"}`} />
+        <span className="text-sm font-semibold">{label}</span>
+        {hasIssue && <span className="ml-auto h-2 w-2 rounded-full bg-red-500 animate-pulse" />}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        {kpis.map(k => (
+          <div key={k.label}>
+            <p className={`text-lg font-bold leading-none ${k.alert ? "text-red-600" : ""}`}>{k.value}</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">{k.label}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-2 flex items-center gap-1 text-xs text-accent">
+        <span>Ver módulo</span><ChevronRight className="h-3 w-3" />
+      </div>
+    </Link>
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
-
-export default function ExecutiveDashboardPage() {
-  const [data, setData] = useState<SummaryData | null>(null);
+// ── Main page ──────────────────────────────────────────────────────────────
+export default function DashboardPage() {
+  const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastFetch, setLastFetch] = useState<Date | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/dashboard/summary");
-      const json = await res.json();
-      setData(json);
-      setLastFetch(new Date());
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch("/api/dashboard");
+      if (res.ok) setData(await res.json());
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { load(); }, [load]);
 
-  // Auto-refresh every 5 minutes
-  useEffect(() => {
-    const timer = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(timer);
-  }, [fetchData]);
+  if (loading) return (
+    <div className="flex h-full items-center justify-center">
+      <div className="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
+    </div>
+  );
+  if (!data) return <p className="p-8 text-muted-foreground">Error cargando datos.</p>;
 
-  if (loading && !data) {
-    return (
-      <div className="flex items-center justify-center min-h-screen gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" />
-        Cargando resumen ejecutivo…
-      </div>
-    );
-  }
-
-  const d = data!;
-  const health = d.health ?? { status: "neutral" as const, danger_signals: 0, warning_signals: 0 };
-  const compliancePct = parseFloat(d.compliance?.pct ?? "0");
+  const { modules: m, critical_alerts, trends, program_score, program_status, year } = data;
+  const criticalCount = critical_alerts.filter(a => a.level === "critical").length;
+  const warningCount  = critical_alerts.filter(a => a.level === "warning").length;
 
   return (
-    <div className="p-6 space-y-5 max-w-7xl mx-auto">
-
+    <div className="flex flex-col gap-6 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            <Shield className="w-5 h-5 text-blue-600" />
-            Resumen Ejecutivo
-            {data && <HealthBadge status={health.status as "ok" | "warning" | "danger"} />}
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Vista operacional en tiempo real · Sistema RPMS
+          <h1 className="text-xl font-bold">Dashboard Ejecutivo PR</h1>
+          <p className="text-sm text-muted-foreground">
+            Año {year} · Actualizado {fmtTs(data.generated_at)}
           </p>
         </div>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          {lastFetch && (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              {lastFetch.toLocaleTimeString("es-CL")}
-            </span>
-          )}
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="p-1.5 border rounded-lg hover:bg-muted"
-          >
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-          </button>
+        <button onClick={load} className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
+          <RefreshCw className="h-4 w-4" />
+          Actualizar
+        </button>
+      </div>
+
+      {/* Score + resumen alertas */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        {/* Dial */}
+        <div className="sm:col-span-1 flex flex-col items-center justify-center rounded-lg border border-border bg-surface p-4">
+          <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Score Programa PR</p>
+          <ScoreDial score={program_score} status={program_status} />
+        </div>
+
+        {/* KPIs rápidos */}
+        <div className="sm:col-span-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Alertas críticas",   value: criticalCount, sub: "requieren acción inmediata", alert: criticalCount > 0 },
+            { label: "Advertencias",        value: warningCount,  sub: "revisar en breve",           alert: warningCount > 0  },
+            { label: "Trabajadores OER",    value: m.workers.oer, sub: `de ${m.workers.total} activos`                        },
+            { label: "Incidentes año",      value: m.incidents.total_year, sub: `${m.incidents.open} abiertos`                },
+            { label: "Dosis prom. trim.",   value: `${m.dosimetry.avg_dose_msv} mSv`, sub: `máx ${m.dosimetry.max_dose_msv} mSv` },
+            { label: "Fuentes activas",     value: m.sources.total, sub: `${m.sources.in_use} en uso`                        },
+            { label: "Capacitaciones año",  value: m.training.completed, sub: `${m.training.planned} planificadas`           },
+            { label: "Residuos activos",    value: m.waste.stored,  sub: `${m.waste.total_activity_gbq.toFixed(1)} GBq total`},
+          ].map(k => (
+            <div key={k.label} className={`rounded-lg border p-3 ${k.alert ? "border-red-300 bg-red-50" : "border-border bg-surface"}`}>
+              <p className={`text-2xl font-bold ${k.alert ? "text-red-600" : ""}`}>{k.value}</p>
+              <p className="text-xs font-medium leading-tight">{k.label}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">{k.sub}</p>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Health summary bar */}
-      <div className={cn(
-        "rounded-xl border p-4 flex flex-wrap items-center gap-4 text-sm",
-        health.status === "danger"  ? "bg-red-50 border-red-300"   :
-        health.status === "warning" ? "bg-amber-50 border-amber-300" :
-        "bg-green-50 border-green-300"
-      )}>
-        <div className="flex items-center gap-2">
-          {health.status === "danger"  && <AlertCircle  className="w-5 h-5 text-red-600" />}
-          {health.status === "warning" && <AlertTriangle className="w-5 h-5 text-amber-600" />}
-          {health.status === "ok"      && <CheckCircle2 className="w-5 h-5 text-green-600" />}
-          <span className="font-semibold">
-            {health.status === "danger"  ? `${health.danger_signals} señal(es) crítica(s) detectada(s)` :
-             health.status === "warning" ? `${health.warning_signals} condicion(es) de atención` :
-             "Todos los indicadores en rango normal"}
-          </span>
-        </div>
-        <div className="flex gap-3 ml-auto text-xs flex-wrap">
-          <Link href="/alerts"        className="text-blue-600 hover:underline">Ver alertas →</Link>
-          <Link href="/expiries"      className="text-blue-600 hover:underline">Vencimientos →</Link>
-          <Link href="/notifications" className="text-blue-600 hover:underline">
-            Notificaciones
-            {parseInt(d.notifications?.unread ?? "0") > 0 && (
-              <span className="ml-1 bg-red-500 text-white rounded-full px-1 font-bold">
-                {d.notifications?.unread}
-              </span>
-            )}
-          </Link>
-        </div>
-      </div>
-
-      {/* Module grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-
-        {/* Trabajadores */}
-        <ModuleCard
-          title="Trabajadores POE"
-          href="/workers"
-          icon={Users}
-          status={parseInt(d.workers?.expired_auth ?? "0") > 0 ? "danger" :
-                 parseInt(d.workers?.expiring_soon ?? "0") > 0 ? "warning" : "ok"}
-        >
-          <KV label="Activos" value={n(d.workers?.active)} />
-          <KV label="Suspendidos" value={n(d.workers?.suspended)} />
-          <KV label="Auth. vencida" value={n(d.workers?.expired_auth)} alert={parseInt(d.workers?.expired_auth ?? "0") > 0} />
-          <KV label="Por vencer (30d)" value={n(d.workers?.expiring_soon)} alert={parseInt(d.workers?.expiring_soon ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Dosimetría */}
-        <ModuleCard
-          title="Dosimetría (mes)"
-          href="/dosimetry"
-          icon={Activity}
-          status={parseInt(d.dosimetry?.above_annual_limit ?? "0") > 0 ? "danger" : "neutral"}
-        >
-          <KV label="Monitorizados" value={n(d.dosimetry?.workers_this_month)} />
-          <KV label="Dosis media (mSv)" value={f(d.dosimetry?.avg_dose, 2)} />
-          <KV label="Dosis máxima (mSv)" value={f(d.dosimetry?.max_dose, 2)} />
-          <KV label="> límite anual" value={n(d.dosimetry?.above_annual_limit)} alert={parseInt(d.dosimetry?.above_annual_limit ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Instrumentos */}
-        <ModuleCard
-          title="Instrumentos"
-          href="/instruments/calibrations"
-          icon={Wrench}
-          status={parseInt(d.instruments?.expired ?? "0") > 0 ? "danger" :
-                 parseInt(d.instruments?.expiring_soon ?? "0") > 0 ? "warning" : "ok"}
-        >
-          <KV label="Total" value={n(d.instruments?.total)} />
-          <KV label="Calibración vigente" value={n(d.instruments?.calibrated)} />
-          <KV label="Calibración vencida" value={n(d.instruments?.expired)} alert={parseInt(d.instruments?.expired ?? "0") > 0} />
-          <KV label="Por vencer (30d)" value={n(d.instruments?.expiring_soon)} alert={parseInt(d.instruments?.expiring_soon ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Incidentes */}
-        <ModuleCard
-          title="Incidentes"
-          href="/incidents"
-          icon={AlertTriangle}
-          iconColor="text-orange-600"
-          status={parseInt(d.incidents?.high_severity_30d ?? "0") > 0 ? "danger" :
-                 parseInt(d.incidents?.open ?? "0") > 0 ? "warning" : "ok"}
-        >
-          <KV label="Últimos 30 días" value={n(d.incidents?.last_30_days)} />
-          <KV label="Abiertos" value={n(d.incidents?.open)} alert={parseInt(d.incidents?.open ?? "0") > 0} />
-          <KV label="INES ≥2 (total)" value={n(d.incidents?.high_severity)} alert={parseInt(d.incidents?.high_severity ?? "0") > 0} />
-          <KV label="INES ≥2 (30d)" value={n(d.incidents?.high_severity_30d)} alert={parseInt(d.incidents?.high_severity_30d ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Cumplimiento */}
-        <ModuleCard
-          title="Cumplimiento NS-06.0"
-          href="/compliance"
-          icon={ShieldAlert}
-          status={parseInt(d.compliance?.overdue ?? "0") > 0 ? "danger" :
-                 parseInt(d.compliance?.critical_pending ?? "0") > 0 ? "warning" :
-                 compliancePct >= 90 ? "ok" : "warning"}
-        >
-          <KV label="Requisitos" value={n(d.compliance?.total)} />
-          <KV label="Cumplidos" value={n(d.compliance?.compliant)} />
-          <KV label="Vencidos" value={n(d.compliance?.overdue)} alert={parseInt(d.compliance?.overdue ?? "0") > 0} />
-          <KV label="% cumplimiento" value={d.compliance?.pct ? `${d.compliance.pct}%` : "—"} />
-        </ModuleCard>
-
-        {/* Capacitación */}
-        <ModuleCard
-          title="Capacitación"
-          href="/training"
-          icon={GraduationCap}
-          iconColor="text-green-600"
-          status={parseInt(d.training?.pending_renewals ?? "0") > 2 ? "warning" : "neutral"}
-        >
-          <KV label="Por renovar" value={n(d.training?.pending_renewals)} alert={parseInt(d.training?.pending_renewals ?? "0") > 0} />
-          <KV label="TOE afectados" value={n(d.training?.workers_with_pending)} />
-          <KV label="Completadas (año)" value={n(d.training?.completed_this_year)} />
-        </ModuleCard>
-
-        {/* Fuentes */}
-        <ModuleCard
-          title="Fuentes Radiactivas"
-          href="/sources"
-          icon={Zap}
-          iconColor="text-purple-600"
-          status="neutral"
-        >
-          <KV label="Total fuentes" value={n(d.sources?.total)} />
-          <KV label="En uso" value={n(d.sources?.in_use)} />
-          <KV label="Almacenadas" value={n(d.sources?.stored)} />
-          <KV label="Radioisótopos" value={n(d.sources?.isotopes)} />
-        </ModuleCard>
-
-        {/* Residuos */}
-        <ModuleCard
-          title="Residuos Radiactivos"
-          href="/waste-management"
-          icon={Trash2}
-          iconColor="text-orange-600"
-          status={parseInt(d.waste?.pending_auth ?? "0") > 0 ? "warning" : "neutral"}
-        >
-          <KV label="Total paquetes" value={n(d.waste?.total)} />
-          <KV label="En almacenamiento" value={n(d.waste?.in_storage)} />
-          <KV label="Pendiente auth." value={n(d.waste?.pending_auth)} alert={parseInt(d.waste?.pending_auth ?? "0") > 0} />
-          <KV label="Regulados" value={n(d.waste?.regulated)} />
-        </ModuleCard>
-
-        {/* I-131 */}
-        <ModuleCard
-          title="Administración I-131"
-          href="/i131"
-          icon={HeartPulse}
-          iconColor="text-pink-600"
-          status={parseInt(d.i131?.hospitalized_now ?? "0") > 0 ? "warning" : "neutral"}
-        >
-          <KV label="Últimas 24h" value={n(d.i131?.last_24h)} />
-          <KV label="Últimos 30 días" value={n(d.i131?.last_30_days)} />
-          <KV label="Hospitalizados ahora" value={n(d.i131?.hospitalized_now)} alert={parseInt(d.i131?.hospitalized_now ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Emergencias */}
-        <ModuleCard
-          title="Planes de Emergencia"
-          href="/emergency"
-          icon={Flame}
-          iconColor="text-red-600"
-          status={parseInt(d.emergency?.overdue_drills ?? "0") > 0 ? "warning" : "ok"}
-        >
-          <KV label="Planes activos" value={n(d.emergency?.active_plans)} />
-          <KV label="Simulacros atrasados" value={n(d.emergency?.overdue_drills)} alert={parseInt(d.emergency?.overdue_drills ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Notificaciones */}
-        <ModuleCard
-          title="Notificaciones"
-          href="/notifications"
-          icon={Bell}
-          iconColor="text-blue-600"
-          status={parseInt(d.notifications?.danger ?? "0") > 0 ? "danger" :
-                 parseInt(d.notifications?.warning ?? "0") > 0 ? "warning" : "ok"}
-        >
-          <KV label="Sin leer" value={n(d.notifications?.unread)} alert={parseInt(d.notifications?.unread ?? "0") > 0} />
-          <KV label="Peligro" value={n(d.notifications?.danger)} alert={parseInt(d.notifications?.danger ?? "0") > 0} />
-          <KV label="Advertencia" value={n(d.notifications?.warning)} alert={parseInt(d.notifications?.warning ?? "0") > 0} />
-        </ModuleCard>
-
-        {/* Informe de Gestión */}
-        <ModuleCard
-          title="Informe de Gestión"
-          href="/management-report"
-          icon={Award}
-          iconColor="text-indigo-600"
-          status="neutral"
-        >
-          <div className="text-xs text-muted-foreground leading-relaxed">
-            Resumen ejecutivo consolidado por año para la jefatura y CCHEN.
+      {/* Alertas críticas */}
+      {critical_alerts.length > 0 && (
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Bell className="h-4 w-4 text-accent" />
+            Alertas del Programa ({critical_alerts.length})
+            {criticalCount > 0 && <span className="ml-1 rounded-full bg-red-100 px-1.5 text-[10px] font-bold text-red-700">{criticalCount} críticas</span>}
+          </h2>
+          <div className="flex flex-col gap-2">
+            {critical_alerts.map((a, i) => {
+              const cfg = ALERT_CFG[a.level];
+              const Icon = cfg.icon;
+              return (
+                <Link key={i} href={a.href} className={`flex items-center gap-3 rounded-md border px-3 py-2 hover:opacity-80 transition-opacity ${cfg.bg}`}>
+                  <Icon className={`h-4 w-4 shrink-0 ${cfg.text}`} />
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs font-medium ${cfg.text}`}>{a.message}</span>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${cfg.badge}`}>{a.module}</span>
+                  <ChevronRight className={`h-3 w-3 shrink-0 ${cfg.text}`} />
+                </Link>
+              );
+            })}
           </div>
-          <div className="mt-2">
-            <span className="text-xs text-blue-600 font-medium">Ver informe completo →</span>
-          </div>
-        </ModuleCard>
+        </div>
+      )}
+      {critical_alerts.length === 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+          <p className="text-sm text-emerald-700 font-medium">Sin alertas activas — Programa PR en estado óptimo</p>
+        </div>
+      )}
 
+      {/* Módulos */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Estado por Módulo</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <ModuleCard icon={Activity}     label="Dosimetría"        href="/dosimetry"
+            hasIssue={m.dosimetry.over_limit > 0}
+            kpis={[
+              { label: "Registros trim.", value: m.dosimetry.total_records },
+              { label: "Sobre límite",    value: m.dosimetry.over_limit, alert: m.dosimetry.over_limit > 0 },
+              { label: "Dosis prom.",     value: `${m.dosimetry.avg_dose_msv} mSv` },
+              { label: "Dosis colect.",   value: `${m.dosimetry.collective_dose_msv.toFixed(1)} mSv` },
+            ]} />
+          <ModuleCard icon={Users}        label="Trabajadores"      href="/workers"
+            hasIssue={m.workers.medical_expired > 0}
+            kpis={[
+              { label: "Total activos",   value: m.workers.total },
+              { label: "OER",             value: m.workers.oer },
+              { label: "Examen vencido",  value: m.workers.medical_expired, alert: m.workers.medical_expired > 0 },
+              { label: "Vence 90 días",   value: m.workers.medical_expiring, alert: m.workers.medical_expiring > 0 },
+            ]} />
+          <ModuleCard icon={Atom}         label="Fuentes Radiact."  href="/sources"
+            hasIssue={m.sources.auth_expired > 0 || m.sources.leak_test_failed > 0}
+            kpis={[
+              { label: "Total fuentes",   value: m.sources.total },
+              { label: "Auth. vencida",   value: m.sources.auth_expired, alert: m.sources.auth_expired > 0 },
+              { label: "Fuga fallida",    value: m.sources.leak_test_failed, alert: m.sources.leak_test_failed > 0 },
+              { label: "Auth. próxima",   value: m.sources.auth_expiring, alert: m.sources.auth_expiring > 0 },
+            ]} />
+          <ModuleCard icon={Flame}        label="Incidentes"        href="/incidents"
+            hasIssue={m.incidents.cchen_pending > 0 || m.incidents.ines_1_plus > 0}
+            kpis={[
+              { label: "Total año",       value: m.incidents.total_year },
+              { label: "Abiertos",        value: m.incidents.open, alert: m.incidents.open > 0 },
+              { label: "INES ≥ 1",        value: m.incidents.ines_1_plus, alert: m.incidents.ines_1_plus > 0 },
+              { label: "CCHEN pendiente", value: m.incidents.cchen_pending, alert: m.incidents.cchen_pending > 0 },
+            ]} />
+          <ModuleCard icon={Radio}        label="Reportes CCHEN"    href="/regulatory-reports"
+            hasIssue={m.reports.overdue > 0}
+            kpis={[
+              { label: "En elaboración",  value: m.reports.in_progress },
+              { label: "Enviados",        value: m.reports.submitted },
+              { label: "Aprobados",       value: m.reports.approved },
+              { label: "Vencidos",        value: m.reports.overdue, alert: m.reports.overdue > 0 },
+            ]} />
+          <ModuleCard icon={GraduationCap} label="Capacitaciones"   href="/training"
+            hasIssue={m.training.overdue > 0}
+            kpis={[
+              { label: "Completadas",     value: m.training.completed },
+              { label: "Planificadas",    value: m.training.planned },
+              { label: "Participantes",   value: m.training.total_participants },
+              { label: "Atrasadas",       value: m.training.overdue, alert: m.training.overdue > 0 },
+            ]} />
+          <ModuleCard icon={Wrench}       label="Instrumentos"      href="/instruments"
+            hasIssue={m.equipment.calibration_overdue > 0 || m.equipment.out_of_service > 0}
+            kpis={[
+              { label: "Total",           value: m.equipment.total },
+              { label: "Calib. vencida",  value: m.equipment.calibration_overdue, alert: m.equipment.calibration_overdue > 0 },
+              { label: "Calib. próxima",  value: m.equipment.calibration_soon },
+              { label: "Fuera servicio",  value: m.equipment.out_of_service, alert: m.equipment.out_of_service > 0 },
+            ]} />
+          <ModuleCard icon={Trash2}       label="Residuos"          href="/waste-management"
+            hasIssue={false}
+            kpis={[
+              { label: "Total activos",   value: m.waste.total },
+              { label: "Almacenados",     value: m.waste.stored },
+              { label: "Transferidos",    value: m.waste.transferred },
+              { label: "Actividad total", value: `${m.waste.total_activity_gbq.toFixed(1)} GBq` },
+            ]} />
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-4">
-        <span>Actualización automática cada 5 minutos · DS 3/1985 · NS-06.0 CCHEN</span>
-        <div className="flex gap-3">
-          <Link href="/alerts"           className="hover:text-foreground">Alertas</Link>
-          <Link href="/expiries"         className="hover:text-foreground">Vencimientos</Link>
-          <Link href="/management-report" className="hover:text-foreground">Informe Gestión</Link>
-          <Link href="/reports/annual-cchen" className="hover:text-foreground">Informe CCHEN</Link>
+      {/* Tendencias */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Dosis últimos 6 meses */}
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <h3 className="mb-1 text-sm font-semibold flex items-center gap-2">
+            <Activity className="h-4 w-4 text-accent" />
+            Dosis últimos 6 meses
+          </h3>
+          <p className="mb-3 text-[10px] text-muted-foreground">Promedio y máximo mensual (mSv)</p>
+          <MiniBar data={trends.dose_history} keys={["avg_dose","max_dose"]} colors={["bg-accent/70","bg-orange-400/80"]} />
+          <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-2 w-3 rounded-sm bg-accent/70 inline-block" />Promedio</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-3 rounded-sm bg-orange-400/80 inline-block" />Máximo</span>
+          </div>
         </div>
+
+        {/* Incidentes últimos 6 meses */}
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <h3 className="mb-1 text-sm font-semibold flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-accent" />
+            Incidentes últimos 6 meses
+          </h3>
+          <p className="mb-3 text-[10px] text-muted-foreground">Total e INES ≥1 por mes</p>
+          <MiniBar data={trends.incident_history} keys={["count","ines_1_plus"]} colors={["bg-orange-400/70","bg-red-500/80"]} />
+          <div className="mt-2 flex gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-2 w-3 rounded-sm bg-orange-400/70 inline-block" />Total</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-3 rounded-sm bg-red-500/80 inline-block" />INES ≥1</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Accesos rápidos */}
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Accesos Rápidos</h2>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { href: "/dosimetry",          label: "Dosimetría",          icon: Activity      },
+            { href: "/workers",            label: "Trabajadores",         icon: Users         },
+            { href: "/sources",            label: "Fuentes",              icon: Atom          },
+            { href: "/incidents",          label: "Incidentes",           icon: Flame         },
+            { href: "/regulatory-reports", label: "Reportes CCHEN",       icon: Radio         },
+            { href: "/training",           label: "Capacitación",         icon: GraduationCap },
+            { href: "/instruments",        label: "Instrumentos",         icon: Wrench        },
+            { href: "/waste-management",   label: "Residuos",             icon: Trash2        },
+            { href: "/alara",              label: "ALARA",                icon: TrendingDown  },
+            { href: "/compliance",         label: "Cumplimiento",         icon: ShieldCheck   },
+            { href: "/contamination",      label: "Contaminación",        icon: Biohazard     },
+            { href: "/expiries",           label: "Vencimientos",         icon: Award         },
+            { href: "/alerts",             label: "Alertas",              icon: Bell          },
+            { href: "/logbook",            label: "Libro Novedades",      icon: Tag           },
+          ].map(l => {
+            const Icon = l.icon;
+            return (
+              <Link key={l.href} href={l.href} className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors">
+                <Icon className="h-3.5 w-3.5 text-accent" />{l.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Normativa */}
+      <div className="rounded-md bg-muted/40 px-4 py-2 text-[10px] text-muted-foreground">
+        Normativa: DS 3/1985 Capítulos I-X · CCHEN Reglamento Informe Anual · IAEA GSR Part 3 (2014) · IAEA Safety Standards Series · DS 594/1999 (Ambientes Ocupacionales)
       </div>
     </div>
   );
