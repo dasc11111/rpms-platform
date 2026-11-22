@@ -1,357 +1,236 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import {
-  FileText, Download, CheckCircle2, AlertTriangle, XCircle,
-  Users, Radiation, Shield, GraduationCap, Wrench, Trash2,
-  TrendingDown, BarChart3, AlertCircle, Clock, ChevronDown, ChevronUp,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { FileText, CheckCircle2, XCircle, AlertTriangle, Download } from "lucide-react";
 
 // ── types ──────────────────────────────────────────────────────────────────
-interface AnnualReport {
-  year: number;
-  generated_at: string;
-  institution: { name:string; address:string; cchen_license:string; opr_name:string; opr_registration:string; report_period:string; report_year:number };
-  summary: { score:number; critical_issues:string[] };
-  sections: {
-    dosimetry: { workers_monitored:number; collective_dose_mSv:number; avg_dose_mSv:number; max_individual_dose_mSv:number; above_20mSv:number; between_6_20mSv:number; below_1mSv:number; monthly_trend:{month:number;collective:number;max_dose:number;workers:number}[] };
-    workers: { total:number; cat_a:number; cat_b:number; active:number; with_dosimeter:number };
-    sources: { total:number; active:number; sealed:number; unsealed:number; cat_1:number; cat_2:number; cat_3:number; cat_4:number; cat_5:number };
-    incidents: { total:number; ines_0:number; ines_1:number; ines_2plus:number; closed:number; open:number; investigating:number };
-    training: { sessions_total:number; sessions_completed:number; total_participants:number; total_training_hours:number };
-    instruments: { total:number; operational:number; calibration_due:number; out_of_service:number; overdue_calibration:number };
-    waste: { total_entries:number; in_storage:number; cleared:number; disposed:number; vll:number; low:number; intermediate:number };
-    compliance: { total:number; compliant:number; partial:number; non_compliant:number; not_applicable:number; compliance_pct:number };
-    alara: { objectives_total:number; achieved:number; in_progress:number; overdue:number; avg_progress_pct:number };
-    regulatory_reports: { total:number; submitted:number; approved:number; draft:number; this_year:number };
-    environmental: { total_readings:number; avg_dose_rate:number; max_dose_rate:number; anomalies:number };
-  };
+interface Summary {
+  totalWorkers:number; activePoe:number; dosimetryRecords:number; avgDose:number; maxDose:number;
+  workersOver15:number; workersOver20:number;
+  totalIncidents:number; reportedCchen:number;
+  trainingEvents:number; trainedWorkers:number; avgTrainingHours:number;
+  committeeMeetings:number; openAgreements:number;
+  auditsTotal:number; auditsClosed:number; openFindings:number;
+  docsTotal:number; docsApproved:number; docsOverdue:number;
+  vendorsTotal:number; vendorsCchen:number; vendorsExpired:number;
+  risksTotal:number; risksHigh:number;
+  changesTotal:number; instrTotal:number; instrExpiredCalib:number;
+  complianceScore:number;
 }
+interface DoseMonth { month:number; avg_dose:number; count:number; }
+interface ComplianceItem { section:string; ok:boolean; }
+interface ReportData { year:number; summary:Summary; doseMonthly:DoseMonth[]; complianceItems:ComplianceItem[]; }
 
-// ── helpers ────────────────────────────────────────────────────────────────
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-CL", { day:"2-digit", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
-}
+// ── helpers ─────────────────────────────────────────────────────────────────
+const MONTH_LABEL = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
-// ── Section wrapper ────────────────────────────────────────────────────────
-function Section({ title, icon: Icon, children, defaultOpen = true }: { title:string; icon:React.ComponentType<{className?:string}>; children:React.ReactNode; defaultOpen?:boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
+function MiniBar({ value, max, color="bg-accent" }: { value:number; max:number; color?:string }) {
+  const pct = max > 0 ? Math.min(value/max*100,100) : 0;
   return (
-    <div className="rounded-lg border border-border bg-surface overflow-hidden print:block">
-      <button onClick={()=>setOpen(o=>!o)} className="w-full flex items-center gap-2 px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors print:pointer-events-none">
-        <Icon className="h-4 w-4 text-accent shrink-0"/>
-        <span className="font-semibold text-sm flex-1 text-left">{title}</span>
-        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground print:hidden"/> : <ChevronDown className="h-4 w-4 text-muted-foreground print:hidden"/>}
-      </button>
-      {open && <div className="p-4">{children}</div>}
+    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+      <div className={`h-full rounded-full ${color}`} style={{width:`${pct}%`}}/>
     </div>
   );
 }
 
-// ── KPI row ────────────────────────────────────────────────────────────────
-function KpiRow({ items }: { items:{label:string;value:string|number;sub?:string;color?:string}[] }) {
+function KpiBlock({ label, value, sub, warn=false, ok=true }: { label:string; value:string|number; sub?:string; warn?:boolean; ok?:boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {items.map(k=>(
-        <div key={k.label} className="rounded-md border border-border/60 bg-muted/20 px-3 py-2">
-          <p className={`text-xl font-bold ${k.color??""}`}>{k.value}</p>
-          <p className="text-xs text-muted-foreground leading-tight">{k.label}</p>
-          {k.sub && <p className="text-[10px] text-muted-foreground">{k.sub}</p>}
-        </div>
-      ))}
+    <div className={`rounded-lg border p-3 ${warn?"border-orange-300 bg-orange-50/60":ok?"border-border bg-surface":"border-red-200 bg-red-50/40"}`}>
+      <p className={`text-2xl font-bold ${warn?"text-orange-600":!ok?"text-red-600":""}`}>{value}</p>
+      <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────
+function Section({ title, children }: { title:string; children:React.ReactNode }) {
+  return (
+    <section className="rounded-lg border border-border bg-surface">
+      <div className="border-b border-border/60 px-4 py-2.5">
+        <h2 className="text-sm font-semibold">{title}</h2>
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  );
+}
+
 export default function AnnualReportPage() {
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
-  const [data, setData] = useState<AnnualReport | null>(null);
+  const [year, setYear]     = useState(currentYear);
+  const [data, setData]     = useState<ReportData|null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async (y: number) => {
+  useEffect(() => {
     setLoading(true);
-    const r = await fetch(`/api/annual-report?year=${y}`);
-    if (r.ok) setData(await r.json());
-    setLoading(false);
-  }, []);
+    fetch(`/api/annual-report?year=${year}`)
+      .then(r=>r.json())
+      .then(d=>{ setData(d); setLoading(false); })
+      .catch(()=>setLoading(false));
+  }, [year]);
 
-  useEffect(() => { load(year); }, [year, load]);
-
-  if (loading && !data) return (
+  if (loading) return (
     <div className="flex h-full items-center justify-center">
       <div className="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
     </div>
   );
-  if (!data) return <p className="p-8 text-muted-foreground">Error cargando datos.</p>;
+  if (!data) return <div className="p-6 text-sm text-muted-foreground">Error cargando informe</div>;
 
-  const { institution, summary, sections: s } = data;
-  const sc = summary.score >= 85 ? "text-emerald-600" : summary.score >= 65 ? "text-amber-600" : "text-red-600";
+  const { summary: s, doseMonthly, complianceItems } = data;
+  const maxMonthDose = Math.max(...doseMonthly.map(d=>d.avg_dose), 0.001);
 
   return (
-    <div className="flex flex-col gap-5 p-6 print:p-2 print:gap-3">
+    <div className="flex flex-col gap-5 p-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 print:flex-col">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2 print:text-lg"><FileText className="h-5 w-5 text-accent print:hidden"/>Informe Anual de Protección Radiológica</h1>
-          <p className="text-sm text-muted-foreground">CCHEN NS-06.0 Art. 36 — Informe Anual Obligatorio</p>
+          <h1 className="text-xl font-bold flex items-center gap-2"><FileText className="h-5 w-5 text-accent"/>Informe Anual Integrado PR</h1>
+          <p className="text-sm text-muted-foreground">Hospital Dr. Hernán Henríquez Aravena — Servicio Medicina Nuclear · Programa de Protección Radiológica NS-06.0</p>
         </div>
-        <div className="flex items-center gap-2 print:hidden">
+        <div className="flex items-center gap-2">
           <select value={year} onChange={e=>setYear(Number(e.target.value))}
             className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm">
             {[currentYear, currentYear-1, currentYear-2].map(y=><option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={()=>window.print()} className="flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-1.5 text-sm hover:opacity-90">
-            <Download className="h-4 w-4"/>Imprimir / PDF
+          <button onClick={()=>window.print()} className="flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-2 text-sm hover:opacity-90">
+            <Download className="h-4 w-4"/>Imprimir
           </button>
         </div>
       </div>
 
-      {/* Portada */}
-      <div className="rounded-lg border border-border bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Institución</p>
-            <p className="font-bold text-lg leading-tight">{institution.name}</p>
-            <p className="text-sm text-muted-foreground">{institution.address}</p>
-            <div className="mt-2 flex gap-4 flex-wrap text-xs">
-              <span>📋 Licencia: <strong>{institution.cchen_license}</strong></span>
-              <span>👤 EPR: <strong>{institution.opr_registration}</strong></span>
-              <span>📅 Período: <strong>{institution.report_period}</strong></span>
+      {/* Compliance global */}
+      <div className={`rounded-lg border px-4 py-3 flex items-center gap-4 ${s.complianceScore>=80?"border-emerald-200 bg-emerald-50/50":"border-orange-200 bg-orange-50/50"}`}>
+        {s.complianceScore>=80 ? <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0"/> : <AlertTriangle className="h-6 w-6 text-orange-600 shrink-0"/>}
+        <div className="flex-1">
+          <p className="font-semibold text-sm">Cumplimiento NS-06.0 — Año {year}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
+              <div className={`h-full rounded-full ${s.complianceScore>=80?"bg-emerald-500":"bg-orange-400"}`} style={{width:`${s.complianceScore}%`}}/>
             </div>
-          </div>
-          <div className="text-center border-l border-blue-200 pl-5">
-            <p className="text-xs text-muted-foreground mb-1">Score del Programa</p>
-            <p className={`text-5xl font-black ${sc}`}>{summary.score}</p>
-            <p className="text-xs text-muted-foreground">/ 100 pts</p>
+            <span className={`font-bold text-lg ${s.complianceScore>=80?"text-emerald-700":"text-orange-600"}`}>{s.complianceScore}%</span>
           </div>
         </div>
-        {summary.critical_issues.length > 0 && (
-          <div className="mt-3 rounded-md bg-red-50 border border-red-200 p-2.5">
-            <p className="text-xs font-semibold text-red-700 mb-1">⚠ Hallazgos críticos del período:</p>
-            <ul className="space-y-0.5">
-              {summary.critical_issues.map((c,i)=><li key={i} className="text-xs text-red-700">• {c}</li>)}
-            </ul>
-          </div>
-        )}
-        {summary.critical_issues.length === 0 && (
-          <div className="mt-3 rounded-md bg-emerald-50 border border-emerald-200 p-2.5 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0"/>
-            <p className="text-xs text-emerald-700">Sin hallazgos críticos en el período — Programa en estado satisfactorio</p>
-          </div>
-        )}
-        <p className="text-[10px] text-muted-foreground mt-2">Generado: {fmtDate(data.generated_at)}</p>
+        <p className="text-xs text-muted-foreground shrink-0">{complianceItems.filter(c=>c.ok).length}/{complianceItems.length} secciones OK</p>
       </div>
 
-      {/* Sections */}
-      {/* 1. Dosimetría */}
-      <Section title="1. Dosimetría Personal — Resultados del Período" icon={Radiation}>
-        {Number(s.dosimetry.above_20mSv) > 0 && (
-          <div className="mb-3 rounded-md bg-red-50 border border-red-200 p-2.5 flex items-center gap-2">
-            <XCircle className="h-4 w-4 text-red-600 shrink-0"/>
-            <p className="text-sm text-red-700"><strong>{s.dosimetry.above_20mSv} trabajador(es)</strong> superaron el límite de 20 mSv/año — Requiere investigación inmediata</p>
-          </div>
-        )}
-        <KpiRow items={[
-          { label:"Trabajadores monitoreados", value: s.dosimetry.workers_monitored },
-          { label:"Dosis colectiva (mSv)", value: s.dosimetry.collective_dose_mSv, sub:"Σ período" },
-          { label:"Dosis media individual", value: `${s.dosimetry.avg_dose_mSv} mSv`, color: Number(s.dosimetry.avg_dose_mSv)>6?"text-amber-600":"" },
-          { label:"Dosis máxima individual", value: `${s.dosimetry.max_individual_dose_mSv} mSv`, color: Number(s.dosimetry.max_individual_dose_mSv)>20?"text-red-600":Number(s.dosimetry.max_individual_dose_mSv)>6?"text-amber-600":"text-emerald-600" },
-          { label:"Sobre límite 20 mSv", value: s.dosimetry.above_20mSv, color: Number(s.dosimetry.above_20mSv)>0?"text-red-600":"" },
-          { label:"Entre 6–20 mSv", value: s.dosimetry.between_6_20mSv, color: Number(s.dosimetry.between_6_20mSv)>0?"text-amber-600":"" },
-          { label:"Por debajo de 1 mSv", value: s.dosimetry.below_1mSv, sub:"Dosis muy baja" },
-          { label:"Límite reglamentario", value:"20 mSv/año", sub:"DS 3/1985" },
-        ]}/>
-        {s.dosimetry.monthly_trend?.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs font-semibold mb-2">Tendencia mensual dosis colectiva (mSv)</p>
-            <div className="flex items-end gap-1 h-16">
-              {s.dosimetry.monthly_trend.map(m=>{
-                const months = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-                const max = Math.max(...s.dosimetry.monthly_trend.map(x=>Number(x.collective)), 1);
-                const h = Math.round((Number(m.collective)/max)*100);
-                return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-0.5">
-                    <div className="w-full bg-blue-500/20 rounded-sm flex items-end" style={{height:"52px"}}>
-                      <div className="w-full bg-blue-500 rounded-sm transition-all" style={{height:`${h}%`}} title={`${m.collective} mSv`}/>
-                    </div>
-                    <span className="text-[9px] text-muted-foreground">{months[m.month]}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </Section>
-
-      {/* 2. Personal */}
-      <Section title="2. Personal Ocupacionalmente Expuesto (POE)" icon={Users}>
-        <KpiRow items={[
-          { label:"POE total registrado", value: s.workers.total },
-          { label:"Categoría A", value: s.workers.cat_a, sub:"Control trimestral" },
-          { label:"Categoría B", value: s.workers.cat_b, sub:"Control anual" },
-          { label:"Con dosímetro asignado", value: s.workers.with_dosimeter },
-        ]}/>
-        <p className="text-xs text-muted-foreground mt-2">Categorización según DS 3/1985 Art. 15 — Límite Cat. A: 20 mSv/año | Cat. B: 6 mSv/año</p>
-      </Section>
-
-      {/* 3. Fuentes */}
-      <Section title="3. Inventario de Fuentes Radiactivas" icon={Radiation}>
-        <KpiRow items={[
-          { label:"Fuentes totales", value: s.sources.total },
-          { label:"Activas", value: s.sources.active, color:"text-emerald-600" },
-          { label:"Selladas", value: s.sources.sealed },
-          { label:"No selladas", value: s.sources.unsealed },
-        ]}/>
-        <div className="mt-2 flex gap-2 flex-wrap">
-          {[1,2,3,4,5].map(c=>{
-            const val = s.sources[`cat_${c}` as keyof typeof s.sources] as number;
-            if (!val) return null;
-            const colors = ["","bg-red-100 text-red-700","bg-orange-100 text-orange-700","bg-amber-100 text-amber-700","bg-green-100 text-green-700","bg-blue-100 text-blue-700"];
-            return <span key={c} className={`text-xs px-2 py-0.5 rounded-full ${colors[c]}`}>Cat. {c}: {val}</span>;
-          })}
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">Categorización IAEA — Categoría 1 mayor peligrosidad</p>
-      </Section>
-
-      {/* 4. Incidentes */}
-      <Section title="4. Incidentes Radiológicos" icon={AlertTriangle}>
-        {Number(s.incidents.ines_2plus) > 0 && (
-          <div className="mb-3 rounded-md bg-red-50 border border-red-200 p-2.5 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-600 shrink-0"/>
-            <p className="text-sm text-red-700"><strong>{s.incidents.ines_2plus} incidente(s) INES ≥ 2</strong> — Deben reportarse a CCHEN</p>
-          </div>
-        )}
-        <KpiRow items={[
-          { label:"Total incidentes", value: s.incidents.total },
-          { label:"INES 0 (Desviación)", value: s.incidents.ines_0 },
-          { label:"INES 1 (Anomalía)", value: s.incidents.ines_1, color: Number(s.incidents.ines_1)>0?"text-amber-600":"" },
-          { label:"INES ≥ 2", value: s.incidents.ines_2plus, color: Number(s.incidents.ines_2plus)>0?"text-red-600":"" },
-          { label:"Cerrados", value: s.incidents.closed, color:"text-emerald-600" },
-          { label:"Abiertos", value: s.incidents.open, color: Number(s.incidents.open)>0?"text-amber-600":"" },
-          { label:"En investigación", value: s.incidents.investigating },
-          { label:"Tasa resolución", value: s.incidents.total > 0 ? `${Math.round(s.incidents.closed/s.incidents.total*100)}%` : "—", color:"text-blue-600" },
-        ]}/>
-      </Section>
-
-      {/* 5. Capacitación */}
-      <Section title="5. Capacitación y Competencias en Protección Radiológica" icon={GraduationCap}>
-        <KpiRow items={[
-          { label:"Sesiones realizadas", value: `${s.training.sessions_completed}/${s.training.sessions_total}` },
-          { label:"Total participantes", value: s.training.total_participants },
-          { label:"Horas de capacitación", value: s.training.total_training_hours, sub:"horas·persona" },
-          { label:"Cumplimiento plan", value: s.training.sessions_total > 0 ? `${Math.round(s.training.sessions_completed/s.training.sessions_total*100)}%` : "—", color:"text-emerald-600" },
-        ]}/>
-      </Section>
-
-      {/* 6. Instrumentos */}
-      <Section title="6. Instrumentos de Medición y Calibración" icon={Wrench}>
-        {Number(s.instruments.overdue_calibration) > 0 && (
-          <div className="mb-3 rounded-md bg-amber-50 border border-amber-200 p-2.5 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-600 shrink-0"/>
-            <p className="text-sm text-amber-700"><strong>{s.instruments.overdue_calibration} instrumento(s)</strong> con calibración vencida</p>
-          </div>
-        )}
-        <KpiRow items={[
-          { label:"Instrumentos totales", value: s.instruments.total },
-          { label:"Operativos", value: s.instruments.operational, color:"text-emerald-600" },
-          { label:"Calibración requerida", value: s.instruments.calibration_due, color: Number(s.instruments.calibration_due)>0?"text-amber-600":"" },
-          { label:"Fuera de servicio", value: s.instruments.out_of_service, color: Number(s.instruments.out_of_service)>0?"text-red-600":"" },
-        ]}/>
-      </Section>
-
-      {/* 7. Residuos */}
-      <Section title="7. Gestión de Residuos Radiactivos" icon={Trash2}>
-        <KpiRow items={[
-          { label:"Entradas registradas", value: s.waste.total_entries },
-          { label:"En almacenamiento", value: s.waste.in_storage },
-          { label:"Liberados (10 T½)", value: s.waste.cleared, color:"text-emerald-600" },
-          { label:"Dispuestos", value: s.waste.disposed },
-          { label:"Muy bajo nivel", value: s.waste.vll },
-          { label:"Bajo nivel", value: s.waste.low },
-          { label:"Nivel intermedio", value: s.waste.intermediate, color: Number(s.waste.intermediate)>0?"text-amber-600":"" },
-        ]}/>
-        <p className="text-xs text-muted-foreground mt-2">Criterio liberación: 10 semividas (T½×10) — IAEA GSR Part 5 / DS 3/1985 Art. 56</p>
-      </Section>
-
-      {/* 8. Cumplimiento */}
-      <Section title="8. Cumplimiento Normativo NS-06.0" icon={Shield}>
-        <div className="flex items-center gap-4 mb-3">
-          <div className="text-center">
-            <p className={`text-4xl font-black ${s.compliance.compliance_pct>=90?"text-emerald-600":s.compliance.compliance_pct>=70?"text-amber-600":"text-red-600"}`}>{s.compliance.compliance_pct}%</p>
-            <p className="text-xs text-muted-foreground">Cumplimiento</p>
-          </div>
-          <div className="flex-1">
-            <div className="flex h-4 rounded-full overflow-hidden gap-0.5">
-              <div className="bg-emerald-500" style={{width:`${(s.compliance.compliant/Math.max(s.compliance.total,1))*100}%`}}/>
-              <div className="bg-amber-400" style={{width:`${(s.compliance.partial/Math.max(s.compliance.total,1))*100}%`}}/>
-              <div className="bg-red-500" style={{width:`${(s.compliance.non_compliant/Math.max(s.compliance.total,1))*100}%`}}/>
-              <div className="bg-gray-200" style={{width:`${(s.compliance.not_applicable/Math.max(s.compliance.total,1))*100}%`}}/>
-            </div>
-            <div className="flex gap-3 mt-1 text-[10px] text-muted-foreground">
-              <span>✓ Cumple: {s.compliance.compliant}</span>
-              <span>◑ Parcial: {s.compliance.partial}</span>
-              <span>✗ No cumple: {s.compliance.non_compliant}</span>
-              <span>— N/A: {s.compliance.not_applicable}</span>
-            </div>
-          </div>
+      {/* §1 Personal expuesto */}
+      <Section title="1. Personal Ocupacionalmente Expuesto (POE)">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <KpiBlock label="Total trabajadores" value={s.totalWorkers}/>
+          <KpiBlock label="POE activos" value={s.activePoe}/>
+          <KpiBlock label="Registros dosim. año" value={s.dosimetryRecords}/>
+          <KpiBlock label="Dosis promedio anual" value={`${s.avgDose?.toFixed(2)} mSv`} sub="Límite: 20 mSv/año" ok={s.avgDose<10}/>
+          <KpiBlock label="Dosis máxima individual" value={`${s.maxDose?.toFixed(2)} mSv`} warn={s.maxDose>15} ok={s.maxDose<20}/>
+          <KpiBlock label="POE > 15 mSv" value={s.workersOver15} warn={s.workersOver15>0} ok={s.workersOver15===0} sub="Alerta: > límite de acción"/>
+          {s.workersOver20>0 && <KpiBlock label="POE > 20 mSv ⚠" value={s.workersOver20} ok={false} sub="Excede límite regulatorio"/>}
         </div>
       </Section>
 
-      {/* 9. ALARA */}
-      <Section title="9. Programa ALARA — Optimización de la Dosis Colectiva" icon={TrendingDown}>
-        <KpiRow items={[
-          { label:"Objetivos ALARA", value: s.alara.objectives_total },
-          { label:"Logrados", value: s.alara.achieved, color:"text-emerald-600" },
-          { label:"En progreso", value: s.alara.in_progress },
-          { label:"Atrasados", value: s.alara.overdue, color: Number(s.alara.overdue)>0?"text-red-600":"" },
-        ]}/>
-        <p className="text-xs text-muted-foreground mt-1">Avance promedio: {s.alara.avg_progress_pct}% — Principio ALARA: "As Low As Reasonably Achievable"</p>
+      {/* §2 Dosis mensuales */}
+      {doseMonthly.length > 0 && (
+        <Section title="2. Tendencia de Dosis Efectiva Mensual Promedio">
+          <div className="space-y-1.5">
+            {doseMonthly.map(d=>(
+              <div key={d.month} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-7 text-right shrink-0">{MONTH_LABEL[d.month]}</span>
+                <div className="flex-1">
+                  <MiniBar value={d.avg_dose} max={maxMonthDose}
+                    color={d.avg_dose > 1.5?"bg-orange-400": d.avg_dose > 0.8?"bg-amber-400":"bg-emerald-400"}/>
+                </div>
+                <span className="text-xs font-mono w-20 text-right shrink-0">{d.avg_dose.toFixed(3)} mSv</span>
+                <span className="text-[10px] text-muted-foreground w-14 text-right shrink-0">({d.count} reg.)</span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* §3 Incidentes */}
+      <Section title="3. Incidentes y Eventos Radiológicos">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Total incidentes" value={s.totalIncidents} ok={s.totalIncidents===0}/>
+          <KpiBlock label="Reportados a CCHEN" value={s.reportedCchen} sub="Obligatorio según normativa"/>
+          {s.totalIncidents > s.reportedCchen && (
+            <KpiBlock label="Sin reportar a CCHEN" value={s.totalIncidents-s.reportedCchen} ok={false} warn/>
+          )}
+        </div>
       </Section>
 
-      {/* 10. Monitoreo ambiental */}
-      <Section title="10. Monitoreo Ambiental" icon={BarChart3}>
-        <KpiRow items={[
-          { label:"Lecturas registradas", value: s.environmental.total_readings },
-          { label:"Tasa dosis promedio", value: `${s.environmental.avg_dose_rate} μSv/h` },
-          { label:"Tasa dosis máxima", value: `${s.environmental.max_dose_rate} μSv/h` },
-          { label:"Anomalías detectadas", value: s.environmental.anomalies, color: Number(s.environmental.anomalies)>0?"text-amber-600":"" },
-        ]}/>
+      {/* §4 Capacitación */}
+      <Section title="4. Capacitación del Personal">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Eventos de capacitación" value={s.trainingEvents}/>
+          <KpiBlock label="Trabajadores capacitados" value={s.trainedWorkers}
+            ok={s.trainedWorkers >= s.activePoe * 0.8} sub={`Meta: ≥80% POE (${Math.ceil(s.activePoe*0.8)})`}/>
+          <KpiBlock label="Horas promedio/evento" value={`${s.avgTrainingHours?.toFixed(1) ?? 0} h`}/>
+          <KpiBlock label="% POE capacitado" value={`${s.activePoe ? Math.round(s.trainedWorkers/s.activePoe*100) : 0}%`}
+            ok={(s.trainedWorkers/Math.max(s.activePoe,1))>=0.8}/>
+        </div>
       </Section>
 
-      {/* 11. Reportes regulatorios */}
-      <Section title="11. Declaraciones y Reportes a CCHEN" icon={FileText}>
-        <KpiRow items={[
-          { label:"Reportes año en curso", value: s.regulatory_reports.this_year },
-          { label:"Enviados a CCHEN", value: s.regulatory_reports.submitted, color:"text-emerald-600" },
-          { label:"Aprobados", value: s.regulatory_reports.approved },
-          { label:"En borrador", value: s.regulatory_reports.draft, color: Number(s.regulatory_reports.draft)>0?"text-amber-600":"" },
-        ]}/>
+      {/* §5 Comité PR */}
+      <Section title="5. Comité de Protección Radiológica">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Sesiones realizadas" value={s.committeeMeetings}
+            ok={s.committeeMeetings>=4} sub="Mínimo 4 anuales NS-06.0"/>
+          <KpiBlock label="Acuerdos pendientes" value={s.openAgreements}
+            warn={s.openAgreements>5} ok={s.openAgreements===0}/>
+        </div>
       </Section>
 
-      {/* Firma */}
-      <div className="rounded-lg border border-border bg-surface p-4 print:mt-8">
-        <p className="text-xs font-semibold mb-4">Firmas y Responsabilidades</p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {[
-            { title:"Encargado de Protección Radiológica", name: institution.opr_name, reg: institution.opr_registration },
-            { title:"Director Médico / Jefe de Servicio", name:"", reg:"" },
-            { title:"Representante Legal", name:"", reg:"" },
-          ].map((s,i)=>(
-            <div key={i} className="flex flex-col gap-1">
-              <p className="text-[10px] text-muted-foreground font-semibold">{s.title}</p>
-              <div className="border-b border-border pb-6 mb-1"/>
-              {s.name ? <p className="text-xs">{s.name}</p> : <p className="text-xs text-muted-foreground">Nombre y firma</p>}
-              {s.reg && <p className="text-[10px] text-muted-foreground">Reg. {s.reg}</p>}
-              <p className="text-[10px] text-muted-foreground">Fecha: _______________</p>
+      {/* §6 Auditorías */}
+      <Section title="6. Auditorías Internas del Programa">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Auditorías planificadas" value={s.auditsTotal}/>
+          <KpiBlock label="Auditorías cerradas" value={s.auditsClosed} ok={s.auditsClosed===s.auditsTotal}/>
+          <KpiBlock label="Hallazgos abiertos" value={s.openFindings}
+            warn={s.openFindings>3} ok={s.openFindings===0}/>
+        </div>
+      </Section>
+
+      {/* §7 Documentación */}
+      <Section title="7. Sistema de Gestión Documental">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Documentos totales" value={s.docsTotal}/>
+          <KpiBlock label="Documentos vigentes" value={s.docsApproved}
+            ok={s.docsApproved===s.docsTotal} sub={`${s.docsTotal ? Math.round(s.docsApproved/s.docsTotal*100) : 0}% del total`}/>
+          <KpiBlock label="Revisiones vencidas" value={s.docsOverdue}
+            ok={s.docsOverdue===0} warn={s.docsOverdue>0}/>
+        </div>
+      </Section>
+
+      {/* §8 Proveedores e instrumentos */}
+      <Section title="8. Proveedores e Instrumentos">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <KpiBlock label="Proveedores activos" value={s.vendorsTotal}/>
+          <KpiBlock label="Auth. CCHEN" value={s.vendorsCchen}/>
+          <KpiBlock label="Auth. CCHEN vencida" value={s.vendorsExpired}
+            ok={s.vendorsExpired===0} warn={s.vendorsExpired>0}/>
+          <KpiBlock label="Instrumentos" value={s.instrTotal}/>
+          <KpiBlock label="Calibraciones vencidas" value={s.instrExpiredCalib}
+            ok={s.instrExpiredCalib===0} warn={s.instrExpiredCalib>0}/>
+          <KpiBlock label="Cambios al programa" value={s.changesTotal}/>
+          <KpiBlock label="Riesgos identificados" value={s.risksTotal}/>
+          <KpiBlock label="Riesgos alto/crítico" value={s.risksHigh}
+            warn={s.risksHigh>0} ok={s.risksHigh===0}/>
+        </div>
+      </Section>
+
+      {/* §9 Checklist cumplimiento NS-06.0 */}
+      <Section title="9. Lista de Verificación Cumplimiento NS-06.0">
+        <div className="flex flex-col gap-1.5">
+          {complianceItems.map((c,i)=>(
+            <div key={i} className={`flex items-center gap-3 rounded px-3 py-2 text-xs ${c.ok?"bg-emerald-50 border border-emerald-100":"bg-red-50 border border-red-200"}`}>
+              {c.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0"/> : <XCircle className="h-4 w-4 text-red-500 shrink-0"/>}
+              <span className={c.ok?"text-emerald-800":"text-red-800"}>{c.section}</span>
+              <span className="ml-auto font-semibold shrink-0">{c.ok?"✓ Conforme":"✗ No conforme"}</span>
             </div>
           ))}
         </div>
-      </div>
+      </Section>
 
       {/* Footer */}
-      <div className="text-center text-[10px] text-muted-foreground print:fixed print:bottom-2 print:w-full">
-        Informe generado por RPMS — Sistema de Gestión de Protección Radiológica · {fmtDate(data.generated_at)} · Período {data.year}
+      <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+        <CheckCircle2 className="h-3 w-3 text-emerald-500"/>
+        <p>Informe generado por RPMS · Hospital Dr. Hernán Henríquez Aravena, Temuco · Año {year} · CCHEN NS-06.0</p>
       </div>
     </div>
   );
