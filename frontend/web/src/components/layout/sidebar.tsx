@@ -84,6 +84,7 @@ const NAV = [
   // ── Transporte ────────────────────────────────────────
   { href: "/transport", label: "Transporte Radiactivo", icon: Truck },
   { href: "/transport/dashboard", label: "Dashboard Transporte", icon: BarChart3 },
+  { href: "/transport/authorization", label: "Autorización CCHEN Transporte", icon: FileCheck },
 
   // ── Gestión Normativa ─────────────────────────────────
   { href: "/alara", label: "Programa ALARA", icon: TrendingDown },
