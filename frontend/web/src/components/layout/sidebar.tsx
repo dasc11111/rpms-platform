@@ -34,6 +34,7 @@ const NAV = [
   // ── Medicina Nuclear ───────────────────────────────────
   { href: "/nuclear-medicine", label: "Medicina Nuclear", icon: Stethoscope },
   { href: "/petct", label: "PET/CT Exámenes", icon: ScanLine },
+  { href: "/petct/alerts", label: "Alertas PET/CT", icon: AlertTriangle },
   { href: "/quality-control", label: "Control de Calidad", icon: CheckSquare },
   { href: "/i131", label: "Administración I-131", icon: Syringe },
   { href: "/i131/stats", label: "Estadísticas I-131", icon: BarChart3 },
