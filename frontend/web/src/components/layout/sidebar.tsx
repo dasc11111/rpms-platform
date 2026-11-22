@@ -86,6 +86,7 @@ const NAV = [
   { href: "/training", label: "Capacitación PR", icon: GraduationCap },
   { href: "/equipment", label: "Equipos y Mantención", icon: Wrench },
   { href: "/waste", label: "Residuos Radiactivos", icon: Recycle },
+  { href: "/sources", label: "Fuentes Radiactivas", icon: Atom },
   { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
