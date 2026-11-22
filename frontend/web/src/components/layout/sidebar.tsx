@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
-  FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
+  FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, Send,
 } from "lucide-react";
@@ -70,6 +70,7 @@ const NAV = [
   { href: "/incidents", label: "Incidentes", icon: AlertTriangle },
   { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
+  { href: "/changes", label: "Gestión de Cambios", icon: GitBranch },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
