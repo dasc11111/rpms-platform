@@ -71,6 +71,7 @@ const NAV = [
   { href: "/logbook", label: "Libro de Novedades", icon: BookOpen },
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
   { href: "/changes", label: "Gestión de Cambios", icon: GitBranch },
+  { href: "/radiation-program", label: "Programa PR (PPR)", icon: BookOpen },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
