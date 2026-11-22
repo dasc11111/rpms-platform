@@ -47,6 +47,7 @@ const NAV = [
   { href: "/waste-expert", label: "Residuos (Sistema Experto)", icon: FlaskConical },
   { href: "/waste-records", label: "Registros de Residuos", icon: Trash2 },
   { href: "/waste-calibration", label: "Calibración Detectores", icon: FlaskConical },
+  { href: "/waste-contamination-criteria", label: "Criterios Contaminación", icon: ShieldAlert },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
