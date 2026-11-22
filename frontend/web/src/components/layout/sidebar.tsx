@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Beaker, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail,
+  Trash2, Truck, UserCog, Users, Warehouse, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -51,6 +51,7 @@ const NAV = [
   { href: "/waste-release-criteria", label: "Criterios Liberación", icon: Recycle },
   { href: "/waste-items", label: "Fichas de Residuos", icon: Trash2 },
   { href: "/waste-labels", label: "Rótulos de Residuos", icon: Tag },
+  { href: "/waste-storage", label: "Almacenamiento Temporal", icon: Warehouse },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
