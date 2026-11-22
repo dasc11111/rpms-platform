@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
+  Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Beaker, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail,
@@ -88,6 +88,7 @@ const NAV = [
   { href: "/radioactive-sources", label: "Fuentes Radiactivas", icon: Atom },
   { href: "/radioactive-waste", label: "Residuos Radiactivos", icon: Recycle },
   { href: "/equipment-calibration", label: "Calibración y Control Calidad", icon: Gauge },
+  { href: "/leak-tests", label: "Pruebas de Estanqueidad", icon: Beaker },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
