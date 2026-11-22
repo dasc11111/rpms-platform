@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -83,7 +83,7 @@ function ResultCard({ result }: { result: SearchResult }) {
   );
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -207,7 +207,7 @@ export default function SearchPage() {
       {searched && !loading && results.length === 0 && (
         <div className="text-center py-12">
           <SearchX className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-          <p className="font-medium text-gray-500">Sin resultados para "{query}"</p>
+          <p className="font-medium text-gray-500">Sin resultados para &ldquo;{query}&rdquo;</p>
           <p className="text-sm text-gray-400 mt-1">
             Intenta con otro término o revisa la ortografía.
           </p>
@@ -277,5 +277,20 @@ export default function SearchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 max-w-3xl mx-auto">
+        <div className="flex items-center gap-2 text-gray-400">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Cargando búsqueda…</span>
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }
