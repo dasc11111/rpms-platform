@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
   FileText, Flame, FlaskConical, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown,
+  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -87,6 +87,7 @@ const NAV = [
   { href: "/equipment", label: "Equipos y Mantención", icon: Wrench },
   { href: "/waste", label: "Residuos Radiactivos", icon: Recycle },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Atom },
+  { href: "/regulatory-reports", label: "Reportes CCHEN", icon: Send },
   { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
