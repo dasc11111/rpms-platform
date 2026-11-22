@@ -57,6 +57,7 @@ const NAV = [
   { href: "/waste-release-criteria", label: "Criterios Liberación", icon: Recycle },
   { href: "/waste-items", label: "Fichas de Residuos", icon: Trash2 },
   { href: "/waste-labels", label: "Rótulos de Residuos", icon: Tag },
+  { href: "/waste-labels/stats", label: "Estadísticas Rótulos", icon: BarChart3 },
   { href: "/waste-storage", label: "Almacenamiento Temporal", icon: Warehouse },
   { href: "/waste-storage/dashboard", label: "Dashboard Almacenamiento", icon: BarChart3 },
 
