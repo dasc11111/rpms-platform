@@ -106,6 +106,7 @@ const NAV = [
   { href: "/leak-tests", label: "Pruebas de Estanqueidad", icon: Beaker },
   { href: "/instruments-maintenance", label: "Calibraciones y Mantenciones", icon: Wrench },
   { href: "/room-clearance", label: "Liberación de Salas MN", icon: ScanLine },
+  { href: "/room-clearance/stats", label: "Estadísticas Liberación Salas", icon: BarChart3 },
   { href: "/radionuclides", label: "Catálogo de Radionúclidos", icon: Atom },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
