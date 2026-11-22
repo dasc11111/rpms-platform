@@ -6,6 +6,7 @@ import {
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Warehouse, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail, Clock, Package,
+  PlusCircle, FileSpreadsheet, Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -29,6 +30,11 @@ const NAV = [
   { href: "/dosimetry/late-returns", label: "Devueltos Fuera de Plazo", icon: Clock },
   { href: "/dosimetry/returns", label: "Lista de Devolución", icon: Package },
   { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
+  { href: "/dosimetry/manual", label: "Ingreso Manual Dosis", icon: PlusCircle },
+  { href: "/dosimetry/import-quarterly", label: "Importar Planilla CCHEN", icon: FileSpreadsheet },
+  { href: "/dosimetry/import-pdf", label: "Importar PDF Dosis", icon: FileText },
+  { href: "/dosimetry/export", label: "Exportar Informe Dosis", icon: Download },
+  { href: "/dosimetry/documents", label: "Documentos Dosimetría", icon: FileText },
   { href: "/internal-dosimetry", label: "Dosimetría Interna", icon: Atom },
 
   // ── Medicina Nuclear ───────────────────────────────────
