@@ -76,6 +76,7 @@ const NAV = [
   { href: "/capa", label: "CAPA — No Conformidades", icon: ClipboardCheck },
   { href: "/indicators", label: "Indicadores Desempeño PR", icon: BarChart3 },
   { href: "/objectives", label: "Objetivos PR y Plan Anual", icon: CheckSquare },
+  { href: "/service-providers", label: "Proveedores de Servicio PR", icon: Building2 },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
