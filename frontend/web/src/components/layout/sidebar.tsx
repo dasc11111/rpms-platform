@@ -85,6 +85,7 @@ const NAV = [
   { href: "/ppe-radiation", label: "EPP Radiológico", icon: ShieldAlert },
   { href: "/personal-contamination", label: "Contaminación Personal", icon: Biohazard },
   { href: "/personal-dosimetry", label: "Dosimetría Personal", icon: Activity },
+  { href: "/radioactive-sources", label: "Fuentes Radiactivas", icon: Atom },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
