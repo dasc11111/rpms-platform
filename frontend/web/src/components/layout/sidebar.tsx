@@ -63,6 +63,9 @@ const NAV = [
   { href: "/waste-labels/stats", label: "Estadísticas Rótulos", icon: BarChart3 },
   { href: "/waste-storage", label: "Almacenamiento Temporal", icon: Warehouse },
   { href: "/waste-storage/dashboard", label: "Dashboard Almacenamiento", icon: BarChart3 },
+  { href: "/waste-storage/inventory", label: "Inventario Almacenamiento", icon: Warehouse },
+  { href: "/waste-storage/locations", label: "Ubicaciones de Almacenamiento", icon: MapPin },
+  { href: "/waste-storage/movements", label: "Movimientos de Inventario", icon: ArrowRightLeft },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
