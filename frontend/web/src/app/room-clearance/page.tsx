@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 // §91 — Liberación de Salas de Medicina Nuclear
 // Monitoreo de contaminación superficial en Laboratorio y Sala de Pacientes
 // Normativa: DS 3/1985 Art. 36 · NS-06.0 §5.3 · IAEA Safety Reports No. 19

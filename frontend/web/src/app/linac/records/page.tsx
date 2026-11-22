@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { RefreshCw, ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
 

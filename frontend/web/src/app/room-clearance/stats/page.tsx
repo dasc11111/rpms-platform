@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import {
   ScanLine, BarChart3, RefreshCw, AlertTriangle, CheckCircle2, TrendingUp,

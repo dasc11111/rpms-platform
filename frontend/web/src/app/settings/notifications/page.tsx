@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Ajustes de Notificaciones
  * Configuración de alertas de vencimientos, dosis e incidentes.

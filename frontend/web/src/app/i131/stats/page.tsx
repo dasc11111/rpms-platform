@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useCallback } from "react";
 import {
   Syringe, BarChart3, RefreshCw, TrendingUp, Users, Calendar, Beaker,

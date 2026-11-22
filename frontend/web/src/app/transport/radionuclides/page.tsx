@@ -1,4 +1,6 @@
 "use client";
+
+export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { Plus, Atom, ChevronDown, ChevronUp, Pencil, Check, X } from "lucide-react";
 

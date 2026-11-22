@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useCallback, type ComponentType } from "react";
 import {
   Activity, Plus, Pencil, Trash2, X, Save, Search, RefreshCw,

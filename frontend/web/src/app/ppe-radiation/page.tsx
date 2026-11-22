@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 // §83 — Gestión de EPP Radiológico
 // NS-06.0 §4.6 — DS 3/1985 Art. 12
 

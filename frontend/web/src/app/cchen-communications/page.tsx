@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 // §82 — Gestión de Comunicaciones y Correspondencia Oficial con CCHEN
 // NS-06.0 §8.3 — DS 3/1985 Art. 10, 15
 // Trazabilidad del diálogo regulatorio con la Comisión Chilena de Energía Nuclear

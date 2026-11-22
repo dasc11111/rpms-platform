@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, FormEvent } from "react";
 import { ArrowLeft, Save, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";

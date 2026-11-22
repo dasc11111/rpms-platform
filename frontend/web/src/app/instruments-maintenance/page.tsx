@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 // §90 — Calibraciones Externas y Mantenciones de Instrumentos
 // Normativa: DS 3/1985 Art. 28 · NS-06.0 §8.3 · IAEA Safety Reports No. 16
 // IAEA-TECDOC-1040 · NCh-ISO 17025 · NMX-CC-9001-IMNC-2015

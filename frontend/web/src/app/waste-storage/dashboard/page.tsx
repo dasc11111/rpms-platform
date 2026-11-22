@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { RefreshCw, Trash2, AlertTriangle, BarChart3, TrendingUp, MapPin } from "lucide-react";
 

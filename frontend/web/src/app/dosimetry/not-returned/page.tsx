@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState, useMemo } from "react";
 import {
   AlertTriangle, Search, RefreshCw, Package, Filter, CheckCircle2, XCircle,

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect, useCallback, type ComponentType } from "react";
 import {
   FlaskConical, Plus, Pencil, Trash2, X, Save, AlertTriangle,

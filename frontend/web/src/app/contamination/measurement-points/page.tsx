@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { RefreshCw, Plus, MapPin, ToggleLeft, ToggleRight, Edit2, Check, X } from "lucide-react";
 

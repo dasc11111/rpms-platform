@@ -1,4 +1,6 @@
 "use client";
+
+export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
   MapPin, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw,
