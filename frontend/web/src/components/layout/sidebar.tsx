@@ -87,6 +87,7 @@ const NAV = [
   { href: "/personal-dosimetry", label: "Dosimetría Personal", icon: Activity },
   { href: "/radioactive-sources", label: "Fuentes Radiactivas", icon: Atom },
   { href: "/radioactive-waste", label: "Residuos Radiactivos", icon: Recycle },
+  { href: "/equipment-calibration", label: "Calibración y Control Calidad", icon: Gauge },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
