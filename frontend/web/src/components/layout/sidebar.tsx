@@ -83,6 +83,7 @@ const NAV = [
   { href: "/emergency-drills", label: "Simulacros de Emergencia", icon: Flame },
   { href: "/cchen-communications", label: "Comunicaciones CCHEN", icon: Mail },
   { href: "/ppe-radiation", label: "EPP Radiológico", icon: ShieldAlert },
+  { href: "/personal-contamination", label: "Contaminación Personal", icon: Biohazard },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
