@@ -80,6 +80,7 @@ const NAV = [
   { href: "/cchen-declarations", label: "Declaración Anual Dosis CCHEN", icon: Send },
   { href: "/cchen-inspections", label: "Inspecciones CCHEN", icon: Shield },
   { href: "/operating-licenses", label: "Licencias de Operación CCHEN", icon: FileCheck },
+  { href: "/emergency-drills", label: "Simulacros de Emergencia", icon: Flame },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
