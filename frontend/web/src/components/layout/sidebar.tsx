@@ -72,6 +72,7 @@ const NAV = [
   { href: "/compliance", label: "Cumplimiento NS-06.0", icon: ShieldAlert },
   { href: "/changes", label: "Gestión de Cambios", icon: GitBranch },
   { href: "/radiation-program", label: "Programa PR (PPR)", icon: BookOpen },
+  { href: "/improvement-plans", label: "Planes de Mejora PR", icon: TrendingUp },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
