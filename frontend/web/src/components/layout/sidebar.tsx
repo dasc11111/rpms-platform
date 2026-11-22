@@ -25,6 +25,7 @@ const NAV = [
 
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
   { href: "/dosimetry/annual-summary", label: "Resumen Anual Dosis", icon: BarChart3 },
+  { href: "/dosimetry/not-returned", label: "Dosímetros No Devueltos", icon: AlertTriangle },
   { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
   { href: "/internal-dosimetry", label: "Dosimetría Interna", icon: Atom },
 
