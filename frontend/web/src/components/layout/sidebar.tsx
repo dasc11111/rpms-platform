@@ -60,6 +60,7 @@ const NAV = [
   { href: "/instruments/calibrations", label: "Estado Calibraciones", icon: Award },
   { href: "/calibrations-overview", label: "Resumen Calibraciones", icon: Award },
   { href: "/instruments/maintenances", label: "Estado Mantenimientos", icon: Hammer },
+  { href: "/maintenances-overview", label: "Resumen Mantenimientos", icon: Wrench },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
   { href: "/sources/movements", label: "Movimientos IMAR", icon: ArrowRightLeft },
 
