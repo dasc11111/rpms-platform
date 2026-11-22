@@ -19,6 +19,7 @@ const NAV = [
   { href: "/expiries", label: "Vencimientos", icon: CalendarClock },
   { href: "/search", label: "Búsqueda Global", icon: Search },
   { href: "/workers", label: "Trabajadores", icon: Users },
+  { href: "/medical-exams", label: "Exámenes Médicos POE", icon: Stethoscope },
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
 
