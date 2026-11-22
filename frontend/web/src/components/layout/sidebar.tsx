@@ -88,6 +88,7 @@ const NAV = [
   { href: "/waste", label: "Residuos Radiactivos", icon: Recycle },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Atom },
   { href: "/regulatory-reports", label: "Reportes CCHEN", icon: Send },
+  { href: "/incidents", label: "Incidentes Radiológicos", icon: Flame },
   { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
