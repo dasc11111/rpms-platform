@@ -58,6 +58,7 @@ const NAV = [
   { href: "/waste-items", label: "Fichas de Residuos", icon: Trash2 },
   { href: "/waste-labels", label: "Rótulos de Residuos", icon: Tag },
   { href: "/waste-storage", label: "Almacenamiento Temporal", icon: Warehouse },
+  { href: "/waste-storage/dashboard", label: "Dashboard Almacenamiento", icon: BarChart3 },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
