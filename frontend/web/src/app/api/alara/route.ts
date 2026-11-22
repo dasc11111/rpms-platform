@@ -1,227 +1,267 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-async function ensureTable() {
+// ── ensure tables ──────────────────────────────────────────────────────────
+async function ensureTables() {
   await sql`
-    CREATE TABLE IF NOT EXISTS alara_actions (
-      id               SERIAL PRIMARY KEY,
-      year             INT NOT NULL,
-      quarter          INT,
-      service          TEXT,
-      action_type      TEXT NOT NULL DEFAULT 'optimizacion',
-      title            TEXT NOT NULL,
-      description      TEXT,
-      rationale        TEXT,
-      expected_benefit TEXT,
-      dose_reduction_pct NUMERIC(5,1),
-      responsible      TEXT,
-      status           TEXT NOT NULL DEFAULT 'planificado',
-      start_date       DATE,
-      end_date         DATE,
-      completion_date  DATE,
-      actual_reduction_pct NUMERIC(5,1),
-      verified_by      TEXT,
-      notes            TEXT,
-      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS alara_objectives (
+      id              SERIAL PRIMARY KEY,
+      year            INT NOT NULL DEFAULT EXTRACT(YEAR FROM NOW()),
+      title           TEXT NOT NULL,
+      description     TEXT,
+      category        TEXT NOT NULL DEFAULT 'optimization',  -- optimization|dose_reduction|technical|administrative
+      target_metric   TEXT,                                   -- e.g. "avg_dose_msv"
+      baseline_value  NUMERIC(10,4),
+      target_value    NUMERIC(10,4),
+      current_value   NUMERIC(10,4),
+      unit            TEXT,
+      status          TEXT NOT NULL DEFAULT 'planned',       -- planned|in_progress|achieved|not_achieved|cancelled
+      priority        TEXT NOT NULL DEFAULT 'medium',        -- high|medium|low
+      responsible     TEXT,
+      due_date        DATE,
+      completion_date DATE,
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ DEFAULT NOW()
     )
   `;
   await sql`
-    CREATE TABLE IF NOT EXISTS alara_dose_constraints (
-      id            SERIAL PRIMARY KEY,
-      service       TEXT NOT NULL,
-      role          TEXT,
-      constraint_msv NUMERIC(8,3) NOT NULL,
-      limit_msv      NUMERIC(8,3) NOT NULL DEFAULT 20,
-      year           INT NOT NULL,
-      notes          TEXT,
-      created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS alara_measures (
+      id              SERIAL PRIMARY KEY,
+      objective_id    INT REFERENCES alara_objectives(id) ON DELETE CASCADE,
+      title           TEXT NOT NULL,
+      description     TEXT,
+      measure_type    TEXT NOT NULL DEFAULT 'technical',     -- technical|administrative|ppe|training|procedure
+      area            TEXT,
+      status          TEXT NOT NULL DEFAULT 'proposed',      -- proposed|approved|implementing|completed|rejected
+      estimated_reduction_pct NUMERIC(5,2),
+      actual_reduction_pct    NUMERIC(5,2),
+      cost_clp        NUMERIC(12,0),
+      responsible     TEXT,
+      implementation_date DATE,
+      verification_date   DATE,
+      verification_result TEXT,
+      doc_ref         TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS alara_reviews (
+      id              SERIAL PRIMARY KEY,
+      year            INT NOT NULL,
+      quarter         INT NOT NULL CHECK (quarter BETWEEN 1 AND 4),
+      review_date     DATE NOT NULL,
+      conducted_by    TEXT,
+      overall_assessment TEXT,  -- satisfactory|needs_improvement|critical
+      collective_dose_msv NUMERIC(10,4),
+      max_individual_msv  NUMERIC(10,4),
+      avg_individual_msv  NUMERIC(10,4),
+      incidents_count INT DEFAULT 0,
+      objectives_achieved INT DEFAULT 0,
+      objectives_total    INT DEFAULT 0,
+      findings        TEXT,
+      actions_required TEXT,
+      next_review_date DATE,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
     )
   `;
 }
 
-// GET — collective dose summary + actions
+// ── seed ───────────────────────────────────────────────────────────────────
+async function seedIfEmpty() {
+  const count = await sql`SELECT COUNT(*) FROM alara_objectives`;
+  if (Number(count[0].count) > 0) return;
+
+  const year = new Date().getFullYear();
+
+  await sql`
+    INSERT INTO alara_objectives (year,title,description,category,target_metric,baseline_value,target_value,unit,status,priority,responsible,due_date)
+    VALUES
+    (${year},'Reducción dosis media personal medicina nuclear',
+     'Reducir dosis promedio trimestral del personal de medicina nuclear mediante optimización de protocolos de radiofarmacia',
+     'dose_reduction','avg_dose_msv',1.2,0.9,'mSv/trimestre','in_progress','high','Jefe de Protección Radiológica',${year+'-12-31'}),
+    (${year},'Implementar blindaje adicional en sala caliente',
+     'Instalar pantallas de vidrio plomado y contenedores adicionales en zona de preparación de radiofármacos',
+     'technical',NULL,NULL,NULL,NULL,'in_progress','high','Jefe de Medicina Nuclear',${year+'-09-30'}),
+    (${year},'Capacitación ALARA todo el personal OER',
+     'Realizar jornada de capacitación específica en principio ALARA para todo el personal expuesto',
+     'administrative','training_completion_pct',0,100,'%','planned','medium','Encargado Capacitación',${year+'-11-30'}),
+    (${year},'Revisión y actualización procedimientos de trabajo',
+     'Actualizar procedimientos escritos incorporando medidas de optimización identificadas en revisiones ALARA',
+     'administrative',NULL,NULL,NULL,NULL,'in_progress','medium','Comité de Protección Radiológica',${year+'-12-31'}),
+    (${year},'Implementar dosimetría de cristalino en personal de alto riesgo',
+     'Iniciar monitoreo de dosis en cristalino para personal que realiza procedimientos intervencionistas',
+     'technical','lens_dose_msv',NULL,15,'mSv/año','planned','medium','Jefe de Protección Radiológica',${year+'-10-31'})
+  `;
+
+  const objs = await sql`SELECT id FROM alara_objectives ORDER BY id LIMIT 2`;
+  if (objs.length >= 2) {
+    await sql`
+      INSERT INTO alara_measures (objective_id,title,description,measure_type,area,status,estimated_reduction_pct,responsible,implementation_date)
+      VALUES
+      (${objs[0].id},'Uso de blindajes tipo L en preparación',
+       'Instalar blindajes tipo L de 25 mm Pb en todas las estaciones de preparación de radiofármacos',
+       'technical','Radiofarmacia','completed',25.0,'Jefe Radiofarmacia','${year}-03-15'),
+      (${objs[0].id},'Optimización tiempo de permanencia en zona controlada',
+       'Implementar sistema de control de tiempo máximo en sala caliente: 20 min por turno',
+       'administrative','Sala Caliente','implementing',15.0,'Jefe Medicina Nuclear',NULL),
+      (${objs[1].id},'Pantalla vidrio plomado 2 mm Pb en ventana sala caliente',
+       'Instalación de ventana de vidrio plomado 50×50 cm para preparación con I-131',
+       'technical','Sala Caliente','approved',30.0,'Mantención Hospital',NULL)
+    `;
+  }
+
+  await sql`
+    INSERT INTO alara_reviews (year,quarter,review_date,conducted_by,overall_assessment,
+      collective_dose_msv,max_individual_msv,avg_individual_msv,incidents_count,
+      objectives_achieved,objectives_total,findings,actions_required,next_review_date)
+    VALUES
+    (${year},1,'${year}-04-15','Comité de Protección Radiológica','satisfactory',
+      12.5,0.8,0.42,0,1,3,
+      'Implementación de blindajes tipo L exitosa. Dosis promedio bajó de 0.52 a 0.42 mSv/trimestre.',
+      'Continuar con implementación de pantalla vidrio plomado. Revisar procedimientos sala caliente.',
+      '${year}-07-15'),
+    (${year},2,'${year}-07-18','Comité de Protección Radiológica','needs_improvement',
+      14.2,1.1,0.47,1,0,3,
+      'Incidente de contaminación menor en radiofarmacia. Dosis ligeramente sobre baseline por mayor carga de trabajo.',
+      'Reforzar procedimiento de verificación de contenedores. Actualizar protocolo I-131.',
+      '${year}-10-15')
+  `;
+}
+
+// ── GET ────────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
-  await ensureTable();
-  const url = new URL(req.url);
-  const resource = url.searchParams.get("resource") ?? "summary";
-  const year = parseInt(url.searchParams.get("year") ?? String(new Date().getFullYear()), 10);
+  await ensureTables();
+  await seedIfEmpty();
 
-  if (resource === "actions") {
-    const { rows } = await sql`
-      SELECT * FROM alara_actions
-      ORDER BY year DESC, quarter, created_at DESC
-    `;
-    return NextResponse.json({ actions: rows });
-  }
+  const { searchParams } = new URL(req.url);
+  const year  = searchParams.get("year")     ? parseInt(searchParams.get("year")!) : new Date().getFullYear();
+  const status = searchParams.get("status")  || "";
 
-  if (resource === "constraints") {
-    const { rows } = await sql`
-      SELECT * FROM alara_dose_constraints ORDER BY service, role
-    `;
-    return NextResponse.json({ constraints: rows });
-  }
+  const whereStatus = status ? sql`AND o.status = ${status}` : sql``;
 
-  // Default: collective dose summary from dosimetry_readings
-  // Group by service and year
-  const { rows: collective } = await sql`
+  const objectives = await sql`
+    SELECT o.*,
+      COUNT(m.id)                                          AS measures_count,
+      COUNT(m.id) FILTER (WHERE m.status = 'completed')   AS measures_done,
+      ROUND(
+        CASE WHEN o.baseline_value IS NOT NULL AND o.target_value IS NOT NULL AND o.baseline_value != o.target_value
+          THEN LEAST(100, GREATEST(0,
+            ((o.baseline_value - COALESCE(o.current_value, o.baseline_value)) /
+             (o.baseline_value - o.target_value)) * 100
+          ))
+          ELSE NULL
+        END, 1
+      ) AS progress_pct
+    FROM alara_objectives o
+    LEFT JOIN alara_measures m ON m.objective_id = o.id
+    WHERE o.year = ${year} ${whereStatus}
+    GROUP BY o.id
+    ORDER BY
+      CASE o.priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+      o.created_at
+  `;
+
+  const reviews = await sql`
+    SELECT * FROM alara_reviews
+    WHERE year = ${year}
+    ORDER BY quarter DESC
+  `;
+
+  // stats
+  const stats = await sql`
     SELECT
-      COALESCE(NULLIF(TRIM(w.service), ''), 'Sin servicio')       AS service,
-      EXTRACT(YEAR FROM d.period_end)::int                         AS yr,
-      COUNT(DISTINCT d.worker_id)::int                             AS worker_count,
-      SUM(d.dose)::numeric(10,3)                                   AS collective_dose_msv,
-      AVG(d.dose)::numeric(8,3)                                    AS avg_dose_msv,
-      MAX(d.dose)::numeric(8,3)                                    AS max_dose_msv,
-      COUNT(*) FILTER (WHERE d.dose > 6)::int                     AS above_constraint,
-      COUNT(*) FILTER (WHERE d.dose > 20)::int                    AS above_limit,
-      COUNT(*) FILTER (WHERE d.dose = 0 OR d.dose IS NULL)::int   AS zero_dose
-    FROM dosimetry_readings d
-    JOIN workers w ON w.id = d.worker_id
-    WHERE EXTRACT(YEAR FROM d.period_end) = ${year}
-      AND (d.body_region = 'whole_body' OR d.body_region IS NULL)
-    GROUP BY 1, 2
-    ORDER BY collective_dose_msv DESC
+      COUNT(*)                                                     AS total,
+      COUNT(*) FILTER (WHERE status = 'achieved')                  AS achieved,
+      COUNT(*) FILTER (WHERE status IN ('planned','in_progress'))  AS active,
+      COUNT(*) FILTER (WHERE status = 'not_achieved')              AS not_achieved,
+      COUNT(*) FILTER (WHERE priority = 'high' AND status NOT IN ('achieved','cancelled')) AS high_priority_pending,
+      COUNT(*) FILTER (WHERE due_date < NOW() AND status NOT IN ('achieved','cancelled','not_achieved')) AS overdue
+    FROM alara_objectives WHERE year = ${year}
   `;
+  const s = stats[0];
 
-  // Trend: last 5 years totals
-  const { rows: trend } = await sql`
-    SELECT
-      EXTRACT(YEAR FROM d.period_end)::int AS yr,
-      COUNT(DISTINCT d.worker_id)::int     AS workers,
-      SUM(d.dose)::numeric(10,3)           AS collective_dose_msv,
-      AVG(d.dose)::numeric(8,3)            AS avg_dose_msv,
-      MAX(d.dose)::numeric(8,3)            AS max_dose_msv,
-      COUNT(*) FILTER (WHERE d.dose > 20)::int AS exceeded_limit
-    FROM dosimetry_readings d
-    WHERE (d.body_region = 'whole_body' OR d.body_region IS NULL)
-      AND EXTRACT(YEAR FROM d.period_end) >= ${year - 4}
-    GROUP BY 1
-    ORDER BY 1
-  `;
-
-  // ALARA actions for selected year
-  const { rows: actions } = await sql`
-    SELECT * FROM alara_actions WHERE year = ${year} ORDER BY quarter NULLS LAST, created_at
-  `;
-
-  // Constraints
-  const { rows: constraints } = await sql`
-    SELECT * FROM alara_dose_constraints WHERE year = ${year} ORDER BY service, role
-  `;
-
-  return NextResponse.json({ collective, trend, actions, constraints, year });
+  return NextResponse.json({
+    year,
+    objectives,
+    reviews,
+    stats: {
+      total:                Number(s.total),
+      achieved:             Number(s.achieved),
+      active:               Number(s.active),
+      not_achieved:         Number(s.not_achieved),
+      high_priority_pending:Number(s.high_priority_pending),
+      overdue:              Number(s.overdue),
+    },
+  });
 }
 
-// POST
+// ── POST ───────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
-  await ensureTable();
-  const url = new URL(req.url);
-  const resource = url.searchParams.get("resource") ?? "action";
+  await ensureTables();
   const body = await req.json();
 
-  if (resource === "constraint") {
-    const { service, role, constraint_msv, limit_msv, year, notes } = body;
-    const { rows } = await sql`
-      INSERT INTO alara_dose_constraints (service, role, constraint_msv, limit_msv, year, notes)
-      VALUES (${service}, ${role ?? null}, ${constraint_msv}, ${limit_msv ?? 20}, ${year}, ${notes ?? null})
+  // sub-resource: measure
+  if (body._type === "measure") {
+    const { objective_id, title, description, measure_type, area, status, estimated_reduction_pct, responsible, implementation_date, doc_ref, cost_clp } = body;
+    const rows = await sql`
+      INSERT INTO alara_measures (objective_id,title,description,measure_type,area,status,estimated_reduction_pct,responsible,implementation_date,doc_ref,cost_clp)
+      VALUES (${objective_id},${title},${description??null},${measure_type??'technical'},${area??null},${status??'proposed'},${estimated_reduction_pct??null},${responsible??null},${implementation_date??null},${doc_ref??null},${cost_clp??null})
       RETURNING *
     `;
-    return NextResponse.json({ constraint: rows[0] }, { status: 201 });
+    return NextResponse.json(rows[0], { status: 201 });
   }
 
-  // default: action
-  const {
-    year, quarter, service, action_type, title, description, rationale,
-    expected_benefit, dose_reduction_pct, responsible, status,
-    start_date, end_date, completion_date, actual_reduction_pct, verified_by, notes,
-  } = body;
-  const { rows } = await sql`
-    INSERT INTO alara_actions (
-      year, quarter, service, action_type, title, description, rationale,
-      expected_benefit, dose_reduction_pct, responsible, status,
-      start_date, end_date, completion_date, actual_reduction_pct, verified_by, notes
-    ) VALUES (
-      ${year}, ${quarter ?? null}, ${service ?? null}, ${action_type ?? "optimizacion"},
-      ${title}, ${description ?? null}, ${rationale ?? null},
-      ${expected_benefit ?? null}, ${dose_reduction_pct ?? null}, ${responsible ?? null},
-      ${status ?? "planificado"}, ${start_date ?? null}, ${end_date ?? null},
-      ${completion_date ?? null}, ${actual_reduction_pct ?? null}, ${verified_by ?? null}, ${notes ?? null}
-    ) RETURNING *
-  `;
-  return NextResponse.json({ action: rows[0] }, { status: 201 });
-}
-
-// PATCH
-export async function PATCH(req: NextRequest) {
-  await ensureTable();
-  const url = new URL(req.url);
-  const resource = url.searchParams.get("resource") ?? "action";
-  const id = url.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-  const body = await req.json();
-
-  if (resource === "constraint") {
-    const { service, role, constraint_msv, limit_msv, year, notes } = body;
-    const { rows } = await sql`
-      UPDATE alara_dose_constraints SET
-        service        = COALESCE(${service ?? null}, service),
-        role           = COALESCE(${role ?? null}, role),
-        constraint_msv = COALESCE(${constraint_msv ?? null}::numeric, constraint_msv),
-        limit_msv      = COALESCE(${limit_msv ?? null}::numeric, limit_msv),
-        year           = COALESCE(${year ?? null}::int, year),
-        notes          = COALESCE(${notes ?? null}, notes)
-      WHERE id = ${parseInt(id, 10)}
+  // sub-resource: review
+  if (body._type === "review") {
+    const { year, quarter, review_date, conducted_by, overall_assessment, collective_dose_msv, max_individual_msv, avg_individual_msv, incidents_count, objectives_achieved, objectives_total, findings, actions_required, next_review_date } = body;
+    const rows = await sql`
+      INSERT INTO alara_reviews (year,quarter,review_date,conducted_by,overall_assessment,collective_dose_msv,max_individual_msv,avg_individual_msv,incidents_count,objectives_achieved,objectives_total,findings,actions_required,next_review_date)
+      VALUES (${year},${quarter},${review_date},${conducted_by??null},${overall_assessment??null},${collective_dose_msv??null},${max_individual_msv??null},${avg_individual_msv??null},${incidents_count??0},${objectives_achieved??0},${objectives_total??0},${findings??null},${actions_required??null},${next_review_date??null})
       RETURNING *
     `;
-    if (!rows.length) return NextResponse.json({ error: "not found" }, { status: 404 });
-    return NextResponse.json({ constraint: rows[0] });
+    return NextResponse.json(rows[0], { status: 201 });
   }
 
-  const {
-    year, quarter, service, action_type, title, description, rationale,
-    expected_benefit, dose_reduction_pct, responsible, status,
-    start_date, end_date, completion_date, actual_reduction_pct, verified_by, notes,
-  } = body;
-  const { rows } = await sql`
-    UPDATE alara_actions SET
-      year                 = COALESCE(${year ?? null}::int, year),
-      quarter              = COALESCE(${quarter ?? null}::int, quarter),
-      service              = COALESCE(${service ?? null}, service),
-      action_type          = COALESCE(${action_type ?? null}, action_type),
-      title                = COALESCE(${title ?? null}, title),
-      description          = COALESCE(${description ?? null}, description),
-      rationale            = COALESCE(${rationale ?? null}, rationale),
-      expected_benefit     = COALESCE(${expected_benefit ?? null}, expected_benefit),
-      dose_reduction_pct   = COALESCE(${dose_reduction_pct ?? null}::numeric, dose_reduction_pct),
-      responsible          = COALESCE(${responsible ?? null}, responsible),
-      status               = COALESCE(${status ?? null}, status),
-      start_date           = COALESCE(${start_date ?? null}::date, start_date),
-      end_date             = COALESCE(${end_date ?? null}::date, end_date),
-      completion_date      = COALESCE(${completion_date ?? null}::date, completion_date),
-      actual_reduction_pct = COALESCE(${actual_reduction_pct ?? null}::numeric, actual_reduction_pct),
-      verified_by          = COALESCE(${verified_by ?? null}, verified_by),
-      notes                = COALESCE(${notes ?? null}, notes),
-      updated_at           = NOW()
-    WHERE id = ${parseInt(id, 10)}
+  // objective
+  const { year, title, description, category, target_metric, baseline_value, target_value, unit, status, priority, responsible, due_date, notes } = body;
+  const rows = await sql`
+    INSERT INTO alara_objectives (year,title,description,category,target_metric,baseline_value,target_value,unit,status,priority,responsible,due_date,notes)
+    VALUES (${year??new Date().getFullYear()},${title},${description??null},${category??'optimization'},${target_metric??null},${baseline_value??null},${target_value??null},${unit??null},${status??'planned'},${priority??'medium'},${responsible??null},${due_date??null},${notes??null})
     RETURNING *
   `;
-  if (!rows.length) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json({ action: rows[0] });
+  return NextResponse.json(rows[0], { status: 201 });
 }
 
-// DELETE
+// ── PATCH ──────────────────────────────────────────────────────────────────
+export async function PATCH(req: NextRequest) {
+  await ensureTables();
+  const body = await req.json();
+  const { id, _table, ...fields } = body;
+
+  const table = _table === "measure" ? "alara_measures" : _table === "review" ? "alara_reviews" : "alara_objectives";
+  if (_table !== "measure" && _table !== "review") fields.updated_at = new Date().toISOString();
+
+  const keys = Object.keys(fields);
+  if (!keys.length) return NextResponse.json({ error: "No fields" }, { status: 400 });
+
+  let p = 1;
+  const setClauses = keys.map(k => `"${k}" = $${p++}`).join(", ");
+  const values = keys.map(k => fields[k]);
+  values.push(id);
+
+  const rows = await sql.unsafe(`UPDATE ${table} SET ${setClauses} WHERE id = $${p} RETURNING *`, values);
+  return NextResponse.json(rows[0]);
+}
+
+// ── DELETE ─────────────────────────────────────────────────────────────────
 export async function DELETE(req: NextRequest) {
-  await ensureTable();
-  const url = new URL(req.url);
-  const resource = url.searchParams.get("resource") ?? "action";
-  const id = url.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-  if (resource === "constraint") {
-    await sql`DELETE FROM alara_dose_constraints WHERE id = ${parseInt(id, 10)}`;
-  } else {
-    await sql`DELETE FROM alara_actions WHERE id = ${parseInt(id, 10)}`;
-  }
+  await ensureTables();
+  const { id, _table } = await req.json();
+  const table = _table === "measure" ? "alara_measures" : _table === "review" ? "alara_reviews" : "alara_objectives";
+  await sql.unsafe(`DELETE FROM ${table} WHERE id = $1`, [id]);
   return NextResponse.json({ ok: true });
 }
