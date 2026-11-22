@@ -81,6 +81,10 @@ const NAV = [
   // ── Radioterapia / Linac ───────────────────────────────
   { href: "/linac", label: "Linac / CML", icon: Zap },
   { href: "/linac/dashboard", label: "Dashboard LINAC", icon: BarChart3 },
+  { href: "/linac/qc", label: "Control de Calidad LINAC", icon: CheckSquare },
+  { href: "/linac/incidents", label: "Incidentes LINAC", icon: AlertTriangle },
+  { href: "/linac/maintenance", label: "Mantenimiento LINAC", icon: Wrench },
+  { href: "/linac/trends", label: "Tendencias CC LINAC", icon: TrendingUp },
   { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
   { href: "/blindaje", label: "Blindaje y Diseño", icon: ShieldCheck },
 
