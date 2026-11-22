@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send,
+  Trash2, Truck, UserCog, Users, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -78,6 +78,7 @@ const NAV = [
   { href: "/objectives", label: "Objetivos PR y Plan Anual", icon: CheckSquare },
   { href: "/service-providers", label: "Proveedores de Servicio PR", icon: Building2 },
   { href: "/cchen-declarations", label: "Declaración Anual Dosis CCHEN", icon: Send },
+  { href: "/cchen-inspections", label: "Inspecciones CCHEN", icon: Shield },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
