@@ -58,6 +58,7 @@ const NAV = [
   { href: "/instruments", label: "Instrumentos", icon: Wrench },
   { href: "/instruments/operational-check", label: "Verif. Operacional", icon: CheckSquare },
   { href: "/instruments/calibrations", label: "Estado Calibraciones", icon: Award },
+  { href: "/calibrations-overview", label: "Resumen Calibraciones", icon: Award },
   { href: "/instruments/maintenances", label: "Estado Mantenimientos", icon: Hammer },
   { href: "/sources", label: "Fuentes Radiactivas", icon: Zap },
   { href: "/sources/movements", label: "Movimientos IMAR", icon: ArrowRightLeft },
