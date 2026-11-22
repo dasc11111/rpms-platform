@@ -99,7 +99,7 @@ async function ensureTables() {
           capacitacion: { completo: false },
           declaracion_jurada: { completo: false }
         }},
-        `Informe en preparación. Plazo presentación CCHEN: 31 de marzo ${thisYear + 1}.`
+        ${"Informe en preparación. Plazo presentación CCHEN: 31 de marzo " + (thisYear + 1) + "."}
       )
     `;
 
