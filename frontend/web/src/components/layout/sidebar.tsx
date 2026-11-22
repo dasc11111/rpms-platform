@@ -72,6 +72,7 @@ const NAV = [
 
   // ── Radioterapia / Linac ───────────────────────────────
   { href: "/linac", label: "Linac / CML", icon: Zap },
+  { href: "/linac/dashboard", label: "Dashboard LINAC", icon: BarChart3 },
   { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
   { href: "/blindaje", label: "Blindaje y Diseño", icon: ShieldCheck },
 
