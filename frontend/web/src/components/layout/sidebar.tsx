@@ -5,7 +5,7 @@ import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Beaker, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
-  Trash2, Truck, UserCog, Users, Warehouse, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail,
+  Trash2, Truck, UserCog, Users, Warehouse, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -26,6 +26,7 @@ const NAV = [
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
   { href: "/dosimetry/annual-summary", label: "Resumen Anual Dosis", icon: BarChart3 },
   { href: "/dosimetry/not-returned", label: "Dosímetros No Devueltos", icon: AlertTriangle },
+  { href: "/dosimetry/late-returns", label: "Devueltos Fuera de Plazo", icon: Clock },
   { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
   { href: "/internal-dosimetry", label: "Dosimetría Interna", icon: Atom },
 
