@@ -85,6 +85,11 @@ const NAV = [
   { href: "/linac/incidents", label: "Incidentes LINAC", icon: AlertTriangle },
   { href: "/linac/maintenance", label: "Mantenimiento LINAC", icon: Wrench },
   { href: "/linac/trends", label: "Tendencias CC LINAC", icon: TrendingUp },
+  { href: "/linac/documents", label: "Documentos LINAC", icon: FileText },
+  { href: "/linac/authorizations", label: "Autorizaciones LINAC", icon: Shield },
+  { href: "/linac/radiation", label: "Protección Radiológica LINAC", icon: Radiation },
+  { href: "/linac/alerts", label: "Alertas LINAC", icon: Bell },
+  { href: "/linac/records", label: "Registros LINAC", icon: ClipboardList },
   { href: "/radioterapia", label: "Radioterapia (SIGR)", icon: Radiation },
   { href: "/blindaje", label: "Blindaje y Diseño", icon: ShieldCheck },
 
