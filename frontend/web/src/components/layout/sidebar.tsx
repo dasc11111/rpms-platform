@@ -43,6 +43,7 @@ const NAV = [
   // ── Protección Radiológica ─────────────────────────────
   { href: "/contamination", label: "Contaminación", icon: Biohazard },
   { href: "/contamination/stats", label: "Estadísticas Contaminación", icon: BarChart3 },
+  { href: "/contamination/measurement-points", label: "Puntos de Medición", icon: MapPin },
   { href: "/classified-zones", label: "Zonas Clasificadas", icon: MapPin },
   { href: "/zone-access", label: "Control de Acceso", icon: LogIn },
   { href: "/area-monitoring", label: "Monitoreo de Área", icon: Gauge },
