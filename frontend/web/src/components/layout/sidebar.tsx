@@ -73,7 +73,7 @@ const NAV = [
   { href: "/changes", label: "Gestión de Cambios", icon: GitBranch },
   { href: "/radiation-program", label: "Programa PR (PPR)", icon: BookOpen },
   { href: "/training", label: "Capacitación", icon: GraduationCap },
-  { href: "/committee-meetings", label: "Comité PR — Actas", icon: ClipboardList },
+  { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
   { href: "/environmental-monitoring", label: "Monitoreo Ambiental", icon: MapPin },
   { href: "/licenses", label: "Autorizaciones CCHEN", icon: FileText },
