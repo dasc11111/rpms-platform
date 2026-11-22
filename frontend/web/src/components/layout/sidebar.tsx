@@ -30,6 +30,7 @@ const NAV = [
   { href: "/dosimetry/late-returns", label: "Devueltos Fuera de Plazo", icon: Clock },
   { href: "/dosimetry/returns", label: "Lista de Devolución", icon: Package },
   { href: "/dosimetry/stats", label: "Estadísticas Dosis", icon: BarChart3 },
+  { href: "/dosimetry/quarterly", label: "Registros Trimestrales Dosis", icon: BarChart3 },
   { href: "/dosimetry/manual", label: "Ingreso Manual Dosis", icon: PlusCircle },
   { href: "/dosimetry/import-quarterly", label: "Importar Planilla CCHEN", icon: FileSpreadsheet },
   { href: "/dosimetry/import-pdf", label: "Importar PDF Dosis", icon: FileText },
@@ -45,12 +46,16 @@ const NAV = [
   { href: "/i131", label: "Administración I-131", icon: Syringe },
   { href: "/i131/stats", label: "Estadísticas I-131", icon: BarChart3 },
   { href: "/i131/isolation", label: "Aislamiento I-131", icon: Shield },
+  { href: "/i131/suggestions", label: "Sugerencias I-131", icon: Search },
+  { href: "/i131/export", label: "Exportar Registros I-131", icon: Download },
   { href: "/radiopharmacy", label: "Radiofarmacia", icon: FlaskConical },
 
   // ── Protección Radiológica ─────────────────────────────
   { href: "/contamination", label: "Contaminación", icon: Biohazard },
   { href: "/contamination/stats", label: "Estadísticas Contaminación", icon: BarChart3 },
   { href: "/contamination/measurement-points", label: "Puntos de Medición", icon: MapPin },
+  { href: "/contamination/limits", label: "Límites Contaminación", icon: ShieldAlert },
+  { href: "/contamination/export", label: "Exportar Contaminación", icon: Download },
   { href: "/classified-zones", label: "Zonas Clasificadas", icon: MapPin },
   { href: "/zone-access", label: "Control de Acceso", icon: LogIn },
   { href: "/area-monitoring", label: "Monitoreo de Área", icon: Gauge },
@@ -72,6 +77,7 @@ const NAV = [
   { href: "/waste-storage/inventory", label: "Inventario Almacenamiento", icon: Warehouse },
   { href: "/waste-storage/locations", label: "Ubicaciones de Almacenamiento", icon: MapPin },
   { href: "/waste-storage/movements", label: "Movimientos de Inventario", icon: ArrowRightLeft },
+  { href: "/waste-storage/export", label: "Exportar Almacenamiento", icon: Download },
 
   // ── Equipos y Fuentes ──────────────────────────────────
   { href: "/equipment", label: "Equipos", icon: Radio },
@@ -106,6 +112,7 @@ const NAV = [
   { href: "/transport/drivers", label: "Conductores Autorizados", icon: Truck },
   { href: "/transport/oprs", label: "OPRs de Transporte", icon: Shield },
   { href: "/transport/dispatch-documents", label: "Documentos de Despacho", icon: FileText },
+  { href: "/transport/radionuclides", label: "Catálogo Radionúclidos Transporte", icon: Atom },
 
   // ── Gestión Normativa ─────────────────────────────────
   { href: "/alara", label: "Programa ALARA", icon: TrendingDown },
