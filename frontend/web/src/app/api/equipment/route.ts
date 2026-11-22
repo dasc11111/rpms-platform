@@ -1,79 +1,123 @@
-/**
- * API de Equipos Radiológicos — DS 133/1984 MINSAL
- * Gestión de equipos generadores de radiación ionizante
- * con estado de autorización SEREMI y documentación asociada.
- */
 import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+
+// §54 — Gestión de Equipos y Mantenimiento
+// DS 3/1985 Art. 18 — equipos bajo norma técnica
+// IAEA TECDOC-1040 — control calidad equipos medicina nuclear
 
 export const dynamic = "force-dynamic";
 
 async function ensureTable() {
   await sql`
-    CREATE TABLE IF NOT EXISTS radiology_equipment (
-      id SERIAL PRIMARY KEY,
-      inventory_number TEXT NOT NULL DEFAULT '',
-      service TEXT NOT NULL DEFAULT '',
-      unit TEXT NOT NULL DEFAULT '',
-      location TEXT NOT NULL DEFAULT '',
-      equipment_name TEXT NOT NULL DEFAULT '',
-      brand TEXT NOT NULL DEFAULT '',
-      model TEXT NOT NULL DEFAULT '',
-      equipment_serial_number TEXT NOT NULL DEFAULT '',
-      tube_serial_number TEXT NOT NULL DEFAULT '',
-      resolution_number TEXT NOT NULL DEFAULT '',
-      resolution_date DATE,
-      authorization_status TEXT NOT NULL DEFAULT 'vigente',
-      observations TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'operativo',
-      last_modified_by TEXT NOT NULL DEFAULT 'Sistema',
-      documents JSONB NOT NULL DEFAULT '[]',
-      history JSONB NOT NULL DEFAULT '[]',
-      alerts JSONB NOT NULL DEFAULT '[]',
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    CREATE TABLE IF NOT EXISTS equipment (
+      id               SERIAL PRIMARY KEY,
+      equipment_code   VARCHAR(50) UNIQUE NOT NULL,
+      name             TEXT NOT NULL,
+      category         VARCHAR(50) NOT NULL DEFAULT 'gamma_camera',
+      model            TEXT,
+      brand            TEXT,
+      serial_number    VARCHAR(100),
+      acquisition_date DATE,
+      installation_date DATE,
+      location         TEXT,
+      responsible      TEXT,
+      vendor_id        INT,
+      maintenance_type VARCHAR(30) DEFAULT 'preventive',
+      last_maintenance DATE,
+      next_maintenance DATE,
+      maintenance_freq_months INT DEFAULT 6,
+      last_calibration DATE,
+      next_calibration DATE,
+      calibration_freq_months INT DEFAULT 12,
+      last_qa          DATE,
+      next_qa          DATE,
+      qa_freq_months   INT DEFAULT 3,
+      warranty_expiry  DATE,
+      status           VARCHAR(30) NOT NULL DEFAULT 'operational',
+      observations     TEXT,
+      references_norm  TEXT,
+      notes            TEXT,
+      active           BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
     )
   `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS equipment_events (
+      id            SERIAL PRIMARY KEY,
+      equipment_id  INT NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
+      event_type    VARCHAR(30) NOT NULL DEFAULT 'maintenance',
+      event_date    DATE NOT NULL,
+      end_date      DATE,
+      performed_by  TEXT,
+      entity        TEXT,
+      description   TEXT,
+      findings      TEXT,
+      result        VARCHAR(20) DEFAULT 'approved',
+      next_due      DATE,
+      cost          NUMERIC(12,2),
+      order_number  VARCHAR(50),
+      notes         TEXT,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+
+  const count = await sql`SELECT COUNT(*) FROM equipment`;
+  if (parseInt(count[0]?.count ?? "0") === 0) {
+    await sql`
+      INSERT INTO equipment (equipment_code, name, category, model, brand, serial_number, acquisition_date, installation_date, location, responsible, maintenance_freq_months, last_maintenance, next_maintenance, calibration_freq_months, last_calibration, next_calibration, qa_freq_months, last_qa, next_qa, status, references_norm)
+      VALUES
+        ('EQ-MN-001', 'Gammacámara SPECT/CT', 'gamma_camera', 'Discovery NM/CT 670', 'GE Healthcare', 'SN-GE-MN-2019-001', '2019-03-15', '2019-04-20', 'Sala Gammacámara, Medicina Nuclear piso 2', 'Tecnólogo Médico Encargado', 6, '2025-05-10', '2025-11-10', 12, '2025-01-15', '2026-01-15', 3, '2025-09-01', '2025-12-01', 'operational', 'DS 3/1985 Art. 18; IAEA TECDOC-1040; NEMA NU1-2018'),
+        ('EQ-RF-001', 'Calibrador de dosis (Curiemeter)', 'dose_calibrator', 'CRC-55tR', 'Capintec', 'SN-CAP-RF-2020-002', '2020-08-01', '2020-08-15', 'Radiofarmacia, piso 3', 'Radiofarmacéutica', 12, '2025-06-01', '2026-06-01', 12, '2025-01-10', '2026-01-10', 1, '2025-10-15', '2025-11-15', 'operational', 'DS 3/1985 Art. 42; IAEA TECDOC-602; NRC Reg. Guide 10.8'),
+        ('EQ-MN-002', 'Sistema PET/CT', 'pet_ct', 'Biograph mCT 128', 'Siemens Healthineers', 'SN-SIE-MN-2021-001', '2021-05-20', '2021-06-15', 'Sala PET/CT, Medicina Nuclear piso 2', 'Físico Médico', 6, '2025-07-20', '2026-01-20', 12, '2025-02-28', '2026-02-28', 3, '2025-09-15', '2025-12-15', 'operational', 'DS 3/1985 Art. 18; IAEA TECDOC-1040; NEMA NU2-2018'),
+        ('EQ-RP-001', 'Contador de pozo (Well counter)', 'survey_meter', 'Wizard2 2480', 'PerkinElmer', 'SN-PE-RP-2018-001', '2018-11-01', '2018-11-20', 'Laboratorio Protección Radiológica', 'Encargado Protección Radiológica', 12, '2025-04-10', '2026-04-10', 12, '2025-04-10', '2026-04-10', 6, '2025-07-01', '2026-01-01', 'operational', 'DS 3/1985; IAEA Safety Reports Series No.16'),
+        ('EQ-RP-002', 'Monitor de área (Geiger-Müller)', 'survey_meter', 'FH 40 GL', 'Thermo Scientific', 'SN-TS-RP-2022-003', '2022-02-14', '2022-02-28', 'Sala de espera terapia I-131', 'Encargado Protección Radiológica', 12, '2025-02-28', '2026-02-28', 12, '2025-02-28', '2026-02-28', 6, '2025-08-15', '2026-02-15', 'maintenance', 'DS 3/1985 Art. 50; IEC 60846-1')
+    `;
+  }
 }
 
-function rowToEquipment(r: Record<string, unknown>) {
-  return {
-    id: String(r.id),
-    inventoryNumber: r.inventory_number ?? "",
-    service: r.service ?? "",
-    unit: r.unit ?? "",
-    location: r.location ?? "",
-    equipmentName: r.equipment_name ?? "",
-    brand: r.brand ?? "",
-    model: r.model ?? "",
-    equipmentSerialNumber: r.equipment_serial_number ?? "",
-    tubeSerialNumber: r.tube_serial_number ?? "",
-    resolutionNumber: r.resolution_number ?? "",
-    resolutionDate: r.resolution_date ? String(r.resolution_date).slice(0, 10) : "",
-    authorizationStatus: r.authorization_status ?? "vigente",
-    observations: r.observations ?? "",
-    status: r.status ?? "operativo",
-    lastModifiedBy: r.last_modified_by ?? "Sistema",
-    documents: (r.documents as unknown[]) ?? [],
-    history: (r.history as unknown[]) ?? [],
-    alerts: (r.alerts as unknown[]) ?? [],
-    createdAt: r.created_at ? String(r.created_at).slice(0, 10) : "",
-    updatedAt: r.updated_at ? String(r.updated_at).slice(0, 10) : "",
-  };
-}
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await ensureTable();
-    const { rows } = await sql`
-      SELECT * FROM radiology_equipment
-      ORDER BY service ASC, equipment_name ASC
-      LIMIT 2000
+    const { searchParams } = new URL(req.url);
+    const id       = searchParams.get("id");
+    const category = searchParams.get("category");
+    const status   = searchParams.get("status");
+
+    if (id) {
+      const [eq] = await sql`SELECT * FROM equipment WHERE id = ${id} AND active = TRUE`;
+      if (!eq) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+      const events = await sql`SELECT * FROM equipment_events WHERE equipment_id = ${id} ORDER BY event_date DESC`;
+      return NextResponse.json({ equipment: eq, events });
+    }
+
+    let equipment;
+    if (category && status) {
+      equipment = await sql`SELECT * FROM equipment WHERE active=TRUE AND category=${category} AND status=${status} ORDER BY name`;
+    } else if (category) {
+      equipment = await sql`SELECT * FROM equipment WHERE active=TRUE AND category=${category} ORDER BY name`;
+    } else if (status) {
+      equipment = await sql`SELECT * FROM equipment WHERE active=TRUE AND status=${status} ORDER BY name`;
+    } else {
+      equipment = await sql`SELECT * FROM equipment WHERE active=TRUE ORDER BY name`;
+    }
+
+    const [stats] = await sql`
+      SELECT
+        COUNT(*) FILTER (WHERE active)                                                   AS total,
+        COUNT(*) FILTER (WHERE active AND status='operational')                           AS operational,
+        COUNT(*) FILTER (WHERE active AND status='maintenance')                           AS maintenance,
+        COUNT(*) FILTER (WHERE active AND status='out_of_service')                        AS out_of_service,
+        COUNT(*) FILTER (WHERE active AND next_maintenance <= CURRENT_DATE + INTERVAL '30 days' AND status='operational') AS maintenance_due,
+        COUNT(*) FILTER (WHERE active AND next_calibration <= CURRENT_DATE + INTERVAL '30 days' AND status='operational') AS calibration_due,
+        COUNT(*) FILTER (WHERE active AND next_qa <= CURRENT_DATE AND status='operational') AS qa_overdue
+      FROM equipment
     `;
-    return NextResponse.json(rows.map(rowToEquipment));
-  } catch (err) {
-    console.error("GET /api/equipment", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+
+    return NextResponse.json({ equipment, stats });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
 
@@ -81,90 +125,66 @@ export async function POST(req: NextRequest) {
   try {
     await ensureTable();
     const body = await req.json();
+    // Handle equipment_event sub-creation
+    if (body._type === "event") {
+      const { equipment_id, event_type, event_date, end_date, performed_by, entity, description, findings, result, next_due, cost, order_number, notes } = body;
+      if (!equipment_id || !event_date) return NextResponse.json({ error: "equipment_id y event_date requeridos" }, { status: 400 });
+      const [row] = await sql`
+        INSERT INTO equipment_events (equipment_id, event_type, event_date, end_date, performed_by, entity, description, findings, result, next_due, cost, order_number, notes)
+        VALUES (${equipment_id}, ${event_type ?? "maintenance"}, ${event_date}, ${end_date ?? null}, ${performed_by ?? null}, ${entity ?? null}, ${description ?? null}, ${findings ?? null}, ${result ?? "approved"}, ${next_due ?? null}, ${cost ?? null}, ${order_number ?? null}, ${notes ?? null})
+        RETURNING *
+      `;
+      // Update last/next dates on equipment based on event type
+      if (event_type === "maintenance" && next_due) {
+        await sql`UPDATE equipment SET last_maintenance=${event_date}, next_maintenance=${next_due}, updated_at=now() WHERE id=${equipment_id}`;
+      } else if (event_type === "calibration" && next_due) {
+        await sql`UPDATE equipment SET last_calibration=${event_date}, next_calibration=${next_due}, updated_at=now() WHERE id=${equipment_id}`;
+      } else if (event_type === "qa" && next_due) {
+        await sql`UPDATE equipment SET last_qa=${event_date}, next_qa=${next_due}, updated_at=now() WHERE id=${equipment_id}`;
+      }
+      return NextResponse.json(row, { status: 201 });
+    }
 
-    const { rows } = await sql`
-      INSERT INTO radiology_equipment (
-        inventory_number, service, unit, location,
-        equipment_name, brand, model,
-        equipment_serial_number, tube_serial_number,
-        resolution_number, resolution_date,
-        authorization_status, observations, status,
-        last_modified_by, documents, history, alerts
-      ) VALUES (
-        ${body.inventoryNumber ?? ""},
-        ${body.service ?? ""},
-        ${body.unit ?? ""},
-        ${body.location ?? ""},
-        ${body.equipmentName ?? ""},
-        ${body.brand ?? ""},
-        ${body.model ?? ""},
-        ${body.equipmentSerialNumber ?? ""},
-        ${body.tubeSerialNumber ?? ""},
-        ${body.resolutionNumber ?? ""},
-        ${body.resolutionDate || null},
-        ${body.authorizationStatus ?? "vigente"},
-        ${body.observations ?? ""},
-        ${body.status ?? "operativo"},
-        ${body.lastModifiedBy ?? "Sistema"},
-        ${JSON.stringify(body.documents ?? [])}::jsonb,
-        ${JSON.stringify(body.history ?? [])}::jsonb,
-        ${JSON.stringify(body.alerts ?? [])}::jsonb
-      )
+    const { equipment_code, name, category = "gamma_camera", model, brand, serial_number, acquisition_date, installation_date, location, responsible, maintenance_freq_months = 6, last_maintenance, next_maintenance, calibration_freq_months = 12, last_calibration, next_calibration, qa_freq_months = 3, last_qa, next_qa, warranty_expiry, status = "operational", references_norm, notes } = body;
+    if (!equipment_code || !name) return NextResponse.json({ error: "Código y nombre requeridos" }, { status: 400 });
+    const [row] = await sql`
+      INSERT INTO equipment (equipment_code, name, category, model, brand, serial_number, acquisition_date, installation_date, location, responsible, maintenance_freq_months, last_maintenance, next_maintenance, calibration_freq_months, last_calibration, next_calibration, qa_freq_months, last_qa, next_qa, warranty_expiry, status, references_norm, notes)
+      VALUES (${equipment_code}, ${name}, ${category}, ${model ?? null}, ${brand ?? null}, ${serial_number ?? null}, ${acquisition_date ?? null}, ${installation_date ?? null}, ${location ?? null}, ${responsible ?? null}, ${maintenance_freq_months}, ${last_maintenance ?? null}, ${next_maintenance ?? null}, ${calibration_freq_months}, ${last_calibration ?? null}, ${next_calibration ?? null}, ${qa_freq_months}, ${last_qa ?? null}, ${next_qa ?? null}, ${warranty_expiry ?? null}, ${status}, ${references_norm ?? null}, ${notes ?? null})
       RETURNING *
     `;
-    return NextResponse.json(rowToEquipment(rows[0] as Record<string, unknown>), { status: 201 });
-  } catch (err) {
-    console.error("POST /api/equipment", err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json(row, { status: 201 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  await ensureTable();
   try {
+    await ensureTable();
     const body = await req.json();
-    const { id, ...fields } = body as {
-      id: number;
-      inventory_number?: string; service?: string; unit?: string; location?: string;
-      equipment_name?: string; brand?: string; model?: string;
-      equipment_serial_number?: string; tube_serial_number?: string;
-      authorization_status?: string; observations?: string; status?: string;
-    };
+    const { id, ...fields } = body;
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-    const { rows } = await sql`
-      UPDATE radiology_equipment SET
-        inventory_number       = COALESCE(${fields.inventory_number ?? null}, inventory_number),
-        service                = COALESCE(${fields.service ?? null}, service),
-        unit                   = COALESCE(${fields.unit ?? null}, unit),
-        location               = COALESCE(${fields.location ?? null}, location),
-        equipment_name         = COALESCE(${fields.equipment_name ?? null}, equipment_name),
-        brand                  = COALESCE(${fields.brand ?? null}, brand),
-        model                  = COALESCE(${fields.model ?? null}, model),
-        equipment_serial_number = COALESCE(${fields.equipment_serial_number ?? null}, equipment_serial_number),
-        tube_serial_number     = COALESCE(${fields.tube_serial_number ?? null}, tube_serial_number),
-        authorization_status   = COALESCE(${fields.authorization_status ?? null}, authorization_status),
-        observations           = COALESCE(${fields.observations ?? null}, observations),
-        status                 = COALESCE(${fields.status ?? null}, status),
-        updated_at             = NOW()
-      WHERE id = ${id}
-      RETURNING *
-    `;
-    if (!rows[0]) return NextResponse.json({ error: "Equipo no encontrado" }, { status: 404 });
-    return NextResponse.json(rowToEquipment(rows[0] as Record<string, unknown>));
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    const allowed = ["name","category","model","brand","serial_number","acquisition_date","installation_date","location","responsible","maintenance_freq_months","last_maintenance","next_maintenance","calibration_freq_months","last_calibration","next_calibration","qa_freq_months","last_qa","next_qa","warranty_expiry","status","observations","references_norm","notes"];
+    const entries = Object.entries(fields).filter(([k]) => allowed.includes(k));
+    if (!entries.length) return NextResponse.json({ error: "Sin campos" }, { status: 400 });
+    const setClauses = entries.map(([k], i) => `${k} = $${i + 2}`).join(", ");
+    const values = [id, ...entries.map(([, v]) => v)];
+    const rows = await sql.unsafe(`UPDATE equipment SET ${setClauses}, updated_at=now() WHERE id=$1 AND active=TRUE RETURNING *`, values);
+    return NextResponse.json(rows[0] ?? null);
+  } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
-  await ensureTable();
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
   try {
-    await sql`UPDATE radiology_equipment SET status = 'dado_de_baja', updated_at = NOW() WHERE id = ${Number(id)}`;
+    await ensureTable();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    await sql`UPDATE equipment SET active=FALSE, updated_at=now() WHERE id=${id}`;
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }

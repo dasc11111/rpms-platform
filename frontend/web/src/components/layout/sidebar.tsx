@@ -84,6 +84,7 @@ const NAV = [
   { href: "/audits", label: "Auditorías Internas PR", icon: ClipboardCheck },
   { href: "/risks", label: "Riesgos Radiológicos", icon: ShieldAlert },
   { href: "/training", label: "Capacitación PR", icon: GraduationCap },
+  { href: "/equipment", label: "Equipos y Mantención", icon: Wrench },
   { href: "/vendors", label: "Proveedores", icon: Building2 },
   { href: "/documents", label: "Documentos", icon: FileText },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
