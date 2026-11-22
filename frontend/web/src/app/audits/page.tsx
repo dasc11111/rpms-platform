@@ -1,198 +1,136 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
-  ClipboardCheck, Plus, ChevronDown, ChevronUp, AlertTriangle,
-  CheckCircle2, Clock, FileText, Search, X, Edit2, Trash2,
-  User, Calendar, AlertCircle, BookOpen
+  ClipboardCheck, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,
 } from "lucide-react";
 
-// Gestión de Auditorías Internas de Protección Radiológica
-// DS 3/1985 — Verificación periódica del cumplimiento normativo
-// IAEA GSR Part 3 Req. 11 — Self-assessment y auditorías independientes
-
+// ── types ──────────────────────────────────────────────────────────────────
+interface AuditFinding {
+  id:number; audit_id:number; finding_code:string; finding_type:string; area:string|null;
+  description:string; criteria_ref:string|null; severity:string; responsible:string|null;
+  due_date:string|null; corrective_action:string|null; status:string; closure_date:string|null;
+  audit_code?:string; audit_title?:string;
+}
 interface Audit {
-  id: number;
-  audit_code: string;
-  title: string;
-  audit_type: string;
-  scope: string | null;
-  audit_date: string;
-  lead_auditor: string | null;
-  team_members: string | null;
-  areas_audited: string | null;
-  criteria: string | null;
-  methodology: string | null;
-  findings_total: number;
-  nc_critical: number;
-  nc_major: number;
-  nc_minor: number;
-  observations: number;
-  opportunities: number;
-  summary: string | null;
-  conclusions: string | null;
-  recommendations: string | null;
-  status: string;
-  report_date: string | null;
-  next_audit: string | null;
-  responsible: string | null;
-  notes: string | null;
+  id:number; audit_code:string; title:string; audit_type:string; scope:string|null;
+  auditor:string|null; auditee:string|null; planned_date:string|null;
+  start_date:string|null; end_date:string|null; status:string;
+  overall_result:string|null; summary:string|null; observations:string|null;
+  finding_count:number; nc_count:number; open_findings:number; overdue_findings:number;
 }
-
-interface Finding {
-  id: number;
-  audit_id: number;
-  finding_ref: string;
-  finding_type: string;
-  area: string | null;
-  description: string;
-  criteria_ref: string | null;
-  evidence: string | null;
-  risk_level: string;
-  corrective_action: string | null;
-  responsible: string | null;
-  due_date: string | null;
-  completion_date: string | null;
-  status: string;
-}
-
 interface Stats {
-  total: string; planned: string; in_progress: string; completed: string;
-  nc_critical_total: string; nc_major_total: string; nc_minor_total: string; obs_total: string;
+  total_audits:number; completed:number; planned:number; in_progress:number;
+  total_findings:number; nc_total:number; open_findings:number; overdue_findings:number;
 }
 
-const TYPE_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  internal:   { label: "Interna",       color: "text-blue-700",   bg: "bg-blue-100"   },
-  external:   { label: "Externa",       color: "text-purple-700", bg: "bg-purple-100" },
-  followup:   { label: "Seguimiento",   color: "text-teal-700",   bg: "bg-teal-100"   },
-  regulatory: { label: "Regulatoria",   color: "text-red-700",    bg: "bg-red-100"    },
+// ── config ─────────────────────────────────────────────────────────────────
+const TYPE_LABEL: Record<string,string> = {
+  internal:"Interna", cchen:"CCHEN", external:"Externa", surveillance:"Vigilancia",
 };
-
-const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  planned:     { label: "Planificada",   color: "text-blue-600",   icon: <Calendar size={13} />     },
-  in_progress: { label: "En curso",      color: "text-amber-600",  icon: <Clock size={13} />        },
-  completed:   { label: "Completada",    color: "text-green-700",  icon: <CheckCircle2 size={13} /> },
-  cancelled:   { label: "Cancelada",     color: "text-gray-400",   icon: <X size={13} />            },
+const STATUS_LABEL: Record<string,string> = {
+  planned:"Planificada", in_progress:"En curso", closed:"Cerrada", cancelled:"Cancelada",
 };
-
-const FINDING_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  nc_critical: { label: "NC Crítica",    color: "text-red-800",    bg: "bg-red-100"    },
-  nc_major:    { label: "NC Mayor",      color: "text-orange-700", bg: "bg-orange-100" },
-  nc_minor:    { label: "NC Menor",      color: "text-yellow-700", bg: "bg-yellow-100" },
-  observation: { label: "Observación",   color: "text-blue-700",   bg: "bg-blue-100"   },
-  opportunity: { label: "Oportunidad",   color: "text-teal-700",   bg: "bg-teal-100"   },
+const STATUS_COLOR: Record<string,string> = {
+  planned:"bg-blue-100 text-blue-700", in_progress:"bg-amber-100 text-amber-700",
+  closed:"bg-emerald-100 text-emerald-700", cancelled:"bg-gray-100 text-gray-500",
 };
-
-function fmtDate(d: string | null) {
+const RESULT_LABEL: Record<string,string> = {
+  satisfactory:"Satisfactorio", minor_nc:"NC Menor", major_nc:"NC Mayor", critical:"Crítico",
+};
+const RESULT_COLOR: Record<string,string> = {
+  satisfactory:"text-emerald-600", minor_nc:"text-amber-600", major_nc:"text-orange-600", critical:"text-red-600",
+};
+const FINDING_LABEL: Record<string,string> = {
+  non_conformance:"No conformidad", observation:"Observación", opportunity:"Oportunidad mejora",
+};
+const SEV_COLOR: Record<string,string> = {
+  critical:"bg-red-100 text-red-700", major:"bg-orange-100 text-orange-700",
+  minor:"bg-amber-100 text-amber-700", low:"bg-gray-100 text-gray-600",
+};
+function fmtDate(d:string|null) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("es-CL",{day:"2-digit",month:"short",year:"numeric"});
 }
 
-function FindingBadge({ type, count }: { type: string; count: number }) {
-  if (!count) return null;
-  const cfg = FINDING_CFG[type] ?? FINDING_CFG.observation;
+// ── FindingRow ──────────────────────────────────────────────────────────────
+function FindingRow({ f, onClose }: { f:AuditFinding; onClose:()=>void }) {
+  const isOverdue = f.due_date && new Date(f.due_date)<new Date() && f.status==="open";
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.bg} ${cfg.color}`}>
-      {count} {cfg.label}{count > 1 ? "s" : ""}
-    </span>
+    <div className={`rounded px-3 py-2 text-xs ${isOverdue?"bg-red-50 border border-red-200":"bg-muted/30"}`}>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-mono text-[9px] text-muted-foreground">{f.finding_code}</span>
+        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${SEV_COLOR[f.severity]??SEV_COLOR.low}`}>{f.severity}</span>
+        <span className="font-medium">{FINDING_LABEL[f.finding_type]??f.finding_type}</span>
+        {f.area && <span className="text-muted-foreground">— {f.area}</span>}
+        {isOverdue && <span className="text-red-600 font-semibold">⚠ VENCIDA</span>}
+        {f.status==="closed" && <span className="text-emerald-600">✓ Cerrada {fmtDate(f.closure_date)}</span>}
+      </div>
+      <p className="mt-0.5 text-muted-foreground">{f.description}</p>
+      {f.corrective_action && <p className="mt-0.5">→ {f.corrective_action}</p>}
+      {f.due_date && <p className="text-muted-foreground mt-0.5">Plazo: {fmtDate(f.due_date)} · Resp.: {f.responsible??"-"}</p>}
+      {f.status==="open" && (
+        <button onClick={onClose} className="mt-1 text-[9px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+          ✓ Cerrar hallazgo
+        </button>
+      )}
+    </div>
   );
 }
 
-function AuditCard({ audit, onEdit, onDelete }: { audit: Audit; onEdit: () => void; onDelete: () => void }) {
+// ── AuditCard ───────────────────────────────────────────────────────────────
+function AuditCard({ audit, findings, onEdit, onCloseFinding }: {
+  audit:Audit; findings:AuditFinding[];
+  onEdit:(a:Audit)=>void; onCloseFinding:(id:number)=>void;
+}) {
   const [open, setOpen] = useState(false);
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [loadingFindings, setLoadingFindings] = useState(false);
-
-  const type = TYPE_CFG[audit.audit_type] ?? TYPE_CFG.internal;
-  const st   = STATUS_CFG[audit.status]   ?? STATUS_CFG.planned;
-  const hasCritical = audit.nc_critical > 0;
-
-  async function toggleOpen() {
-    if (!open && findings.length === 0) {
-      setLoadingFindings(true);
-      const r = await fetch(`/api/audits?id=${audit.id}`);
-      const d = await r.json();
-      setFindings(d.findings ?? []);
-      setLoadingFindings(false);
-    }
-    setOpen(!open);
-  }
+  const sc = STATUS_COLOR[audit.status] ?? STATUS_COLOR.planned;
+  const rc = RESULT_COLOR[audit.overall_result??""] ?? "";
+  const mine = findings.filter(f=>f.audit_id===audit.id);
+  const hasIssue = audit.overdue_findings > 0;
 
   return (
-    <div className={`bg-white rounded-lg border shadow-sm ${hasCritical ? "border-red-300" : "border-gray-200"}`}>
-      <button className="w-full text-left px-5 py-4 flex items-start gap-3" onClick={toggleOpen}>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-sm font-semibold text-gray-600">{audit.audit_code}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${type.bg} ${type.color}`}>{type.label}</span>
-            <span className={`text-xs flex items-center gap-1 ${st.color}`}>{st.icon}{st.label}</span>
+    <div className={`rounded-lg border ${hasIssue?"border-orange-300":audit.status==="closed"?"border-emerald-200":"border-border"} bg-surface overflow-hidden`}>
+      <button onClick={()=>setOpen(o=>!o)} className="w-full text-left px-4 py-3 hover:bg-muted/30 transition-colors">
+        <div className="flex items-start gap-3">
+          <ClipboardCheck className={`h-4 w-4 mt-0.5 shrink-0 ${audit.status==="closed"?"text-emerald-500":"text-muted-foreground"}`}/>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-xs text-muted-foreground shrink-0">{audit.audit_code}</span>
+              <span className="text-sm font-semibold">{audit.title}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${sc}`}>{STATUS_LABEL[audit.status]??audit.status}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 shrink-0">{TYPE_LABEL[audit.audit_type]??audit.audit_type}</span>
+              {audit.overall_result && <span className={`text-[10px] font-semibold shrink-0 ${rc}`}>{RESULT_LABEL[audit.overall_result]??audit.overall_result}</span>}
+              {audit.nc_count > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 shrink-0">{audit.nc_count} NC</span>}
+              {audit.overdue_findings > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 shrink-0">⚠ {audit.overdue_findings} vencidas</span>}
+            </div>
+            <div className="mt-0.5 flex gap-3 text-[10px] text-muted-foreground flex-wrap">
+              {audit.auditor && <span>🔍 {audit.auditor}</span>}
+              {audit.auditee && <span>📋 {audit.auditee}</span>}
+              {audit.planned_date && <span>Planif.: {fmtDate(audit.planned_date)}</span>}
+              {audit.finding_count > 0 && <span>{audit.finding_count} hallazgos · {audit.open_findings} abiertos</span>}
+            </div>
           </div>
-          <p className="font-medium text-gray-900 truncate">{audit.title}</p>
-          <div className="flex flex-wrap gap-3 mt-2">
-            <span className="text-xs text-gray-500"><Calendar size={11} className="inline mr-1" />{fmtDate(audit.audit_date)}</span>
-            {audit.lead_auditor && <span className="text-xs text-gray-500"><User size={11} className="inline mr-1" />{audit.lead_auditor}</span>}
-            <FindingBadge type="nc_critical" count={audit.nc_critical} />
-            <FindingBadge type="nc_major"    count={audit.nc_major} />
-            <FindingBadge type="nc_minor"    count={audit.nc_minor} />
-            <FindingBadge type="observation" count={audit.observations} />
-          </div>
+          {open ? <ChevronUp className="h-4 w-4 shrink-0"/> : <ChevronDown className="h-4 w-4 shrink-0"/>}
         </div>
-        {open ? <ChevronUp size={18} className="text-gray-400 mt-1 shrink-0" />
-               : <ChevronDown size={18} className="text-gray-400 mt-1 shrink-0" />}
       </button>
-
       {open && (
-        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4 text-sm">
-          {audit.scope && <p className="text-gray-700"><span className="font-medium">Alcance:</span> {audit.scope}</p>}
-          {audit.areas_audited && <p className="text-gray-700"><span className="font-medium">Áreas auditadas:</span> {audit.areas_audited}</p>}
-          {audit.criteria && (
-            <div className="flex items-start gap-2 text-xs text-indigo-700 bg-indigo-50 rounded p-2">
-              <BookOpen size={13} className="shrink-0 mt-0.5" />
-              <span>{audit.criteria}</span>
-            </div>
-          )}
-          {audit.summary && <p className="text-gray-700"><span className="font-medium">Resumen:</span> {audit.summary}</p>}
-          {audit.conclusions && <p className="text-gray-700"><span className="font-medium">Conclusiones:</span> {audit.conclusions}</p>}
-          {audit.recommendations && <p className="text-amber-800 bg-amber-50 rounded p-2 text-xs"><span className="font-medium">Recomendaciones:</span> {audit.recommendations}</p>}
-
-          {/* Hallazgos */}
-          {findings.length > 0 && (
-            <div className="space-y-2">
-              <p className="font-medium text-gray-700 text-xs uppercase tracking-wide">Hallazgos ({findings.length})</p>
-              {findings.map(f => {
-                const fcfg = FINDING_CFG[f.finding_type] ?? FINDING_CFG.observation;
-                return (
-                  <div key={f.id} className={`rounded p-3 border text-xs ${f.status === "closed" ? "opacity-60" : ""} ${f.finding_type === "nc_critical" ? "border-red-200 bg-red-50" : "border-gray-200 bg-gray-50"}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`font-mono text-xs font-semibold ${fcfg.color}`}>{f.finding_ref}</span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full ${fcfg.bg} ${fcfg.color}`}>{fcfg.label}</span>
-                      {f.area && <span className="text-gray-500">{f.area}</span>}
-                      <span className={`ml-auto ${f.status === "closed" ? "text-green-600" : "text-amber-600"}`}>
-                        {f.status === "closed" ? "✓ Cerrado" : "● Abierto"}
-                      </span>
-                    </div>
-                    <p className="text-gray-700">{f.description}</p>
-                    {f.corrective_action && <p className="text-teal-700 mt-1"><span className="font-medium">Acción:</span> {f.corrective_action}</p>}
-                    {f.due_date && <p className="text-gray-500 mt-1">Plazo: {fmtDate(f.due_date)}</p>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {loadingFindings && <p className="text-gray-400 text-xs">Cargando hallazgos…</p>}
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-gray-600">
-            <div><span className="font-medium">Informe:</span> {fmtDate(audit.report_date)}</div>
-            <div><span className="font-medium">Próxima auditoría:</span> {fmtDate(audit.next_audit)}</div>
-            {audit.responsible && <div><span className="font-medium">Responsable:</span> {audit.responsible}</div>}
+        <div className="border-t border-border/40 px-4 py-3 space-y-3">
+          {audit.scope && <div><p className="text-xs font-semibold mb-1">Alcance:</p><p className="text-xs text-muted-foreground">{audit.scope}</p></div>}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {audit.start_date && <div><span className="text-muted-foreground">Inicio: </span>{fmtDate(audit.start_date)}</div>}
+            {audit.end_date   && <div><span className="text-muted-foreground">Fin: </span>{fmtDate(audit.end_date)}</div>}
           </div>
-
-          <div className="flex gap-2 pt-1">
-            <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-700">
-              <Edit2 size={12} />Editar
-            </button>
-            <button onClick={onDelete} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded text-red-600">
-              <Trash2 size={12} />Eliminar
-            </button>
+          {audit.summary && <div><p className="text-xs font-semibold mb-1">Resumen:</p><p className="text-xs text-muted-foreground">{audit.summary}</p></div>}
+          {mine.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold mb-1.5">Hallazgos y no conformidades:</p>
+              <div className="flex flex-col gap-1.5">
+                {mine.map(f=><FindingRow key={f.id} f={f} onClose={()=>onCloseFinding(f.id)}/>)}
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 pt-1 border-t border-border/40">
+            <button onClick={()=>onEdit(audit)} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded hover:opacity-90">Editar auditoría</button>
           </div>
         </div>
       )}
@@ -200,302 +138,227 @@ function AuditCard({ audit, onEdit, onDelete }: { audit: Audit; onEdit: () => vo
   );
 }
 
-const EMPTY: Partial<Audit> = {
-  audit_code: "", title: "", audit_type: "internal", scope: "", audit_date: "",
-  lead_auditor: "", team_members: "", areas_audited: "", criteria: "",
-  status: "planned", responsible: "", notes: ""
-};
-
-function AuditForm({ initial, onSave, onClose }: {
-  initial: Partial<Audit>; onSave: (d: Partial<Audit>) => Promise<void>; onClose: () => void
-}) {
-  const [form, setForm] = useState<Partial<Audit>>(initial);
-  const [saving, setSaving] = useState(false);
-  const set = (k: keyof Audit, v: unknown) => setForm(f => ({ ...f, [k]: v }));
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try { await onSave(form); } finally { setSaving(false); }
-  }
-
-  const lbl = "block text-xs font-medium text-gray-600 mb-1";
-  const inp = "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-
+// ── AuditModal ──────────────────────────────────────────────────────────────
+function AuditModal({ audit, onClose, onSave }: { audit:Partial<Audit>|null; onClose:()=>void; onSave:(d:Partial<Audit>)=>void }) {
+  const [form, setForm] = useState<Partial<Audit>>({ audit_type:"internal", status:"planned", ...audit });
+  const set = (k:keyof Audit, v:string) => setForm(f=>({...f,[k]:v}));
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-            <ClipboardCheck size={18} className="text-blue-600" />
-            {initial.id ? "Editar auditoría" : "Nueva auditoría"}
-          </h2>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-600" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-lg rounded-lg border border-border bg-surface shadow-xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="font-semibold text-sm">{audit?.id?"Editar auditoría":"Registrar auditoría"}</h2>
+          <button onClick={onClose}><X className="h-4 w-4"/></button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={lbl}>Código *</label>
-              <input required className={inp} value={form.audit_code ?? ""} onChange={e => set("audit_code", e.target.value)} placeholder="AUD-PR-001" />
-            </div>
-            <div>
-              <label className={lbl}>Fecha de auditoría *</label>
-              <input required type="date" className={inp} value={form.audit_date?.slice(0,10) ?? ""} onChange={e => set("audit_date", e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <label className={lbl}>Título *</label>
-            <input required className={inp} value={form.title ?? ""} onChange={e => set("title", e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={lbl}>Tipo</label>
-              <select className={inp} value={form.audit_type ?? "internal"} onChange={e => set("audit_type", e.target.value)}>
-                {Object.entries(TYPE_CFG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
+        <div className="p-4 space-y-3 overflow-y-auto max-h-[70vh]">
+          <div className="grid grid-cols-2 gap-3">
+            <label className="col-span-2 flex flex-col gap-1 text-xs">Título *
+              <input value={form.title??""} onChange={e=>set("title",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm"/>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Tipo
+              <select value={form.audit_type??""} onChange={e=>set("audit_type",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm">
+                {Object.entries(TYPE_LABEL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
               </select>
-            </div>
-            <div>
-              <label className={lbl}>Estado</label>
-              <select className={inp} value={form.status ?? "planned"} onChange={e => set("status", e.target.value)}>
-                {Object.entries(STATUS_CFG).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Estado
+              <select value={form.status??""} onChange={e=>set("status",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm">
+                {Object.entries(STATUS_LABEL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
               </select>
-            </div>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Auditor
+              <input value={form.auditor??""} onChange={e=>set("auditor",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm"/>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Auditado
+              <input value={form.auditee??""} onChange={e=>set("auditee",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm"/>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Fecha planificada
+              <input type="date" value={form.planned_date??""} onChange={e=>set("planned_date",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm"/>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">Resultado global
+              <select value={form.overall_result??""} onChange={e=>set("overall_result",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm">
+                <option value="">— Sin resultado aún —</option>
+                {Object.entries(RESULT_LABEL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+            <label className="col-span-2 flex flex-col gap-1 text-xs">Alcance
+              <textarea value={form.scope??""} onChange={e=>set("scope",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm" rows={2}/>
+            </label>
+            <label className="col-span-2 flex flex-col gap-1 text-xs">Resumen ejecutivo
+              <textarea value={form.summary??""} onChange={e=>set("summary",e.target.value)}
+                className="rounded border border-border bg-muted/20 px-2 py-1.5 text-sm" rows={2}/>
+            </label>
           </div>
-          <div>
-            <label className={lbl}>Alcance</label>
-            <textarea className={inp} rows={2} value={form.scope ?? ""} onChange={e => set("scope", e.target.value)} />
-          </div>
-          <div>
-            <label className={lbl}>Áreas auditadas</label>
-            <input className={inp} value={form.areas_audited ?? ""} onChange={e => set("areas_audited", e.target.value)} placeholder="Medicina Nuclear, Radiofarmacia, Almacén de residuos" />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={lbl}>Auditor líder</label>
-              <input className={inp} value={form.lead_auditor ?? ""} onChange={e => set("lead_auditor", e.target.value)} />
-            </div>
-            <div>
-              <label className={lbl}>Equipo auditor</label>
-              <input className={inp} value={form.team_members ?? ""} onChange={e => set("team_members", e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <label className={lbl}>Criterios de auditoría</label>
-            <input className={inp} value={form.criteria ?? ""} onChange={e => set("criteria", e.target.value)} placeholder="DS 3/1985; IAEA GSR Part 3; ISO 19011:2018" />
-          </div>
-          <div className="grid grid-cols-5 gap-3">
-            {[
-              { key: "nc_critical" as keyof Audit, label: "NC Críticas" },
-              { key: "nc_major"    as keyof Audit, label: "NC Mayores" },
-              { key: "nc_minor"    as keyof Audit, label: "NC Menores" },
-              { key: "observations"as keyof Audit, label: "Observ." },
-              { key: "opportunities" as keyof Audit, label: "Oport." },
-            ].map(f => (
-              <div key={f.key}>
-                <label className={lbl}>{f.label}</label>
-                <input type="number" min="0" className={inp} value={String(form[f.key] ?? 0)} onChange={e => set(f.key, parseInt(e.target.value) || 0)} />
-              </div>
-            ))}
-          </div>
-          <div>
-            <label className={lbl}>Resumen ejecutivo</label>
-            <textarea className={inp} rows={3} value={form.summary ?? ""} onChange={e => set("summary", e.target.value)} />
-          </div>
-          <div>
-            <label className={lbl}>Conclusiones</label>
-            <textarea className={inp} rows={2} value={form.conclusions ?? ""} onChange={e => set("conclusions", e.target.value)} />
-          </div>
-          <div>
-            <label className={lbl}>Recomendaciones</label>
-            <textarea className={inp} rows={2} value={form.recommendations ?? ""} onChange={e => set("recommendations", e.target.value)} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={lbl}>Fecha de informe</label>
-              <input type="date" className={inp} value={form.report_date?.slice(0,10) ?? ""} onChange={e => set("report_date", e.target.value)} />
-            </div>
-            <div>
-              <label className={lbl}>Próxima auditoría</label>
-              <input type="date" className={inp} value={form.next_audit?.slice(0,10) ?? ""} onChange={e => set("next_audit", e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <label className={lbl}>Responsable seguimiento</label>
-            <input className={inp} value={form.responsible ?? ""} onChange={e => set("responsible", e.target.value)} />
-          </div>
-          <div>
-            <label className={lbl}>Notas</label>
-            <textarea className={inp} rows={2} value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancelar</button>
-            <button type="submit" disabled={saving} className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-              {saving ? "Guardando…" : "Guardar"}
-            </button>
-          </div>
-        </form>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
+          <button onClick={onClose} className="text-sm px-3 py-1.5 rounded border border-border hover:bg-muted/40">Cancelar</button>
+          <button onClick={()=>onSave(form)} className="text-sm px-3 py-1.5 rounded bg-accent text-accent-foreground hover:opacity-90">Guardar</button>
+        </div>
       </div>
     </div>
   );
 }
 
+// ── Main page ───────────────────────────────────────────────────────────────
 export default function AuditsPage() {
-  const [audits, setAudits]     = useState<Audit[]>([]);
-  const [stats, setStats]       = useState<Stats | null>(null);
-  const [openFindings, setOpenFindings] = useState<{ total: string; critical: string; major: string } | null>(null);
-  const [years, setYears]       = useState<number[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [filterYear, setFilterYear] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterSt, setFilterSt]     = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing]   = useState<Audit | null>(null);
-  const [error, setError]       = useState("");
+  const [data, setData]       = useState<{ rows:Audit[]; stats:Stats }|null>(null);
+  const [findings, setFindings] = useState<AuditFinding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal]     = useState<Partial<Audit>|null|false>(false);
+  const [tab, setTab]         = useState<"audits"|"findings">("audits");
+  const [filterType, setFilterType]     = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (t=filterType, s=filterStatus) => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (filterYear) params.set("year", filterYear);
-    if (filterType) params.set("type", filterType);
-    if (filterSt)   params.set("status", filterSt);
-    try {
-      const r = await fetch(`/api/audits?${params}`);
-      const d = await r.json();
-      setAudits(d.audits ?? []);
-      setStats(d.stats ?? null);
-      setOpenFindings(d.openFindings ?? null);
-      setYears(d.years ?? []);
-    } catch { setError("Error cargando auditorías"); }
+    const p = new URLSearchParams();
+    if (t) p.set("type",t);
+    if (s) p.set("status",s);
+    const [r1,r2] = await Promise.all([
+      fetch(`/api/audits?${p}`).then(r=>r.json()),
+      fetch("/api/audits?findings=1").then(r=>r.json()),
+    ]);
+    if (r1.rows) setData(r1);
+    if (r2.rows) setFindings(r2.rows);
     setLoading(false);
-  }, [filterYear, filterType, filterSt]);
+  }, [filterType, filterStatus]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(()=>{ load(); },[load]);
 
-  async function handleSave(form: Partial<Audit>) {
-    const isNew = !form.id;
-    const r = await fetch("/api/audits", {
-      method: isNew ? "POST" : "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
-    if (!r.ok) { const d = await r.json(); alert(d.error ?? "Error"); return; }
-    setShowForm(false); setEditing(null); load();
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm("¿Eliminar esta auditoría y sus hallazgos?")) return;
-    await fetch(`/api/audits?id=${id}`, { method: "DELETE" });
+  const handleSave = async (form: Partial<Audit>) => {
+    const method = form.id ? "PATCH" : "POST";
+    await fetch("/api/audits", { method, headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) });
+    setModal(false); load();
+  };
+  const closeFinding = async (id: number) => {
+    await fetch("/api/audits", { method:"PATCH", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ id, _type:"finding", status:"closed", closure_date: new Date().toISOString().slice(0,10) }) });
     load();
-  }
+  };
 
-  const critOpen = parseInt(openFindings?.critical ?? "0");
-  const majOpen  = parseInt(openFindings?.major    ?? "0");
-  const totalOpen= parseInt(openFindings?.total    ?? "0");
+  if (loading && !data) return (
+    <div className="flex h-full items-center justify-center">
+      <div className="animate-spin h-6 w-6 border-2 border-accent border-t-transparent rounded-full" />
+    </div>
+  );
+  const st = data?.stats;
+  const rows = data?.rows ?? [];
+  const openFindings = findings.filter(f=>f.status==="open");
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <ClipboardCheck size={28} className="text-blue-600" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Auditorías Internas de PR</h1>
-            <p className="text-sm text-gray-500">DS 3/1985 — IAEA GSR Part 3 Req. 11 — Verificación del sistema de protección radiológica</p>
-          </div>
+    <div className="flex flex-col gap-5 p-6">
+      {modal !== false && (
+        <AuditModal audit={modal} onClose={()=>setModal(false)} onSave={handleSave}/>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2"><ClipboardCheck className="h-5 w-5 text-accent"/>Auditorías Internas PR</h1>
+          <p className="text-sm text-muted-foreground">CCHEN NS-06.0 — Planificación, ejecución y seguimiento de auditorías del Programa de Protección Radiológica</p>
         </div>
-        <button
-          onClick={() => { setEditing(null); setShowForm(true); }}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <Plus size={16} />Nueva auditoría
+        <button onClick={()=>setModal(null)} className="flex items-center gap-1.5 rounded-md bg-accent text-accent-foreground px-3 py-2 text-sm hover:opacity-90">
+          <Plus className="h-4 w-4"/>Nueva auditoría
         </button>
       </div>
 
-      {/* Alertas hallazgos abiertos */}
-      {critOpen > 0 && (
-        <div className="mb-4 flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-          <AlertCircle size={18} className="text-red-600 mt-0.5 shrink-0" />
-          <div>
-            <p className="font-semibold text-red-800">{critOpen} hallazgo{critOpen > 1 ? "s" : ""} crítico{critOpen > 1 ? "s" : ""} abierto{critOpen > 1 ? "s" : ""}</p>
-            <p className="text-sm text-red-700">Requieren acción correctiva inmediata.</p>
-          </div>
-        </div>
-      )}
-      {!critOpen && majOpen > 0 && (
-        <div className="mb-4 flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-lg px-4 py-3">
-          <AlertTriangle size={18} className="text-orange-600 mt-0.5 shrink-0" />
-          <p className="text-sm text-orange-800">{majOpen} NC mayor{majOpen > 1 ? "es" : ""} abierta{majOpen > 1 ? "s" : ""} — {totalOpen} hallazgos pendientes en total</p>
+      {/* Alertas */}
+      {st && Number(st.overdue_findings)>0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5">
+          <AlertTriangle className="h-4 w-4 text-red-600 shrink-0"/>
+          <p className="text-sm text-red-700"><strong>{st.overdue_findings} hallazgo(s)</strong> con plazo de acción correctiva vencido — requieren atención inmediata</p>
         </div>
       )}
 
       {/* KPIs */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      {st && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: "Total auditorías", value: stats.total,          color: "text-gray-700"  },
-            { label: "Completadas",      value: stats.completed,      color: "text-green-700" },
-            { label: "NC Mayores",       value: stats.nc_major_total, color: "text-orange-600"},
-            { label: "NC Menores",       value: stats.nc_minor_total, color: "text-yellow-600"},
-          ].map(k => (
-            <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center shadow-sm">
-              <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{k.label}</p>
+            { label:"Total auditorías",   value:st.total_audits },
+            { label:"Completadas",        value:st.completed,       color:"text-emerald-600" },
+            { label:"Planificadas",       value:st.planned,         color:"text-blue-600" },
+            { label:"En curso",           value:st.in_progress,     color:"text-amber-600" },
+            { label:"Total hallazgos",    value:st.total_findings },
+            { label:"No conformidades",   value:st.nc_total,        color:"text-orange-600" },
+            { label:"Hallazgos abiertos", value:st.open_findings,   color: st.open_findings>0?"text-amber-600":"text-muted-foreground" },
+            { label:"Plazos vencidos",    value:st.overdue_findings,color: st.overdue_findings>0?"text-red-600":"" },
+          ].map(k=>(
+            <div key={k.label} className="rounded-lg border border-border bg-surface p-3">
+              <p className={`text-2xl font-bold ${k.color??""}`}>{k.value}</p>
+              <p className="text-xs text-muted-foreground leading-tight">{k.label}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-3 mb-5">
-        <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="">Todos los años</option>
-          {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
-        </select>
-        <select value={filterType} onChange={e => setFilterType(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="">Todos los tipos</option>
-          {Object.entries(TYPE_CFG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
-        </select>
-        <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="">Todos los estados</option>
-          {Object.entries(STATUS_CFG).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}
-        </select>
-        {(filterYear || filterType || filterSt) && (
-          <button onClick={() => { setFilterYear(""); setFilterType(""); setFilterSt(""); }}
-            className="text-xs text-gray-500 hover:text-gray-700 px-2">Limpiar filtros</button>
+      {/* Tabs + Filtros */}
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-1 border-b border-border">
+          {([["audits","Auditorías"],["findings","Seguimiento de hallazgos"]] as const).map(([k,label])=>(
+            <button key={k} onClick={()=>setTab(k)}
+              className={`text-sm px-4 py-2 font-medium transition-colors border-b-2 ${tab===k?"border-accent text-foreground":"-mb-px border-transparent text-muted-foreground hover:text-foreground"}`}>
+              {label}
+              {k==="findings" && openFindings.length>0 && <span className="ml-1.5 text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">{openFindings.length}</span>}
+            </button>
+          ))}
+        </div>
+        {tab==="audits" && (
+          <div className="flex gap-2 flex-wrap">
+            <select value={filterType} onChange={e=>{setFilterType(e.target.value);load(e.target.value,filterStatus);}}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm">
+              <option value="">Todos los tipos</option>
+              {Object.entries(TYPE_LABEL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+            <select value={filterStatus} onChange={e=>{setFilterStatus(e.target.value);load(filterType,e.target.value);}}
+              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm">
+              <option value="">Todos los estados</option>
+              {Object.entries(STATUS_LABEL).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
         )}
       </div>
 
-      {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
-
-      {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando auditorías…</div>
-      ) : audits.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <Search size={40} className="mx-auto mb-3 opacity-30" />
-          <p>No hay auditorías registradas</p>
+      {/* Contenido */}
+      {tab==="audits" ? (
+        <div className="flex flex-col gap-2">
+          {rows.length===0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center">
+              <ClipboardCheck className="h-8 w-8 text-muted-foreground mx-auto mb-2"/>
+              <p className="text-sm text-muted-foreground">Sin auditorías registradas</p>
+            </div>
+          ) : rows.map(a=>(
+            <AuditCard key={a.id} audit={a} findings={findings}
+              onEdit={a=>setModal(a)} onCloseFinding={closeFinding}/>
+          ))}
         </div>
       ) : (
-        <div className="space-y-3">
-          {audits.map(a => (
-            <AuditCard
-              key={a.id}
-              audit={a}
-              onEdit={() => { setEditing(a); setShowForm(true); }}
-              onDelete={() => handleDelete(a.id)}
-            />
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">Todos los hallazgos y no conformidades de todas las auditorías</p>
+          {findings.length===0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center">
+              <p className="text-sm text-muted-foreground">Sin hallazgos registrados</p>
+            </div>
+          ) : findings.map(f=>(
+            <div key={f.id} className="rounded-lg border border-border bg-surface px-4 py-2">
+              <p className="text-[10px] text-muted-foreground mb-1">{f.audit_code} — {f.audit_title}</p>
+              <FindingRow f={f} onClose={()=>closeFinding(f.id)}/>
+            </div>
           ))}
         </div>
       )}
 
-      {showForm && (
-        <AuditForm
-          initial={editing ?? EMPTY}
-          onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditing(null); }}
-        />
-      )}
+      <div className="flex items-center gap-2 mt-1">
+        <CheckCircle2 className="h-3 w-3 text-emerald-500"/>
+        <p className="text-[10px] text-muted-foreground">
+          Normativa: CCHEN NS-06.0 §4.4 (Auditorías internas) · Mínimo una auditoría interna anual · Hallazgos con plazo máximo 90 días · NC cerradas con evidencia
+        </p>
+      </div>
     </div>
   );
 }

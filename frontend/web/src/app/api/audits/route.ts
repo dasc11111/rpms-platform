@@ -3,248 +3,221 @@ import { sql } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// Gestión de Auditorías Internas de Protección Radiológica
-// DS 3/1985 — Los titulares de instalaciones deben implementar un sistema
-// de verificación periódica del cumplimiento de las normas de protección radiológica.
-// IAEA GSR Part 3 — Self-assessment and independent audits.
+async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try { return await fn(); } catch { return fallback; }
+}
 
 async function ensureTable() {
   await sql`
-    CREATE TABLE IF NOT EXISTS audits (
-      id                SERIAL PRIMARY KEY,
-      audit_code        TEXT        NOT NULL UNIQUE,
-      title             TEXT        NOT NULL,
-      audit_type        TEXT        NOT NULL DEFAULT 'internal',
-      scope             TEXT,
-      audit_date        DATE        NOT NULL,
-      lead_auditor      TEXT,
-      team_members      TEXT,
-      areas_audited     TEXT,
-      criteria          TEXT,
-      methodology       TEXT,
-      findings_total    INT         DEFAULT 0,
-      nc_critical       INT         DEFAULT 0,
-      nc_major          INT         DEFAULT 0,
-      nc_minor          INT         DEFAULT 0,
-      observations      INT         DEFAULT 0,
-      opportunities     INT         DEFAULT 0,
-      summary           TEXT,
-      conclusions       TEXT,
-      recommendations   TEXT,
-      status            TEXT        NOT NULL DEFAULT 'planned',
-      report_date       DATE,
-      report_location   TEXT,
-      next_audit        DATE,
-      responsible       TEXT,
-      notes             TEXT,
-      created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-      updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+    CREATE TABLE IF NOT EXISTS pr_audits (
+      id              SERIAL PRIMARY KEY,
+      audit_code      VARCHAR(30) UNIQUE NOT NULL,
+      title           TEXT NOT NULL,
+      audit_type      VARCHAR(30) NOT NULL DEFAULT 'internal',
+      scope           TEXT,
+      auditor         VARCHAR(120),
+      auditee         VARCHAR(120),
+      planned_date    DATE,
+      start_date      DATE,
+      end_date        DATE,
+      status          VARCHAR(30) NOT NULL DEFAULT 'planned',
+      criteria        TEXT,
+      methodology     TEXT,
+      summary         TEXT,
+      conclusion      TEXT,
+      overall_result  VARCHAR(30),
+      report_path     TEXT,
+      observations    TEXT,
+      active          BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
   await sql`
     CREATE TABLE IF NOT EXISTS audit_findings (
       id              SERIAL PRIMARY KEY,
-      audit_id        INT         NOT NULL REFERENCES audits(id) ON DELETE CASCADE,
-      finding_ref     TEXT        NOT NULL,
-      finding_type    TEXT        NOT NULL DEFAULT 'nc_minor',
-      area            TEXT,
-      description     TEXT        NOT NULL,
-      criteria_ref    TEXT,
-      evidence        TEXT,
-      risk_level      TEXT        DEFAULT 'low',
-      corrective_action TEXT,
-      responsible     TEXT,
+      audit_id        INT NOT NULL REFERENCES pr_audits(id) ON DELETE CASCADE,
+      finding_code    VARCHAR(30),
+      finding_type    VARCHAR(30) NOT NULL DEFAULT 'observation',
+      area            VARCHAR(120),
+      description     TEXT NOT NULL,
+      criteria_ref    VARCHAR(200),
+      severity        VARCHAR(20) DEFAULT 'low',
+      responsible     VARCHAR(120),
       due_date        DATE,
-      completion_date DATE,
-      verification    TEXT,
-      status          TEXT        NOT NULL DEFAULT 'open',
-      created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+      corrective_action TEXT,
+      status          VARCHAR(30) NOT NULL DEFAULT 'open',
+      closure_date    DATE,
+      evidence        TEXT,
+      active          BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
 
-  const { rows } = await sql`SELECT id FROM audits LIMIT 1`;
-  if (rows.length === 0) {
-    const y = new Date().getFullYear();
-    const { rows: a1 } = await sql`
-      INSERT INTO audits
-        (audit_code, title, audit_type, scope, audit_date, lead_auditor, team_members,
-         areas_audited, criteria, findings_total, nc_critical, nc_major, nc_minor,
-         observations, summary, conclusions, status, report_date, next_audit, responsible)
-      VALUES
-        ('AUD-PR-001', 'Auditoría Interna Anual Sistema de Protección Radiológica',
-         'internal', 'Sistema completo de protección radiológica del Departamento de Medicina Nuclear',
-         ${`${y}-03-15`}, 'Encargado PR', 'Jefe PABH, TM Dosimetría',
-         'Medicina Nuclear, Radiofarmacia, Almacén de residuos, Zonas clasificadas',
-         'DS 3/1985; IAEA GSR Part 3; ISO 19011:2018',
-         8, 0, 2, 4, 2,
-         'Auditoría programada al sistema completo de PR. Se identificaron 8 hallazgos: 2 NC mayores, 4 NC menores y 2 observaciones.',
-         'El sistema de PR funciona adecuadamente. Se requiere mejorar la gestión documental y el programa de monitoreo de área.',
-         'completed', ${`${y}-04-01`}, ${`${y + 1}-03-15`}, 'Encargado PR')
+  const { rows:[{cnt}] } = await sql`SELECT COUNT(*)::int AS cnt FROM pr_audits`;
+  if (cnt > 0) return;
+
+  const audits = [
+    { code:"AUD-2026-001", title:"Auditoría Interna Programa PR — 1er Semestre 2026", type:"internal", scope:"Dosimetría personal, Zonas clasificadas, Gestión de residuos", auditor:"TM Jefe PR (Externo Dept. Calidad)", auditee:"Servicio Medicina Nuclear", planned:"2026-03-15", start:"2026-03-18", end:"2026-03-20", status:"closed", result:"satisfactory", summary:"Auditoría completada sin hallazgos críticos" },
+    { code:"AUD-2026-002", title:"Auditoría CCHEN NS-06.0 — Verificación Documental", type:"cchen", scope:"Programa PR, Documentación, Autorizaciones", auditor:"Inspector CCHEN", auditee:"TM Jefe PR", planned:"2026-05-20", start:"2026-05-20", end:"2026-05-21", status:"closed", result:"satisfactory", summary:"Verificación documental aprobada" },
+    { code:"AUD-2026-003", title:"Auditoría Interna — Control de Calidad Instrumentos", type:"internal", scope:"Instrumentos de medición, Calibraciones, Verificaciones", auditor:"Físico Médico", auditee:"TM PR", planned:"2026-08-10", start:"2026-08-12", end:"2026-08-13", status:"closed", result:"minor_nc", summary:"1 no conformidad menor en registros de verificación" },
+    { code:"AUD-2026-004", title:"Auditoría Interna Programa PR — 2do Semestre 2026", type:"internal", scope:"Programa completo NS-06.0", auditor:"TM Jefe PR (Externo Dept. Calidad)", auditee:"Servicio Medicina Nuclear", planned:"2026-11-25", start:null, end:null, status:"planned", result:null, summary:null },
+  ];
+  const idMap: Record<string,number> = {};
+  for (const a of audits) {
+    const { rows:[r] } = await sql`
+      INSERT INTO pr_audits (audit_code, title, audit_type, scope, auditor, auditee,
+        planned_date, start_date, end_date, status, overall_result, summary)
+      VALUES (${a.code}, ${a.title}, ${a.type}, ${a.scope}, ${a.auditor}, ${a.auditee},
+        ${a.planned}, ${a.start??null}, ${a.end??null}, ${a.status}, ${a.result??null}, ${a.summary??null})
       RETURNING id
     `;
-    await sql`
-      INSERT INTO audit_findings
-        (audit_id, finding_ref, finding_type, area, description, criteria_ref,
-         risk_level, corrective_action, responsible, due_date, status)
-      VALUES
-        (${a1[0].id}, 'AUD-PR-001-NC01', 'nc_major', 'Monitoreo de área',
-         'Registros de monitoreo de área no actualizados por 3 meses en zona de preparación de radiofármacos.',
-         'DS 3/1985 Art. 25', 'medium',
-         'Implementar registro electrónico de monitoreo y asignar responsable semanal.',
-         'Encargado PR', ${`${y}-06-30`}, 'closed'),
-        (${a1[0].id}, 'AUD-PR-001-NC02', 'nc_major', 'Gestión de residuos',
-         'Plan de gestión de residuos radiactivos no incluye procedimiento para contenedores de dosis unitaria.',
-         'DS 3/1985; IAEA GSG-1', 'medium',
-         'Actualizar procedimiento PRP-WM-001 incluyendo protocolo para contenedores unitarios.',
-         'Encargado PR', ${`${y}-07-31`}, 'open'),
-        (${a1[0].id}, 'AUD-PR-001-NC03', 'nc_minor', 'Dosimetría personal',
-         'Tres trabajadores sin registro de entrega de dosímetro durante enero.',
-         'DS 3/1985 Art. 18', 'low',
-         'Reforzar control de asistencia a dosímetros en reunión mensual.',
-         'Jefe PABH', ${`${y}-05-31`}, 'closed'),
-        (${a1[0].id}, 'AUD-PR-001-OBS01', 'observation', 'Capacitación',
-         'Oportunidad de mejora: capacitación en ALARA no incluye casos prácticos de optimización.',
-         'IAEA GSR Part 3 Req. 12', 'low', null, null, null, 'open')
-    `;
+    idMap[a.code] = r.id;
+  }
 
+  const findings = [
+    { audit:"AUD-2026-003", code:"AUD-2026-003-NC-01", type:"non_conformance", area:"Control Instrumentos", desc:"Registros de verificación operacional incompletos para 2 instrumentos durante agosto", ref:"NS-06.0 §3.4.2", sev:"minor", resp:"TM PR", due:"2026-09-30", action:"Implementar lista de verificación digital diaria obligatoria", status:"closed", closure:"2026-09-28" },
+    { audit:"AUD-2026-003", code:"AUD-2026-003-OB-01", type:"observation", area:"Calibraciones", desc:"Oportunidad de mejora: implementar alertas automáticas 30 días antes del vencimiento de calibración", ref:"NS-06.0 §3.4.1", sev:"low", resp:"TM Jefe PR", due:"2026-12-31", action:"Integrar sistema de alertas en RPMS", status:"open", closure:null },
+    { audit:"AUD-2026-001", code:"AUD-2026-001-OB-01", type:"observation", area:"Dosimetría", desc:"Recomendación de digitalizar todos los registros de dosis previos a 2020", ref:"NS-06.0 §3.2.1", sev:"low", resp:"TM Jefe PR", due:"2026-12-31", action:"Digitalización retroactiva de historiales", status:"open", closure:null },
+    { audit:"AUD-2026-002", code:"AUD-2026-002-OB-01", type:"observation", area:"Documentación", desc:"Actualizar referencia normativa en 3 procedimientos que citan versión anterior DS 3/1985", ref:"NS-06.0 §4.3", sev:"low", resp:"TM Jefe PR", due:"2026-07-31", action:"Actualización de referencias en PR-PO-003, PR-PO-004, PR-IN-002", status:"closed", closure:"2026-07-15" },
+  ];
+  for (const f of findings) {
+    const auditId = idMap[f.audit];
     await sql`
-      INSERT INTO audits
-        (audit_code, title, audit_type, scope, audit_date, lead_auditor,
-         areas_audited, criteria, status, next_audit, responsible)
-      VALUES
-        ('AUD-PR-002', 'Auditoría de Seguimiento — Gestión de Residuos',
-         'followup', 'Verificación cierre NC mayores auditoría AUD-PR-001',
-         ${`${y}-09-20`}, 'Encargado PR',
-         'Almacén de residuos, Radiofarmacia',
-         'DS 3/1985; IAEA GSG-1; PRP-WM-001',
-         'planned', null, 'Encargado PR')
+      INSERT INTO audit_findings (audit_id, finding_code, finding_type, area, description,
+        criteria_ref, severity, responsible, due_date, corrective_action, status, closure_date)
+      VALUES (${auditId}, ${f.code}, ${f.type}, ${f.area}, ${f.desc},
+        ${f.ref}, ${f.sev}, ${f.resp}, ${f.due??null}, ${f.action}, ${f.status}, ${f.closure??null})
+      ON CONFLICT DO NOTHING
     `;
   }
 }
 
 export async function GET(req: NextRequest) {
-  try { await ensureTable(); } catch { /* ok */ }
+  return safeQuery(async () => {
+    await ensureTable();
+    const sp = req.nextUrl.searchParams;
+    const type   = sp.get("type") ?? "";
+    const status = sp.get("status") ?? "";
+    const findings = sp.get("findings") ?? "";
 
-  const { searchParams } = new URL(req.url);
-  const year   = searchParams.get("year");
-  const type   = searchParams.get("type");
-  const status = searchParams.get("status");
-  const id     = searchParams.get("id");
-
-  try {
-    // Single audit with findings
-    if (id) {
-      const { rows: audit } = await sql`SELECT * FROM audits WHERE id=${parseInt(id)}`;
-      const { rows: findings } = await sql`SELECT * FROM audit_findings WHERE audit_id=${parseInt(id)} ORDER BY finding_ref`;
-      return NextResponse.json({ audit: audit[0], findings });
+    if (findings === "1") {
+      const { rows } = await sql`
+        SELECT f.*, a.audit_code, a.title AS audit_title
+        FROM audit_findings f JOIN pr_audits a ON a.id = f.audit_id
+        WHERE f.active = TRUE
+        ORDER BY f.due_date ASC NULLS LAST, f.created_at DESC
+      `;
+      return NextResponse.json({ rows });
     }
 
-    let rows;
-    if (year && type && status) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE EXTRACT(YEAR FROM audit_date)=${parseInt(year)} AND audit_type=${type} AND status=${status} ORDER BY audit_date DESC`);
-    } else if (year && type) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE EXTRACT(YEAR FROM audit_date)=${parseInt(year)} AND audit_type=${type} ORDER BY audit_date DESC`);
-    } else if (year && status) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE EXTRACT(YEAR FROM audit_date)=${parseInt(year)} AND status=${status} ORDER BY audit_date DESC`);
-    } else if (year) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE EXTRACT(YEAR FROM audit_date)=${parseInt(year)} ORDER BY audit_date DESC`);
-    } else if (type) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE audit_type=${type} ORDER BY audit_date DESC`);
-    } else if (status) {
-      ({ rows } = await sql`SELECT * FROM audits WHERE status=${status} ORDER BY audit_date DESC`);
-    } else {
-      ({ rows } = await sql`SELECT * FROM audits ORDER BY audit_date DESC`);
-    }
+    const { rows } = await sql`
+      SELECT a.*,
+        COUNT(f.id)                                            ::int AS finding_count,
+        COUNT(f.id) FILTER (WHERE f.finding_type='non_conformance') ::int AS nc_count,
+        COUNT(f.id) FILTER (WHERE f.status='open')            ::int AS open_findings,
+        COUNT(f.id) FILTER (WHERE f.due_date < NOW() AND f.status='open') ::int AS overdue_findings
+      FROM pr_audits a
+      LEFT JOIN audit_findings f ON f.audit_id = a.id AND f.active = TRUE
+      WHERE a.active = TRUE
+        AND (${type}   = '' OR a.audit_type = ${type})
+        AND (${status} = '' OR a.status     = ${status})
+      GROUP BY a.id
+      ORDER BY a.planned_date DESC
+    `;
 
     const { rows: stats } = await sql`
       SELECT
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE status='planned') AS planned,
-        COUNT(*) FILTER (WHERE status='in_progress') AS in_progress,
-        COUNT(*) FILTER (WHERE status='completed') AS completed,
-        SUM(nc_critical)::int AS nc_critical_total,
-        SUM(nc_major)::int AS nc_major_total,
-        SUM(nc_minor)::int AS nc_minor_total,
-        SUM(observations)::int AS obs_total
-      FROM audits
+        COUNT(DISTINCT a.id)                                             ::int AS total_audits,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status='closed')           ::int AS completed,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status='planned')          ::int AS planned,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status='in_progress')      ::int AS in_progress,
+        COUNT(f.id)                                                      ::int AS total_findings,
+        COUNT(f.id) FILTER (WHERE f.finding_type='non_conformance')     ::int AS nc_total,
+        COUNT(f.id) FILTER (WHERE f.status='open')                      ::int AS open_findings,
+        COUNT(f.id) FILTER (WHERE f.due_date < NOW() AND f.status='open') ::int AS overdue_findings
+      FROM pr_audits a
+      LEFT JOIN audit_findings f ON f.audit_id = a.id AND f.active = TRUE
+      WHERE a.active = TRUE
     `;
 
-    const { rows: openFindings } = await sql`
-      SELECT COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE finding_type='nc_critical') AS critical,
-        COUNT(*) FILTER (WHERE finding_type='nc_major') AS major
-      FROM audit_findings WHERE status='open'
-    `;
+    return NextResponse.json({ rows, stats: stats[0] });
+  }, NextResponse.json({ rows:[], stats:{} }, { status:500 }));
+}
 
-    const { rows: years } = await sql`
-      SELECT DISTINCT EXTRACT(YEAR FROM audit_date)::int AS y FROM audits ORDER BY y DESC
-    `;
-
-    return NextResponse.json({ audits: rows, stats: stats[0], openFindings: openFindings[0], years: years.map(r => r.y) });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+async function nextCode() {
+  const yr = new Date().getFullYear();
+  const { rows:[{cnt}] } = await sql`SELECT COUNT(*)::int AS cnt FROM pr_audits WHERE audit_code LIKE ${'AUD-'+yr+'%'}`;
+  return `AUD-${yr}-${String(cnt+1).padStart(3,"0")}`;
+}
+async function nextFindingCode(auditCode: string, type: string) {
+  const prefix = type === "non_conformance" ? "NC" : "OB";
+  const { rows:[{cnt}] } = await sql`SELECT COUNT(*)::int AS cnt FROM audit_findings f JOIN pr_audits a ON a.id=f.audit_id WHERE a.audit_code=${auditCode}`;
+  return `${auditCode}-${prefix}-${String(cnt+1).padStart(2,"0")}`;
 }
 
 export async function POST(req: NextRequest) {
-  try { await ensureTable(); } catch { /* ok */ }
-  try {
-    const body = await req.json();
-    if (!body.audit_code || !body.title || !body.audit_date) {
-      return NextResponse.json({ error: "audit_code, title y audit_date requeridos" }, { status: 400 });
+  return safeQuery(async () => {
+    await ensureTable();
+    const b = await req.json();
+
+    if (b._type === "finding") {
+      const { audit_id, audit_code, ...rest } = b;
+      const code = await nextFindingCode(audit_code ?? "AUD", rest.finding_type ?? "observation");
+      const { rows:[row] } = await sql`
+        INSERT INTO audit_findings (audit_id, finding_code, finding_type, area, description,
+          criteria_ref, severity, responsible, due_date, corrective_action, status)
+        VALUES (${audit_id}, ${code}, ${rest.finding_type??'observation'}, ${rest.area??null},
+          ${rest.description}, ${rest.criteria_ref??null}, ${rest.severity??'low'},
+          ${rest.responsible??null}, ${rest.due_date??null}, ${rest.corrective_action??null},
+          ${rest.status??'open'})
+        RETURNING *
+      `;
+      return NextResponse.json(row, { status:201 });
     }
-    const { rows } = await sql`
-      INSERT INTO audits
-        (audit_code, title, audit_type, scope, audit_date, lead_auditor, team_members,
-         areas_audited, criteria, methodology, summary, conclusions, recommendations,
-         status, report_date, report_location, next_audit, responsible, notes)
-      VALUES
-        (${body.audit_code}, ${body.title}, ${body.audit_type ?? "internal"},
-         ${body.scope ?? null}, ${body.audit_date}, ${body.lead_auditor ?? null},
-         ${body.team_members ?? null}, ${body.areas_audited ?? null}, ${body.criteria ?? null},
-         ${body.methodology ?? null}, ${body.summary ?? null}, ${body.conclusions ?? null},
-         ${body.recommendations ?? null}, ${body.status ?? "planned"},
-         ${body.report_date ?? null}, ${body.report_location ?? null},
-         ${body.next_audit ?? null}, ${body.responsible ?? null}, ${body.notes ?? null})
+
+    const code = await nextCode();
+    const { rows:[row] } = await sql`
+      INSERT INTO pr_audits (audit_code, title, audit_type, scope, auditor, auditee,
+        planned_date, start_date, end_date, status, criteria, methodology, summary, observations)
+      VALUES (${code}, ${b.title}, ${b.audit_type??'internal'}, ${b.scope??null},
+        ${b.auditor??null}, ${b.auditee??null}, ${b.planned_date??null},
+        ${b.start_date??null}, ${b.end_date??null}, ${b.status??'planned'},
+        ${b.criteria??null}, ${b.methodology??null}, ${b.summary??null}, ${b.observations??null})
       RETURNING *
     `;
-    return NextResponse.json({ audit: rows[0] }, { status: 201 });
-  } catch (err) {
-    if (String(err).includes("unique")) {
-      return NextResponse.json({ error: "El código ya existe" }, { status: 409 });
-    }
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+    return NextResponse.json(row, { status:201 });
+  }, NextResponse.json({ error:"db error" }, { status:500 }));
 }
 
 export async function PATCH(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { id } = body;
-    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-    const editable = ["title","audit_type","scope","audit_date","lead_auditor","team_members",
-      "areas_audited","criteria","methodology","findings_total","nc_critical","nc_major","nc_minor",
-      "observations","opportunities","summary","conclusions","recommendations","status",
-      "report_date","report_location","next_audit","responsible","notes"];
-    const fields = Object.keys(body).filter(k => editable.includes(k));
-    if (!fields.length) return NextResponse.json({ error: "Sin campos" }, { status: 400 });
-    const sets = fields.map((f, i) => `"${f}" = $${i + 2}`).join(", ");
-    const vals = [id, ...fields.map(f => (body as Record<string, unknown>)[f])];
-    const { rows } = await sql.unsafe(`UPDATE audits SET ${sets}, updated_at=now() WHERE id=$1 RETURNING *`, vals);
-    return NextResponse.json({ audit: rows[0] });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  return safeQuery(async () => {
+    await ensureTable();
+    const b = await req.json();
+    const { id, _type, ...rest } = b;
+    const table = _type === "finding" ? "audit_findings" : "pr_audits";
+    const fields = Object.keys(rest);
+    if (!fields.length) return NextResponse.json({ error:"no fields" }, { status:400 });
+    const setClauses = fields.map((f,i) => `"${f}" = $${i+2}`).join(", ");
+    const vals = fields.map(f => (rest as Record<string,unknown>)[f]);
+    const { rows:[row] } = await sql.unsafe(
+      `UPDATE ${table} SET ${setClauses}, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [id, ...vals]
+    );
+    return NextResponse.json(row);
+  }, NextResponse.json({ error:"db error" }, { status:500 }));
 }
 
 export async function DELETE(req: NextRequest) {
-  try {
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-    await sql`DELETE FROM audits WHERE id=${parseInt(id)}`;
-    return NextResponse.json({ deleted: id });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  return safeQuery(async () => {
+    await ensureTable();
+    const { id, _type } = await req.json();
+    if (_type === "finding") {
+      await sql`UPDATE audit_findings SET active = FALSE WHERE id = ${id}`;
+    } else {
+      await sql`UPDATE pr_audits SET active = FALSE WHERE id = ${id}`;
+    }
+    return NextResponse.json({ ok:true });
+  }, NextResponse.json({ error:"db error" }, { status:500 }));
 }
