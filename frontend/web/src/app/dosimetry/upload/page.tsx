@@ -2,6 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
+import type { ComponentType } from "react";
 import Link from "next/link";
 import {
   FileText,
@@ -22,7 +23,7 @@ interface UploadModule {
   title: string;
   description: string;
   href: string;
-  icon: React.ElementType;
+  icon: ComponentType<{ className?: string }>;
   badge?: string;
   badgeColor?: string;
   group: "dosimetria" | "dosimetros" | "otros";
@@ -82,7 +83,7 @@ const GROUP_LABELS: Record<UploadModule["group"], string> = {
   otros: "Documentos y respaldos",
 };
 
-const GROUP_ICONS: Record<UploadModule["group"], React.ElementType> = {
+const GROUP_ICONS: Record<UploadModule["group"], ComponentType<{ className?: string }>> = {
   dosimetria: FileText,
   dosimetros: Tag,
   otros: BookOpen,

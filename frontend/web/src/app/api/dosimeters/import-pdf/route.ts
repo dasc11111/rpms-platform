@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { ensureDosimeterTables } from "@/lib/dosimeters-db";
 import { formatRut, rutMatchKey } from "@/lib/rut";
+import * as XLSX from "xlsx";
 
 export const dynamic = "force-dynamic";
 
@@ -110,9 +111,6 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
 // ── XLS/XLSX parser ───────────────────────────────────────────────────────────
 
 function parseXlsxBuffer(buf: Buffer): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
-  // Dynamic require inside function to avoid SSR issues
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const XLSX = require("xlsx") as typeof import("xlsx");
   const workbook = XLSX.read(buf, { type: "buffer", cellDates: true });
   const results: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] = [];
 
@@ -461,45 +459,87 @@ async function handleConfirm(params: {
     const nameToUse = (row.worker_name_system || row.worker_name_report) || null;
     const serviceToUse = (row.service_system || row.raw_service) || null;
     const typeToUse = row.raw_type || "cuerpo_entero";
-    const deliveryDate = row.raw_delivery_date || null;
+    // Parse delivery date to ISO string for safe passing to Postgres
+    const deliveryDateStr: string | null = row.raw_delivery_date
+      ? (() => {
+          // Accept DD/MM/YYYY, DD-MM-YYYY or ISO YYYY-MM-DD
+          const d = row.raw_delivery_date.trim();
+          const isoMatch = d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (isoMatch) return d;
+          const dmyMatch = d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+          if (dmyMatch) {
+            const [, day, month, year] = dmyMatch;
+            const y = year!.length === 2 ? `20${year}` : year;
+            return `${y}-${month!.padStart(2, "0")}-${day!.padStart(2, "0")}`;
+          }
+          return null;
+        })()
+      : null;
 
     try {
       if (row.resolution === "crear_y_asignar") {
-        await sql`
-          INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, updated_at)
-          VALUES (
-            ${codeToUse},
-            ${typeToUse},
-            'asignado',
-            ${rutToUse},
-            ${nameToUse},
-            ${serviceToUse},
-            ${deliveryDate ? sql`${deliveryDate}::date` : sql`CURRENT_DATE`},
-            ${deliveryDate ? sql`(${deliveryDate}::date + INTERVAL '3 months')` : sql`(CURRENT_DATE + INTERVAL '3 months')::date`},
-            now()
-          )
-          ON CONFLICT (code) DO UPDATE SET
-            status = 'asignado',
-            worker_rut = EXCLUDED.worker_rut,
-            worker_name = EXCLUDED.worker_name,
-            service = EXCLUDED.service,
-            delivery_date = EXCLUDED.delivery_date,
-            estimated_return_date = EXCLUDED.estimated_return_date,
-            updated_at = now()
-        `;
+        if (deliveryDateStr) {
+          await sql`
+            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, updated_at)
+            VALUES (
+              ${codeToUse}, ${typeToUse}, 'asignado',
+              ${rutToUse}, ${nameToUse}, ${serviceToUse},
+              ${deliveryDateStr}::date,
+              (${deliveryDateStr}::date + INTERVAL '3 months')::date,
+              now()
+            )
+            ON CONFLICT (code) DO UPDATE SET
+              status = 'asignado', worker_rut = EXCLUDED.worker_rut,
+              worker_name = EXCLUDED.worker_name, service = EXCLUDED.service,
+              delivery_date = EXCLUDED.delivery_date,
+              estimated_return_date = EXCLUDED.estimated_return_date,
+              updated_at = now()
+          `;
+        } else {
+          await sql`
+            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, updated_at)
+            VALUES (
+              ${codeToUse}, ${typeToUse}, 'asignado',
+              ${rutToUse}, ${nameToUse}, ${serviceToUse},
+              CURRENT_DATE,
+              (CURRENT_DATE + INTERVAL '3 months')::date,
+              now()
+            )
+            ON CONFLICT (code) DO UPDATE SET
+              status = 'asignado', worker_rut = EXCLUDED.worker_rut,
+              worker_name = EXCLUDED.worker_name, service = EXCLUDED.service,
+              delivery_date = EXCLUDED.delivery_date,
+              estimated_return_date = EXCLUDED.estimated_return_date,
+              updated_at = now()
+          `;
+        }
         created++;
       } else if (row.resolution === "asignar" || row.resolution === "reasignar") {
-        await sql`
-          UPDATE dosimeters SET
-            status = 'asignado',
-            worker_rut = ${rutToUse},
-            worker_name = ${nameToUse},
-            service = ${serviceToUse},
-            delivery_date = ${deliveryDate ? sql`${deliveryDate}::date` : sql`COALESCE(delivery_date, CURRENT_DATE)`},
-            estimated_return_date = COALESCE(estimated_return_date, (CURRENT_DATE + INTERVAL '3 months')::date),
-            updated_at = now()
-          WHERE id = ${row.dosimeter_id}
-        `;
+        if (deliveryDateStr) {
+          await sql`
+            UPDATE dosimeters SET
+              status = 'asignado',
+              worker_rut = ${rutToUse},
+              worker_name = ${nameToUse},
+              service = ${serviceToUse},
+              delivery_date = ${deliveryDateStr}::date,
+              estimated_return_date = COALESCE(estimated_return_date, (CURRENT_DATE + INTERVAL '3 months')::date),
+              updated_at = now()
+            WHERE id = ${row.dosimeter_id}
+          `;
+        } else {
+          await sql`
+            UPDATE dosimeters SET
+              status = 'asignado',
+              worker_rut = ${rutToUse},
+              worker_name = ${nameToUse},
+              service = ${serviceToUse},
+              delivery_date = COALESCE(delivery_date, CURRENT_DATE),
+              estimated_return_date = COALESCE(estimated_return_date, (CURRENT_DATE + INTERVAL '3 months')::date),
+              updated_at = now()
+            WHERE id = ${row.dosimeter_id}
+          `;
+        }
         assigned++;
       }
     } catch (e) {
