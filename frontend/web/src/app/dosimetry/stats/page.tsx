@@ -12,10 +12,20 @@ import {
   RefreshCw,
   TrendingUp,
   Users,
-  ShieldCheck,
   ShieldAlert,
   ArrowUpRight,
+  Layers,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface Summary {
   total_workers: number;
@@ -66,6 +76,90 @@ interface StatsData {
   trend: TrendRow[];
   at_risk: AtRiskRow[];
   histogram: HistogramRow[];
+}
+
+interface MultiYearServiceData {
+  service: string;
+  data: { year: number; collective_dose: number; workers: number }[];
+}
+
+interface MultiYearData {
+  years: number[];
+  services: string[];
+  rows: MultiYearServiceData[];
+}
+
+// Color palette for multi-year bars
+const YEAR_COLORS = [
+  "#6366f1", "#3b82f6", "#22c55e", "#f59e0b", "#ef4444",
+  "#a855f7", "#14b8a6", "#f97316",
+];
+
+function ServiceComparisonChart({ data }: { data: MultiYearData }) {
+  if (data.rows.length === 0) {
+    return <p className="text-sm text-gray-400 text-center py-10">Sin datos multi-año para mostrar</p>;
+  }
+
+  // Transform: one entry per service, years as keys
+  const chartData = data.rows.map((r) => {
+    const entry: Record<string, string | number> = { service: r.service.length > 20 ? r.service.slice(0, 18) + "…" : r.service };
+    for (const d of r.data) {
+      entry[String(d.year)] = d.collective_dose;
+    }
+    return entry;
+  });
+
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-xs space-y-1">
+        <div className="font-semibold text-gray-800 mb-1">{label}</div>
+        {payload.map((p) => (
+          <div key={p.name} className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
+            <span className="text-gray-600">{p.name}:</span>
+            <span className="font-mono font-semibold text-gray-800">{p.value.toFixed(2)} mSv</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+        <XAxis
+          dataKey="service"
+          tick={{ fontSize: 11, fill: "#6b7280" }}
+          angle={-35}
+          textAnchor="end"
+          interval={0}
+          height={70}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "#6b7280" }}
+          tickFormatter={(v) => `${v}`}
+          label={{ value: "mSv", angle: -90, position: "insideLeft", offset: 10, style: { fontSize: 10, fill: "#9ca3af" } }}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend
+          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+          formatter={(value) => <span style={{ color: "#374151" }}>{value}</span>}
+        />
+        {data.years.map((y, i) => (
+          <Bar
+            key={y}
+            dataKey={String(y)}
+            name={String(y)}
+            fill={YEAR_COLORS[i % YEAR_COLORS.length]}
+            radius={[3, 3, 0, 0]}
+            maxBarSize={28}
+          />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
 }
 
 const HIST_COLORS: Record<string, string> = {
@@ -141,6 +235,11 @@ export default function DosimetryStatsPage() {
   const [year, setYear] = useState(currentYear);
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [multiYear, setMultiYear] = useState<MultiYearData | null>(null);
+  const [multiYearLoading, setMultiYearLoading] = useState(false);
+  const [multiYearYears] = useState<number[]>(() =>
+    Array.from({ length: 5 }, (_, i) => currentYear - 4 + i)
+  );
 
   const fetchStats = async (y: number) => {
     setLoading(true);
@@ -155,9 +254,28 @@ export default function DosimetryStatsPage() {
     }
   };
 
+  const fetchMultiYear = async () => {
+    setMultiYearLoading(true);
+    try {
+      const yearsStr = multiYearYears.join(",");
+      const res = await fetch(`/api/dosimetry/stats/multi-year?years=${yearsStr}&top=8`);
+      const json = await res.json();
+      setMultiYear(json);
+    } catch {
+      /* ignore */
+    } finally {
+      setMultiYearLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats(year);
   }, [year]);
+
+  useEffect(() => {
+    fetchMultiYear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const maxCollective = data
     ? Math.max(...data.by_service.map((s) => Number(s.collective_dose)), 1)
@@ -388,6 +506,42 @@ export default function DosimetryStatsPage() {
               </div>
             </section>
           )}
+
+          {/* Multi-year service comparison */}
+          <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <Layers className="h-4 w-4 text-indigo-500" />
+                Comparación inter-servicios multi-año — Dosis colectiva (mSv)
+              </h2>
+              <button
+                onClick={fetchMultiYear}
+                disabled={multiYearLoading}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50 transition disabled:opacity-50"
+                title="Actualizar gráfico"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${multiYearLoading ? "animate-spin" : ""}`} />
+                Actualizar
+              </button>
+            </div>
+            {multiYearLoading ? (
+              <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+                <RefreshCw className="animate-spin h-5 w-5" />
+                <span className="text-sm">Cargando comparación multi-año…</span>
+              </div>
+            ) : multiYear ? (
+              <>
+                <ServiceComparisonChart data={multiYear} />
+                <div className="mt-2 text-xs text-gray-400 text-center">
+                  Top 8 servicios por dosis colectiva total · {multiYearYears[0]}–{multiYearYears[multiYearYears.length - 1]}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10 text-sm text-gray-400">
+                Haz clic en &ldquo;Actualizar&rdquo; para cargar la comparación
+              </div>
+            )}
+          </section>
 
           {/* At-risk workers */}
           {data.at_risk.length > 0 && (
