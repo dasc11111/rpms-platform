@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const TABS: { key: "listado" | "alertas" | "estadisticas"; label: string; href: string }[] = [
+const TABS: { key: "listado" | "alertas" | "estadisticas" | "importar"; label: string; href: string }[] = [
   { key: "listado", label: "Listado", href: "/dosimeters" },
   { key: "alertas", label: "Alertas", href: "/dosimeters/alerts" },
   { key: "estadisticas", label: "Estadisticas", href: "/dosimeters/stats" },
+  { key: "importar", label: "Importar PDF", href: "/dosimeters/import-pdf" },
 ];
 
-export function DosimetersSubnav({ active }: { active: "listado" | "alertas" | "estadisticas" }) {
+export function DosimetersSubnav({ active }: { active: "listado" | "alertas" | "estadisticas" | "importar" }) {
   return (
     <div className="mb-4 flex items-center gap-1 border-b border-border">
       {TABS.map((t) => (
