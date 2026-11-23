@@ -110,7 +110,7 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
 
 // ── XLS/XLSX parser ───────────────────────────────────────────────────────────
 
-function parseXlsxBuffer(buf: Buffer): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
+function parseXlsxBuffer(buf: Uint8Array): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
   const workbook = XLSX.read(buf, { type: "buffer", cellDates: true });
   const results: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] = [];
 
@@ -295,7 +295,7 @@ export async function POST(req: NextRequest) {
       await ensureDosimeterTables();
 
       const arrayBuffer = await file.arrayBuffer();
-      const buf = Buffer.from(arrayBuffer);
+      const buf = new Uint8Array(arrayBuffer);
 
       // Hash
       let fileHash = "";

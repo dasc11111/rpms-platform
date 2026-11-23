@@ -61,7 +61,8 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
         worker,
-        annual_history: annualRows.map((r) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        annual_history: annualRows.map((r: any) => ({
           year: r.year,
           heff_msv: parseFloat(r.heff_msv),
           periods: parseInt(r.periods),
@@ -132,7 +133,8 @@ export async function GET(req: NextRequest) {
       }
     } catch { /* ignore */ }
 
-    const workers = summaryRows.map((r) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const workers = summaryRows.map((r: any) => {
       const heff = parseFloat(r.heff_msv ?? "0");
       const fiveY = fiveYearData[r.id] ?? 0;
       return {
@@ -157,9 +159,12 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const exceeded = workers.filter((w) => w.status === "exceeded").length;
-    const investigation = workers.filter((w) => w.status === "investigation").length;
-    const elevated = workers.filter((w) => w.status === "elevated").length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const exceeded = workers.filter((w: any) => w.status === "exceeded").length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const investigation = workers.filter((w: any) => w.status === "investigation").length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const elevated = workers.filter((w: any) => w.status === "elevated").length;
 
     return NextResponse.json({
       year: targetYear,

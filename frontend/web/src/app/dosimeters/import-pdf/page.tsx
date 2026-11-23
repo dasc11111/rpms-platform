@@ -204,7 +204,7 @@ function EditableRow({
         )}
       </td>
       <td className="px-2 py-2 text-xs text-muted-foreground max-w-[120px] truncate">
-        {row.service_system ?? row.raw_service || <span className="italic">—</span>}
+        {(row.service_system ?? row.raw_service) || <span className="italic">—</span>}
       </td>
       <td className="px-2 py-2 text-xs text-muted-foreground capitalize whitespace-nowrap">
         {(row.raw_type || "cuerpo_entero").replace(/_/g, " ")}
