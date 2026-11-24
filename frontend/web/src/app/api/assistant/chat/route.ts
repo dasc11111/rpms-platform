@@ -1,11 +1,18 @@
 /**
  * Ruta de chat del Asistente IA de RPMS.
- * Usa la API de Anthropic con streaming SSE nativo.
- * Requiere ANTHROPIC_API_KEY como variable de entorno.
+ * Cascada de proveedores: Anthropic → Google Gemini → Fallback local
+ *
+ * Variables de entorno opcionales:
+ *   ANTHROPIC_API_KEY  — sk-ant-...
+ *   GEMINI_API_KEY     — AIza...
+ *
+ * Sin ninguna clave funciona con respuestas locales basadas en
+ * la base de conocimiento RPMS embebida.
  */
 import { NextRequest } from "next/server";
 import { buildSystemPrompt } from "@/lib/assistant/system-prompt";
 import { getModuleLabel } from "@/lib/assistant/modules";
+import { localAnswer } from "@/lib/assistant/local-knowledge";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,142 +42,168 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    // Sin clave API: respuesta de fallback
-    return fallbackResponse(messages, modulePath);
-  }
-
   const moduleLabel = modulePath ? getModuleLabel(modulePath) : undefined;
   const systemPrompt = buildSystemPrompt(moduleLabel);
-
-  // Construir historial (máximo últimos 20 mensajes para no sobrepasar contexto)
   const history = messages.slice(-20).map((m) => ({
     role: m.role as "user" | "assistant",
     content: m.content,
   }));
 
-  try {
-    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5",
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: history,
-        stream: true,
-      }),
-    });
+  // ── 1. Intentar Anthropic ─────────────────────────────────────────────────
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5",
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: history,
+          stream: true,
+        }),
+      });
 
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text().catch(() => "");
-      console.error("[RPMS Assistant] Anthropic API error:", anthropicRes.status, errText);
-      return fallbackResponse(messages, modulePath);
+      if (res.ok) {
+        return buildAnthropicStream(res);
+      }
+      console.warn("[RPMS] Anthropic falló:", res.status, "→ intentando Gemini");
+    } catch (err) {
+      console.warn("[RPMS] Anthropic error de red:", err, "→ intentando Gemini");
     }
-
-    // Redirigir stream SSE directamente al cliente
-    const stream = new ReadableStream({
-      async start(controller) {
-        const encoder = new TextEncoder();
-        const reader = anthropicRes.body?.getReader();
-        if (!reader) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
-          controller.close();
-          return;
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              const data = line.slice(6).trim();
-              if (data === "[DONE]") continue;
-
-              try {
-                const event = JSON.parse(data);
-                if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
-                  const chunk = JSON.stringify({ type: "delta", text: event.delta.text });
-                  controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
-                }
-                if (event.type === "message_stop") {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
-                }
-              } catch {
-                // Ignorar líneas SSE malformadas
-              }
-            }
-          }
-        } catch (err) {
-          console.error("[RPMS Assistant] Stream error:", err);
-          const errMsg = JSON.stringify({ type: "error", error: "Error leyendo respuesta" });
-          controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`));
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
-  } catch (err) {
-    console.error("[RPMS Assistant] Fetch error:", err);
-    return fallbackResponse(messages, modulePath);
   }
+
+  // ── 2. Intentar Google Gemini ─────────────────────────────────────────────
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const geminiRes = await callGemini(geminiKey, systemPrompt, history);
+      if (geminiRes) {
+        return new Response(
+          JSON.stringify({ reply: geminiRes, streaming: false, provider: "gemini" }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      console.warn("[RPMS] Gemini falló → usando fallback local");
+    } catch (err) {
+      console.warn("[RPMS] Gemini error:", err, "→ usando fallback local");
+    }
+  }
+
+  // ── 3. Fallback local inteligente ─────────────────────────────────────────
+  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+  const reply = localAnswer(lastUser, moduleLabel);
+  return new Response(
+    JSON.stringify({ reply, streaming: false, provider: "local" }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
 }
 
-/**
- * Respuesta de fallback cuando no hay API key o falla la conexión.
- * Responde con contexto básico del módulo actual.
- */
-function fallbackResponse(
-  messages: Array<{ role: string; content: string }>,
-  modulePath?: string
-): Response {
-  const moduleLabel = modulePath ? getModuleLabel(modulePath) : undefined;
-  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-  let reply = "Hola, soy el Asistente RPMS. ";
+function buildAnthropicStream(anthropicRes: Response): Response {
+  const stream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder();
+      const reader = anthropicRes.body?.getReader();
+      if (!reader) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+        controller.close();
+        return;
+      }
 
-  if (moduleLabel) {
-    reply += `Estás en el módulo **${moduleLabel}**. `;
-  }
+      const decoder = new TextDecoder();
+      let buffer = "";
 
-  if (lastUser.toLowerCase().includes("dosis") || lastUser.toLowerCase().includes("dosimetr")) {
-    reply +=
-      "Para consultas de dosimetría, recuerda que el límite de dosis efectiva para trabajadores POE en Chile es **20 mSv/año** según DS 3/1985 y NS-06.0 CCHEN. Para detalles específicos, configura una API key de Anthropic en Ajustes del sistema.";
-  } else if (lastUser.toLowerCase().includes("residuo") || lastUser.toLowerCase().includes("waste")) {
-    reply +=
-      "La gestión de residuos radiactivos se rige por NS-04.0 CCHEN e IAEA GSG-1. Para asesoría específica, configura una API key de Anthropic en Ajustes del sistema.";
-  } else if (lastUser.toLowerCase().includes("cchen") || lastUser.toLowerCase().includes("licencia")) {
-    reply +=
-      "Las declaraciones e informes CCHEN se gestionan desde los módulos correspondientes. Para ayuda detallada, configura una API key de Anthropic en Ajustes del sistema.";
-  } else {
-    reply +=
-      "Para respuestas inteligentes y contextuales, configura una **API key de Anthropic** en Ajustes → Asistente IA. Sin la clave, solo puedo ofrecer respuestas básicas.";
-  }
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-  return new Response(JSON.stringify({ reply, streaming: false }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") continue;
+
+            try {
+              const event = JSON.parse(data);
+              if (
+                event.type === "content_block_delta" &&
+                event.delta?.type === "text_delta"
+              ) {
+                const chunk = JSON.stringify({ type: "delta", text: event.delta.text });
+                controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
+              }
+              if (event.type === "message_stop") {
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`)
+                );
+              }
+            } catch {
+              // ignorar líneas SSE malformadas
+            }
+          }
+        }
+      } catch (err) {
+        console.error("[RPMS] Stream error:", err);
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify({ type: "error", error: "Error leyendo respuesta" })}\n\n`
+          )
+        );
+      } finally {
+        controller.close();
+      }
+    },
   });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+async function callGemini(
+  apiKey: string,
+  systemPrompt: string,
+  history: Array<{ role: string; content: string }>
+): Promise<string | null> {
+  // Gemini 1.5 Flash — gratuito con límites generosos
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  // Convertir historial al formato Gemini
+  const contents = history.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  const body = {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents,
+    generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  return typeof text === "string" ? text : null;
 }
