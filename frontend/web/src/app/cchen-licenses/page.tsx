@@ -10,6 +10,7 @@ import {
   ChevronDown, ChevronUp, Plus, X, Calendar, ExternalLink
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 interface License {
   id: number;
@@ -193,6 +194,9 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
         </div>
 
         {/* Actions */}
+        <div className="mt-2">
+          <RowPdfActions module="cchen-licenses" ownerType="cchen_license" ownerId={String(license.id)} size="xs" />
+        </div>
         {license.status === "active" && license.alert_level !== "ok" && (
           <button
             onClick={startRenewal}

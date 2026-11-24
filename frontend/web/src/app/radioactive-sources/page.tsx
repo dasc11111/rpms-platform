@@ -8,6 +8,7 @@ import {
   Clock, MapPin, Shield, FileText, Activity, Calendar, Package
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 type SourceType = "sealed" | "unsealed" | "generator" | "device";
 type SourceStatus = "active" | "in_use" | "storage" | "maintenance" | "transfer" | "decommissioned" | "lost";
@@ -260,6 +261,7 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
             <button onClick={() => setShowMoveForm(v => !v)} className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded hover:bg-green-100 font-medium flex items-center gap-1">
               <Plus className="w-3 h-3" /> Registrar movimiento
             </button>
+            <RowPdfActions module="radioactive-sources" ownerType="radioactive_source" ownerId={String(s.id)} size="xs" />
             <button onClick={() => onEdit(s)} className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 font-medium">
               Editar fuente
             </button>

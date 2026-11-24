@@ -1,11 +1,11 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
   ShieldAlert, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface Risk {
@@ -142,7 +142,8 @@ function RiskCard({ risk, onEdit }: { risk:Risk; onEdit:(r:Risk)=>void }) {
               {risk.residual_level && <span>Nivel residual: <strong className={LEVEL_COLOR[risk.residual_level]?.split(" ")[1]??""}>{LEVEL_LABEL[risk.residual_level]}</strong></span>}
             </div>
           )}
-          <div className="flex gap-2 pt-1 border-t border-border/40">
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-border/40">
+            <RowPdfActions module="risks" ownerType="risk" ownerId={String(risk.id)} size="xs" />
             <button onClick={()=>onEdit(risk)} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded hover:opacity-90">Editar</button>
           </div>
         </div>

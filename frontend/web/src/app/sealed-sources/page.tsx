@@ -12,6 +12,7 @@ import {
   Plus, X, Atom
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 interface SealedSource {
   id: number;
@@ -156,6 +157,9 @@ function SourceCard({ source, onAddEvent }: {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-0.5 truncate">{source.purpose}</p>
+              <div className="mt-1.5">
+                <RowPdfActions module="sealed-sources" ownerType="sealed_source" ownerId={String(source.id)} size="xs" />
+              </div>
             </div>
           </div>
           <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600 flex-shrink-0">

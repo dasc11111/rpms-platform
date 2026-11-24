@@ -9,6 +9,7 @@ import {
   Calendar, User, FileText, ExternalLink, Printer, Flag
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // §79 — Seguimiento de Recomendaciones de Inspecciones CCHEN
 // DS 3/1985 Art. 15 + NS-06.0 §8.2
@@ -357,6 +358,7 @@ function InspectionCard({ insp, onUpdate }: { insp: Inspection; onUpdate: () => 
 
       {/* Quick actions */}
       <div className="mt-3 flex gap-2 flex-wrap">
+        <RowPdfActions module="cchen-inspections" ownerType="cchen_inspection" ownerId={String(insp.id)} size="xs" />
         {insp.status === "open" && (
           <button onClick={() => quickStatus("in_progress")}
             className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Iniciar Seguimiento</button>

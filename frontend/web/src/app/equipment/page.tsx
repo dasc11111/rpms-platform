@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 import { useState, useEffect, useCallback } from "react";
 import {
   Wrench, Plus, ChevronDown, ChevronUp, AlertTriangle,
@@ -249,7 +250,8 @@ function EquipmentCard({ eq, onEdit, onDelete }: { eq: Equipment; onEdit: () => 
             <p className="text-xs text-indigo-700 bg-indigo-50 rounded px-3 py-2">{eq.references_norm}</p>
           )}
 
-          <div className="flex gap-2 pt-1">
+          <div className="flex gap-2 pt-1 flex-wrap">
+            <RowPdfActions module="equipment" ownerType="equipment" ownerId={String(eq.id)} size="xs" />
             <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-700">
               <Edit2 size={12} />Editar
             </button>

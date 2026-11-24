@@ -8,6 +8,7 @@ import {
   Clock, Package, FileText, Activity, Shield, CheckCircle
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 type WasteStatus = "in_storage" | "pending_clearance" | "cleared" | "transferred_cchen" | "disposed" | "lost";
 type WasteType = "solid" | "liquid" | "gaseous" | "mixed" | "biological" | "sharps";
@@ -246,6 +247,7 @@ function WasteCard({ w, onEdit }: { w: Waste; onEdit: (w: Waste) => void }) {
 
           {/* Quick actions */}
           <div className="flex flex-wrap gap-2 mt-3">
+            <RowPdfActions module="radioactive-waste" ownerType="radioactive_waste" ownerId={String(w.id)} size="xs" />
             <button onClick={async () => { if (!showEvents && events.length === 0) await loadEvents(); setShowEvents(v => !v); }} className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded hover:bg-blue-100 font-medium">
               {showEvents ? "Ocultar historial" : "Ver historial"}
             </button>

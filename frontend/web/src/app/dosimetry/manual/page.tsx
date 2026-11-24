@@ -1,11 +1,9 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState } from "react";
 import { PlusCircle, CheckCircle } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
+const inp = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
 
 const QUARTERS = [1, 2, 3, 4];
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
@@ -13,7 +11,7 @@ const TIPOS = ["C.E.", "extremidades", "cristalino", "otro"];
 const RADIACIONES = ["Rayos X", "Rayos Gamma", "Beta", "Neutrones", "Mixta", "Otro"];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label className="text-xs text-gray-500 mb-1 block">{label}</label>{children}</div>;
+  return <div><label className="text-xs font-medium text-gray-700 mb-1 block">{label}</label>{children}</div>;
 }
 
 export default function DosimetryManualPage() {
@@ -62,7 +60,7 @@ export default function DosimetryManualPage() {
           <div className="p-2 rounded-lg bg-blue-100"><PlusCircle className="h-6 w-6 text-blue-700" /></div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Ingreso Manual de Dosis</h1>
-            <p className="text-sm text-gray-500">Registro trimestral individual de dosimetría personal</p>
+            <p className="text-sm text-gray-600">Registro trimestral individual de dosimetría personal</p>
           </div>
         </div>
 

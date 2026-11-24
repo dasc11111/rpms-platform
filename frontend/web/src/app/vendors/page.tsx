@@ -7,6 +7,7 @@ import {
   Star, X,
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface VendorService {
@@ -127,7 +128,8 @@ function VendorCard({ v, onEdit }: { v:Vendor; onEdit:(v:Vendor)=>void }) {
             </div>
           )}
           {v.observations && <p className="text-xs text-muted-foreground italic">{v.observations}</p>}
-          <div className="flex gap-2 pt-1 border-t border-border/40">
+          <div className="flex gap-2 pt-1 border-t border-border/40 flex-wrap">
+            <RowPdfActions module="vendors" ownerType="vendor" ownerId={String(v.id)} size="xs" />
             <button onClick={()=>onEdit(v)} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded hover:opacity-90">Editar</button>
           </div>
         </div>

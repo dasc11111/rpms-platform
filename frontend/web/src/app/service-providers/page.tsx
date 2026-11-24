@@ -9,6 +9,7 @@ import {
   FileText, Wrench, GraduationCap, Recycle, Atom, Users
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // §77 — Proveedores de Servicios de Dosimetría y Calibración Externa
 // NS-06.0 §5.3: Acreditación y supervisión de proveedores externos del programa PR
@@ -190,6 +191,7 @@ function ProviderCard({
             </div>
           </div>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+            <RowPdfActions module="service-providers" ownerType="service_provider" ownerId={String(p.id)} size="xs" />
             <button onClick={() => onEdit(p)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
               <Edit2 size={15} />
             </button>

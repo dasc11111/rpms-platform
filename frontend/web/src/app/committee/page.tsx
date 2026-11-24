@@ -1,12 +1,12 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
   Users, Plus, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle,
   Clock, X, Calendar,
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface Meeting {
@@ -112,6 +112,7 @@ function MeetingCard({ m, onStatusChange, onEdit }: { m:Meeting; onStatusChange:
             </div>
           )}
           <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/40">
+            <RowPdfActions module="committee" ownerType="meeting" ownerId={String(m.id)} size="xs" />
             <button onClick={()=>onEdit(m)} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded hover:opacity-90">Editar</button>
             {m.status==="scheduled" && (
               <button onClick={()=>onStatusChange(m.id,"completed")} className="text-xs px-2 py-1 rounded border bg-emerald-100 text-emerald-700 hover:opacity-80">✓ Marcar realizada</button>

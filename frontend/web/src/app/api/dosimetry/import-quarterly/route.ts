@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
     // Preview mode: return rows without importing
     if (action === 'preview') {
-      return NextResponse.json({ ok: true, rows: rows.slice(0, 100), rowCount: rows.length });
+      return NextResponse.json({ ok: true, rows: rows.slice(0, 10000), rowCount: rows.length });
     }
     // action === 'import' falls through to import logic below
   } else {

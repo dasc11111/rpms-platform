@@ -10,6 +10,7 @@ import {
   Plus, X, ChevronDown, ChevronUp, Briefcase, Activity
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 interface Contractor {
   id: number;
@@ -173,6 +174,9 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
                 ))}
               </div>
             )}
+            <div className="mt-2">
+              <RowPdfActions module="contractors" ownerType="contractor" ownerId={String(contractor.id)} size="xs" />
+            </div>
           </div>
           <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

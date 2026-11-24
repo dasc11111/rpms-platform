@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { SendEmailModal } from "@/components/workers/send-email-modal";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 interface Worker {
   rut: string;
@@ -330,6 +331,7 @@ export default function WorkersPage() {
                           worker={{ rut: w.rut, displayName: w.name, email: w.email }}
                         />
                       )}
+                      <RowPdfActions module="workers" ownerType="worker" ownerId={w.rut} />
                       <button onClick={() => openEdit(w)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
                         <Pencil className="h-4 w-4" />
                       </button>

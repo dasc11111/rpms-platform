@@ -104,6 +104,32 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/* PATCH /api/module-pdfs
+   Body JSON: { id: number, description: string }
+   Updates the description of an existing document.
+*/
+export async function PATCH(request: Request) {
+  try {
+    await ensureTable();
+    const body = await request.json();
+    const id = Number(body.id);
+    const description = String(body.description ?? "").trim() || null;
+
+    if (!id) return NextResponse.json({ error: "El campo 'id' es obligatorio." }, { status: 400 });
+
+    const { rows } = await sql`
+      UPDATE module_pdfs SET description = ${description} WHERE id = ${id}
+      RETURNING id, description
+    `;
+    if (!rows[0]) return NextResponse.json({ error: "Documento no encontrado." }, { status: 404 });
+
+    return NextResponse.json({ ok: true, document: rows[0] });
+  } catch (err) {
+    console.error("[module-pdfs PATCH]", err);
+    return NextResponse.json({ error: "Error al actualizar el documento." }, { status: 500 });
+  }
+}
+
 /* DELETE /api/module-pdfs?id=123 */
 export async function DELETE(request: NextRequest) {
   try {

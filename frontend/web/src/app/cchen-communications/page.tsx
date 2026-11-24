@@ -14,6 +14,7 @@ import {
   Flame, Bell, Calendar, ExternalLink, Tag, MessageSquare, ArrowRight
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 const API = "/api/cchen-communications";
 
@@ -376,6 +377,7 @@ function CommCard({ comm, onRefresh }: { comm: Communication; onRefresh: () => v
             <button onClick={startEdit} className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-slate-50 text-slate-600 hover:bg-slate-100">
               <Edit3 size={11}/> Editar
             </button>
+            <RowPdfActions module="cchen-communications" ownerType="cchen_communication" ownerId={String(comm.id)} size="xs" />
           </div>
         )}
       </div>

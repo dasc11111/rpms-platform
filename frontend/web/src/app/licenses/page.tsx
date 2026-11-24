@@ -7,6 +7,7 @@ import {
   AlertTriangle, CheckCircle, Clock, XCircle, RotateCcw, Calendar
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 type License = {
   id: number; license_number: string; license_type: string; description: string;
@@ -261,6 +262,9 @@ function LicCard({ lic, onDelete, onRenew }: { lic: License; onDelete: () => voi
           {lic.conditions && <p><span className="font-medium">Condiciones:</span> {lic.conditions}</p>}
           {lic.document_ref && <p><span className="font-medium">Documento:</span> {lic.document_ref}</p>}
           {lic.notes      && <p><span className="font-medium">Notas:</span> {lic.notes}</p>}
+          <div className="pt-1">
+            <RowPdfActions module="licenses" ownerType="license" ownerId={String(lic.id)} size="xs" />
+          </div>
         </div>
       )}
     </div>

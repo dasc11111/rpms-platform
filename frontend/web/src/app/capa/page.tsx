@@ -7,6 +7,7 @@ import {
   Plus, Pencil, ClipboardCheck, CalendarClock, List
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface CapaRecord {
@@ -322,6 +323,7 @@ function CapaCard({ capa, onEdit, onStatusChange }: {
             ) : null}
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <RowPdfActions module="capa" ownerType="capa" ownerId={String(capa.id)} size="xs" />
             {capa.status !== "closed" && capa.status !== "cancelled" && (
               <button onClick={onEdit}
                 className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-muted">

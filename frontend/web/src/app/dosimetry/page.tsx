@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useState, useEffect, useCallback, type ComponentType } from "react";
 import {
   Activity, Plus, Pencil, Trash2, X, Save, Search, RefreshCw,
@@ -10,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 interface Reading {
   id: number;
@@ -436,6 +435,7 @@ export default function DosimetryPage() {
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.badge_number ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
+                        <RowPdfActions module="dosimetry" ownerType="dosimetry_reading" ownerId={String(r.id)} size="xs" />
                         <button onClick={() => openEdit(r)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
                           <Pencil className="h-4 w-4" />
                         </button>

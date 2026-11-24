@@ -8,6 +8,7 @@ import {
   Calendar, User, Shield, BarChart2, Users, Radiation
 } from "lucide-react";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
+import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 
 // §78 — Declaración Anual de Dosis ante CCHEN
 // DS 3/1985 Art. 10 + NS-06.0 §4.4
@@ -285,6 +286,7 @@ function DeclarationCard({
             </div>
           </div>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+            <RowPdfActions module="cchen-declarations" ownerType="cchen_declaration" ownerId={String(decl.id)} size="xs" />
             <button onClick={handlePrint} className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Imprimir declaración">
               <Printer size={15} />
             </button>
