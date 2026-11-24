@@ -1,199 +1,235 @@
+// §156 — Monitoreo Ambiental Externo / Perimetral
+// DS 3/1985 Arts. 38-42 · CCHEN NS-05.0 §8 · IAEA GSR Part 3 Req. 27
+// Monitoreo de zonas no controladas: público, límites instalación, entorno perimetral
+
+import { sql } from "@vercel/postgres";
 import { NextRequest, NextResponse } from "next/server";
-import { sql } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
-// DS 3/1985 Art. 32: Regulated areas must be surveyed periodically.
-// Measurement points and dose rate results are recorded here.
+// ─── Ensure tables ───────────────────────────────────────────────────────────
 
 async function ensureTable() {
   await sql`
-    CREATE TABLE IF NOT EXISTS env_monitoring_points (
-      id            SERIAL PRIMARY KEY,
-      point_code    TEXT        NOT NULL UNIQUE,
-      point_name    TEXT        NOT NULL,
-      location      TEXT,
-      area_type     TEXT        NOT NULL DEFAULT 'controlled',
-      reference_level_usvh NUMERIC(10,3),
-      active        BOOLEAN     DEFAULT true,
-      notes         TEXT,
-      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
-    )
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS env_monitoring_records (
-      id            SERIAL PRIMARY KEY,
-      point_id      INTEGER     REFERENCES env_monitoring_points(id) ON DELETE CASCADE,
-      point_code    TEXT        NOT NULL,
-      measurement_date DATE     NOT NULL,
-      measured_by   TEXT,
-      instrument_id TEXT,
-      dose_rate_usvh NUMERIC(10,3) NOT NULL,
-      background_usvh NUMERIC(10,3),
-      net_rate_usvh NUMERIC(10,3) GENERATED ALWAYS AS
-                    (dose_rate_usvh - COALESCE(background_usvh, 0.1)) STORED,
-      conditions    TEXT,
-      status        TEXT GENERATED ALWAYS AS (
-        CASE
-          WHEN dose_rate_usvh > 100 THEN 'critical'
-          WHEN dose_rate_usvh > 25  THEN 'high'
-          WHEN dose_rate_usvh > 2.5 THEN 'elevated'
-          ELSE 'normal'
-        END
-      ) STORED,
-      notes         TEXT,
-      created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+    CREATE TABLE IF NOT EXISTS environmental_monitoring_points (
+      id              SERIAL PRIMARY KEY,
+      point_code      VARCHAR(20) NOT NULL UNIQUE,
+      name            TEXT NOT NULL,
+      location        TEXT,
+      point_type      VARCHAR(30) NOT NULL DEFAULT 'perimeter',
+      -- Types: perimeter, public_area, effluent_air, effluent_liquid, soil, vegetation
+      lat             NUMERIC(10,7),
+      lng             NUMERIC(10,7),
+      baseline_usvh   NUMERIC(8,4),
+      alert_threshold_usvh  NUMERIC(8,4) DEFAULT 1.0,
+      action_threshold_usvh NUMERIC(8,4) DEFAULT 2.5,
+      frequency       VARCHAR(20) DEFAULT 'monthly',
+      active          BOOLEAN DEFAULT TRUE,
+      notes           TEXT,
+      created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
 
-  const { rows } = await sql`SELECT id FROM env_monitoring_points LIMIT 1`;
-  if (rows.length === 0) {
-    // Seed measurement points
+  await sql`
+    CREATE TABLE IF NOT EXISTS environmental_readings (
+      id              SERIAL PRIMARY KEY,
+      point_id        INTEGER NOT NULL REFERENCES environmental_monitoring_points(id),
+      reading_date    DATE NOT NULL,
+      dose_rate_usvh  NUMERIC(8,4),
+      cumulative_mSv  NUMERIC(8,4),
+      instrument_code VARCHAR(30),
+      measured_by     TEXT,
+      weather         VARCHAR(60),
+      anomaly         BOOLEAN DEFAULT FALSE,
+      anomaly_note    TEXT,
+      created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  const { rowCount } = await sql`SELECT 1 FROM environmental_monitoring_points LIMIT 1`;
+  if (!rowCount) {
+    // Seed monitoring points
     await sql`
-      INSERT INTO env_monitoring_points (point_code, point_name, location, area_type, reference_level_usvh)
+      INSERT INTO environmental_monitoring_points
+        (point_code, name, location, point_type, baseline_usvh, alert_threshold_usvh, action_threshold_usvh, frequency)
       VALUES
-        ('MN-01', 'Sala de Captación PET',   'Medicina Nuclear – Sala 1',      'controlled', 2.5),
-        ('MN-02', 'Sala de Dosis I-131',      'Medicina Nuclear – Sala 2',      'controlled', 2.5),
-        ('MN-03', 'Sala de Espera Pacientes', 'Medicina Nuclear – Acceso',      'supervised',  1.0),
-        ('MN-04', 'Pasillo exterior MN',      'Corredor Hospital 2° piso',      'public',      0.5),
-        ('RF-01', 'Sala de Isótopos',         'Radiofísica – Almacén fuentes',  'controlled', 2.5),
-        ('RF-02', 'Sala de Calibración',      'Radiofísica – Lab',              'controlled', 2.5),
-        ('LN-01', 'Sala de Tratamiento LINAC','Radioterapia – Búnker 1',        'controlled', 2.5),
-        ('LN-02', 'Sala de Control LINAC',    'Radioterapia – Sala control',    'supervised',  1.0)
+        ('PER-N',  'Límite norte instalación',      'Fachada norte, calle exterior',   'perimeter',    0.09, 0.50, 1.00, 'weekly'),
+        ('PER-S',  'Límite sur instalación',         'Estacionamiento público sur',      'perimeter',    0.08, 0.50, 1.00, 'weekly'),
+        ('PER-E',  'Límite este instalación',        'Calle lateral este',               'perimeter',    0.09, 0.50, 1.00, 'weekly'),
+        ('PER-O',  'Límite oeste instalación',       'Edificio colindante oeste',        'perimeter',    0.09, 0.50, 1.00, 'weekly'),
+        ('PUB-01', 'Sala de espera pública',         'Área de espera medicina nuclear',  'public_area',  0.10, 0.75, 1.50, 'daily'),
+        ('PUB-02', 'Pasillo pacientes ambulatorios', 'Pasillo principal acceso público', 'public_area',  0.09, 0.75, 1.50, 'daily'),
+        ('EFL-A1', 'Salida aire HVAC medicina nuclear', 'Extracción cuarto caliente',    'effluent_air', 0.11, 1.00, 2.50, 'weekly'),
+        ('EFL-L1', 'Efluente líquido área caliente', 'Sistema drenaje radiactivo',      'effluent_liquid', 0.08, 0.50, 1.00, 'weekly')
     `;
-    // Seed recent measurements
-    const { rows: points } = await sql`SELECT id, point_code FROM env_monitoring_points`;
-    const today = new Date();
-    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 15);
-    const dateStr = lastMonth.toISOString().slice(0, 10);
-    for (const p of points) {
-      const baseRate = p.point_code.startsWith("LN") ? 0.15 :
-                       p.point_code.startsWith("MN") ? 0.3  : 0.2;
-      const rate = (baseRate + Math.random() * 0.3).toFixed(3);
-      await sql`
-        INSERT INTO env_monitoring_records (point_id, point_code, measurement_date, measured_by, dose_rate_usvh, background_usvh)
-        VALUES (${p.id}, ${p.point_code}, ${dateStr}, 'Encargado PR', ${rate}, 0.1)
-      `;
+
+    // Seed readings for the last 6 months
+    const pointIds = await sql`SELECT id, point_code FROM environmental_monitoring_points`;
+
+    const now = new Date();
+    for (const point of pointIds.rows) {
+      // Generate monthly readings for 6 months
+      for (let m = 5; m >= 0; m--) {
+        const readDate = new Date(now.getFullYear(), now.getMonth() - m, 15);
+        const baseRate = point.point_code.startsWith('PUB') ? 0.10 : 0.09;
+        const reading = (baseRate + (Math.random() - 0.5) * 0.03).toFixed(4);
+        const cumul   = (Number(reading) * 24 * 30 / 1000).toFixed(4); // approx monthly mSv
+
+        await sql`
+          INSERT INTO environmental_readings
+            (point_id, reading_date, dose_rate_usvh, cumulative_mSv, instrument_code, measured_by, weather)
+          VALUES
+            (${point.id}, ${readDate.toISOString().split('T')[0]},
+             ${reading}, ${cumul}, 'TLD-ENV-01',
+             'TM. Diego Solís', 'Despejado')
+        `;
+      }
     }
   }
 }
+
+// ─── GET ─────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  try { await ensureTable(); } catch { /* ok */ }
-
+  await ensureTable();
   const { searchParams } = new URL(req.url);
-  const view   = searchParams.get("view") ?? "records";
-  const year   = searchParams.get("year");
-  const month  = searchParams.get("month");
-  const status = searchParams.get("status");
-  const limit  = Math.min(parseInt(searchParams.get("limit") ?? "100"), 500);
+  const pointId = searchParams.get("point_id");
+  const summary = searchParams.get("summary");
 
-  try {
-    if (view === "points") {
-      const { rows } = await sql`SELECT * FROM env_monitoring_points WHERE active = true ORDER BY area_type, point_code`;
-      return NextResponse.json({ points: rows });
-    }
-
-    // Records view
-    let rows;
-    if (year && month && status) {
-      ({ rows } = await sql`
-        SELECT r.*, p.point_name, p.area_type, p.reference_level_usvh
-        FROM env_monitoring_records r
-        LEFT JOIN env_monitoring_points p ON p.id = r.point_id
-        WHERE EXTRACT(YEAR FROM r.measurement_date) = ${parseInt(year)}
-          AND EXTRACT(MONTH FROM r.measurement_date) = ${parseInt(month)}
-          AND r.status = ${status}
-        ORDER BY r.measurement_date DESC, r.point_code LIMIT ${limit}`);
-    } else if (year && month) {
-      ({ rows } = await sql`
-        SELECT r.*, p.point_name, p.area_type, p.reference_level_usvh
-        FROM env_monitoring_records r
-        LEFT JOIN env_monitoring_points p ON p.id = r.point_id
-        WHERE EXTRACT(YEAR FROM r.measurement_date) = ${parseInt(year)}
-          AND EXTRACT(MONTH FROM r.measurement_date) = ${parseInt(month)}
-        ORDER BY r.measurement_date DESC, r.point_code LIMIT ${limit}`);
-    } else if (year) {
-      ({ rows } = await sql`
-        SELECT r.*, p.point_name, p.area_type, p.reference_level_usvh
-        FROM env_monitoring_records r
-        LEFT JOIN env_monitoring_points p ON p.id = r.point_id
-        WHERE EXTRACT(YEAR FROM r.measurement_date) = ${parseInt(year)}
-        ORDER BY r.measurement_date DESC, r.point_code LIMIT ${limit}`);
-    } else {
-      ({ rows } = await sql`
-        SELECT r.*, p.point_name, p.area_type, p.reference_level_usvh
-        FROM env_monitoring_records r
-        LEFT JOIN env_monitoring_points p ON p.id = r.point_id
-        ORDER BY r.measurement_date DESC, r.point_code LIMIT ${limit}`);
-    }
-
-    // Stats
+  if (summary) {
+    // Return summary stats for dashboard
     const { rows: stats } = await sql`
       SELECT
-        COUNT(*) AS total_records,
-        COUNT(DISTINCT point_code) AS points_measured,
-        COUNT(*) FILTER (WHERE status = 'critical')  AS critical,
-        COUNT(*) FILTER (WHERE status = 'high')      AS high,
-        COUNT(*) FILTER (WHERE status = 'elevated')  AS elevated,
-        COUNT(*) FILTER (WHERE status = 'normal')    AS normal,
-        ROUND(AVG(dose_rate_usvh)::numeric, 3)       AS avg_rate,
-        MAX(dose_rate_usvh)                          AS max_rate,
-        MAX(measurement_date)                        AS last_survey
-      FROM env_monitoring_records
+        COUNT(DISTINCT mp.id) AS total_points,
+        COUNT(DISTINCT mp.id) FILTER (WHERE mp.active) AS active_points,
+        COUNT(r.id) FILTER (WHERE r.reading_date >= CURRENT_DATE - INTERVAL '30 days') AS readings_last_30d,
+        COUNT(r.id) FILTER (WHERE r.anomaly) AS total_anomalies,
+        MAX(r.dose_rate_usvh) AS max_rate_ever,
+        ROUND(AVG(r.dose_rate_usvh)::numeric, 4) AS avg_rate
+      FROM environmental_monitoring_points mp
+      LEFT JOIN environmental_readings r ON r.point_id = mp.id
     `;
 
-    // Latest per point
-    const { rows: latest } = await sql`
-      SELECT DISTINCT ON (r.point_code)
-        r.*, p.point_name, p.area_type, p.reference_level_usvh
-      FROM env_monitoring_records r
-      LEFT JOIN env_monitoring_points p ON p.id = r.point_id
-      ORDER BY r.point_code, r.measurement_date DESC
+    // Points due for reading
+    const { rows: due } = await sql`
+      SELECT mp.point_code, mp.name, mp.frequency,
+             MAX(r.reading_date) AS last_reading,
+             CURRENT_DATE - MAX(r.reading_date) AS days_since
+      FROM environmental_monitoring_points mp
+      LEFT JOIN environmental_readings r ON r.point_id = mp.id
+      WHERE mp.active = TRUE
+      GROUP BY mp.id, mp.point_code, mp.name, mp.frequency
+      HAVING MAX(r.reading_date) < CURRENT_DATE - INTERVAL '28 days'
+         OR MAX(r.reading_date) IS NULL
+      ORDER BY days_since DESC NULLS FIRST
+      LIMIT 5
     `;
 
-    return NextResponse.json({ records: rows, stats: stats[0], latest_by_point: latest });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ stats: stats[0], due_points: due });
   }
+
+  if (pointId) {
+    // Single point detail with history
+    const { rows: point } = await sql`SELECT * FROM environmental_monitoring_points WHERE id = ${Number(pointId)}`;
+    if (!point.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const { rows: readings } = await sql`
+      SELECT * FROM environmental_readings WHERE point_id = ${Number(pointId)}
+      ORDER BY reading_date DESC LIMIT 24
+    `;
+    return NextResponse.json({ point: point[0], readings });
+  }
+
+  // All points with latest reading
+  const { rows } = await sql`
+    SELECT
+      mp.*,
+      r.dose_rate_usvh AS latest_rate,
+      r.cumulative_mSv AS latest_cumul,
+      r.reading_date AS latest_reading_date,
+      r.anomaly AS latest_anomaly,
+      CURRENT_DATE - r.reading_date AS days_since_reading,
+      CASE
+        WHEN r.dose_rate_usvh >= mp.action_threshold_usvh THEN 'action'
+        WHEN r.dose_rate_usvh >= mp.alert_threshold_usvh  THEN 'alert'
+        ELSE 'normal'
+      END AS alarm_level
+    FROM environmental_monitoring_points mp
+    LEFT JOIN LATERAL (
+      SELECT * FROM environmental_readings
+      WHERE point_id = mp.id ORDER BY reading_date DESC LIMIT 1
+    ) r ON TRUE
+    WHERE mp.active = TRUE
+    ORDER BY
+      CASE WHEN r.dose_rate_usvh >= mp.action_threshold_usvh THEN 0
+           WHEN r.dose_rate_usvh >= mp.alert_threshold_usvh  THEN 1
+           ELSE 2 END,
+      mp.point_code
+  `;
+
+  return NextResponse.json({ points: rows });
 }
+
+// ─── POST: Add a reading ──────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  try { await ensureTable(); } catch { /* ok */ }
-  try {
-    const body = await req.json();
-    if (!body.point_code || !body.measurement_date || body.dose_rate_usvh == null) {
-      return NextResponse.json({ error: "point_code, measurement_date y dose_rate_usvh son obligatorios" }, { status: 400 });
-    }
-    // Look up point_id
-    const { rows: pts } = await sql`SELECT id FROM env_monitoring_points WHERE point_code = ${body.point_code}`;
-    const point_id = pts[0]?.id ?? null;
+  await ensureTable();
+  const body = await req.json();
 
-    const { rows } = await sql`
-      INSERT INTO env_monitoring_records
-        (point_id, point_code, measurement_date, measured_by, instrument_id,
-         dose_rate_usvh, background_usvh, conditions, notes)
-      VALUES
-        (${point_id}, ${body.point_code}, ${body.measurement_date},
-         ${body.measured_by ?? null}, ${body.instrument_id ?? null},
-         ${body.dose_rate_usvh}, ${body.background_usvh ?? 0.1},
-         ${body.conditions ?? null}, ${body.notes ?? null})
-      RETURNING *
-    `;
-    return NextResponse.json({ record: rows[0] }, { status: 201 });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  const { rows } = await sql`
+    INSERT INTO environmental_readings
+      (point_id, reading_date, dose_rate_usvh, cumulative_mSv, instrument_code, measured_by, weather, anomaly, anomaly_note)
+    VALUES
+      (${body.point_id}, ${body.reading_date}, ${body.dose_rate_usvh},
+       ${body.cumulative_mSv ?? null}, ${body.instrument_code ?? null},
+       ${body.measured_by ?? null}, ${body.weather ?? null},
+       ${body.anomaly ?? false}, ${body.anomaly_note ?? null})
+    RETURNING *
+  `;
+
+  // Check if reading exceeds thresholds
+  const { rows: point } = await sql`
+    SELECT alert_threshold_usvh, action_threshold_usvh FROM environmental_monitoring_points
+    WHERE id = ${body.point_id}
+  `;
+
+  let alarm = "normal";
+  if (point.length && body.dose_rate_usvh >= Number(point[0].action_threshold_usvh)) alarm = "action";
+  else if (point.length && body.dose_rate_usvh >= Number(point[0].alert_threshold_usvh)) alarm = "alert";
+
+  return NextResponse.json({ reading: rows[0], alarm }, { status: 201 });
 }
 
-export async function DELETE(req: NextRequest) {
-  try {
-    const id = new URL(req.url).searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
-    const { rows } = await sql`DELETE FROM env_monitoring_records WHERE id = ${parseInt(id)} RETURNING id`;
-    if (!rows[0]) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-    return NextResponse.json({ deleted: id });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+// ─── PATCH: Add monitoring point ─────────────────────────────────────────────
+
+export async function PATCH(req: NextRequest) {
+  await ensureTable();
+  const body = await req.json();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (id) {
+    // Update existing point
+    await sql`
+      UPDATE environmental_monitoring_points SET
+        name = COALESCE(${body.name ?? null}, name),
+        location = COALESCE(${body.location ?? null}, location),
+        alert_threshold_usvh = COALESCE(${body.alert_threshold_usvh ?? null}, alert_threshold_usvh),
+        action_threshold_usvh = COALESCE(${body.action_threshold_usvh ?? null}, action_threshold_usvh),
+        active = COALESCE(${body.active ?? null}, active),
+        notes = COALESCE(${body.notes ?? null}, notes)
+      WHERE id = ${Number(id)}
+    `;
+    const { rows } = await sql`SELECT * FROM environmental_monitoring_points WHERE id = ${Number(id)}`;
+    return NextResponse.json({ point: rows[0] });
   }
+
+  // Create new monitoring point
+  const { rows } = await sql`
+    INSERT INTO environmental_monitoring_points
+      (point_code, name, location, point_type, baseline_usvh, alert_threshold_usvh, action_threshold_usvh, frequency, notes)
+    VALUES
+      (${body.point_code}, ${body.name}, ${body.location ?? null}, ${body.point_type ?? 'perimeter'},
+       ${body.baseline_usvh ?? null}, ${body.alert_threshold_usvh ?? 1.0}, ${body.action_threshold_usvh ?? 2.5},
+       ${body.frequency ?? 'monthly'}, ${body.notes ?? null})
+    RETURNING *
+  `;
+  return NextResponse.json({ point: rows[0] }, { status: 201 });
 }
