@@ -1,12 +1,15 @@
 /**
  * Módulo de envío de correos electrónicos — RPMS
- * Usa Resend (https://resend.com) — no requiere App Passwords ni OAuth
+ * Usa Gmail API vía nodemailer con OAuth2
  *
  * Variables de entorno requeridas:
- *   RESEND_API_KEY = re_xxxxxxxxxxxxxxxxxxxx
+ *   GMAIL_CLIENT_ID     = Client ID de OAuth2 (Google Cloud Console)
+ *   GMAIL_CLIENT_SECRET = Client Secret de OAuth2
+ *   GMAIL_REFRESH_TOKEN = Refresh Token obtenido del OAuth2 Playground
  */
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 
 export interface EmailPayload {
   to: string | string[];
@@ -27,56 +30,69 @@ export interface EmailResult {
   error?: string;
 }
 
-const FROM_ADDRESS = '"Diego Solís · Oficial de Protección Radiológica" <onboarding@resend.dev>';
+const FROM_ADDRESS =
+  '"Diego Solís · Oficial de Protección Radiológica" <proteccionradiologica.hhha@gmail.com>';
 
-function getResend(): Resend {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    throw new Error("Variable RESEND_API_KEY no está configurada en el entorno");
+function getTransporter(): Transporter {
+  const clientId = process.env.GMAIL_CLIENT_ID;
+  const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+  const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error(
+      "Variables GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET o GMAIL_REFRESH_TOKEN no están configuradas"
+    );
   }
-  return new Resend(key);
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: "proteccionradiologica.hhha@gmail.com",
+      clientId,
+      clientSecret,
+      refreshToken,
+    },
+  });
 }
 
 /** Envía un correo. Retorna { ok: true, messageId } o { ok: false, error } */
 export async function sendEmail(payload: EmailPayload): Promise<EmailResult> {
   try {
-    const resend = getResend();
+    const transporter = getTransporter();
 
-    const { data, error } = await resend.emails.send({
+    const info = await transporter.sendMail({
       from: FROM_ADDRESS,
-      to: Array.isArray(payload.to) ? payload.to : [payload.to],
+      to: Array.isArray(payload.to) ? payload.to.join(", ") : payload.to,
       cc: payload.cc
         ? Array.isArray(payload.cc)
-          ? payload.cc
-          : [payload.cc]
+          ? payload.cc.join(", ")
+          : payload.cc
         : undefined,
       subject: payload.subject,
       text: payload.text,
       html: payload.html,
+      attachments: payload.attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
     });
 
-    if (error) {
-      return { ok: false, error: error.message };
-    }
-
-    return { ok: true, messageId: data?.id };
+    return { ok: true, messageId: info.messageId };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
 }
 
 /** Verifica la conexión (útil para diagnóstico) */
-export async function verifyEmailConnection(): Promise<{ ok: boolean; error?: string }> {
+export async function verifyEmailConnection(): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
   try {
-    const resend = getResend();
-    // Resend no tiene un endpoint de "ping", enviamos a resend's test address
-    const { error } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: ["delivered@resend.dev"],
-      subject: "RPMS — verificación de conexión",
-      html: "<p>Test de conexión</p>",
-    });
-    if (error) return { ok: false, error: error.message };
+    const transporter = getTransporter();
+    await transporter.verify();
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };
@@ -111,7 +127,7 @@ const FOOTER_HTML = `
       Diego Solís Catalán · Tecnólogo Médico<br>
       Oficial de Protección Radiológica<br>
       Departamento de Prevención de Riesgos · HHHA Temuco<br>
-      <a href="mailto:proteccionradiologica.hha@gmail.com" style="color:#60a5fa;">proteccionradiologica.hha@gmail.com</a>
+      <a href="mailto:proteccionradiologica.hhha@gmail.com" style="color:#60a5fa;">proteccionradiologica.hhha@gmail.com</a>
     </div>
   </div>
 `;
@@ -139,9 +155,13 @@ export function templateDosimetriaReminder(opts: {
     <h2 style="color:#1a1a2e; margin:0 0 16px;">Recordatorio: Dosimetría pendiente</h2>
     <p>Estimado/a <strong>${opts.nombreTrabajador}</strong>,</p>
     <p>Le informamos que su registro de dosimetría del período <strong>${opts.periodo}</strong> aún no ha sido ingresado al sistema RPMS.</p>
-    ${opts.fechaLimite ? `<div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:4px; margin:16px 0;">
+    ${
+      opts.fechaLimite
+        ? `<div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:4px; margin:16px 0;">
       <strong>⚠ Fecha límite:</strong> ${opts.fechaLimite}
-    </div>` : ""}
+    </div>`
+        : ""
+    }
     <p>Por favor, coordine con el Oficial de Protección Radiológica para el registro oportuno según la normativa CCHEN / DS 3/1985.</p>
     <p>Si ya realizó la entrega, puede ignorar este mensaje.</p>
   `;
