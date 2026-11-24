@@ -159,6 +159,7 @@ const NAV = [
   { href: "/sealed-sources", label: "Fuentes Selladas", icon: Atom },
   { href: "/internal-audits", label: "Auditorías Internas PR", icon: ClipboardCheck },
   { href: "/cchen-licenses", label: "Licencias CCHEN", icon: FileCheck },
+  { href: "/contractors", label: "Contratistas POE Externos", icon: Truck },
   { href: "/licenses", label: "Autorizaciones CCHEN", icon: FileText },
   { href: "/public-dose", label: "Dosis a Miembros Público", icon: Users },
   { href: "/ppe", label: "EPP Radiológico", icon: ShieldAlert },
