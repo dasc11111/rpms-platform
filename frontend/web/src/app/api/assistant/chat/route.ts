@@ -486,7 +486,7 @@ async function callOpenAIWithTools(
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
-  await ensureTable();
+  try { await ensureTable(); } catch { /* DB puede no estar disponible; continuar con agente local */ }
   const body: Record<string, unknown> = await request.json().catch(() => ({}));
   const messages: AssistantMessage[] = Array.isArray(body?.messages)
     ? (body.messages as Record<string, unknown>[])
@@ -507,8 +507,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No se recibió ningún mensaje." }, { status: 400 });
   }
 
-  const { rows } = await sql`SELECT * FROM assistant_settings WHERE id = 1`;
-  const row: Record<string, unknown> | undefined = rows[0];
+  let row: Record<string, unknown> | undefined;
+  try {
+    const { rows } = await sql`SELECT * FROM assistant_settings WHERE id = 1`;
+    row = rows[0];
+  } catch { /* DB no disponible — usar agente local */ }
 
   const hasApiKey = !!row?.api_key && String(row.api_key).trim().length > 0;
   const providerId = hasApiKey ? String(row?.provider ?? "local") : "local";
