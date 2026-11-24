@@ -1,10 +1,12 @@
 /**
- * RPMS Local Agent — motor de respuesta offline.
- * Busca en la base de conocimiento embebida y genera respuestas contextuales.
- * No requiere conexión a internet ni APIs externas.
+ * RPMS Local Agent — motor de respuesta híbrido.
+ * 1. Busca en la base de conocimiento embebida (siempre, offline).
+ * 2. Si la confianza es baja, complementa con búsqueda web (DuckDuckGo).
+ * No requiere API keys externas.
  */
 
 import { KNOWLEDGE_BASE, type KBEntry } from "./knowledge-base";
+import { searchDuckDuckGo, formatWebAnswer } from "./web-search";
 
 /** Normaliza texto para comparación: minúsculas, sin tildes, sin puntuación. */
 function normalize(text: string): string {
@@ -142,12 +144,13 @@ function generalHelp(currentModule?: string): string {
 
 /**
  * Genera una respuesta completa para el asistente a partir del historial de mensajes.
- * Usa el último mensaje del usuario para buscar en la KB.
+ * 1. Consulta la KB local (siempre).
+ * 2. Si la confianza es baja, complementa con búsqueda web.
  */
-export function generateLocalResponse(
+export async function generateLocalResponse(
   messages: Array<{ role: "user" | "assistant"; content: string }>,
   currentModule?: string
-): string {
+): Promise<string> {
   // Tomar el último mensaje del usuario
   const lastUser = [...messages]
     .reverse()
@@ -159,5 +162,25 @@ export function generateLocalResponse(
   }
 
   const result = queryKnowledgeBase(userText, { currentModule });
+
+  // Si la KB local tiene buena confianza, responder directamente (offline)
+  if (result.confidence === "high" || result.confidence === "medium") {
+    return result.answer;
+  }
+
+  // Confianza baja: intentar búsqueda web para complementar
+  try {
+    // Agregar contexto radiológico/médico a la búsqueda
+    const searchQuery = `${userText} radiología protección radiológica Chile`;
+    const webResult = await searchDuckDuckGo(searchQuery);
+
+    if (webResult && webResult.snippet.length > 50) {
+      return formatWebAnswer(userText, webResult);
+    }
+  } catch {
+    // Si la búsqueda web falla, seguir con la respuesta local
+  }
+
+  // Fallback: respuesta de orientación general de la KB
   return result.answer;
 }

@@ -27,7 +27,7 @@ export interface AssistantProvider {
 const localProvider: AssistantProvider = {
   id: "local",
   async send(messages, _systemPrompt, config) {
-    return generateLocalResponse(messages, config.currentModule);
+    return await generateLocalResponse(messages, config.currentModule);
   },
 };
 
@@ -38,8 +38,7 @@ const localProvider: AssistantProvider = {
 const mockProvider: AssistantProvider = {
   id: "mock",
   async send(messages, _systemPrompt, config) {
-    // Usar el agente local en lugar de respuesta genérica
-    return generateLocalResponse(messages, config.currentModule);
+    return await generateLocalResponse(messages, config.currentModule);
   },
 };
 
