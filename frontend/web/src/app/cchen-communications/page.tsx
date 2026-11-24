@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Mail, ArrowUpRight, ArrowDownLeft, Building2, RefreshCw,
   Plus, ChevronDown, ChevronUp, AlertTriangle, Clock, CheckCircle,
   FileText, Send, Archive, Edit3, XCircle, Filter, Search,
   Flame, Bell, Calendar, ExternalLink, Tag, MessageSquare, ArrowRight
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 const API = "/api/cchen-communications";
 

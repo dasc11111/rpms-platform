@@ -3,11 +3,11 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   FileText, Plus, ChevronDown, ChevronUp, CheckCircle2,
   AlertTriangle, Clock, RefreshCw, Edit2, Printer,
   Calendar, User, Shield, BarChart2, Users, Radiation
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // §78 — Declaración Anual de Dosis ante CCHEN
 // DS 3/1985 Art. 10 + NS-06.0 §4.4

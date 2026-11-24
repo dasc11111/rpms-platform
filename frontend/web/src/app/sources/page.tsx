@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom, ChevronDown, ChevronUp, Plus, X, AlertTriangle,
   ClipboardList, Calendar, Shield, Activity, FileText,
   CheckCircle, Clock, Zap, Radiation
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ── Types ──────────────────────────────────────────────────────────────
 interface Source {

@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   FileCheck, AlertTriangle, CheckCircle, Clock, RefreshCw,
   ChevronDown, ChevronUp, Plus, X, Calendar, ExternalLink
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface License {
   id: number;

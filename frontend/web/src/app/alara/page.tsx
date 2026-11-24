@@ -3,10 +3,10 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ChevronDown, ChevronUp, Plus, TrendingDown, Target, ClipboardCheck,
   AlertCircle, CheckCircle2, Clock, XCircle, BarChart3, Wrench, BookOpen,
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface Objective {

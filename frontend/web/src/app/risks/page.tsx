@@ -3,9 +3,9 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ShieldAlert, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface Risk {

@@ -10,7 +10,6 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom,
   CheckCircle2,
   XCircle,
@@ -24,6 +23,7 @@ import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Clock,
   AlertTriangle,
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ─────────────── Types ───────────────────────────────────────────────────────
 

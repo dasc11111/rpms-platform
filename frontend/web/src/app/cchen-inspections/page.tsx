@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ClipboardList, ChevronDown, ChevronUp, Plus, RefreshCw,
   CheckCircle2, Clock, AlertTriangle, XCircle, Shield,
   Calendar, User, FileText, ExternalLink, Printer, Flag
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // §79 — Seguimiento de Recomendaciones de Inspecciones CCHEN
 // DS 3/1985 Art. 15 + NS-06.0 §8.2

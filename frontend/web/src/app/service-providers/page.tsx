@@ -3,12 +3,12 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Building2, Plus, ChevronDown, ChevronUp, CheckCircle2,
   AlertTriangle, XCircle, RefreshCw, Edit2, Trash2,
   Star, Phone, Mail, MapPin, Calendar, Award, Shield,
   FileText, Wrench, GraduationCap, Recycle, Atom, Users
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // §77 — Proveedores de Servicios de Dosimetría y Calibración Externa
 // NS-06.0 §5.3: Acreditación y supervisión de proveedores externos del programa PR

@@ -3,11 +3,11 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Wrench, Plus, ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle2, Clock, X, Edit2, Trash2,
   Calendar, Radio, Zap, Settings, Tool
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // §54 — Gestión de Equipos y Mantenimiento
 // DS 3/1985 Art. 18 — equipos bajo norma técnica

@@ -3,10 +3,10 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ShieldAlert, CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp,
   Plus, Pencil, ClipboardCheck, CalendarClock, List
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ── types ──────────────────────────────────────────────────────────────────
 interface CapaRecord {

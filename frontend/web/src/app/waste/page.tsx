@@ -3,10 +3,10 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Trash2, Plus, ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle2, Clock, X, Edit2, Recycle, Radiation
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // §55 — Gestión de Residuos Radiactivos
 // DS 3/1985 Arts. 55–60 — clasificación, almacenamiento y disposición

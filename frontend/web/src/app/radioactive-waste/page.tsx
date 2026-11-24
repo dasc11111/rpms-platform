@@ -4,10 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Trash2, ChevronDown, ChevronUp, Plus, X, AlertTriangle,
   Clock, Package, FileText, Activity, Shield, CheckCircle
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 type WasteStatus = "in_storage" | "pending_clearance" | "cleared" | "transferred_cchen" | "disposed" | "lost";
 type WasteType = "solid" | "liquid" | "gaseous" | "mixed" | "biological" | "sharps";

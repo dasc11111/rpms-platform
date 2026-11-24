@@ -4,10 +4,10 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom, ChevronDown, ChevronUp, Plus, X, AlertTriangle,
   Clock, MapPin, Shield, FileText, Activity, Calendar, Package
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 type SourceType = "sealed" | "unsealed" | "generator" | "device";
 type SourceStatus = "active" | "in_use" | "storage" | "maintenance" | "transfer" | "decommissioned" | "lost";

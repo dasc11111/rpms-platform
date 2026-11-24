@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ScanLine,
   CheckCircle2,
   AlertTriangle,
@@ -27,6 +26,7 @@ import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Plus,
   Loader2,
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ─────────────── Types ───────────────────────────────────────────────────────
 

@@ -7,11 +7,11 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
-import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   RadioTower, AlertTriangle, CheckCircle, Clock, Package,
   Zap, FlaskConical, Calendar, FileText, ChevronDown, ChevronUp,
   Plus, X, Atom
 } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface SealedSource {
   id: number;
