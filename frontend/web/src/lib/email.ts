@@ -27,8 +27,7 @@ export interface EmailResult {
   error?: string;
 }
 
-const FROM_ADDRESS =
-  '"Diego Solís · Oficial de Protección Radiológica" <proteccionradiologica.hha@gmail.com>';
+const FROM_ADDRESS = '"Diego Solís · Oficial de Protección Radiológica" <onboarding@resend.dev>';
 
 function getResend(): Resend {
   const key = process.env.RESEND_API_KEY;
