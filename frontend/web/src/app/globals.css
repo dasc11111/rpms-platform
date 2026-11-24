@@ -19,8 +19,8 @@
     --success: 158 76% 36%;
     --success-foreground: 0 0% 100%;
     --success-subtle: 158 84% 95%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 38 92% 44%;
+    --warning-foreground: 0 0% 10%;
     --warning-subtle: 38 92% 95%;
     --danger: 0 84% 60%;
     --danger-foreground: 0 0% 100%;

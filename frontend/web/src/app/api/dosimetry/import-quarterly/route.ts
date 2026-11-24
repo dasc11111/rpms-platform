@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import * as XLSX from 'xlsx';
 import { sql } from '@/lib/db';
 import { rutMatchKey } from '@/lib/rut';
 import { syncAnnualDoseForWorkers } from '@/lib/dosimetry-sync';
@@ -42,9 +43,62 @@ type Agg = {
 // [4] RUN [9] Hp(3) cuantitativo [15] Suma Hp(3) 12m [21] radiacion
 // [10] Hp(0.07) cuantitativo [16] Suma piel 12m [22] proceso
 // [23] dosimetro
+// Parse xlsx/csv buffer into rows array (same column layout as CCHEN planilla)
+function parseXlsxBuffer(buf: Uint8Array): unknown[][] {
+  const workbook = XLSX.read(buf, { type: 'buffer', cellDates: true });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const raw: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+  // Skip header rows: keep only rows where col[4] looks like a RUT
+  const dataRows: unknown[][] = [];
+  for (const row of raw) {
+    const cell4 = String(row[4] ?? '').trim();
+    if (!cell4) continue;
+    // RUT heuristic: contains digits (at least 6) or matches XX.XXX.XXX-X pattern
+    if (/\d{6,}/.test(cell4.replace(/[.\-]/g, '')) || /^\d{1,2}\.\d{3}\.\d{3}-[\dkK]$/.test(cell4)) {
+      dataRows.push(row);
+    }
+  }
+  return dataRows;
+}
+
 export async function POST(request: Request) {
- const body = await request.json().catch(() => ({}));
- const rows: unknown[][] = Array.isArray(body?.rows) ? body.rows : [];
+  let rows: unknown[][] = [];
+
+  const contentType = request.headers.get('content-type') ?? '';
+
+  if (contentType.includes('multipart/form-data')) {
+    // Server-side xlsx parsing (new path — avoids client-side xlsx dependency)
+    const formData = await request.formData();
+    const file = formData.get('file') as File | null;
+    const action = formData.get('action') as string | null;
+
+    if (!file) {
+      return NextResponse.json({ ok: false, error: 'No se recibió ningún archivo.' }, { status: 400 });
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buf = new Uint8Array(arrayBuffer);
+
+    try {
+      rows = parseXlsxBuffer(buf);
+    } catch (e) {
+      return NextResponse.json(
+        { ok: false, error: `Error al leer el archivo: ${String(e)}` },
+        { status: 400 }
+      );
+    }
+
+    // Preview mode: return rows without importing
+    if (action === 'preview') {
+      return NextResponse.json({ ok: true, rows: rows.slice(0, 100), rowCount: rows.length });
+    }
+    // action === 'import' falls through to import logic below
+  } else {
+    // Legacy JSON path (backward compat)
+    const body = await request.json().catch(() => ({}));
+    rows = Array.isArray(body?.rows) ? body.rows : [];
+  }
 
  await ensureDosimetryTables();
 
@@ -192,8 +246,8 @@ const alerts = buildQuarterlyDoseAlertSummaries(
      }))
    );
 
-   return NextResponse.json(
+  return NextResponse.json(
     { ok: true, totalRows: rows.length, matchedGroups: agg.size, inserted, unmatched, unmatchedSamples, synced, alerts },
     { headers: corsHeaders() }
-      );
+  );
 }
