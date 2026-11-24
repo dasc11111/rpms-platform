@@ -719,7 +719,7 @@ export default function DosimetriaPage() {
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>Normal (0–25% límite)</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block"></span>Bajo (25–50%)</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block"></span>Moderado (50–75%)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>Alerta (>75% = 15 mSv)</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block"></span>Alerta ({'>'}75% = 15 mSv)</span>
               </div>
             </div>
 
