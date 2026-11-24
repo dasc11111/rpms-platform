@@ -6,7 +6,7 @@ import {
   FileText, Flame, FlaskConical, GitBranch, GraduationCap, Hammer, Home, Radiation, Radio, Recycle,
   ScanLine, Settings, ShieldAlert, ShieldCheck, Stethoscope, Syringe,
   Trash2, Truck, UserCog, Users, Warehouse, Wrench, CheckSquare, Zap, MapPin, Gauge, ArrowRightLeft, LogIn, BookOpen, TrendingDown, TrendingUp, Send, Shield, FileCheck, Mail, Clock, Package,
-  PlusCircle, FileSpreadsheet, Download,
+  PlusCircle, FileSpreadsheet, Download, Baby,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -58,6 +58,7 @@ const NAV = [
   { href: "/contamination/export", label: "Exportar Contaminación", icon: Download },
   { href: "/classified-zones", label: "Zonas Clasificadas", icon: MapPin },
   { href: "/zone-access", label: "Control de Acceso", icon: LogIn },
+  { href: "/special-surveillance", label: "Vigilancia Especial POE", icon: Baby },
   { href: "/area-monitoring", label: "Monitoreo de Área", icon: Gauge },
   { href: "/room-release", label: "Liberación de Sala", icon: Radiation },
 
