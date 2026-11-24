@@ -162,6 +162,7 @@ const NAV = [
   { href: "/spills", label: "Derrames Radiactivos", icon: Biohazard },
 
   // ── Documentos y Reportes ─────────────────────────────
+  { href: "/encargado-pr", label: "Portal Encargado PR", icon: Shield },
   { href: "/management-report", label: "Informe de Gestión", icon: BarChart3 },
   { href: "/procedures", label: "Procedimientos", icon: ClipboardList },
   { href: "/audits", label: "Auditorías Internas PR", icon: ClipboardCheck },
