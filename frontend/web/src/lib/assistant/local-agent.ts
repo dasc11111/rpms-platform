@@ -22,19 +22,35 @@ function tokenize(text: string): string[] {
   return normalize(text).split(" ").filter((w) => w.length >= 2);
 }
 
+/** Stop-words: palabras comunes sin valor semántico para el scoring */
+const STOP_WORDS = new Set([
+  "el", "la", "los", "las", "un", "una", "unos", "unas",
+  "es", "son", "se", "de", "del", "al", "en", "con", "por",
+  "para", "que", "cual", "como", "cuando", "donde", "quien",
+  "qué", "cómo", "cuál", "cuándo", "dónde", "quién",
+  "mi", "tu", "su", "nos", "yo", "me", "te", "le",
+  "no", "si", "ya", "más", "muy", "tan", "cada",
+  "hay", "puede", "puedo", "hacer", "ver", "usar",
+]);
+
 /** Calcula puntuación de coincidencia entre la consulta y una entrada KB. */
 function score(queryTokens: string[], entry: KBEntry): number {
   let hits = 0;
-  for (const qt of queryTokens) {
+  // Filtrar stop-words antes de comparar
+  const meaningfulTokens = queryTokens.filter((t) => !STOP_WORDS.has(t) && t.length >= 3);
+
+  for (const qt of meaningfulTokens) {
     for (const kw of entry.keywords) {
       const kwNorm = normalize(kw);
-      if (kwNorm === qt || kwNorm.includes(qt) || qt.includes(kwNorm)) {
-        // Bonus si es match exacto de palabra clave completa
-        hits += kwNorm === qt ? 2 : 1;
+      if (kwNorm === qt) {
+        // Match exacto: máxima puntuación
+        hits += 3;
+      } else if (kwNorm.length >= 4 && qt.length >= 4 && (kwNorm.includes(qt) || qt.includes(kwNorm))) {
+        // Match parcial solo si ambos tienen ≥ 4 chars (evita falsos positivos)
+        hits += 1;
       }
     }
   }
-  // Bonus si el módulo actual coincide con módulos relevantes de la entrada
   return hits;
 }
 
