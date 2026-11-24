@@ -156,6 +156,7 @@ const NAV = [
   { href: "/committee", label: "Comité PR — Sesiones", icon: Users },
   { href: "/inspections", label: "Inspecciones CCHEN", icon: ShieldCheck },
   { href: "/environmental-monitoring", label: "Monitoreo Ambiental", icon: MapPin },
+  { href: "/sealed-sources", label: "Fuentes Selladas", icon: Atom },
   { href: "/licenses", label: "Autorizaciones CCHEN", icon: FileText },
   { href: "/public-dose", label: "Dosis a Miembros Público", icon: Users },
   { href: "/ppe", label: "EPP Radiológico", icon: ShieldAlert },
