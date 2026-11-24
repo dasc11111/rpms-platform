@@ -8,6 +8,7 @@ import { matchesWorkerSearch } from "@/lib/search";
 import { cn } from "@/lib/utils";
 import { WorkerEditModal } from "@/components/workers/worker-edit-modal";
 import { StatusActionButton } from "@/components/workers/status-action-button";
+import { SendEmailModal } from "@/components/workers/send-email-modal";
 
 export type WorkerRow = {
   rut: string;
@@ -232,6 +233,11 @@ export function WorkersTable({ workers }: { workers: WorkerRow[] }) {
                 </td>
                 <td className="px-3 py-2.5 text-right">
                   <div className="flex justify-end gap-1.5">
+                    {w.email && (
+                      <SendEmailModal
+                        worker={{ rut: w.rut, displayName, email: w.email }}
+                      />
+                    )}
                     <WorkerEditModal worker={w} />
                     <StatusActionButton rut={w.rut} active={true} />
                   </div>

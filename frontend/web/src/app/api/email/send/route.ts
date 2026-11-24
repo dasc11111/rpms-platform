@@ -1,15 +1,18 @@
 /**
  * POST /api/email/send
- * Envía correos desde proteccionradiologica.hha@gmail.com
+ * Envía correos desde proteccionradiologica.hhha@gmail.com
  *
- * Body:
+ * Acepta JSON o multipart/form-data (para adjuntar archivos).
+ *
+ * Campos:
  *   to          string | string[]   — destinatario(s)
  *   subject     string              — asunto
  *   html        string              — cuerpo HTML (o usar template)
  *   text?       string              — texto plano
  *   cc?         string | string[]   — con copia
  *   template?   string              — nombre de plantilla
- *   templateData? object            — datos para la plantilla
+ *   templateData? object/json string — datos para la plantilla
+ *   attachment? File                — archivo adjunto (solo multipart)
  *
  * Plantillas disponibles:
  *   "dosimetria_reminder"   → templateData: { nombreTrabajador, periodo, fechaLimite? }
@@ -45,10 +48,57 @@ async function ensureEmailLogTable() {
   await sql`CREATE INDEX IF NOT EXISTS idx_email_log_sent ON email_log (sent_at DESC)`;
 }
 
+/** Parsear cuerpo: soporta JSON y multipart/form-data */
+async function parseBody(req: NextRequest) {
+  const contentType = req.headers.get("content-type") ?? "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+    const to = formData.get("to") as string | null;
+    const subject = formData.get("subject") as string | null;
+    const html = formData.get("html") as string | null;
+    const text = formData.get("text") as string | null;
+    const cc = formData.get("cc") as string | null;
+    const template = formData.get("template") as string | null;
+    const templateDataRaw = formData.get("templateData") as string | null;
+    const attachmentFile = formData.get("attachment") as File | null;
+
+    let templateData: Record<string, unknown> | undefined;
+    if (templateDataRaw) {
+      try { templateData = JSON.parse(templateDataRaw); } catch { templateData = undefined; }
+    }
+
+    let attachments: Array<{ filename: string; content: Buffer; contentType?: string }> | undefined;
+    if (attachmentFile && attachmentFile.size > 0) {
+      const arrayBuffer = await attachmentFile.arrayBuffer();
+      attachments = [{
+        filename: attachmentFile.name,
+        content: Buffer.from(arrayBuffer),
+        contentType: attachmentFile.type || "application/octet-stream",
+      }];
+    }
+
+    return { to, subject, html, text, cc, template, templateData, attachments };
+  }
+
+  // JSON por defecto
+  const body = await req.json();
+  return {
+    to: body.to,
+    subject: body.subject,
+    html: body.html,
+    text: body.text,
+    cc: body.cc,
+    template: body.template,
+    templateData: body.templateData,
+    attachments: undefined,
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { to, subject: subjectIn, html: htmlIn, text: textIn, cc, template, templateData } = body;
+    const { to, subject: subjectIn, html: htmlIn, text: textIn, cc, template, templateData, attachments } =
+      await parseBody(req);
 
     if (!to) {
       return NextResponse.json({ error: "El campo 'to' es requerido" }, { status: 400 });
@@ -91,7 +141,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await sendEmail({ to, subject, html, text, cc });
+    const result = await sendEmail({ to, subject, html, text: text ?? undefined, cc: cc ?? undefined, attachments });
 
     // Registrar en log
     try {

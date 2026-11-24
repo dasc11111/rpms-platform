@@ -9,6 +9,7 @@ import {
   type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SendEmailModal } from "@/components/workers/send-email-modal";
 
 interface Worker {
   rut: string;
@@ -209,6 +210,7 @@ export default function WorkersPage() {
           <button onClick={load} className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-background text-sm hover:bg-muted">
             <RefreshCw className="h-4 w-4" /> Actualizar
           </button>
+          <SendEmailModal />
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">
             <Plus className="h-4 w-4" /> Nuevo trabajador
           </button>
