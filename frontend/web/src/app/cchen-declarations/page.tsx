@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   FileText, Plus, ChevronDown, ChevronUp, CheckCircle2,
   AlertTriangle, Clock, RefreshCw, Edit2, Printer,
   Calendar, User, Shield, BarChart2, Users, Radiation
@@ -100,6 +101,14 @@ function PrintableDeclaration({ decl }: { decl: Declaration }) {
         </div>
         <div className="text-xs text-gray-500 mt-1">DS 3/1985 Art. 10 — NS-06.0 §4.4</div>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="cchen-declarations"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       <table className="w-full border-collapse text-sm mb-4">
         <tbody>

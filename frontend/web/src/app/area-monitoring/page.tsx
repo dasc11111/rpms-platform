@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import { Activity, Gauge, Plus, Trash2, Pencil, AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface AreaRecord {
   id: number;
@@ -233,6 +234,14 @@ export default function AreaMonitoringPage() {
           </p>
         </div>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="area-monitoring"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* Table */}
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">

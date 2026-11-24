@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Mail, ArrowUpRight, ArrowDownLeft, Building2, RefreshCw,
   Plus, ChevronDown, ChevronUp, AlertTriangle, Clock, CheckCircle,
   FileText, Send, Archive, Edit3, XCircle, Filter, Search,
@@ -686,6 +687,14 @@ export default function CCHENCommunicationsPage() {
             </select>
           </div>
         </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="cchen-communications"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
         {/* List */}
         {loading ? (

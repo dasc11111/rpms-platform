@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   FileText, Plus, Trash2, ChevronDown, ChevronUp, RefreshCw,
   AlertTriangle, CheckCircle, Clock, XCircle, RotateCcw, Calendar
 } from "lucide-react";
@@ -361,6 +362,14 @@ export default function LicensesPage() {
           </div>
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="licenses"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {s && (

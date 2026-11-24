@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom,
   CheckCircle2,
   XCircle,
@@ -177,6 +178,14 @@ function EditModal({
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-muted"><X className="w-5 h-5" /></button>
         </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="radionuclides"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
         <div className="p-5 space-y-4">
           <div>

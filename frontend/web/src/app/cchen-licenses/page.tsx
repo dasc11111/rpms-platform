@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   FileCheck, AlertTriangle, CheckCircle, Clock, RefreshCw,
   ChevronDown, ChevronUp, Plus, X, Calendar, ExternalLink
 } from "lucide-react";
@@ -164,6 +165,14 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="cchen-licenses"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
         {/* Key stats */}
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">

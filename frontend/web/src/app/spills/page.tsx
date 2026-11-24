@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import { ChevronDown, ChevronUp, Plus, X, AlertTriangle, Biohazard } from "lucide-react";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // DS 3/1985 Art. 42 — Registro de incidentes radiológicos y derrames
 // Todo derrame de material radiactivo debe documentarse, investigarse y
@@ -124,6 +125,14 @@ function SpillCard({ ev, onEdit }: { ev: SpillEvent; onEdit: (e: SpillEvent) => 
               <div><span className="text-gray-500">Detectado por:</span> <span className="font-medium">{ev.detected_by}</span></div>
             )}
           </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="spills"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
           {ev.immediate_actions && (
             <div>

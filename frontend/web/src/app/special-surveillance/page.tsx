@@ -14,6 +14,7 @@ import {
   GraduationCap, Heart, Users, Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -213,6 +214,14 @@ function SurveillanceCard({ rec, onStatusChange }: {
               </span>
             </div>
           </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="special-surveillance"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
           {/* Dose bar */}
           <div className="mt-2">

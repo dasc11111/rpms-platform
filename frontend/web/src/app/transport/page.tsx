@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
 import { TransportApp } from "@/components/transport/transport-app";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 import { Loader2 } from "lucide-react";
 
 export default function TransportPage() {
@@ -56,10 +57,19 @@ export default function TransportPage() {
   }
 
   return (
-    <TransportApp
-      initialShipments={data.shipments}
-      radionuclides={data.radionuclides as Parameters<typeof TransportApp>[0]["radionuclides"]}
-      initialAuthorization={data.authorization}
-    />
+    <div>
+      <TransportApp
+        initialShipments={data.shipments}
+        radionuclides={data.radionuclides as Parameters<typeof TransportApp>[0]["radionuclides"]}
+        initialAuthorization={data.authorization}
+      />
+      <div className="px-6 pb-6">
+        <ModulePdfPanel
+          module="transport"
+          ownerType="module"
+          title="Documentos del módulo Transporte"
+        />
+      </div>
+    </div>
   );
 }

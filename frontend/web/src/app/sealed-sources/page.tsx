@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   RadioTower, AlertTriangle, CheckCircle, Clock, Package,
   Zap, FlaskConical, Calendar, FileText, ChevronDown, ChevronUp,
   Plus, X, Atom
@@ -161,6 +162,14 @@ function SourceCard({ source, onAddEvent }: {
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="sealed-sources"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
         {/* Alerts */}
         {(isCritical) && (

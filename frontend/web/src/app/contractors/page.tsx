@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Truck, AlertTriangle, CheckCircle, User, Shield, Calendar,
   Plus, X, ChevronDown, ChevronUp, Briefcase, Activity
 } from "lucide-react";
@@ -177,6 +178,14 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="contractors"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
         {/* Dose bar */}
         {Number(contractor.annual_dose_mSv) > 0 && (

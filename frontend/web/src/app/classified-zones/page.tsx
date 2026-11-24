@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface ClassifiedZone {
   id: number;
@@ -205,6 +206,14 @@ export default function ClassifiedZonesPage() {
           Nueva Zona
         </button>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="classified-zones"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {/* KPI summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

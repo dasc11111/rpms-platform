@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ShieldAlert, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,
 } from "lucide-react";
 
@@ -324,6 +325,14 @@ export default function RisksPage() {
           </div>
         )}
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="risks"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap">

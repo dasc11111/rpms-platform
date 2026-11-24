@@ -9,6 +9,7 @@ import {
   BarChart3, Calendar, type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface Reading {
   id: number;
@@ -242,6 +243,14 @@ export default function DosimetryPage() {
           </button>
         </div>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="dosimetry"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

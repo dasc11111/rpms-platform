@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ChevronDown, ChevronUp, Plus, TrendingDown, Target, ClipboardCheck,
   AlertCircle, CheckCircle2, Clock, XCircle, BarChart3, Wrench, BookOpen,
 } from "lucide-react";
@@ -399,6 +400,14 @@ export default function AlaraPage() {
           <Plus className="h-4 w-4"/>Nuevo Objetivo
         </button>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="alara"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {stats.overdue > 0 && (

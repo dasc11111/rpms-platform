@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ClipboardList, ChevronDown, ChevronUp, Plus, RefreshCw,
   CheckCircle2, Clock, AlertTriangle, XCircle, Shield,
   Calendar, User, FileText, ExternalLink, Printer, Flag
@@ -315,6 +316,14 @@ function InspectionCard({ insp, onUpdate }: { insp: Inspection; onUpdate: () => 
           {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="cchen-inspections"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {/* Hallazgos summary */}
       <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">

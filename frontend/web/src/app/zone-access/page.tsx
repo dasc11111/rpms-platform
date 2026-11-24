@@ -8,6 +8,7 @@ import {
   ShieldAlert, Clock, AlertTriangle, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface Entry {
   id: number;
@@ -221,6 +222,14 @@ export default function ZoneAccessPage() {
           </button>
         </div>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="zone-access"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="grid grid-cols-3 md:grid-cols-6 gap-3">

@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ShieldAlert, CheckCircle2, AlertCircle, XCircle, Clock, ChevronDown, ChevronUp,
   Plus, FileText, AlertTriangle, Shield, BarChart3,
 } from "lucide-react";
@@ -236,6 +237,14 @@ export default function CompliancePage() {
           )}
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="compliance"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

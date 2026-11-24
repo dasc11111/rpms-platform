@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Stethoscope, Plus, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle,
   Clock, XCircle, User, Calendar, X,
 } from "lucide-react";
@@ -272,6 +273,14 @@ export default function MedicalExamsPage() {
           )}
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="medical-exams"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {st && (

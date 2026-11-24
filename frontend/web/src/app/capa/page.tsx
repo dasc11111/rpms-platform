@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ShieldAlert, CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp,
   Plus, Pencil, ClipboardCheck, CalendarClock, List
 } from "lucide-react";
@@ -476,6 +477,14 @@ export default function CapaPage() {
           <span className="text-orange-700">{stats.critical} no conformidad(es) crítica(s) requieren seguimiento prioritario</span>
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="capa"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">

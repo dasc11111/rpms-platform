@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   GraduationCap, Plus, ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle2, Clock, Calendar, X, Edit2, Trash2,
   Users, BookOpen, Award, Video, Monitor, Building2
@@ -481,6 +482,14 @@ export default function TrainingPage() {
           <p className="text-sm text-amber-800">{upcoming} capacitación{upcoming > 1 ? "es" : ""} planificada{upcoming > 1 ? "s" : ""} en los próximos 30 días.</p>
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="training"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {stats && (

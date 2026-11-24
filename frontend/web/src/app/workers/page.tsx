@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SendEmailModal } from "@/components/workers/send-email-modal";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 interface Worker {
   rut: string;
@@ -216,6 +217,13 @@ export default function WorkersPage() {
           </button>
         </div>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="workers"
+        ownerType="module"
+        title="Documentos del módulo Trabajadores"
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Building2, Plus, ChevronDown, ChevronUp, CheckCircle2,
   AlertTriangle, XCircle, RefreshCw, Edit2, Trash2,
   Star, Phone, Mail, MapPin, Calendar, Award, Shield,
@@ -200,6 +201,14 @@ function ProviderCard({
             </button>
           </div>
         </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="service-providers"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
         {/* Expiry badges row */}
         <div className="mt-2 flex flex-wrap gap-1.5">

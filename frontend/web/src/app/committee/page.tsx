@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Users, Plus, ChevronDown, ChevronUp, CheckCircle2, AlertTriangle,
   Clock, X, Calendar,
 } from "lucide-react";
@@ -293,6 +294,14 @@ export default function CommitteePage() {
           <p className="text-sm text-orange-700"><strong>{st.overdue_agreements} acuerdo(s)</strong> con plazo vencido sin completar</p>
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="committee"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {st && (

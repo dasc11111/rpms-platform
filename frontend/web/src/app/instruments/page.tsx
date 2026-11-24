@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { InstrumentFormModal } from "@/components/instruments/instrument-form-modal";
 import { InstrumentEditModal } from "@/components/instruments/instrument-edit-modal";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,11 @@ export default async function InstrumentsPage() {
   return (
     <div className="mx-auto max-w-[1400px] p-6">
       <h1 className="text-lg font-semibold mb-4">Instrumentos</h1>
+      <ModulePdfPanel
+        module="instruments"
+        ownerType="module"
+        title="Documentos del módulo Instrumentos"
+      />
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         <KPICard label="Instrumentos registrados" value={total} href="/instruments" icon={Wrench} />
         <KPICard label="Próximas a vencer" value={expiringCount} href="/instruments" icon={ClipboardCheck} tone="warning" />

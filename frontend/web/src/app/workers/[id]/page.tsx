@@ -10,6 +10,7 @@ import { buildAuthSummary, formatDaysRemaining, AUTH_STATUS_LABEL, SEMAPHORE_DOT
 import { composeWorkerName } from "@/lib/worker-name";
 import { cn } from "@/lib/utils";
 import { computeDosimeterAlerts, ALERT_SEVERITY_LABEL, ALERT_SEVERITY_CLASS, type DosimeterAlertSeverity } from "@/lib/dosimeter-alerts";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -386,6 +387,16 @@ export default async function WorkerPage({ params }: { params: Promise<{ id: str
         ) : (
           <p className="text-xs text-muted-foreground">Sin devoluciones registradas para este trabajador.</p>
         )}
+      </div>
+
+      {/* Panel de documentos PDF del trabajador */}
+      <div className="mt-4">
+        <ModulePdfPanel
+          module="workers"
+          ownerType="worker"
+          ownerId={rut}
+          title="Documentos del Trabajador"
+        />
       </div>
     </div>
   );

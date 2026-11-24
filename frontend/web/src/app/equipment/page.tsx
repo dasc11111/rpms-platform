@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Wrench, Plus, ChevronDown, ChevronUp, AlertTriangle,
   CheckCircle2, Clock, X, Edit2, Trash2,
   Calendar, Radio, Zap, Settings, Tool
@@ -478,6 +479,14 @@ export default function EquipmentPage() {
           )}
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="equipment"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {stats && (

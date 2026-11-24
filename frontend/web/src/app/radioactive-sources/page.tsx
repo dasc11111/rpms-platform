@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom, ChevronDown, ChevronUp, Plus, X, AlertTriangle,
   Clock, MapPin, Shield, FileText, Activity, Calendar, Package
 } from "lucide-react";
@@ -193,6 +194,14 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
           {open ? <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />}
         </div>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="radioactive-sources"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {open && (
         <div className="px-4 pb-4 border-t border-gray-100">

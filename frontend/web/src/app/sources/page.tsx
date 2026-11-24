@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Atom, ChevronDown, ChevronUp, Plus, X, AlertTriangle,
   ClipboardList, Calendar, Shield, Activity, FileText,
   CheckCircle, Clock, Zap, Radiation
@@ -268,6 +269,14 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
           {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="sources"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {/* Activity row */}
       <div className="px-4 pb-3 grid grid-cols-3 gap-3 border-t border-gray-50">

@@ -8,6 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Clock, type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 type ShieldingRecord = {
   id: number;
@@ -126,6 +127,14 @@ export default function ShieldingPage() {
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Registrar blindaje
         </button>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="shielding"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

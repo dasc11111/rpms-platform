@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ScanLine,
   CheckCircle2,
   AlertTriangle,
@@ -156,6 +157,14 @@ function AreaCard({ title, resumen, icon }: { title: string; resumen: RcResumen;
           )}
         </div>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="room-clearance"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {showPoints && resumen.puntos && resumen.puntos.length > 0 && (
         <div className="mt-3 overflow-x-auto rounded border bg-background">

@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   ClipboardCheck, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,
 } from "lucide-react";
 
@@ -277,6 +278,14 @@ export default function AuditsPage() {
           <p className="text-sm text-red-700"><strong>{st.overdue_findings} hallazgo(s)</strong> con plazo de acción correctiva vencido — requieren atención inmediata</p>
         </div>
       )}
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="audits"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       {st && (

@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import {
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
   Warehouse, RefreshCw, ChevronDown, ChevronUp,
   FileText, Pencil, Save, X, Plus, Trash2,
   Clock, TrendingDown, CheckCircle, AlertTriangle,
@@ -228,6 +229,14 @@ export default function WasteStoragePage() {
           </button>
         </div>
       </div>
+
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="waste-storage"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
 
       {/* ── Dashboard KPIs ── */}
       {dash && (

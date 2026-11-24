@@ -8,6 +8,7 @@ import {
   CheckCircle2, Clock, ShieldCheck, Beaker, type LucideProps,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";
 
 // Límites regulatorios radiofarmacia — NS-06.0 §8, USP <797>, IAEA-TECDOC-1708
 const QC_LIMITS = {
@@ -167,6 +168,14 @@ export default function RadiopharmacyPage() {
           <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Registrar radiofármaco
         </button>
       </div>
+
+      {/* Panel de documentos del módulo */}
+      <ModulePdfPanel
+        module="radiopharmacy"
+        ownerType="module"
+        title="Documentos del módulo"
+      />
+
 
       {/* KPIs */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
