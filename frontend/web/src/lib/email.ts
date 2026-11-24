@@ -1,13 +1,12 @@
 /**
  * Módulo de envío de correos electrónicos — RPMS
- * Usa Gmail SMTP con App Password (no requiere OAuth)
+ * Usa Resend (https://resend.com) — no requiere App Passwords ni OAuth
  *
  * Variables de entorno requeridas:
- *   GMAIL_USER         = proteccionradiologica.hha@gmail.com
- *   GMAIL_APP_PASSWORD = (contraseña de aplicación de 16 chars de Google)
+ *   RESEND_API_KEY = re_xxxxxxxxxxxxxxxxxxxx
  */
 
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 export interface EmailPayload {
   to: string | string[];
@@ -28,54 +27,57 @@ export interface EmailResult {
   error?: string;
 }
 
-/** Crea el transporter de Nodemailer apuntando a Gmail SMTP */
-function createTransporter() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+const FROM_ADDRESS =
+  '"Diego Solís · Oficial de Protección Radiológica" <proteccionradiologica.hha@gmail.com>';
 
-  if (!user || !pass) {
-    throw new Error(
-      "Variables GMAIL_USER y GMAIL_APP_PASSWORD no están configuradas en el entorno"
-    );
+function getResend(): Resend {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error("Variable RESEND_API_KEY no está configurada en el entorno");
   }
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { type: "login", user, pass },
-  });
+  return new Resend(key);
 }
 
 /** Envía un correo. Retorna { ok: true, messageId } o { ok: false, error } */
 export async function sendEmail(payload: EmailPayload): Promise<EmailResult> {
   try {
-    const transporter = createTransporter();
-    const from = `"Diego Solís · Oficial de Protección Radiológica" <${process.env.GMAIL_USER}>`;
+    const resend = getResend();
 
-    const info = await transporter.sendMail({
-      from,
-      to: Array.isArray(payload.to) ? payload.to.join(", ") : payload.to,
+    const { data, error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: Array.isArray(payload.to) ? payload.to : [payload.to],
       cc: payload.cc
         ? Array.isArray(payload.cc)
-          ? payload.cc.join(", ")
-          : payload.cc
+          ? payload.cc
+          : [payload.cc]
         : undefined,
       subject: payload.subject,
       text: payload.text,
       html: payload.html,
-      attachments: payload.attachments,
     });
 
-    return { ok: true, messageId: info.messageId };
+    if (error) {
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true, messageId: data?.id };
   } catch (err) {
     return { ok: false, error: String(err) };
   }
 }
 
-/** Verifica la conexión SMTP (útil para diagnóstico) */
+/** Verifica la conexión (útil para diagnóstico) */
 export async function verifyEmailConnection(): Promise<{ ok: boolean; error?: string }> {
   try {
-    const transporter = createTransporter();
-    await transporter.verify();
+    const resend = getResend();
+    // Resend no tiene un endpoint de "ping", enviamos a resend's test address
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: ["delivered@resend.dev"],
+      subject: "RPMS — verificación de conexión",
+      html: "<p>Test de conexión</p>",
+    });
+    if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (err) {
     return { ok: false, error: String(err) };
