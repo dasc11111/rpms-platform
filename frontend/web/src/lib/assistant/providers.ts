@@ -1,3 +1,4 @@
+import { generateLocalResponse } from "./local-agent";
 import type { AssistantMessage } from "./types";
 
 export interface ProviderConfig {
@@ -5,6 +6,8 @@ export interface ProviderConfig {
   apiKey: string;
   temperature: number;
   maxTokens: number;
+  /** Ruta del módulo actual para contexto en respuestas locales */
+  currentModule?: string;
 }
 
 export interface AssistantProvider {
@@ -16,17 +19,27 @@ export interface AssistantProvider {
   ): Promise<string>;
 }
 
+/**
+ * Proveedor local — base de conocimiento embebida de RPMS.
+ * Funciona completamente sin internet ni API keys externas.
+ * Es el fallback automático cuando no hay proveedor externo configurado.
+ */
+const localProvider: AssistantProvider = {
+  id: "local",
+  async send(messages, _systemPrompt, config) {
+    return generateLocalResponse(messages, config.currentModule);
+  },
+};
+
+/**
+ * Proveedor mock — solo para retrocompatibilidad.
+ * En la práctica el sistema usa localProvider como fallback real.
+ */
 const mockProvider: AssistantProvider = {
   id: "mock",
-  async send(messages) {
-    const lastUser = [...messages].reverse().find((m) => m.role === "user");
-    const question = lastUser?.content?.trim() || "";
-    return (
-      "Aún no hay un proveedor de inteligencia artificial configurado. " +
-      "Esta es una respuesta de demostración generada localmente.\n\n" +
-      (question ? `Recibí tu mensaje: "${question.slice(0, 200)}". ` : "") +
-      "Para habilitar respuestas reales, configura un proveedor de IA en Ajustes → Asistente Inteligente."
-    );
+  async send(messages, _systemPrompt, config) {
+    // Usar el agente local en lugar de respuesta genérica
+    return generateLocalResponse(messages, config.currentModule);
   },
 };
 
@@ -87,11 +100,16 @@ const anthropicProvider: AssistantProvider = {
 
 const registry: Record<string, AssistantProvider> = {
   mock: mockProvider,
+  local: localProvider,
   openai: openaiProvider,
   anthropic: anthropicProvider,
 };
 
+/**
+ * Retorna el proveedor solicitado.
+ * Si no se especifica o no existe, retorna el agente local (funciona offline).
+ */
 export function getProvider(id?: string | null): AssistantProvider {
-  if (!id) return mockProvider;
-  return registry[id] ?? mockProvider;
+  if (!id) return localProvider;
+  return registry[id] ?? localProvider;
 }

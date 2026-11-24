@@ -5,7 +5,7 @@ export interface AssistantMessage {
   content: string;
 }
 
-export type AssistantProviderId = "mock" | "openai" | "anthropic";
+export type AssistantProviderId = "mock" | "local" | "openai" | "anthropic";
 
 export interface AssistantChatRequest {
   messages: AssistantMessage[];

@@ -26,7 +26,15 @@ function welcomeMessage(): ChatMessage {
     id: newId(),
     role: "assistant",
     content:
-      "¡Hola! Soy el Asistente Inteligente de RPMS. Puedo ayudarte a resolver dudas sobre el uso de la plataforma sin que tengas que salir de ella. ¿En qué te puedo ayudar?",
+      "¡Hola! Soy el **Asistente Inteligente de RPMS** 🟢\n\n" +
+      "Tengo conocimiento embebido del sistema completo y funciono **incluso sin conexión a internet**.\n\n" +
+      "Puedo ayudarte con:\n" +
+      "• Dosimetría, límites DS 3/1985 y CCHEN\n" +
+      "• Residuos radiactivos (IAEA GSG-1)\n" +
+      "• I-131, LINAC, Medicina Nuclear\n" +
+      "• Normativa, alertas y cumplimiento NS-06.0\n" +
+      "• Cualquier módulo del sistema\n\n" +
+      "¿En qué puedo ayudarte?",
   };
 }
 
