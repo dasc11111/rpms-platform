@@ -6,6 +6,7 @@ import { useEffect, useState, useMemo } from "react";
 import {
   AlertTriangle, Search, RefreshCw, Package, Filter, CheckCircle2, XCircle,
 } from "lucide-react";
+import { SendEmailModal } from "@/components/workers/send-email-modal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -227,21 +228,26 @@ export default function DosimetryNotReturnedPage() {
                           )}
                         </td>
                         <td className="px-4 py-2.5">
-                          <button
-                            onClick={() => toggleExtraviado(r.dosimetro, r.trimestre_d, r.extraviado)}
-                            disabled={isToggling}
-                            className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
-                              r.extraviado
-                                ? "border-gray-200 text-gray-600 hover:bg-gray-50"
-                                : "border-red-200 text-red-700 hover:bg-red-50"
-                            }`}
-                          >
-                            {isToggling ? "..." : r.extraviado ? (
-                              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />Desmarcar</span>
-                            ) : (
-                              <span className="flex items-center gap-1"><XCircle className="h-3 w-3" />Marcar extraviado</span>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <SendEmailModal
+                              worker={{ rut: r.dcto ?? "", displayName: r.nombrepart, email: null }}
+                            />
+                            <button
+                              onClick={() => toggleExtraviado(r.dosimetro, r.trimestre_d, r.extraviado)}
+                              disabled={isToggling}
+                              className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors ${
+                                r.extraviado
+                                  ? "border-gray-200 text-gray-600 hover:bg-gray-50"
+                                  : "border-red-200 text-red-700 hover:bg-red-50"
+                              }`}
+                            >
+                              {isToggling ? "..." : r.extraviado ? (
+                                <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />Desmarcar</span>
+                              ) : (
+                                <span className="flex items-center gap-1"><XCircle className="h-3 w-3" />Marcar extraviado</span>
+                              )}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

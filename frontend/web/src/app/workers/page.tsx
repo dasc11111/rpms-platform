@@ -317,6 +317,11 @@ export default function WorkersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
+                      {w.email && (
+                        <SendEmailModal
+                          worker={{ rut: w.rut, displayName: w.name, email: w.email }}
+                        />
+                      )}
                       <button onClick={() => openEdit(w)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
                         <Pencil className="h-4 w-4" />
                       </button>
