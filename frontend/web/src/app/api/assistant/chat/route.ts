@@ -264,7 +264,7 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
     case "query_workers": {
       const rows = await queryWorkers(String(input.query || ""));
       if (!rows.length) return "No se encontraron trabajadores con ese criterio.";
-      return rows.map(r =>
+      return (rows as Array<Record<string, unknown>>).map(r =>
         `• **${r.name}** (RUT: ${r.rut})\n  - Categoría: ${r.category} | Estado: ${r.status} | Servicio: ${r.service || "-"}${r.email ? ` | Email: ${r.email}` : ""}`
       ).join("\n");
     }
