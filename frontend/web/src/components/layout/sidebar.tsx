@@ -22,6 +22,7 @@ const NAV = [
   { href: "/workers", label: "Trabajadores", icon: Users },
   { href: "/medical-exams", label: "Exámenes Médicos POE", icon: Stethoscope },
   { href: "/dosimetry", label: "Dosimetría", icon: Activity },
+  { href: "/dosimetria", label: "Dosimetría POE (CCHEN)", icon: Radiation },
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
 
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
