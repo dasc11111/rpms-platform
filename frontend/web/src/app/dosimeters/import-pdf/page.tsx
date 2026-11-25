@@ -19,6 +19,8 @@ import {
   RotateCcw,
   ArrowRightLeft,
   FileSpreadsheet,
+  Search,
+  Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DosimetersSubnav } from "@/components/dosimeters/dosimeters-subnav";
@@ -247,6 +249,8 @@ export default function DosimetersImportPdfPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
   const [error, setError] = useState("");
+  const [filterService, setFilterService] = useState<string>("");
+  const [searchPerson, setSearchPerson] = useState<string>("");
 
   // ── PDF extraction (client-side) ───────────────────────────────────────────
   const extractPdfText = useCallback(async (f: File) => {
@@ -374,6 +378,23 @@ export default function DosimetersImportPdfPage() {
   const noWorkerCount = rows.filter((r) => r.resolution === "sin_trabajador").length;
   const conflictCount = rows.filter((r) => r.conflict).length;
   const alreadyCount = rows.filter((r) => r.resolution === "ya_asignado").length;
+
+  // Unique services for the filter dropdown
+  const uniqueServices = Array.from(new Set(rows.map((r) => r.service_system ?? r.raw_service).filter(Boolean))).sort();
+
+  // Filtered rows for display
+  const filteredRows = rows
+    .map((r, i) => ({ row: r, originalIdx: i }))
+    .filter(({ row }) => {
+      if (filterService && (row.service_system ?? row.raw_service) !== filterService) return false;
+      if (searchPerson) {
+        const q = searchPerson.toLowerCase();
+        const name = (row.worker_name_report || row.raw_name || "").toLowerCase();
+        const rut = (row.rut_normalized || row.raw_rut || "").toLowerCase();
+        if (!name.includes(q) && !rut.includes(q)) return false;
+      }
+      return true;
+    });
 
   return (
     <div className="mx-auto max-w-[1500px] p-6 space-y-5">
@@ -536,6 +557,45 @@ export default function DosimetersImportPdfPage() {
                 </div>
               )}
 
+              {/* Search and filter controls */}
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="relative flex-1 min-w-[180px]">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Buscar persona por nombre o RUT…"
+                    value={searchPerson}
+                    onChange={(e) => setSearchPerson(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  {searchPerson && (
+                    <button onClick={() => setSearchPerson("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                {uniqueServices.length > 0 && (
+                  <div className="relative">
+                    <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <select
+                      value={filterService}
+                      onChange={(e) => setFilterService(e.target.value)}
+                      className="pl-8 pr-6 py-1.5 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-indigo-500 appearance-none"
+                    >
+                      <option value="">Todos los servicios</option>
+                      {uniqueServices.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {(filterService || searchPerson) && (
+                  <span className="text-xs text-muted-foreground">
+                    {filteredRows.length} de {rows.length} registros
+                  </span>
+                )}
+              </div>
+
               <div className="border border-border rounded-xl overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm min-w-[900px]">
                   <thead className="bg-muted/50">
@@ -551,11 +611,11 @@ export default function DosimetersImportPdfPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {rows.map((row, i) => (
-                      <EditableRow key={i} row={row} editing={editingIdx === i}
-                        onStartEdit={() => setEditingIdx(i)}
+                    {filteredRows.map(({ row, originalIdx }) => (
+                      <EditableRow key={originalIdx} row={row} editing={editingIdx === originalIdx}
+                        onStartEdit={() => setEditingIdx(originalIdx)}
                         onSave={(patch) => {
-                          setRows((prev) => prev.map((r, j) => j === i ? { ...r, ...patch } : r));
+                          setRows((prev) => prev.map((r, j) => j === originalIdx ? { ...r, ...patch } : r));
                           setEditingIdx(null);
                         }}
                         onCancel={() => setEditingIdx(null)} />

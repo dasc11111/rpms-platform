@@ -128,8 +128,9 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
       const tokL = tok.toLowerCase().replace(/[^a-záéíóúüñ]/gi, "");
       if (headerWords.has(tokL)) continue;
       if (tok.length < 2) continue;
-      // Must look like a name part: letters (including accented), spaces
-      if (/^[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ ]{1,}$/.test(tok)) {
+      // Must look like a name part: only letters (including accented) and spaces
+      // Accept both ALL CAPS (common in Chilean PDFs) and mixed case
+      if (/^[A-ZÁÉÍÓÚÜÑA-Záéíóúüñ]{2,}(?:[\s\-][A-ZÁÉÍÓÚÜÑA-Záéíóúüñ]{2,})*$/.test(tok)) {
         nameParts.push(tok);
       }
     }
