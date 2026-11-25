@@ -253,7 +253,10 @@ export default function DosimetersImportPdfPage() {
   const extractPdfText = useCallback(async (f: File) => {
     setLoadingMsg("Extrayendo texto del PDF…");
     const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.mjs",
+      import.meta.url,
+    ).toString();
     const arrayBuffer = await f.arrayBuffer();
     const typedArray = new Uint8Array(arrayBuffer);
     let fileHash = "";

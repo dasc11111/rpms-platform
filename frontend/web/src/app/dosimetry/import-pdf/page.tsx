@@ -215,9 +215,12 @@ export default function DosimetryImportPdfPage() {
   // ── PDF extraction helper ────────────────────────────────────────────────
   const extractPdfText = useCallback(async (f: File): Promise<{ rawText: string; pagesText: string[]; fileHash: string; usedOcr: boolean }> => {
     setLoadingMsg("Extrayendo texto del PDF…");
-    // Use pdfjs-dist via dynamic import
+    // Use pdfjs-dist via dynamic import — worker served locally (no CDN)
     const pdfjsLib = await import("pdfjs-dist");
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.mjs",
+      import.meta.url,
+    ).toString();
 
     const arrayBuffer = await f.arrayBuffer();
     const typedArray = new Uint8Array(arrayBuffer);
