@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §154 — Formulario F-01 CCHEN
 // Informe Anual de Protección Radiológica

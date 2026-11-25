@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 // §160 — Control de Personal Externo y Contratistas POE
 // DS 3/1985 Arts. 20-23 · CCHEN NS-05.0 §7.4 · IAEA GSR Part 3 Req. 24

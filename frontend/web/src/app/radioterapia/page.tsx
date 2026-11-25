@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { RadioterapiaApp } from "@/components/radioterapia/radioterapia-app";
 import { ModulePdfPanel } from "@/components/ui/module-pdf-panel";

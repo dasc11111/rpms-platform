@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search } from "lucide-react";
 

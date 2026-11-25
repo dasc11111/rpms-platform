@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { RefreshCw, TrendingUp, AlertTriangle, ArrowUp, ArrowDown, Minus } from "lucide-react";

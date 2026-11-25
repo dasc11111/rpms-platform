@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { Download, FileSpreadsheet, FileText, Filter } from "lucide-react";
 

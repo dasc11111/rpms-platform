@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §155 — Portal del Encargado de Protección Radiológica
 // Dashboard ejecutivo consolidado para el Encargado PR

@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §84 — Monitoreo de Contaminación Personal
 // NS-06.0 §4.5 — DS 3/1985 Art. 12

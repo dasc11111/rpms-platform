@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 // §158 — Auditorías Internas de Protección Radiológica
 // DS 3/1985 Arts. 55-57 · CCHEN NS-05.0 §11 · IAEA GSR Part 3 Req. 31

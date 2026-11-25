@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import {
   ClipboardCheck, Plus, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, X,

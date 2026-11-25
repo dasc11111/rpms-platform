@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §92 — Catálogo de Radionúclidos y Parámetros de Protección Radiológica
 // Parámetros de vida media, criterios de liberación de pacientes y límites

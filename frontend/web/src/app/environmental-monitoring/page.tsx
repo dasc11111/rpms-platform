@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §156 — Monitoreo Ambiental Externo / Perimetral
 // DS 3/1985 Arts. 38-42 · CCHEN NS-05.0 §8 · IAEA GSR Part 3 Req. 27

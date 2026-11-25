@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw, FileCheck, Upload, AlertTriangle, CheckCircle2, Clock, FileText } from "lucide-react";

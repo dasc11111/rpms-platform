@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 // §159 — Gestión de Licencias y Autorizaciones CCHEN
 // DS 3/1985 Arts. 7-14 · CCHEN NS-05.0 §3

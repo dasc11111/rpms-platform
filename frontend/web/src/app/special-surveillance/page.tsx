@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 // §153 — Vigilancia Radiológica Especial POE
 // DS 3/1985 Arts. 16-19 · CCHEN NS-05.0 §7 · ICRP 103 · IAEA GSR Part 3 Req. 30

@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 // §157 — Gestión de Fuentes Radiactivas Selladas
 // DS 3/1985 Arts. 55-62 · CCHEN NS-05.0 §5 · IAEA SSG-32

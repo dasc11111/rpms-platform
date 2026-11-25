@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 import { RowPdfActions } from "@/components/ui/row-pdf-actions";
 import { useState, useEffect, useCallback } from "react";
 import {

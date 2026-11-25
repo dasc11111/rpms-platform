@@ -1,6 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useCallback } from "react";
 import { Activity, Gauge, Plus, Trash2, Pencil, AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react";
