@@ -74,12 +74,44 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
   // Single ALL-CAPS word (2+ letters). We group consecutive ones into full names.
   const capsWordPattern = /^[A-ZÁÉÍÓÚÜÑ]{2,}$/;
 
-  // Known header/label words to skip
+  // Known header/label/column words to skip
+  // This covers: column headers, Sievert-specific labels, medical service names,
+  // period labels, type values, and other non-name vocabulary.
   const headerWords = new Set([
+    // Column headers (Sievert Lista de Envío)
     "codigo", "participante", "nombre", "documento", "tipo",
-    "dosimetro", "dosimetro", "firma", "fecha", "entrega", "rut", "run",
-    "servicio", "unidad", "departamento", "area", "seccion", "seccion",
+    "dosimetro", "firma", "fecha", "entrega", "rut", "run",
+    "servicio", "unidad", "departamento", "area", "seccion",
     "envio", "lista", "hospital", "clinica", "centro", "laboratorio",
+    // Sievert-specific labels found in TIPO / CLIENTE columns
+    "cliente", "uso", "personal", "profesional", "externo", "interno",
+    // Period/time labels (AÑO MES column)
+    "ano", "mes", "trimestre", "semestre", "periodo", "año",
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    // Dosimeter type labels
+    "entero", "cuerpo", "extremidades", "extremidad", "cristalino",
+    "tld", "osl", "film",
+    // Chilean hospital services / specialties (common in service column)
+    "cardiologia", "radiologia", "oncologia", "urologia", "ginecologia",
+    "obstetricia", "pediatria", "neurologia", "traumatologia", "cirugia",
+    "medicina", "nuclear", "interna", "general", "urgencias", "urgencia",
+    "uci", "ucc", "upc", "pabellones", "pabellon", "pabellon",
+    "laboratorio", "anatomia", "patologica", "imagenologia", "ecografia",
+    "scanner", "resonancia", "magnetica", "rayos", "tomografia",
+    "hemato", "hematologia", "nefrologia", "endocrinologia", "reumatologia",
+    "infectologia", "psiquiatria", "dermatologia", "oftalmologia",
+    "otorrinolaringologia", "orl", "gastroenterologia", "broncopulmonar",
+    "neonatologia", "maternidad", "neonato", "fisioterapia", "kinesiologia",
+    "dental", "odontologia", "farmacia", "nutricion", "fonoaudiologia",
+    "dental", "odontologia", "dental", "servicio", "unidad", "seccion",
+    "departamento",
+    // Generic document labels
+    "firma", "receptor", "entregado", "recibido", "observaciones",
+    "observacion", "total", "subtotal", "pagina", "folio",
+    // Sievert company / address words that may appear
+    "sievert", "ltda", "spa", "contrato", "control", "dosimetria",
+    "dosimetrico", "monitoreo", "radiacion", "radiaciones", "ionizante",
   ]);
 
   function normalizeWord(w: string): string {
@@ -136,10 +168,13 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
   let currentGroup: string[] = [];
 
   function flushGroup() {
-    if (currentGroup.length > 0) {
+    // Require at least 2 words: Chilean names always have paternal + maternal surname
+    // (or first name + surname). Single ALL-CAPS words are almost never real names
+    // but instead service labels (CARDIOLOGIA), type labels (CLIENTE), etc.
+    if (currentGroup.length >= 2) {
       nameGroups.push(currentGroup.slice(0, 5).join(" "));
-      currentGroup = [];
     }
+    currentGroup = [];
   }
 
   for (const tok of tokens) {
