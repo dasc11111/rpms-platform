@@ -148,12 +148,12 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
 
     const nameParts: string[] = [];
 
-    // Determine the search range: prefer the region between RUT and code (name column is after RUT, before XA)
-    // If RUT is after the code (unusual layout), search before the code from the window start
-    const nameSearchStart = rutIdx >= 0 && rutIdx < codeIdx
-      ? rutIdx + 1   // name is BETWEEN rut and code
-      : prevCodeIdx; // no rut or unusual layout: search from window start
-    const nameSearchEnd = codeIdx - 1; // always stop before the XA code token
+    // Column order in Sievert PDF: CODIGO | NOMBRE | RUT | TIPO | XA
+    // Name appears BEFORE RUT in the token stream — search from window start up to (but not including) RUT
+    const nameSearchStart = prevCodeIdx;
+    const nameSearchEnd = rutIdx >= 0 && rutIdx < codeIdx
+      ? rutIdx - 1   // name ends just before the RUT token
+      : codeIdx - 1; // no RUT found: search up to the XA code token
 
     for (let j = nameSearchStart; j <= nameSearchEnd; j++) {
       if (j === rutIdx) continue;
