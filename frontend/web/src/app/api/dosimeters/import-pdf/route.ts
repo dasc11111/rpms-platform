@@ -159,13 +159,13 @@ function parsePdfCoordinates(pagesItems: PdfItem[][]): { code: string; rut: stri
       const tipoItem = row.find(i => /^I[15]$/.test(i.str.trim()));
       const tipo = tipoItem?.str.trim() ?? "";
 
-      // Extract name: items between workerCode and RUT by X position
-      // Name items are ALL-CAPS words that aren't codes/RUTs/headers
-      const codeX = workerCodeItem?.x ?? 0;
+      // Extract name: items that look like name tokens (ALL-CAPS words)
+      // Sievert layout: CODIGO(5d) | NOMBRE | RUT | TIPO | XA-CODE | FIRMA | FECHA
+      // Strategy: take all tokens that match the name pattern and aren't codes/headers/RUT/TIPO
       const rutX = rutItem?.x ?? Infinity;
       const codeItemX = codeItem.x;
 
-      // Items between workerCode (left) and RUT (right), excluding the XA code itself
+      // Items that look like name parts: left of RUT and left of XA code
       const nameCandidates = row.filter(i => {
         const t = i.str.trim();
         if (!t || t.length < 2) return false;
@@ -176,24 +176,26 @@ function parsePdfCoordinates(pagesItems: PdfItem[][]): { code: string; rut: stri
         if (/^I[15]$/.test(t)) return false;
         const n = normalizeWord(t);
         if (headerWords.has(n)) return false;
-        // Must be to the right of worker code and left of RUT
-        if (workerCodeItem && i.x <= codeX) return false;
+        // Must be to the left of both RUT and XA code (name comes before those columns)
         if (rutItem && i.x >= rutX) return false;
-        // Must be to the left of XA code
         if (i.x >= codeItemX) return false;
-        // Must look like a name token (ALL-CAPS letters, comma, hyphen allowed)
-        return /^[A-ZÁÉÍÓÚÜÑ,\s\-]{2,}$/.test(t);
+        // Must look like a name token (ALL-CAPS letters, comma, hyphen, spaces allowed)
+        // Also allow accented uppercase and mixed-case as some PDFs embed names differently
+        return /^[A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑa-záéíóúüñ,\s\-]{1,}$/.test(t);
       });
 
       const name = nameCandidates.map(i => i.str.trim()).join(" ").trim();
 
-      console.error(`[PDF-COORD] service="${currentService}" worker=${workerCode} name="${name}" rut=${rut} code=${code} tipo=${tipo}`);
+      // Debug: log all items in this row for diagnosis
+      const rowDebug = row.map(i => `"${i.str.trim()}"@x=${Math.round(i.x)}`).join(", ");
+      console.error(`[PDF-COORD] ROW items: [${rowDebug}]`);
+      console.error(`[PDF-COORD] service="${currentService}" worker=${workerCode} name="${name}" rut=${rut} code=${code} tipo=${tipo} | rutX=${Math.round(rutX)} codeItemX=${Math.round(codeItemX)}`);
 
       if (code) {
         results.push({
           code,
           rut,
-          name: name || workerCode,
+          name: name || "",
           service: currentService,
           type: tipo === "I5" ? "extremidades" : "cuerpo_entero",
           deliveryDate: "",
