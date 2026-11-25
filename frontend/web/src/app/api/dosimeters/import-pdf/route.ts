@@ -50,21 +50,162 @@ function detectType(text: string): string {
   return "cuerpo_entero";
 }
 
-// ── PDF text parser ───────────────────────────────────────────────────────────
+// ── PDF coordinate-based parser ──────────────────────────────────────────────
 //
-// STRATEGY: Positional index matching (definitive approach)
+// STRATEGY: Coordinate-based row reconstruction (definitive fix)
 //
-// PDF.js does NOT guarantee row-by-row extraction for multi-column tables.
-// It may extract column-by-column, meaning all XA codes appear together,
-// all names appear together, all RUTs appear together — in document order.
+// PDF.js returns each text item with a transform matrix [a,b,c,d,e,f] where:
+//   e = transform[4] = X position (left = small, right = large)
+//   f = transform[5] = Y position (PDF Y-axis points UP, so top = large)
 //
-// Solution: collect each data type into its own ordered array, then zip by index.
-//   xaCodes[0]  → ruts[0]  → names[0]  → dates[0]
-//   xaCodes[1]  → ruts[1]  → names[1]  → dates[1]
-//   ...
-//
-// This works regardless of whether PDF.js extracts row-by-row or column-by-column.
+// Algorithm:
+//   1. For each page, sort items by Y descending (top to bottom), then X ascending
+//   2. Group items into rows by Y proximity (tolerance ~5 units)
+//   3. Each row in visual order = one table row
+//   4. Find XA codes, RUTs, 5-digit worker codes, and extract names by X position
+//   5. Track service name from CLIENTE header rows
 
+interface PdfItem { str: string; x: number; y: number; width: number; height: number; }
+
+function parsePdfCoordinates(pagesItems: PdfItem[][]): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
+  const rutPattern = /\b(\d{7,9}-[\dKk])\b/;
+  const codePattern = /\b(XA[A-Z0-9]{4,15})\b/i;
+  const workerCodePattern = /^\d{5}$/;
+  const serviceCodePattern = /^\d{4}$/;
+  const headerWords = new Set([
+    "codigo", "participante", "nombre", "documento", "tipo",
+    "dosimetro", "firma", "fecha", "entrega", "rut", "run",
+    "servicio", "unidad", "departamento", "area", "seccion",
+  ]);
+
+  function normalizeWord(w: string): string {
+    return w.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]/g, "");
+  }
+
+  const results: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] = [];
+  let currentService = "";
+
+  for (const pageItems of pagesItems) {
+    if (pageItems.length === 0) continue;
+
+    // Step 1: Sort by Y descending (top of page first), then X ascending (left to right)
+    const sorted = [...pageItems].sort((a, b) => {
+      const yDiff = b.y - a.y;
+      if (Math.abs(yDiff) > 3) return yDiff;
+      return a.x - b.x;
+    });
+
+    // Step 2: Group into rows by Y proximity (tolerance = 5 units)
+    const rows: PdfItem[][] = [];
+    let currentRow: PdfItem[] = [];
+    let lastY = sorted[0]?.y ?? 0;
+
+    for (const item of sorted) {
+      if (!item.str.trim()) continue;
+      if (Math.abs(item.y - lastY) > 5) {
+        if (currentRow.length > 0) rows.push(currentRow);
+        currentRow = [item];
+        lastY = item.y;
+      } else {
+        currentRow.push(item);
+        // Update lastY to average within tolerance band
+      }
+    }
+    if (currentRow.length > 0) rows.push(currentRow);
+
+    // Step 3: Process each row
+    for (const row of rows) {
+      const rowText = row.map(i => i.str.trim()).filter(Boolean);
+      const fullText = rowText.join(" ");
+
+      // Detect service header: row contains "CLIENTE" or a 4-digit service code
+      // The Sievert format has: 4-digit-code | SERVICE_NAME | CLIENTE | CLIENTE
+      const hasServiceCode = row.some(i => serviceCodePattern.test(i.str.trim()) && !workerCodePattern.test(i.str.trim()));
+      const hasCliente = rowText.some(t => t.toUpperCase() === "CLIENTE");
+
+      if (hasCliente && hasServiceCode) {
+        // This is a service header row — extract service name (the longest ALL-CAPS word that isn't a code or CLIENTE)
+        const capsWords = rowText.filter(t => /^[A-ZÁÉÍÓÚÜÑ\s]{3,}$/.test(t) && t !== "CLIENTE" && !serviceCodePattern.test(t));
+        if (capsWords.length > 0) {
+          currentService = capsWords.sort((a, b) => b.length - a.length)[0] ?? currentService;
+        }
+        continue;
+      }
+
+      // Skip pure header rows (column headers)
+      const isHeader = rowText.every(t => {
+        const n = normalizeWord(t);
+        return headerWords.has(n) || t.length <= 2 || /^\d+$/.test(t);
+      });
+      if (isHeader) continue;
+
+      // Look for XA code in this row
+      const codeItem = row.find(i => codePattern.test(i.str.trim()));
+      if (!codeItem) continue;
+      const codeMatch = codeItem.str.trim().match(codePattern);
+      if (!codeMatch) continue;
+      const code = codeMatch[1] ?? "";
+
+      // Find RUT
+      const rutItem = row.find(i => rutPattern.test(i.str.trim()));
+      const rutMatch = rutItem?.str.trim().match(rutPattern);
+      const rut = rutMatch?.[1] ?? "";
+
+      // Find worker 5-digit code (leftmost item that is exactly 5 digits)
+      const workerCodeItem = row.find(i => workerCodePattern.test(i.str.trim()));
+      const workerCode = workerCodeItem?.str.trim() ?? "";
+
+      // Find TIPO (I1 or I5)
+      const tipoItem = row.find(i => /^I[15]$/.test(i.str.trim()));
+      const tipo = tipoItem?.str.trim() ?? "";
+
+      // Extract name: items between workerCode and RUT by X position
+      // Name items are ALL-CAPS words that aren't codes/RUTs/headers
+      const codeX = workerCodeItem?.x ?? 0;
+      const rutX = rutItem?.x ?? Infinity;
+      const codeItemX = codeItem.x;
+
+      // Items between workerCode (left) and RUT (right), excluding the XA code itself
+      const nameCandidates = row.filter(i => {
+        const t = i.str.trim();
+        if (!t || t.length < 2) return false;
+        if (codePattern.test(t)) return false;
+        if (rutPattern.test(t)) return false;
+        if (workerCodePattern.test(t)) return false;
+        if (serviceCodePattern.test(t)) return false;
+        if (/^I[15]$/.test(t)) return false;
+        const n = normalizeWord(t);
+        if (headerWords.has(n)) return false;
+        // Must be to the right of worker code and left of RUT
+        if (workerCodeItem && i.x <= codeX) return false;
+        if (rutItem && i.x >= rutX) return false;
+        // Must be to the left of XA code
+        if (i.x >= codeItemX) return false;
+        // Must look like a name token (ALL-CAPS letters, comma, hyphen allowed)
+        return /^[A-ZÁÉÍÓÚÜÑ,\s\-]{2,}$/.test(t);
+      });
+
+      const name = nameCandidates.map(i => i.str.trim()).join(" ").trim();
+
+      console.error(`[PDF-COORD] service="${currentService}" worker=${workerCode} name="${name}" rut=${rut} code=${code} tipo=${tipo}`);
+
+      if (code) {
+        results.push({
+          code,
+          rut,
+          name: name || workerCode,
+          service: currentService,
+          type: tipo === "I5" ? "extremidades" : "cuerpo_entero",
+          deliveryDate: "",
+        });
+      }
+    }
+  }
+
+  return results;
+}
+
+// ── PDF text parser (fallback when no coordinate data) ───────────────────────
 function parsePdfLines(text: string): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
 
   // ── Patterns ────────────────────────────────────────────────────────────────
@@ -532,6 +673,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as {
       rawText?: string;
       pagesText?: string[];
+      pagesItems?: PdfItem[][];
       fileName?: string;
       fileHash?: string;
       usedOcr?: boolean;
@@ -558,8 +700,23 @@ export async function POST(req: NextRequest) {
     // Preview from JSON (PDF text extraction happened client-side)
     await ensureDosimeterTables();
 
-    const fullText = body.pagesText ? body.pagesText.join("\n") : (body.rawText ?? "");
-    const parsed = parsePdfLines(fullText);
+    // Use coordinate-based parsing when pagesItems is available (definitive fix)
+    // Fall back to text-based parsing only when pagesItems is not present
+    let parsed: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[];
+    if (body.pagesItems && body.pagesItems.length > 0) {
+      console.error("[import-pdf] Using coordinate-based PDF parsing (pagesItems available)");
+      parsed = parsePdfCoordinates(body.pagesItems);
+      // Fall back to text-based if coordinate parsing found nothing
+      if (parsed.length === 0) {
+        console.error("[import-pdf] Coordinate parsing found 0 records, falling back to text-based");
+        const fullText = body.pagesText ? body.pagesText.join("\n") : (body.rawText ?? "");
+        parsed = parsePdfLines(fullText);
+      }
+    } else {
+      console.error("[import-pdf] Falling back to text-based PDF parsing (no pagesItems)");
+      const fullText = body.pagesText ? body.pagesText.join("\n") : (body.rawText ?? "");
+      parsed = parsePdfLines(fullText);
+    }
 
     if (parsed.length === 0) {
       return NextResponse.json({

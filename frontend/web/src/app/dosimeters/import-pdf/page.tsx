@@ -268,15 +268,26 @@ export default function DosimetersImportPdfPage() {
       fileHash = Array.from(new Uint8Array(hb)).map((b) => b.toString(16).padStart(2, "0")).join("");
     } catch { /* ignore */ }
     const pdfDoc = await pdfjsLib.getDocument({ data: typedArray }).promise;
-    const pagesText: string[] = [];
+    // Collect items WITH coordinate data for coordinate-based row reconstruction
+    const pagesItems: Array<Array<{ str: string; x: number; y: number; width: number; height: number }>> = [];
     for (let p = 1; p <= pdfDoc.numPages; p++) {
       const page = await pdfDoc.getPage(p);
       const content = await page.getTextContent();
-      pagesText.push(content.items.map((item: { str?: string }) => item.str ?? "").join("\n"));
+      pagesItems.push(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content.items.map((item: any) => ({
+          str: item.str ?? "",
+          x: item.transform?.[4] ?? 0,
+          y: item.transform?.[5] ?? 0,
+          width: item.width ?? 0,
+          height: item.height ?? 0,
+        }))
+      );
     }
+    const pagesText = pagesItems.map((items) => items.map((i) => i.str).join("\n"));
     const rawText = pagesText.join("\n");
     const usedOcr = rawText.trim().length < 100;
-    return { rawText, pagesText, fileHash, usedOcr };
+    return { rawText, pagesText, pagesItems, fileHash, usedOcr };
   }, []);
 
   // ── Hash for binary files ──────────────────────────────────────────────────
@@ -318,9 +329,9 @@ export default function DosimetersImportPdfPage() {
         body = fd;
         // no Content-Type header — browser sets boundary automatically
       } else {
-        const { rawText, pagesText, fileHash, usedOcr } = await extractPdfText(f);
+        const { rawText, pagesText, pagesItems, fileHash, usedOcr } = await extractPdfText(f);
         setLoadingMsg("Analizando informe de dosímetros…");
-        body = JSON.stringify({ rawText, pagesText, fileName: f.name, fileHash, usedOcr, action: "preview", quarter, year });
+        body = JSON.stringify({ rawText, pagesText, pagesItems, fileName: f.name, fileHash, usedOcr, action: "preview", quarter, year });
         headers = { "Content-Type": "application/json" };
       }
 
