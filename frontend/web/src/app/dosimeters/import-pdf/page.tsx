@@ -198,9 +198,6 @@ function EditableRow({
         <div className="text-xs font-medium truncate" title={row.worker_name_report || row.raw_name}>
           {row.worker_name_report || row.raw_name || <span className="text-muted-foreground italic">—</span>}
         </div>
-        {row.worker_matched && row.worker_name_system && row.worker_name_system !== row.worker_name_report && (
-          <div className="text-[10px] text-muted-foreground truncate" title={row.worker_name_system}>→ {row.worker_name_system}</div>
-        )}
       </td>
       <td className="px-2 py-2 text-xs text-muted-foreground max-w-[120px] truncate">
         {(row.service_system ?? row.raw_service) || <span className="italic">—</span>}
@@ -271,7 +268,7 @@ export default function DosimetersImportPdfPage() {
     for (let p = 1; p <= pdfDoc.numPages; p++) {
       const page = await pdfDoc.getPage(p);
       const content = await page.getTextContent();
-      pagesText.push(content.items.map((item: { str?: string }) => item.str ?? "").join(" "));
+      pagesText.push(content.items.map((item: { str?: string }) => item.str ?? "").join("\n"));
     }
     const rawText = pagesText.join("\n");
     const usedOcr = rawText.trim().length < 100;

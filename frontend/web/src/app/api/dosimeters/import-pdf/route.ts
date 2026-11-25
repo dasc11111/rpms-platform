@@ -54,56 +54,92 @@ function detectType(text: string): string {
 
 function parsePdfLines(text: string): { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] {
   const results: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] = [];
-  const lines = text.split(/\n|\r/).map((l) => l.trim()).filter(Boolean);
 
   // XA code: Sievert format - XA followed by 4-15 alphanumeric chars (e.g. XA04400483L, XA04400400Z)
   const rutPattern = /\b(\d{7,9}-[\dKk])\b/;
   const codePattern = /\b(XA[A-Z0-9]{4,15})\b/i;
   const datePattern = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? "";
-    const rutMatch = line.match(rutPattern);
-    const codeMatch = line.match(codePattern);
-    if (!codeMatch) continue; // code is required; RUT can be on adjacent line
+  // Split into tokens: each non-empty item from PDF.js is a token (may be a word, code, RUT, name, etc.)
+  const tokens = text.split(/\n|\r/).map((l) => l.trim()).filter(Boolean);
 
+  // Find all XA code positions first
+  const codePositions: number[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    if (codePattern.test(tokens[i] ?? "")) {
+      codePositions.push(i);
+    }
+  }
+
+  // If no codes found by exact token match, fall back to scanning each token for embedded codes
+  if (codePositions.length === 0) {
+    for (let i = 0; i < tokens.length; i++) {
+      const m = (tokens[i] ?? "").match(codePattern);
+      if (m) codePositions.push(i);
+    }
+  }
+
+  // For each code position, gather associated data from surrounding window
+  const usedRutPositions = new Set<number>();
+
+  for (let ci = 0; ci < codePositions.length; ci++) {
+    const codeIdx = codePositions[ci]!;
+    const codeLine = tokens[codeIdx] ?? "";
+    const codeMatch = codeLine.match(codePattern);
+    if (!codeMatch) continue;
     const code = codeMatch[1] ?? "";
 
-    // Try to find RUT on same line or adjacent lines (±2)
-    let rut = rutMatch?.[1] ?? "";
-    if (!rut) {
-      for (let j = Math.max(0, i - 2); j <= Math.min(lines.length - 1, i + 2); j++) {
-        if (j === i) continue;
-        const m = (lines[j] ?? "").match(rutPattern);
-        if (m) { rut = m[1] ?? ""; break; }
+    // Window to search: between previous code and next code (or ±15 tokens)
+    const prevCodeIdx = ci > 0 ? (codePositions[ci - 1]! + 1) : Math.max(0, codeIdx - 15);
+    const nextCodeIdx = ci < codePositions.length - 1 ? (codePositions[ci + 1]! - 1) : Math.min(tokens.length - 1, codeIdx + 15);
+
+    // Find RUT in window (prefer closest to code, not already used)
+    let rut = "";
+    let rutIdx = -1;
+    let bestDist = Infinity;
+    for (let j = prevCodeIdx; j <= nextCodeIdx; j++) {
+      if (usedRutPositions.has(j)) continue;
+      const m = (tokens[j] ?? "").match(rutPattern);
+      if (m) {
+        const dist = Math.abs(j - codeIdx);
+        if (dist < bestDist) { bestDist = dist; rut = m[1] ?? ""; rutIdx = j; }
       }
     }
+    if (rutIdx >= 0) usedRutPositions.add(rutIdx);
 
-    const dateMatch = line.match(datePattern);
-    const deliveryDate = dateMatch?.[1] ?? "";
-
-    // Name: remove known fields from line
-    const remainder = line
-      .replace(codeMatch[0] ?? "", "")
-      .replace(rutMatch?.[0] ?? "", "")
-      .replace(dateMatch?.[0] ?? "", "")
-      .replace(/[|;,\t]+/g, " ")
-      .replace(/\s{2,}/g, " ")
-      .trim();
-    const name = remainder.replace(/^[-–—:]+/, "").replace(/[-–—:]+$/, "").trim();
-
-    // Service: check surrounding lines for department/service info
-    let service = "";
-    for (let j = Math.max(0, i - 3); j <= Math.min(lines.length - 1, i + 3); j++) {
-      if (j === i) continue;
-      const ctx = (lines[j] ?? "").toLowerCase();
-      if (ctx.includes("servicio") || ctx.includes("departamento") || ctx.includes("unidad")) {
-        service = (lines[j] ?? "").replace(/servicio|departamento|unidad/gi, "").replace(/[:=]+/, "").trim();
-        break;
-      }
+    // Find date in window
+    let deliveryDate = "";
+    for (let j = prevCodeIdx; j <= nextCodeIdx; j++) {
+      const m = (tokens[j] ?? "").match(datePattern);
+      if (m) { deliveryDate = m[1] ?? ""; break; }
     }
 
-    results.push({ code, rut, name, service, type: detectType(line), deliveryDate });
+    // Name: collect tokens in window that are not XA code, not RUT, not date, not short noise
+    // Skip header-like tokens (all caps short labels, single words that are field labels)
+    const headerWords = new Set(["codigo", "participante", "nombre", "documento", "tipo", "dosimetro", "dosímetro", "firma", "fecha", "entrega", "rut", "run"]);
+    const nameParts: string[] = [];
+    for (let j = prevCodeIdx; j <= nextCodeIdx; j++) {
+      if (j === codeIdx || j === rutIdx) continue;
+      const tok = (tokens[j] ?? "").trim();
+      if (!tok) continue;
+      if (codePattern.test(tok)) continue;
+      if (rutPattern.test(tok)) continue;
+      if (datePattern.test(tok)) continue;
+      const tokL = tok.toLowerCase().replace(/[^a-záéíóúüñ]/gi, "");
+      if (headerWords.has(tokL)) continue;
+      if (tok.length < 2) continue;
+      // Must look like a name part: letters (including accented), spaces
+      if (/^[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ ]{1,}$/.test(tok)) {
+        nameParts.push(tok);
+      }
+    }
+    // Take up to 5 name parts and join — the name in Sievert is typically APELLIDO APELLIDO NOMBRE
+    const name = nameParts.slice(0, 5).join(" ").trim();
+
+    // Service: not typically in Sievert Lista de Envío per row
+    const service = "";
+
+    results.push({ code, rut, name, service, type: "cuerpo_entero", deliveryDate });
   }
 
   return results;
@@ -129,7 +165,7 @@ function parseXlsxBuffer(buf: Uint8Array): { code: string; rut: string; name: st
       let type = "cuerpo_entero";
       let deliveryDate = "";
 
-      const codeRe = /^XA[-\s]?\d{3,6}$/i;
+      const codeRe = /^XA[A-Z0-9]{4,15}$/i;
       const rutRe = /^\d{7,9}-[\dKk]$/;
 
       for (const [key, val] of Object.entries(row)) {
