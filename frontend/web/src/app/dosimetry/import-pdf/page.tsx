@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useRef, useState, useCallback } from "react";
 import {
   Upload,
