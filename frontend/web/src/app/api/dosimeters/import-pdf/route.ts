@@ -59,8 +59,10 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
   const rutPattern = /\b(\d{7,9}-[\dKk])\b/;
   const codePattern = /\b(XA[A-Z0-9]{4,15})\b/i;
   const datePattern = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/;
+  // All-caps name token: 2+ letters per word, possibly multiple words separated by spaces/hyphens
+  const nameTokenPattern = /^[A-ZÁÉÍÓÚÜÑ]{2,}(?:[\s\-][A-ZÁÉÍÓÚÜÑ]{2,})*$/;
 
-  // Split into tokens: each non-empty item from PDF.js is a token (may be a word, code, RUT, name, etc.)
+  // Split into tokens: each non-empty line from PDF.js is a token
   const tokens = text.split(/\n|\r/).map((l) => l.trim()).filter(Boolean);
 
   // Find all XA code positions first
@@ -78,6 +80,26 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
       if (m) codePositions.push(i);
     }
   }
+
+  // Build a frequency map of all-caps multi-word tokens across the entire document.
+  // Tokens that appear many times (> threshold) are repeated labels/headers/service names, NOT person names.
+  const tokenFrequency = new Map<string, number>();
+  for (const tok of tokens) {
+    if (nameTokenPattern.test(tok)) {
+      tokenFrequency.set(tok, (tokenFrequency.get(tok) ?? 0) + 1);
+    }
+  }
+  // A token appearing more than 3 times is considered a repeated label (service name, header, etc.)
+  const repeatedLabels = new Set<string>(
+    [...tokenFrequency.entries()].filter(([, count]) => count > 3).map(([tok]) => tok)
+  );
+
+  // Known header/label words to skip (single words)
+  const headerWords = new Set([
+    "codigo", "participante", "nombre", "documento", "tipo",
+    "dosimetro", "dosímetro", "firma", "fecha", "entrega", "rut", "run",
+    "servicio", "unidad", "departamento", "area", "seccion", "sección",
+  ]);
 
   // For each code position, gather associated data from surrounding window
   const usedRutPositions = new Set<number>();
@@ -114,27 +136,64 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
       if (m) { deliveryDate = m[1] ?? ""; break; }
     }
 
-    // Name: collect tokens in window that are not XA code, not RUT, not date, not short noise
-    // Skip header-like tokens (all caps short labels, single words that are field labels)
-    const headerWords = new Set(["codigo", "participante", "nombre", "documento", "tipo", "dosimetro", "dosímetro", "firma", "fecha", "entrega", "rut", "run"]);
+    // ── Name extraction ───────────────────────────────────────────────────────
+    // In Sievert "Lista de Envío", columns are ordered:
+    //   CODIGO PARTICIPANTE | NOMBRE PARTICIPANTE | DOCUMENTO (RUT) | TIPO | DOSÍMETRO (XA) | FIRMA | FECHA
+    // So the person's name appears BEFORE the XA code in the token stream.
+    // Strategy:
+    //   1. If we have a RUT, look for name tokens between the RUT and the XA code (name is after RUT, before XA)
+    //   2. If no RUT, search the full window before the XA code
+    //   3. Skip tokens that are repeated labels/service names (frequency > 3)
+    //   4. Skip known header words
+
     const nameParts: string[] = [];
-    for (let j = prevCodeIdx; j <= nextCodeIdx; j++) {
-      if (j === codeIdx || j === rutIdx) continue;
+
+    // Determine the search range: prefer the region between RUT and code (name column is after RUT, before XA)
+    // If RUT is after the code (unusual layout), search before the code from the window start
+    const nameSearchStart = rutIdx >= 0 && rutIdx < codeIdx
+      ? rutIdx + 1   // name is BETWEEN rut and code
+      : prevCodeIdx; // no rut or unusual layout: search from window start
+    const nameSearchEnd = codeIdx - 1; // always stop before the XA code token
+
+    for (let j = nameSearchStart; j <= nameSearchEnd; j++) {
+      if (j === rutIdx) continue;
       const tok = (tokens[j] ?? "").trim();
-      if (!tok) continue;
+      if (!tok || tok.length < 2) continue;
       if (codePattern.test(tok)) continue;
       if (rutPattern.test(tok)) continue;
       if (datePattern.test(tok)) continue;
-      const tokL = tok.toLowerCase().replace(/[^a-záéíóúüñ]/gi, "");
-      if (headerWords.has(tokL)) continue;
-      if (tok.length < 2) continue;
-      // Must look like a name part: only letters (including accented) and spaces
-      // Accept both ALL CAPS (common in Chilean PDFs) and mixed case
-      if (/^[A-ZÁÉÍÓÚÜÑA-Záéíóúüñ]{2,}(?:[\s\-][A-ZÁÉÍÓÚÜÑA-Záéíóúüñ]{2,})*$/.test(tok)) {
+
+      // Skip known header words (normalize: strip accents/punctuation, lowercase)
+      const tokNorm = tok.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]/g, "");
+      if (headerWords.has(tokNorm)) continue;
+
+      // Skip repeated labels (service names, section headers, etc.)
+      if (repeatedLabels.has(tok)) continue;
+
+      // Must match name pattern: ALL CAPS letters only
+      if (!nameTokenPattern.test(tok)) continue;
+
+      nameParts.push(tok);
+    }
+
+    // If we found nothing before the code, try the full window (some PDF layouts differ)
+    if (nameParts.length === 0) {
+      for (let j = prevCodeIdx; j <= nextCodeIdx; j++) {
+        if (j === codeIdx || j === rutIdx) continue;
+        const tok = (tokens[j] ?? "").trim();
+        if (!tok || tok.length < 2) continue;
+        if (codePattern.test(tok)) continue;
+        if (rutPattern.test(tok)) continue;
+        if (datePattern.test(tok)) continue;
+        const tokNorm = tok.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z]/g, "");
+        if (headerWords.has(tokNorm)) continue;
+        if (repeatedLabels.has(tok)) continue;
+        if (!nameTokenPattern.test(tok)) continue;
         nameParts.push(tok);
       }
     }
-    // Take up to 5 name parts and join — the name in Sievert is typically APELLIDO APELLIDO NOMBRE
+
+    // Take up to 5 name parts and join — Sievert name is typically APELLIDO APELLIDO NOMBRE
     const name = nameParts.slice(0, 5).join(" ").trim();
 
     // Service: not typically in Sievert Lista de Envío per row
