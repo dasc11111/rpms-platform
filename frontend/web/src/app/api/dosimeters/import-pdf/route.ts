@@ -34,9 +34,10 @@ export interface ParsedDosimeterRow {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function normalizeCode(raw: string): string {
-  // XA followed by digits: strip spaces/dashes between XA and number
+  // XA followed by alphanumeric (Sievert format: XA04400483L, XA04400400Z, etc.)
   const upper = raw.trim().toUpperCase().replace(/\s+/g, "");
-  return upper.replace(/^XA[-]?(\d+)$/, "XA$1");
+  // Strip optional dash/space between XA and the alphanumeric code
+  return upper.replace(/^XA[-\s]?/, "XA");
 }
 
 function detectType(text: string): string {
@@ -55,9 +56,9 @@ function parsePdfLines(text: string): { code: string; rut: string; name: string;
   const results: { code: string; rut: string; name: string; service: string; type: string; deliveryDate: string }[] = [];
   const lines = text.split(/\n|\r/).map((l) => l.trim()).filter(Boolean);
 
-  // XA code: XA optionally followed by dash/space then 3-6 digits
+  // XA code: Sievert format - XA followed by 4-15 alphanumeric chars (e.g. XA04400483L, XA04400400Z)
   const rutPattern = /\b(\d{7,9}-[\dKk])\b/;
-  const codePattern = /\b(XA[-\s]?\d{3,6})\b/i;
+  const codePattern = /\b(XA[A-Z0-9]{4,15})\b/i;
   const datePattern = /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\b/;
 
   for (let i = 0; i < lines.length; i++) {
@@ -352,6 +353,8 @@ export async function POST(req: NextRequest) {
       rows?: ParsedDosimeterRow[];
       provider?: string;
       uploadedBy?: string;
+      quarter?: "T1" | "T2" | "T3" | "T4";
+      year?: number;
     };
 
     if (body.action === "confirm") {
@@ -361,6 +364,8 @@ export async function POST(req: NextRequest) {
         fileHash: body.fileHash ?? "",
         fileName: body.fileName ?? "",
         provider: body.provider ?? "",
+        quarter: body.quarter,
+        year: body.year,
       });
     }
 
@@ -438,8 +443,10 @@ async function handleConfirm(params: {
   fileHash: string;
   fileName: string;
   provider?: string;
+  quarter?: "T1" | "T2" | "T3" | "T4";
+  year?: number;
 }) {
-  const { rows, uploadedBy, fileHash, fileName } = params;
+  const { rows, uploadedBy, fileHash, fileName, quarter, year } = params;
   if (!rows.length) return NextResponse.json({ ok: false, error: "No rows to process" }, { status: 400 });
 
   await ensureDosimeterTables();
@@ -477,15 +484,19 @@ async function handleConfirm(params: {
       : null;
 
     try {
+      const quarterVal = quarter ?? null;
+      const yearVal = year ?? null;
+
       if (row.resolution === "crear_y_asignar") {
         if (deliveryDateStr) {
           await sql`
-            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, updated_at)
+            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, quarter, period_year, updated_at)
             VALUES (
               ${codeToUse}, ${typeToUse}, 'asignado',
               ${rutToUse}, ${nameToUse}, ${serviceToUse},
               ${deliveryDateStr}::date,
               (${deliveryDateStr}::date + INTERVAL '3 months')::date,
+              ${quarterVal}, ${yearVal},
               now()
             )
             ON CONFLICT (code) DO UPDATE SET
@@ -493,16 +504,18 @@ async function handleConfirm(params: {
               worker_name = EXCLUDED.worker_name, service = EXCLUDED.service,
               delivery_date = EXCLUDED.delivery_date,
               estimated_return_date = EXCLUDED.estimated_return_date,
+              quarter = EXCLUDED.quarter, period_year = EXCLUDED.period_year,
               updated_at = now()
           `;
         } else {
           await sql`
-            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, updated_at)
+            INSERT INTO dosimeters (code, type, status, worker_rut, worker_name, service, delivery_date, estimated_return_date, quarter, period_year, updated_at)
             VALUES (
               ${codeToUse}, ${typeToUse}, 'asignado',
               ${rutToUse}, ${nameToUse}, ${serviceToUse},
               CURRENT_DATE,
               (CURRENT_DATE + INTERVAL '3 months')::date,
+              ${quarterVal}, ${yearVal},
               now()
             )
             ON CONFLICT (code) DO UPDATE SET
@@ -510,6 +523,7 @@ async function handleConfirm(params: {
               worker_name = EXCLUDED.worker_name, service = EXCLUDED.service,
               delivery_date = EXCLUDED.delivery_date,
               estimated_return_date = EXCLUDED.estimated_return_date,
+              quarter = EXCLUDED.quarter, period_year = EXCLUDED.period_year,
               updated_at = now()
           `;
         }
@@ -524,6 +538,7 @@ async function handleConfirm(params: {
               service = ${serviceToUse},
               delivery_date = ${deliveryDateStr}::date,
               estimated_return_date = COALESCE(estimated_return_date, (CURRENT_DATE + INTERVAL '3 months')::date),
+              quarter = ${quarterVal}, period_year = ${yearVal},
               updated_at = now()
             WHERE id = ${row.dosimeter_id}
           `;
@@ -536,6 +551,7 @@ async function handleConfirm(params: {
               service = ${serviceToUse},
               delivery_date = COALESCE(delivery_date, CURRENT_DATE),
               estimated_return_date = COALESCE(estimated_return_date, (CURRENT_DATE + INTERVAL '3 months')::date),
+              quarter = ${quarterVal}, period_year = ${yearVal},
               updated_at = now()
             WHERE id = ${row.dosimeter_id}
           `;

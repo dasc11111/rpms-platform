@@ -45,6 +45,10 @@ export async function ensureDosimeterTables(): Promise<void> {
     )
   `;
 
+  // Add quarter/year columns if they don't exist (idempotent migration)
+  await sql`ALTER TABLE dosimeters ADD COLUMN IF NOT EXISTS quarter TEXT`;
+  await sql`ALTER TABLE dosimeters ADD COLUMN IF NOT EXISTS period_year INT`;
+
   await sql`
     CREATE TABLE IF NOT EXISTS dosimeter_history (
       id SERIAL PRIMARY KEY,

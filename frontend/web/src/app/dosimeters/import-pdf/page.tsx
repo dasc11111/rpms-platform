@@ -240,6 +240,8 @@ export default function DosimetersImportPdfPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState("");
+  const [quarter, setQuarter] = useState<"T1" | "T2" | "T3" | "T4">("T1");
+  const [year, setYear] = useState<number>(new Date().getFullYear());
 
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [rows, setRows] = useState<ParsedRow[]>([]);
@@ -317,7 +319,7 @@ export default function DosimetersImportPdfPage() {
       } else {
         const { rawText, pagesText, fileHash, usedOcr } = await extractPdfText(f);
         setLoadingMsg("Analizando informe de dosímetros…");
-        body = JSON.stringify({ rawText, pagesText, fileName: f.name, fileHash, usedOcr, action: "preview" });
+        body = JSON.stringify({ rawText, pagesText, fileName: f.name, fileHash, usedOcr, action: "preview", quarter, year });
         headers = { "Content-Type": "application/json" };
       }
 
@@ -350,6 +352,8 @@ export default function DosimetersImportPdfPage() {
           fileHash: preview.fileHash,
           fileName: preview.fileName,
           provider,
+          quarter,
+          year,
         }),
       });
       const d = await r.json();
@@ -452,6 +456,28 @@ export default function DosimetersImportPdfPage() {
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Proveedor (opcional)</label>
               <input className={formInp} value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="Ej: CCHEN, Dosimetría Sur…" />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Trimestre</label>
+                <select className={formInp} value={quarter} onChange={(e) => setQuarter(e.target.value as "T1" | "T2" | "T3" | "T4")}>
+                  <option value="T1">T1 (Ene–Mar)</option>
+                  <option value="T2">T2 (Abr–Jun)</option>
+                  <option value="T3">T3 (Jul–Sep)</option>
+                  <option value="T4">T4 (Oct–Dic)</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Año</label>
+                <input
+                  className={formInp}
+                  type="number"
+                  min={2020}
+                  max={2099}
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                />
+              </div>
             </div>
             <div className={cn("border-2 border-dashed rounded-xl p-6 text-center space-y-3 transition-colors cursor-pointer", file ? "border-indigo-400 bg-indigo-50/40 dark:bg-indigo-900/10" : "border-border hover:border-indigo-300")}
               onClick={() => fileRef.current?.click()}>
