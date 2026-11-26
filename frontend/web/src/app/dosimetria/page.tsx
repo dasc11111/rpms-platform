@@ -111,6 +111,18 @@ function MiniBar({ value, max = 20 }: { value: number; max?: number }) {
   );
 }
 
+// ─── KPI color map (static — Tailwind JIT requires full class strings) ───────
+const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }> = {
+  blue:   { border: "border-blue-100",   text: "text-blue-600",   bg: "bg-blue-50" },
+  indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
+  orange: { border: "border-orange-100", text: "text-orange-600", bg: "bg-orange-50" },
+  red:    { border: "border-red-100",    text: "text-red-600",    bg: "bg-red-50" },
+  rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
+  green:  { border: "border-green-100",  text: "text-green-600",  bg: "bg-green-50" },
+  yellow: { border: "border-yellow-100", text: "text-yellow-600", bg: "bg-yellow-50" },
+  sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
+};
+
 // ─── Adjunto ─────────────────────────────────────────────────────────────────
 function AdjuntoBtn({ registroId, tabla, nombre }: { registroId: number; tabla: string; nombre?: string }) {
   const ref = useRef<HTMLInputElement>(null);
@@ -889,6 +901,9 @@ export default function DosimetriaPage() {
   const [devFP, setDevFP] = useState<DevueltoFP[]>([]);
   const [noDev, setNoDev] = useState<NoDevuelto[]>([]);
   const [dashData, setDashData] = useState<{ por_departamento: DashDepto[]; tendencia_anual: DashAnio[] }|null>(null);
+  type DashTab = "institucion"|"departamentos"|"trabajador";
+  const [dashTab, setDashTab] = useState<DashTab>("institucion");
+  const [dashMetric, setDashMetric] = useState<"hp10"|"hp3"|"hp007">("hp10");
   const [loading, setLoading] = useState(false);
   const [modal, setModal] = useState<"registro"|"devuelto_fp"|"no_devuelto"|null>(null);
   const [fAnio, setFAnio] = useState("");
@@ -944,7 +959,7 @@ export default function DosimetriaPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">☢️ Dosimetría POE — CCHEN</h1>
+          <h1 className="text-2xl font-bold text-gray-900">☢️ Dosimetría POE</h1>
           <p className="text-sm text-gray-500 mt-1">
             Hospital Dr. Hernán Henríquez Aravena · DS 3/1985 · CCHEN NS-05.0 · IAEA GSR Part 3
           </p>
@@ -1054,13 +1069,16 @@ export default function DosimetriaPage() {
                 { label:"Dev. fuera de plazo", val:summary.kpis.devueltos_fuera_plazo, color:"orange", icon:"⏰" },
                 { label:"No devueltos", val:summary.kpis.no_devueltos, color:"red", icon:"🚫" },
                 { label:"Extraviados", val:summary.kpis.extraviados, color:"rose", icon:"❓" },
-              ].map(k => (
-                <div key={k.label} className={`bg-white rounded-xl p-4 shadow-sm border border-${k.color}-100`}>
-                  <div className="text-2xl mb-1">{k.icon}</div>
-                  <div className={`text-3xl font-bold text-${k.color}-600`}>{k.val}</div>
-                  <div className="text-xs text-gray-500 mt-1">{k.label}</div>
-                </div>
-              ))}
+              ].map(k => {
+                const c = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP.blue;
+                return (
+                  <div key={k.label} className={`bg-white rounded-xl p-4 shadow-sm border ${c.border}`}>
+                    <div className="text-2xl mb-1">{k.icon}</div>
+                    <div className={`text-3xl font-bold ${c.text}`}>{k.val}</div>
+                    <div className="text-xs text-gray-500 mt-1">{k.label}</div>
+                  </div>
+                );
+              })}
             </div>
             <div className="bg-white rounded-xl shadow-sm border p-5">
               <h3 className="font-semibold text-gray-700 mb-4">📅 Dosis promedio Hp(10) por año — Hospital (mSv)</h3>
@@ -1307,95 +1325,293 @@ export default function DosimetriaPage() {
         )}
 
         {/* ══ DASHBOARD ════════════════════════════════════════════════════════ */}
-        {!loading && tab === "dashboard" && dashData && (
-          <div className="space-y-5">
-            <div className="bg-white rounded-xl border p-4 flex gap-3 items-end">
-              <div>
-                <label className="text-xs text-gray-500">RUT trabajador (dashboard individual)</label>
-                <input value={fRut} onChange={e=>setFRut(e.target.value)} placeholder="12345678-9"
-                  className="block mt-1 px-3 py-1.5 border rounded text-sm w-44" />
+        {!loading && tab === "dashboard" && dashData && (() => {
+          /* ── helpers ── */
+          const doseBar  = (pct: number) => pct>75?"bg-red-500":pct>50?"bg-orange-400":pct>25?"bg-yellow-400":"bg-green-500";
+          const doseBadge= (pct: number) => pct>75?"bg-red-100 text-red-700 border border-red-200":pct>50?"bg-orange-100 text-orange-700 border border-orange-200":pct>25?"bg-yellow-100 text-yellow-700 border border-yellow-200":"bg-green-100 text-green-700 border border-green-200";
+          const doseText = (pct: number) => pct>75?"🔴 Alerta":pct>50?"🟠 Moderado":pct>25?"🟡 Precaución":"🟢 Normal";
+          const metricKey= (m: "hp10"|"hp3"|"hp007") => m==="hp10"?"avg_hp10":m==="hp3"?"avg_hp3":"avg_hp007";
+          const metricLim= (m: "hp10"|"hp3"|"hp007") => m==="hp10"?20:m==="hp3"?150:500;
+          const metricLabel=(m: "hp10"|"hp3"|"hp007") => m==="hp10"?"Hp(10) cuerpo":m==="hp3"?"Hp(3) cristalino":"Hp(0.07) piel";
+
+          /* ── global stats ── */
+          const ultimo = dashData.tendencia_anual[dashData.tendencia_anual.length-1];
+          const globalV = parseFloat(ultimo?.avg_hp10||"0");
+          const globalPct= Math.min((globalV/20)*100,100);
+          const totalTrab= dashData.tendencia_anual.reduce((s,a)=>s+parseInt(a.n_trabajadores||"0"),0);
+          const sobreTotal= dashData.por_departamento.reduce((s,d)=>s+parseInt(d.sobre_alerta||"0"),0);
+          const tMax = Math.max(...dashData.tendencia_anual.map(d=>parseFloat(d.avg_hp10)||0), 0.001);
+
+          return (
+            <div className="space-y-4">
+
+              {/* ── Sub-nav pills ── */}
+              <div className="flex gap-2 bg-gray-100 rounded-xl p-1 w-fit">
+                {([["institucion","🏥 Institución"],["departamentos","🏢 Departamentos"],["trabajador","👷 Trabajador"]] as [DashTab,string][]).map(([k,label])=>(
+                  <button key={k} onClick={()=>setDashTab(k)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${dashTab===k?"bg-white shadow text-blue-700":"text-gray-500 hover:text-gray-700"}`}>
+                    {label}
+                  </button>
+                ))}
               </div>
-              <button onClick={fetchData} className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-                Ver historial
-              </button>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border p-5">
-              <h3 className="font-semibold text-gray-700 mb-4">🏥 Comparativo por Departamento — Dosis promedio Hp(10) trimestral</h3>
-              <div className="space-y-3">
-                {dashData.por_departamento.map((d: DashDepto) => {
-                  const avg = parseFloat(d.avg_hp10)||0;
-                  const pct = Math.min((avg/20)*100,100);
-                  const color = pct>75?"bg-red-500":pct>50?"bg-orange-400":pct>25?"bg-yellow-400":"bg-green-500";
-                  return (
-                    <div key={d.departamento} className="flex items-center gap-3">
-                      <div className="w-48 text-sm text-gray-700 flex-shrink-0 truncate" title={d.departamento}>{d.departamento}</div>
-                      <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden relative">
-                        <div className={`h-full ${color} rounded-full`} style={{ width:`${pct}%` }} />
-                        <span className="absolute left-2 top-0.5 text-xs font-semibold text-white drop-shadow">
-                          {avg.toFixed(3)} mSv
-                        </span>
+
+              {/* ══════════════ SUB-VIEW: INSTITUCIÓN ══════════════ */}
+              {dashTab==="institucion" && (
+                <div className="space-y-4">
+
+                  {/* KPI row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      {icon:"📊",label:"Dosis promedio",value:`${globalV.toFixed(3)} mSv`,sub:`${globalPct.toFixed(1)}% del límite`,color:"blue"},
+                      {icon:"👷",label:"Trabajadores",value:ultimo?.n_trabajadores||"—",sub:`año ${ultimo?.anio||"—"}`,color:"indigo"},
+                      {icon:"🏢",label:"Departamentos",value:String(dashData.por_departamento.length),sub:"con registros",color:"sky"},
+                      {icon:"⚠️",label:"Sobre alerta",value:String(sobreTotal),sub:sobreTotal>0?"requieren atención":"sin alertas",color:sobreTotal>0?"red":"green"},
+                    ].map(k=>{
+                      const c=KPI_COLOR_MAP[k.color]||KPI_COLOR_MAP.blue;
+                      return (
+                        <div key={k.label} className={`bg-white rounded-xl border ${c.border} p-4`}>
+                          <div className="text-2xl mb-1">{k.icon}</div>
+                          <div className={`text-xl font-bold ${c.text}`}>{k.value}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
+                          <div className="text-xs text-gray-400">{k.sub}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Hero card */}
+                  <div className="bg-gradient-to-br from-slate-800 to-blue-900 rounded-2xl p-6 text-white">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-widest text-blue-300 mb-1">Hospital Hernán Henríquez Aravena</div>
+                        <h3 className="text-lg font-bold">Dosis promedio institucional — Hp(10)</h3>
+                        <div className="text-blue-300 text-sm">Año {ultimo?.anio} · {ultimo?.n_trabajadores} trabajadores</div>
                       </div>
-                      <div className="text-xs text-gray-400 w-20 text-right">n={d.n} | máx {parseFloat(d.max_hp10||"0").toFixed(2)}</div>
-                      {parseInt(d.sobre_alerta)>0 && <Badge color="bg-red-100 text-red-700" label={`⚠ ${d.sobre_alerta} sobre límite`} />}
+                      <span className={`text-xs font-semibold px-3 py-1 rounded-full ${globalPct>75?"bg-red-500":globalPct>50?"bg-orange-500":globalPct>25?"bg-yellow-500 text-black":"bg-green-500"}`}>
+                        {doseText(globalPct)}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex gap-4 text-xs text-gray-400">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" />Normal (0–25%)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" />Bajo (25–50%)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block" />Moderado (50–75%)</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" />Alerta (&gt;75% = 15 mSv)</span>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border p-5">
-              <h3 className="font-semibold text-gray-700 mb-4">📈 Tendencia anual — Dosis promedio Hp(10) hospital</h3>
-              <div className="flex items-end gap-6 h-32">
-                {dashData.tendencia_anual.map((a: DashAnio) => {
-                  const v = parseFloat(a.avg_hp10)||0;
-                  const h = Math.max(10, (v/2)*100);
-                  return (
-                    <div key={a.anio} className="flex flex-col items-center gap-1">
-                      <span className="text-xs font-semibold text-gray-700">{v.toFixed(3)}</span>
-                      <div className="w-16 bg-blue-500 rounded-t-md hover:bg-blue-600 transition-colors"
-                        style={{ height:`${h}px` }} title={`${a.anio}: ${v.toFixed(3)} mSv | ${a.n_trabajadores} trab.`} />
-                      <span className="text-xs text-gray-500">{a.anio}</span>
-                      <span className="text-xs text-gray-400">{a.n_trabajadores} trab.</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-5 text-white">
-              <h3 className="font-semibold mb-3">🌡️ Promedio hospital global Hp(10)</h3>
-              {dashData.tendencia_anual.length > 0 && (() => {
-                const ultimo = dashData.tendencia_anual[dashData.tendencia_anual.length-1];
-                const v = parseFloat(ultimo?.avg_hp10||"0");
-                const pct = (v/20*100).toFixed(1);
-                return (
-                  <div className="flex items-center gap-6">
-                    <div>
-                      <div className="text-5xl font-bold">{v.toFixed(3)}</div>
-                      <div className="text-blue-200 text-sm mt-1">mSv promedio — {ultimo?.anio}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-blue-200 text-sm mb-1">{pct}% del límite anual (20 mSv)</div>
-                      <div className="h-4 bg-blue-900 rounded-full overflow-hidden">
-                        <div className="h-full bg-green-400 rounded-full" style={{ width:`${pct}%` }} />
+                    <div className="flex items-end gap-6">
+                      <div>
+                        <div className="text-6xl font-black tracking-tight">{globalV.toFixed(3)}</div>
+                        <div className="text-blue-300 text-sm font-medium mt-1">mSv / año</div>
                       </div>
-                      <div className="text-xs text-blue-300 mt-1">Alerta a 15 mSv | Límite 20 mSv</div>
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs text-blue-300 mb-1">
+                          <span>{globalPct.toFixed(1)}% del límite anual</span>
+                          <span>20 mSv</span>
+                        </div>
+                        <div className="h-5 bg-blue-950 rounded-full overflow-hidden">
+                          <div className={`h-full ${doseBar(globalPct)} rounded-full transition-all`} style={{width:`${globalPct}%`}} />
+                        </div>
+                        <div className="flex justify-between text-xs text-blue-400 mt-1.5">
+                          <span>0</span><span>🔔 15 mSv</span><span>🚫 20 mSv</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                );
-              })()}
+
+                  {/* Tendencia anual */}
+                  <div className="bg-white rounded-xl border p-5">
+                    <h3 className="font-semibold text-gray-800 mb-1">📈 Tendencia anual — Hp(10) promedio</h3>
+                    <p className="text-xs text-gray-400 mb-4">Dosis media del personal ocupacionalmente expuesto por año</p>
+                    <div className="flex items-end gap-4 h-36 px-2">
+                      {dashData.tendencia_anual.map((a: DashAnio) => {
+                        const v=parseFloat(a.avg_hp10)||0;
+                        const h=Math.max(8,Math.round((v/tMax)*120));
+                        const pct=(v/20)*100;
+                        return (
+                          <div key={a.anio} className="flex flex-col items-center gap-1 flex-1 min-w-0">
+                            <span className="text-xs font-bold text-gray-700">{v.toFixed(2)}</span>
+                            <div className={`w-full ${doseBar(pct)} rounded-t-md hover:opacity-80 transition-opacity cursor-default`}
+                              style={{height:`${h}px`}} title={`${a.anio}: ${v.toFixed(3)} mSv · ${a.n_trabajadores} trab.`} />
+                            <span className="text-xs font-semibold text-gray-600">{a.anio}</span>
+                            <span className="text-xs text-gray-400">{a.n_trabajadores}p</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 flex gap-4 text-xs text-gray-400 flex-wrap">
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block"/>0–25%</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block"/>25–50%</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block"/>50–75%</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block"/>&gt;75% alerta</span>
+                    </div>
+                  </div>
+
+                  {/* Normativa */}
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                    <div className="text-xs font-semibold text-blue-800 mb-2">📋 Marco normativo vigente</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-blue-700">
+                      <div><strong>DS 3/1985 MINSAL Art. 44</strong><br/>Hp(10): 20 mSv/año · Hp(3): 150 mSv/año · Hp(0.07): 500 mSv/año</div>
+                      <div><strong>NS-05.0 · IAEA GSR Part 3</strong><br/>Alerta al 75%: 15 mSv/año Hp(10). Req. 29 (2014)</div>
+                      <div><strong>ICRP Pub. 103</strong><br/>Límites para trabajadores ocupacionalmente expuestos (POE)</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ══════════════ SUB-VIEW: DEPARTAMENTOS ══════════════ */}
+              {dashTab==="departamentos" && (
+                <div className="space-y-4">
+
+                  {/* Metric selector */}
+                  <div className="bg-white border rounded-xl p-4 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-gray-600">Métrica:</span>
+                    {(["hp10","hp3","hp007"] as const).map(m=>(
+                      <button key={m} onClick={()=>setDashMetric(m)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all border ${dashMetric===m?"bg-blue-600 text-white border-blue-600":"bg-white text-gray-600 border-gray-200 hover:border-blue-300"}`}>
+                        {metricLabel(m)}
+                      </button>
+                    ))}
+                    <span className="ml-auto text-xs text-gray-400">Límite: {metricLim(dashMetric)} mSv/año</span>
+                  </div>
+
+                  {/* Bar chart sorted by dose */}
+                  <div className="bg-white rounded-xl border p-5">
+                    <h3 className="font-semibold text-gray-800 mb-1">🏢 Comparativo departamentos — {metricLabel(dashMetric)}</h3>
+                    <p className="text-xs text-gray-400 mb-4">Dosis promedio trimestral por unidad. Ordenado de mayor a menor.</p>
+                    <div className="space-y-2.5">
+                      {[...dashData.por_departamento]
+                        .sort((a,b)=>(parseFloat((b as Record<string,string>)[metricKey(dashMetric)])||0)-(parseFloat((a as Record<string,string>)[metricKey(dashMetric)])||0))
+                        .map((d: DashDepto, i) => {
+                          const raw=(d as Record<string,string>)[metricKey(dashMetric)];
+                          const avg=parseFloat(raw)||0;
+                          const pct=Math.min((avg/metricLim(dashMetric))*100,100);
+                          return (
+                            <div key={d.departamento} className="flex items-center gap-3">
+                              <span className="text-xs text-gray-400 w-4 text-right flex-shrink-0">{i+1}</span>
+                              <div className="w-40 text-xs text-gray-700 flex-shrink-0 truncate font-medium" title={d.departamento}>{d.departamento}</div>
+                              <div className="flex-1 h-7 bg-gray-100 rounded-lg overflow-hidden relative">
+                                <div className={`h-full ${doseBar(pct)} rounded-lg transition-all`} style={{width:`${pct}%`}} />
+                                <span className="absolute left-2 top-1 text-xs font-semibold text-white drop-shadow-sm">
+                                  {avg.toFixed(3)} mSv
+                                </span>
+                              </div>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${doseBadge(pct)}`}>{doseText(pct)}</span>
+                              <span className="text-xs text-gray-400 w-16 text-right flex-shrink-0">n={d.n}</span>
+                              {parseInt(d.sobre_alerta)>0 && <Badge color="bg-red-100 text-red-700" label={`⚠ ${d.sobre_alerta}`} />}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Summary table */}
+                  <div className="bg-white rounded-xl border overflow-hidden">
+                    <div className="px-5 py-3 border-b bg-gray-50">
+                      <span className="text-sm font-semibold text-gray-700">Resumen por departamento — todas las métricas</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-gray-500 border-b">
+                            <th className="text-left px-4 py-2 font-medium">Departamento</th>
+                            <th className="text-right px-3 py-2 font-medium">Hp(10)</th>
+                            <th className="text-right px-3 py-2 font-medium">Hp(3)</th>
+                            <th className="text-right px-3 py-2 font-medium">Hp(0.07)</th>
+                            <th className="text-right px-3 py-2 font-medium">Máx Hp(10)</th>
+                            <th className="text-right px-3 py-2 font-medium">N</th>
+                            <th className="text-center px-3 py-2 font-medium">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...dashData.por_departamento]
+                            .sort((a,b)=>(parseFloat(b.avg_hp10)||0)-(parseFloat(a.avg_hp10)||0))
+                            .map((d: DashDepto) => {
+                              const pct=Math.min(((parseFloat(d.avg_hp10)||0)/20)*100,100);
+                              return (
+                                <tr key={d.departamento} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                  <td className="px-4 py-2 font-medium text-gray-700 max-w-[160px] truncate" title={d.departamento}>{d.departamento}</td>
+                                  <td className="px-3 py-2 text-right font-mono">{(parseFloat(d.avg_hp10)||0).toFixed(3)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{d.avg_hp3?(parseFloat(d.avg_hp3)).toFixed(3):"—"}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{d.avg_hp007?(parseFloat(d.avg_hp007)).toFixed(3):"—"}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{(parseFloat(d.max_hp10||"0")||0).toFixed(3)}</td>
+                                  <td className="px-3 py-2 text-right">{d.n}</td>
+                                  <td className="px-3 py-2 text-center">
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${doseBadge(pct)}`}>{doseText(pct)}</span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ══════════════ SUB-VIEW: TRABAJADOR ══════════════ */}
+              {dashTab==="trabajador" && (
+                <div className="space-y-4">
+
+                  {/* Search */}
+                  <div className="bg-white rounded-xl border p-5">
+                    <h3 className="font-semibold text-gray-800 mb-3">👷 Historial individual de dosimetría</h3>
+                    <div className="flex gap-3 items-end flex-wrap">
+                      <div>
+                        <label className="text-xs text-gray-500 font-medium">RUT trabajador</label>
+                        <input value={fRut} onChange={e=>setFRut(e.target.value)} placeholder="12345678-9"
+                          className="block mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm w-44 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                      </div>
+                      <button onClick={fetchData}
+                        className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        Ver historial
+                      </button>
+                      <p className="text-xs text-gray-400 self-center">Ingresa el RUT para ver el historial de dosis personal y evaluación de riesgo</p>
+                    </div>
+                  </div>
+
+                  {/* Dose limits reference card */}
+                  <div className="bg-white rounded-xl border p-5">
+                    <h3 className="font-semibold text-gray-700 mb-3">📏 Límites de dosis DS 3/1985 — Personal POE</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {[
+                        {label:"Hp(10) — Cuerpo entero",lim:20,alert:15,color:"blue",unit:"mSv/año"},
+                        {label:"Hp(3) — Cristalino",lim:150,alert:112,color:"indigo",unit:"mSv/año"},
+                        {label:"Hp(0.07) — Piel/extremidades",lim:500,alert:375,color:"sky",unit:"mSv/año"},
+                      ].map(item=>{
+                        const c=KPI_COLOR_MAP[item.color]||KPI_COLOR_MAP.blue;
+                        return (
+                          <div key={item.label} className={`rounded-xl ${c.bg} border ${c.border} p-4`}>
+                            <div className={`text-sm font-semibold ${c.text} mb-2`}>{item.label}</div>
+                            <div className={`text-3xl font-black ${c.text}`}>{item.lim}</div>
+                            <div className="text-xs text-gray-500 mb-2">{item.unit} · DS 3/1985</div>
+                            <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                              <div className="h-full bg-current rounded-full" style={{width:`${(item.alert/item.lim)*100}%`,color:"inherit",opacity:0.5}} />
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">🔔 Alerta: {item.alert} mSv/año</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Traffic light info */}
+                  <div className="bg-white rounded-xl border p-5">
+                    <h3 className="font-semibold text-gray-700 mb-3">🚦 Semáforo de riesgo dosimétrico</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {[
+                        {color:"🟢",label:"Normal",range:"0–25%",desc:"≤5 mSv/año Hp(10)",bg:"bg-green-50 border-green-100"},
+                        {color:"🟡",label:"Precaución",range:"25–50%",desc:"5–10 mSv/año",bg:"bg-yellow-50 border-yellow-100"},
+                        {color:"🟠",label:"Moderado",range:"50–75%",desc:"10–15 mSv/año",bg:"bg-orange-50 border-orange-100"},
+                        {color:"🔴",label:"Alerta",range:">75%",desc:">15 mSv/año — acción requerida",bg:"bg-red-50 border-red-100"},
+                      ].map(s=>(
+                        <div key={s.label} className={`rounded-xl border p-3 ${s.bg}`}>
+                          <div className="text-2xl mb-1">{s.color}</div>
+                          <div className="text-sm font-semibold text-gray-700">{s.label}</div>
+                          <div className="text-xs text-gray-500">{s.range} del límite</div>
+                          <div className="text-xs text-gray-400 mt-1">{s.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
-            <div className="bg-gray-50 border rounded-xl p-4 text-xs text-gray-500">
-              <strong className="text-gray-700">Marco normativo:</strong>{" "}
-              DS 3/1985 (MINSAL) Art. 44 — Límite: 20 mSv/año efectivo · 150 mSv/año cristalino · 500 mSv/año piel.
-              Alerta al 75%: 15 mSv/año Hp(10). CCHEN NS-05.0. IAEA GSR Part 3 (2014) Req. 29. ICRP Pub. 103.
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {modal && (
