@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Tag, Activity, AlertTriangle, Atom, Award, BarChart3, Beaker, Bell, Biohazard, Building2, CalendarClock, ClipboardCheck, ClipboardList, Search,
@@ -199,11 +200,15 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-[220px] shrink-0 border-r border-border bg-surface lg:flex lg:flex-col">
-      <div className="flex h-14 items-center gap-2 border-b border-border px-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-foreground">
-          <Radio className="h-4 w-4" strokeWidth={2.5} />
-        </div>
-        <span className="text-sm font-semibold">RPMS</span>
+      <div className="flex h-14 items-center border-b border-border px-2">
+        <Image
+          src="/assets/logo-proteccion-radiologica.png"
+          alt="Protección Radiológica - Hospital Dr. Hernán Henríquez Aravena"
+          width={200}
+          height={48}
+          className="h-10 w-auto object-contain"
+          priority
+        />
       </div>
       <nav className="flex-1 overflow-y-auto space-y-0.5 px-2 py-4 scrollbar-thin">
         {items.map((item) => {

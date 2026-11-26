@@ -502,7 +502,7 @@ export default async function Dashboard() {
     <div className="mx-auto max-w-[1400px] p-6">
       <div className="mb-4 flex items-baseline justify-between">
         <div>
-          <h1 className="text-lg font-semibold tracking-tight">Buenos días, Javiera.</h1>
+          <h1 className="text-lg font-semibold tracking-tight">Buenos días, Diego.</h1>
           <p className="text-xs text-muted-foreground">Estado a {now}</p>
         </div>
       </div>
