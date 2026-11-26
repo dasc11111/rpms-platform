@@ -22,7 +22,7 @@ const NAV = [
   { href: "/search", label: "Búsqueda Global", icon: Search },
   { href: "/workers", label: "Trabajadores", icon: Users },
   { href: "/medical-exams", label: "Exámenes Médicos POE", icon: Stethoscope },
-  { href: "/dosimetria", label: "Dosimetría POE (CCHEN)", icon: Radiation },
+  { href: "/dosimetria", label: "Dosimetría POE", icon: Radiation },
   { href: "/dosimeters", label: "Dosímetros", icon: Tag },
 
   { href: "/dosimetry/worker-history", label: "Dosis Individual", icon: Activity },
@@ -221,7 +221,7 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors",
-                active && "bg-accent-subtle text-foreground font-medium",
+                active && "bg-primary text-primary-foreground font-medium",
               )}
             >
               <Icon className="h-4 w-4 shrink-0" strokeWidth={2} />
