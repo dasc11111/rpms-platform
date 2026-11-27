@@ -382,6 +382,10 @@ return (
 </div>
 </div>
 )}
+        </div>
+        );
+        })()} 
+
 
 
         {/* ── EQUIPO & QC ── */}
@@ -590,7 +594,6 @@ return (
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
