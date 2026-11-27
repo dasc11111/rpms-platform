@@ -1,538 +1,433 @@
 "use client";
 
 import * as React from "react";
+import { useState } from "react";
 import {
-  Activity,
-      AlertTriangle,
-      ShieldCheck,
-      ClipboardCheck,
-      FileText,
-      CalendarClock,
-      History,
-      Gauge,
-      Settings2,
-      FileSpreadsheet,
-      FileDown,
-      ChevronRight,
-    } from "lucide-react";
-import {
-  Card,
-      CardHeader,
-      CardTitle,
-      CardContent,
-      KpiCard,
-      Badge,
-      StatusBadge,
-      SemaphoreDot,
-      Modal,
-      Button,
-      Alert,
-      EmptyState,
-      LineChartCard,
-      DonutChartCard,
-      GaugeChartCard,
-    } from "@/components/ui";
-import { SEMAPHORE } from "@/lib/design-system";
-  import type { SemaphoreLevel } from "@/lib/design-system";
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from "recharts";
 
-const ZONES: { key: string; label: string }[] = [
-  { key: "estadoGeneral", label: "1. Estado General" },
-  { key: "alertas", label: "2. Alertas Criticas" },
-{ key: "kpis", label: "3. Indicadores Operacionales" },
-{ key: "proteccion", label: "4. Proteccion Radiologica" },
-{ key: "calidad", label: "5. Control de Calidad" },
-{ key: "documental", label: "6. Gestion Documental" },
-{ key: "calendario", label: "7. Calendario Inteligente" },
-{ key: "actividad", label: "8. Actividad Reciente" },
-{ key: "ejecutivo", label: "9. Panel Ejecutivo" },
-  ];
-
-const STORAGE_KEY = "rpms-sigr-centro-operaciones-zones";
-
-function levelOrUnknown(level?: string | null): SemaphoreLevel {
-  const valid = ["ok", "warning", "urgent", "critical", "unknown", "disabled"];
-return (valid.includes(level as string) ? level : "unknown") as SemaphoreLevel;
-}
-
-function LevelPill({ level, text }: { level?: string | null; text: string }) {
-const lv = levelOrUnknown(level);
-const cfg = SEMAPHORE[lv];
-return (
-<span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.badgeBg} ${cfg.badgeText}`}>
-<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-{text}
-</span>
-);
-}
-
-function pctLevel(p: number | null | undefined): SemaphoreLevel {
-if (p === null || p === undefined) return "unknown";
-if (p >= 90) return "ok";
-if (p >= 70) return "warning";
-if (p >= 40) return "urgent";
-return "critical";
-}
-
-function fmtPct(p: number | null | undefined): string {
-return p === null || p === undefined ? "S/D" : `${p}%`;
-}
-
-function alertTone(level: string): "info" | "success" | "warning" | "danger" {
-if (level === "critical") return "danger";
-if (level === "urgent" || level === "warning") return "warning";
-return "info";
-}
+const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }> = {
+  blue:   { border: "border-blue-100",   text: "text-blue-600",   bg: "bg-blue-50" },
+  green:  { border: "border-green-100",  text: "text-green-600",  bg: "bg-green-50" },
+  teal:   { border: "border-teal-100",   text: "text-teal-600",   bg: "bg-teal-50" },
+  orange: { border: "border-orange-100", text: "text-orange-600", bg: "bg-orange-50" },
+  red:    { border: "border-red-100",    text: "text-red-600",    bg: "bg-red-50" },
+  yellow: { border: "border-yellow-100", text: "text-yellow-600", bg: "bg-yellow-50" },
+  purple: { border: "border-purple-100", text: "text-purple-600", bg: "bg-purple-50" },
+  sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
+  rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
+  indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
+  gray:   { border: "border-gray-100",   text: "text-gray-600",   bg: "bg-gray-50" },
+};
+const PIE_COLORS_DASH = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#06b6d4"];
 
 export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any; facilityName?: string }) {
-const [auditorOpen, setAuditorOpen] = React.useState(false);
-const [settingsOpen, setSettingsOpen] = React.useState(false);
-const [visibleZones, setVisibleZones] = React.useState<Record<string, boolean>>({});
+  const [dashTab, setDashTab] = useState<"resumen" | "equipo" | "operacion" | "tendencias">("resumen");
 
-React.useEffect(() => {
-try {
-const raw = window.localStorage.getItem(STORAGE_KEY);
-if (raw) setVisibleZones(JSON.parse(raw));
-} catch {}
-}, []);
+  if (!dashboard) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        <p>Cargando datos del dashboard…</p>
+      </div>
+    );
+  }
 
-const isVisible = (key: string) => visibleZones[key] !== false;
+  const kpis = dashboard.kpis || {};
+  const alerts = dashboard.alerts || [];
+  const recentAlerts = dashboard.recentAlerts || [];
+  const monthlyOps = dashboard.monthlyOps || [];
+  const treatmentTypes = dashboard.treatmentTypes || [];
+  const qcStats = dashboard.qcStats || [];
+  const maintenanceStats = dashboard.maintenanceStats || [];
+  const authorizations = dashboard.authorizations || [];
+  const topRisks = dashboard.topRisks || [];
 
-function toggleZone(key: string) {
-setVisibleZones((prev) => {
-const next = { ...prev, [key]: !isVisible(key) };
-try {
-window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-} catch {}
-return next;
-});
-}
-
-async function exportExcel() {
-const XLSX: any = await import("xlsx");
-const rows = [
-{ indicador: "Disponibilidad %", valor: dashboard?.kpis?.availabilityPct ?? "S/D" },
-{ indicador: "MTBF (h)", valor: dashboard?.kpis?.mtbfHours ?? "S/D" },
-{ indicador: "MTTR (h)", valor: dashboard?.kpis?.mttrHours ?? "S/D" },
-{ indicador: "Fallas 30d", valor: dashboard?.kpis?.fallas30d ?? 0 },
-{ indicador: "QC ejecutados 90d", valor: dashboard?.kpis?.qcEjecutados90d ?? 0 },
-{ indicador: "QC no conformes 90d", valor: dashboard?.kpis?.qcNoCumple90d ?? 0 },
-{ indicador: "Mantenimientos 90d", valor: dashboard?.kpis?.mantenimientos90d ?? 0 },
-{ indicador: "Cumplimiento documental %", valor: dashboard?.kpis?.cumplimientoDocumental ?? "S/D" },
-{ indicador: "Cumplimiento capacitacion %", valor: dashboard?.kpis?.cumplimientoCapacitacion ?? "S/D" },
-{ indicador: "Cumplimiento auditorias %", valor: dashboard?.kpis?.cumplimientoAuditorias ?? "S/D" },
-{ indicador: "Cumplimiento autorizaciones %", valor: dashboard?.kpis?.cumplimientoAutorizaciones ?? "S/D" },
-{ indicador: "Cumplimiento general %", valor: dashboard?.panelEjecutivo?.cumplimientoGeneral ?? "S/D" },
-{ indicador: "Indicador global %", valor: dashboard?.panelEjecutivo?.indicadorGlobal ?? "S/D" },
+  const kpiCards = [
+    { label: "Disponibilidad", value: kpis.availability != null ? `${kpis.availability}%` : "—", color: "blue" },
+    { label: "Cumpl. CQ",      value: kpis.qcCompliance  != null ? `${kpis.qcCompliance}%`  : "—", color: "green" },
+    { label: "MTBF (h)",       value: kpis.mtbf           != null ? `${kpis.mtbf}`           : "—", color: "teal" },
+    { label: "MTTR (h)",       value: kpis.mttr           != null ? `${kpis.mttr}`           : "—", color: "orange" },
+    { label: "Pacientes",      value: kpis.totalPatients   != null ? `${kpis.totalPatients}`   : "—", color: "purple" },
+    { label: "Horas Op.",      value: kpis.totalOperatingHours != null ? `${kpis.totalOperatingHours}h` : "—", color: "sky" },
+    { label: "Docs",           value: kpis.documentsTotal  != null ? `${kpis.documentsTotal}`  : "—", color: "indigo" },
+    { label: "Incidentes",     value: kpis.incidentsOpen   != null ? `${kpis.incidentsOpen}`   : "—", color: kpis.incidentsOpen > 0 ? "red" : "gray" },
   ];
-const ws = XLSX.utils.json_to_sheet(rows);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, "Resumen Ejecutivo");
-XLSX.writeFile(wb, "sigr-centro-operaciones.xlsx");
-}
 
-async function exportPdf() {
-const jsPDFMod: any = await import("jspdf");
-const jsPDF = jsPDFMod.default || jsPDFMod.jsPDF;
-const autoTableMod: any = await import("jspdf-autotable");
-const autoTable = autoTableMod.default || autoTableMod;
-const doc = new jsPDF();
-doc.setFontSize(14);
-doc.text(`Centro de Operaciones - ${facilityName || "Servicio de Radioterapia"}`, 14, 16);
-doc.setFontSize(9);
-doc.text(`Generado: ${new Date().toLocaleString("es-CL")}`, 14, 22);
-autoTable(doc, {
-startY: 28,
-  head: [["Indicador", "Valor"]],
-  body: [
-  ["Disponibilidad", fmtPct(dashboard?.kpis?.availabilityPct)],
-  ["Cumplimiento general", fmtPct(dashboard?.panelEjecutivo?.cumplimientoGeneral)],
-  ["Indicador global", fmtPct(dashboard?.panelEjecutivo?.indicadorGlobal)],
-  ["Nivel de riesgo", dashboard?.panelEjecutivo?.nivelRiesgo ?? "S/D"],
-  ["Alertas criticas activas", String((dashboard?.alertasCriticas || []).length)],
-  ],
-  });
-doc.save("sigr-centro-operaciones.pdf");
-}
+  const alertSummary = [
+    { label: "CQ",         count: kpis.qcAlertsOpen          || 0, color: "yellow" },
+    { label: "Radiación",  count: kpis.radiationAlertsOpen   || 0, color: "orange" },
+    { label: "Mantenim.",  count: kpis.maintenanceAlertsOpen || 0, color: "red"    },
+  ];
 
-if (!dashboard) {
-return <EmptyState title="Sin datos" description="Seleccione una instalacion para ver el Centro de Operaciones." />;
-}
+  const TABS = [
+    { id: "resumen",    label: "Resumen" },
+    { id: "equipo",     label: "Equipo & CQ" },
+    { id: "operacion",  label: "Operación" },
+    { id: "tendencias", label: "Tendencias" },
+  ] as const;
 
-const alerts: any[] = dashboard.alertasCriticas || [];
-const linacs: any[] = dashboard.estadoGeneral?.linacs || [];
-const controlCalidad: any[] = dashboard.controlCalidad || [];
-const docsByCategory: any[] = dashboard.gestionDocumental?.documentsByCategory || [];
-const authsExpiring: any[] = dashboard.gestionDocumental?.authorizationsExpiring || [];
-const calendario: any[] = dashboard.calendario || [];
-const actividad: any[] = dashboard.actividadReciente || [];
-const surveys: any[] = dashboard.proteccionRadiologica?.recentSurveys || [];
-const modoAuditor: any[] = dashboard.modoAuditor || [];
-const tendencias: any = dashboard.tendencias || {};
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">Centro de Operaciones</h2>
+          {facilityName && <p className="text-sm text-gray-500">{facilityName}</p>}
+        </div>
+        <span className="text-xs text-gray-400">Actualizado: {new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</span>
+      </div>
 
-const surveyChartData = surveys
-.slice()
-.reverse()
-.map((s: any) => ({
-fecha: String(s.survey_date).slice(0, 10),
-dosis: Number(s.dose_rate ?? s.value ?? 0),
-}));
+      {/* Sub-tabs */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setDashTab(t.id)}
+            className={`px-4 py-2 text-sm font-medium transition-colors ${
+              dashTab === t.id
+                ? "border-b-2 border-blue-500 text-blue-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-return (
-<div className="space-y-6">
-<div className="flex flex-wrap items-center justify-between gap-3">
-<div className="flex items-center gap-3">
-<LevelPill
-level={dashboard.estadoGeneral?.servicioLevel}
-text={`Servicio: ${SEMAPHORE[levelOrUnknown(dashboard.estadoGeneral?.servicioLevel)].label}`}
-/>
-{tendencias.incidentsTrendUp ? <Badge tone="danger">Incidentes en alza (30d)</Badge> : null}
-{tendencias.availabilityTrendDown ? <Badge tone="warning">Disponibilidad en baja</Badge> : null}
-</div>
-<div className="flex flex-wrap items-center gap-2">
-<Button variant="outline" size="sm" icon={<Settings2 className="h-4 w-4" />} onClick={() => setSettingsOpen(true)}>
-Personalizar
-</Button>
-<Button variant="outline" size="sm" icon={<ShieldCheck className="h-4 w-4" />} onClick={() => setAuditorOpen(true)}>
-Modo Auditor
-</Button>
-<Button variant="secondary" size="sm" icon={<FileSpreadsheet className="h-4 w-4" />} onClick={exportExcel}>
-Excel
-</Button>
-<Button variant="secondary" size="sm" icon={<FileDown className="h-4 w-4" />} onClick={exportPdf}>
-PDF
-</Button>
-</div>
-</div>
+      {/* ── RESUMEN ─────────────────────────────────────────── */}
+      {dashTab === "resumen" && (
+        <div className="space-y-4">
+          {/* KPI grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {kpiCards.map(k => {
+              const c = KPI_COLOR_MAP[k.color] || KPI_COLOR_MAP.gray;
+              return (
+                <div key={k.label} className={`rounded-lg border p-3 ${c.border} ${c.bg}`}>
+                  <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+                  <p className={`text-2xl font-bold ${c.text}`}>{k.value}</p>
+                </div>
+              );
+            })}
+          </div>
 
-{isVisible("estadoGeneral") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<Activity className="h-4 w-4" />
-1. Estado General
-</CardTitle>
-</CardHeader>
-<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-<KpiCard
-label="Disponibilidad"
-value={fmtPct(dashboard.estadoGeneral?.availabilityPct)}
-level={pctLevel(dashboard.estadoGeneral?.availabilityPct)}
-icon={<Gauge className="h-5 w-5" />}
-/>
-<KpiCard label="Horas operativas (30d)" value={dashboard.estadoGeneral?.operatingHours30d ?? 0} />
-<KpiCard label="Horas fuera de servicio (30d)" value={dashboard.estadoGeneral?.downtimeHours30d ?? 0} />
-<KpiCard label="Pacientes tratados (30d)" value={dashboard.estadoGeneral?.patients30d ?? 0} />
-<KpiCard label="Aceleradores vinculados" value={linacs.length} />
-<div className="sm:col-span-2 lg:col-span-5 flex flex-wrap gap-2">
-{linacs.length === 0 ? (
-<EmptyState
-title="Sin acelerador vinculado"
-description="Vincule un bunker a un acelerador lineal (modulo Acelerador Lineal) para integrar su operacion, QC y mantenimiento en este Centro de Operaciones."
-/>
-) : (
-linacs.map((l: any) => <StatusBadge key={l.id} status={l.operationalStatus} />)
-)}
-</div>
-</CardContent>
-</Card>
-)}
+          {/* Alert summary pills */}
+          <div className="flex gap-3">
+            {alertSummary.map(a => {
+              const c = KPI_COLOR_MAP[a.color] || KPI_COLOR_MAP.gray;
+              return (
+                <div key={a.label} className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${c.bg} ${c.text}`}>
+                  <span className={`inline-block h-2 w-2 rounded-full ${c.text.replace("text-", "bg-")}`} />
+                  {a.count} alertas {a.label}
+                </div>
+              );
+            })}
+          </div>
 
-{isVisible("alertas") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<AlertTriangle className="h-4 w-4" />
-2. Alertas Criticas ({alerts.length})
-</CardTitle>
-</CardHeader>
-<CardContent className="space-y-2">
-{alerts.length === 0 ? (
-<Alert tone="success" title="Sin alertas criticas activas">
-El servicio no registra alertas prioritarias en este momento.
-</Alert>
-) : (
-alerts.map((a: any, i: number) => (
-<Alert key={i} tone={alertTone(a.level)} title={a.message}>
-Modulo: {a.module}
-</Alert>
-))
-)}
-</CardContent>
-</Card>
-)}
+          {/* Recent alerts */}
+          {recentAlerts.length > 0 && (
+            <div className="rounded-lg border border-gray-100 bg-white">
+              <div className="border-b border-gray-100 px-4 py-2">
+                <h3 className="text-sm font-semibold text-gray-700">Alertas recientes</h3>
+              </div>
+              <ul className="divide-y divide-gray-50">
+                {recentAlerts.slice(0, 6).map((al: any, i: number) => (
+                  <li key={i} className="flex items-start gap-3 px-4 py-2">
+                    <span className={`mt-0.5 inline-block h-2 w-2 flex-shrink-0 rounded-full ${
+                      al.severity === "critical" ? "bg-red-500" :
+                      al.severity === "warning"  ? "bg-yellow-500" : "bg-blue-400"
+                    }`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-gray-700">{al.message || al.description}</p>
+                      <p className="text-xs text-gray-400">{al.created_at ? new Date(al.created_at).toLocaleString("es-MX") : ""}</p>
+                    </div>
+                    <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                      al.severity === "critical" ? "bg-red-100 text-red-700" :
+                      al.severity === "warning"  ? "bg-yellow-100 text-yellow-700" : "bg-blue-100 text-blue-700"
+                    }`}>{al.severity || "info"}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-{isVisible("kpis") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<Gauge className="h-4 w-4" />
-3. Indicadores Operacionales
-</CardTitle>
-</CardHeader>
-<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-<KpiCard label="MTBF" value={dashboard.kpis?.mtbfHours != null ? `${dashboard.kpis.mtbfHours} h` : "S/D"} />
-<KpiCard label="MTTR" value={dashboard.kpis?.mttrHours != null ? `${dashboard.kpis.mttrHours} h` : "S/D"} />
-<KpiCard label="Fallas (30d)" value={dashboard.kpis?.fallas30d ?? 0} />
-<KpiCard label="QC ejecutados (90d)" value={dashboard.kpis?.qcEjecutados90d ?? 0} />
-<KpiCard
-label="QC no conformes (90d)"
-value={dashboard.kpis?.qcNoCumple90d ?? 0}
-level={dashboard.kpis?.qcNoCumple90d > 0 ? "warning" : "ok"}
-/>
-<KpiCard label="Mantenimientos (90d)" value={dashboard.kpis?.mantenimientos90d ?? 0} />
-<KpiCard
-label="Cumplimiento documental"
-value={fmtPct(dashboard.kpis?.cumplimientoDocumental)}
-level={pctLevel(dashboard.kpis?.cumplimientoDocumental)}
-/>
-<KpiCard
-label="Cumplimiento capacitacion"
-value={fmtPct(dashboard.kpis?.cumplimientoCapacitacion)}
-level={pctLevel(dashboard.kpis?.cumplimientoCapacitacion)}
-/>
-<KpiCard
-label="Cumplimiento auditorias"
-value={fmtPct(dashboard.kpis?.cumplimientoAuditorias)}
-level={pctLevel(dashboard.kpis?.cumplimientoAuditorias)}
-/>
-<KpiCard
-label="Cumplimiento autorizaciones"
-value={fmtPct(dashboard.kpis?.cumplimientoAutorizaciones)}
-level={pctLevel(dashboard.kpis?.cumplimientoAutorizaciones)}
-/>
-</CardContent>
-</Card>
-)}
+          {recentAlerts.length === 0 && (
+            <div className="rounded-lg border border-green-100 bg-green-50 px-4 py-6 text-center">
+              <p className="text-sm font-medium text-green-700">✓ Sin alertas activas</p>
+              <p className="text-xs text-green-500 mt-1">Todos los sistemas operando normalmente</p>
+            </div>
+          )}
+        </div>
+      )}
 
-{isVisible("proteccion") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<ShieldCheck className="h-4 w-4" />
-4. Proteccion Radiologica
-</CardTitle>
-</CardHeader>
-<CardContent className="space-y-4">
-<div className="grid gap-4 sm:grid-cols-3">
-<KpiCard
-label="Ultimo levantamiento"
-value={dashboard.proteccionRadiologica?.lastSurvey ? String(dashboard.proteccionRadiologica.lastSurvey.survey_date).slice(0, 10) : "S/D"}
-/>
-<KpiCard
-label="Incidentes radiologicos graves"
-value={dashboard.proteccionRadiologica?.incidentesRadiologicos ?? 0}
-level={dashboard.proteccionRadiologica?.incidentesRadiologicos > 0 ? "critical" : "ok"}
-/>
-<KpiCard label="Dispositivos operativos" value={`${dashboard.kpis?.devicesOperational ?? 0} / ${dashboard.kpis?.devicesTotal ?? 0}`} />
-</div>
-{surveyChartData.length > 0 ? (
-<LineChartCard data={surveyChartData} xKey="fecha" yKeys={["dosis"]} height={220} />
-) : (
-<EmptyState title="Sin levantamientos registrados" description="Registre levantamientos radiometricos en el modulo de Seguridad Radiologica." />
-)}
-</CardContent>
-</Card>
-)}
+      {/* ── EQUIPO & CQ ─────────────────────────────────────── */}
+      {dashTab === "equipo" && (() => {
+        const vigColor: Record<string, string> = {
+          vigente: "text-green-600", proximo: "text-yellow-600", vencido: "text-red-600",
+        };
+        return (
+          <div className="space-y-4">
+            {/* CQ compliance bars */}
+            {qcStats.length > 0 && (
+              <div className="rounded-lg border border-gray-100 bg-white">
+                <div className="border-b border-gray-100 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Cumplimiento de Control de Calidad</h3>
+                </div>
+                <div className="space-y-3 p-4">
+                  {qcStats.map((q: any, i: number) => {
+                    const pct = q.total > 0 ? Math.round((q.ok_count / q.total) * 100) : 0;
+                    const barColor = pct >= 90 ? "bg-green-500" : pct >= 70 ? "bg-yellow-500" : "bg-red-500";
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span className="font-medium">{q.periodicity || q.period}</span>
+                          <span>{q.ok_count}/{q.total} · {pct}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-gray-100">
+                          <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-{isVisible("calidad") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<ClipboardCheck className="h-4 w-4" />
-5. Control de Calidad
-</CardTitle>
-</CardHeader>
-<CardContent>
-<div className="overflow-x-auto">
-<table className="w-full text-sm">
-<thead>
-<tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-<th className="py-2 pr-4">Periodicidad</th>
-<th className="py-2 pr-4">Ultimo resultado</th>
-<th className="py-2 pr-4">Ultima fecha</th>
-<th className="py-2 pr-4">Proximo QC</th>
-<th className="py-2 pr-4">Estado</th>
-</tr>
-</thead>
-<tbody>
-{controlCalidad.map((c: any) => (
-<tr key={c.periodicity} className="border-b border-border/50">
-<td className="py-2 pr-4 font-medium">{c.label}</td>
-<td className="py-2 pr-4">{c.lastStatus ?? "S/D"}</td>
-<td className="py-2 pr-4">{c.lastDate ? String(c.lastDate).slice(0, 10) : "S/D"}</td>
-<td className="py-2 pr-4">{c.nextDue ?? "S/D"}</td>
-<td className="py-2 pr-4">
-<LevelPill level={c.level} text={SEMAPHORE[levelOrUnknown(c.level)].label} />
-</td>
-</tr>
-))}
-</tbody>
-</table>
-</div>
-</CardContent>
-</Card>
-)}
+            {/* Authorizations table */}
+            {authorizations.length > 0 && (
+              <div className="rounded-lg border border-gray-100 bg-white">
+                <div className="border-b border-gray-100 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Autorizaciones</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-50 bg-gray-50 text-xs text-gray-500">
+                        <th className="px-4 py-2 text-left">Documento</th>
+                        <th className="px-4 py-2 text-left">Vencimiento</th>
+                        <th className="px-4 py-2 text-left">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {authorizations.map((a: any, i: number) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 font-medium text-gray-700">{a.doc_type}</td>
+                          <td className="px-4 py-2 text-gray-500">{a.expiry_date ? new Date(a.expiry_date).toLocaleDateString("es-MX") : "—"}</td>
+                          <td className={`px-4 py-2 font-medium ${vigColor[a.vigencyLevel] || "text-gray-500"}`}>
+                            {a.vigencyLevel || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
-{isVisible("documental") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<FileText className="h-4 w-4" />
-6. Gestion Documental
-</CardTitle>
-</CardHeader>
-<CardContent className="grid gap-4 lg:grid-cols-2">
-{docsByCategory.length > 0 ? (
-<DonutChartCard data={docsByCategory} dataKey="count" nameKey="category" height={220} />
-) : (
-<EmptyState title="Sin documentos registrados" />
-)}
-<div className="space-y-2">
-<p className="text-xs font-medium uppercase text-muted-foreground">Autorizaciones por vencer</p>
-{authsExpiring.length === 0 ? (
-<p className="text-sm text-muted-foreground">Sin autorizaciones proximas a vencer.</p>
-) : (
-authsExpiring.slice(0, 8).map((a: any, i: number) => (
-<div key={i} className="flex items-center justify-between text-sm">
-<span>{a.doc_type}</span>
-<LevelPill
-level={
-a.daysRemaining == null
-? "unknown"
-: a.daysRemaining < 0
-? "critical"
-: a.daysRemaining <= 15
-? "urgent"
-: a.daysRemaining <= 30
-? "warning"
-: "ok"
-}
-text={a.daysRemaining != null ? `${a.daysRemaining} dias` : "S/D"}
-/>
-</div>
-))
-)}
-</div>
-</CardContent>
-</Card>
-)}
+            {/* Top risks */}
+            {topRisks.length > 0 && (
+              <div className="rounded-lg border border-gray-100 bg-white">
+                <div className="border-b border-gray-100 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Riesgos principales</h3>
+                </div>
+                <ul className="divide-y divide-gray-50">
+                  {topRisks.map((r: any, i: number) => (
+                    <li key={i} className="flex items-start gap-3 px-4 py-3">
+                      <span className={`mt-1 inline-block h-2 w-2 flex-shrink-0 rounded-full ${
+                        r.risk_level === "alto"   ? "bg-red-500" :
+                        r.risk_level === "medio"  ? "bg-yellow-500" : "bg-green-500"
+                      }`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-gray-700">{r.risk}</p>
+                        {r.responsible && <p className="text-xs text-gray-400">Resp: {r.responsible}</p>}
+                      </div>
+                      <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        r.risk_level === "alto"  ? "bg-red-100 text-red-700" :
+                        r.risk_level === "medio" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"
+                      }`}>{r.risk_level || "—"}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
-{isVisible("calendario") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<CalendarClock className="h-4 w-4" />
-7. Calendario Inteligente
-</CardTitle>
-</CardHeader>
-<CardContent className="space-y-2">
-{calendario.length === 0 ? (
-<EmptyState title="Sin eventos proximos" />
-) : (
-calendario.map((e: any, i: number) => (
-<div key={i} className="flex items-center gap-3 text-sm">
-<SemaphoreDot level={levelOrUnknown(e.level)} />
-<span className="w-24 shrink-0 text-muted-foreground">{String(e.date).slice(0, 10)}</span>
-<span>{e.label}</span>
-</div>
-))
-)}
-</CardContent>
-</Card>
-)}
+      {/* ── OPERACIÓN ───────────────────────────────────────── */}
+      {dashTab === "operacion" && (() => {
+        const totalHrs  = monthlyOps.reduce((s: number, m: any) => s + (m.operating_hours  || 0), 0);
+        const totalDown = monthlyOps.reduce((s: number, m: any) => s + (m.downtime_hours   || 0), 0);
+        const totalPts  = monthlyOps.reduce((s: number, m: any) => s + (m.patients         || 0), 0);
+        const availPct  = totalHrs + totalDown > 0
+          ? Math.round((totalHrs / (totalHrs + totalDown)) * 100)
+          : kpis.availability || 0;
+        const summaryCards = [
+          { label: "Disponibilidad acumulada", value: `${availPct}%`,     color: availPct >= 90 ? "green" : availPct >= 75 ? "yellow" : "red" },
+          { label: "Horas operación",          value: `${totalHrs}h`,     color: "blue" },
+          { label: "Horas paro",               value: `${totalDown}h`,    color: "orange" },
+          { label: "Pacientes atendidos",      value: `${totalPts}`,      color: "purple" },
+        ];
+        return (
+          <div className="space-y-4">
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {summaryCards.map(k => {
+                const c = KPI_COLOR_MAP[k.color] || KPI_COLOR_MAP.gray;
+                return (
+                  <div key={k.label} className={`rounded-lg border p-3 ${c.border} ${c.bg}`}>
+                    <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+                    <p className={`text-xl font-bold ${c.text}`}>{k.value}</p>
+                  </div>
+                );
+              })}
+            </div>
 
-{isVisible("actividad") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<History className="h-4 w-4" />
-8. Actividad Reciente
-</CardTitle>
-</CardHeader>
-<CardContent className="space-y-2">
-{actividad.length === 0 ? (
-<EmptyState title="Sin actividad reciente" />
-) : (
-actividad.map((e: any, i: number) => (
-<div key={i} className="flex flex-wrap items-center gap-2 text-sm">
-<span className="text-muted-foreground">{e.created_at ? new Date(e.created_at).toLocaleString("es-CL") : ""}</span>
-<ChevronRight className="h-3 w-3 text-muted-foreground" />
-<span className="font-medium">{e.actor_email || "sistema"}</span>
-<span>{e.action}</span>
-</div>
-))
-)}
-</CardContent>
-</Card>
-)}
+            {/* Monthly hours bars */}
+            {monthlyOps.length > 0 && (
+              <div className="rounded-lg border border-gray-100 bg-white">
+                <div className="border-b border-gray-100 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Horas por mes</h3>
+                </div>
+                <div className="space-y-3 p-4">
+                  {monthlyOps.map((m: any, i: number) => {
+                    const total = (m.operating_hours || 0) + (m.downtime_hours || 0);
+                    const opPct   = total > 0 ? Math.round((m.operating_hours / total) * 100) : 0;
+                    const downPct = total > 0 ? Math.round((m.downtime_hours  / total) * 100) : 0;
+                    return (
+                      <div key={i}>
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span className="font-medium">{m.month}</span>
+                          <span className="text-gray-400">{m.operating_hours}h op · {m.downtime_hours}h paro</span>
+                        </div>
+                        <div className="flex h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                          <div className="h-2 bg-blue-400" style={{ width: `${opPct}%` }} />
+                          <div className="h-2 bg-red-300"  style={{ width: `${downPct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex gap-4 pt-1 text-xs text-gray-500">
+                    <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded-sm bg-blue-400" /> Operación</span>
+                    <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded-sm bg-red-300"  /> Paro</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
-{isVisible("ejecutivo") && (
-<Card>
-<CardHeader>
-<CardTitle className="flex items-center gap-2">
-<Gauge className="h-4 w-4" />
-9. Panel Ejecutivo
-</CardTitle>
-</CardHeader>
-<CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-center">
-<KpiCard
-label="Cumplimiento general"
-value={fmtPct(dashboard.panelEjecutivo?.cumplimientoGeneral)}
-level={pctLevel(dashboard.panelEjecutivo?.cumplimientoGeneral)}
-/>
-<KpiCard
-label="Nivel de riesgo"
-value={SEMAPHORE[levelOrUnknown(dashboard.panelEjecutivo?.nivelRiesgo)].label}
-level={levelOrUnknown(dashboard.panelEjecutivo?.nivelRiesgo)}
-/>
-<KpiCard
-label="Indice de calidad"
-value={fmtPct(dashboard.panelEjecutivo?.indiceCalidad)}
-level={pctLevel(dashboard.panelEjecutivo?.indiceCalidad)}
-/>
-<KpiCard
-label="Indice de seguridad"
-value={fmtPct(dashboard.panelEjecutivo?.indiceSeguridad)}
-level={pctLevel(dashboard.panelEjecutivo?.indiceSeguridad)}
-/>
-<KpiCard
-label="Cumplimiento normativo"
-value={fmtPct(dashboard.panelEjecutivo?.cumplimientoNormativo)}
-level={pctLevel(dashboard.panelEjecutivo?.cumplimientoNormativo)}
-/>
-<KpiCard
-label="Preparacion para auditoria"
-value={fmtPct(dashboard.panelEjecutivo?.preparacionAuditoria)}
-level={pctLevel(dashboard.panelEjecutivo?.preparacionAuditoria)}
-/>
-<div className="sm:col-span-2 lg:col-span-2">
-<GaugeChartCard value={dashboard.panelEjecutivo?.indicadorGlobal ?? 0} label={fmtPct(dashboard.panelEjecutivo?.indicadorGlobal)} />
-</div>
-</CardContent>
-</Card>
-)}
+            {/* Maintenance stats table */}
+            {maintenanceStats.length > 0 && (
+              <div className="rounded-lg border border-gray-100 bg-white">
+                <div className="border-b border-gray-100 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-gray-700">Estadísticas de mantenimiento</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-50 bg-gray-50 text-xs text-gray-500">
+                        <th className="px-4 py-2 text-left">Tipo</th>
+                        <th className="px-4 py-2 text-right">Órdenes</th>
+                        <th className="px-4 py-2 text-right">Horas paro</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {maintenanceStats.map((m: any, i: number) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 font-medium text-gray-700">{m.maintenance_type}</td>
+                          <td className="px-4 py-2 text-right text-gray-600">{m.count}</td>
+                          <td className="px-4 py-2 text-right text-gray-600">{m.total_downtime_hours ?? "—"}h</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
-<Modal open={auditorOpen} onClose={() => setAuditorOpen(false)} title="Modo Auditor - Cumplimiento normativo" size="lg">
-<div className="space-y-2">
-{modoAuditor.map((f: any) => (
-<div key={f.key} className="flex items-center justify-between border-b border-border/50 py-2 text-sm">
-<span className="font-medium">{f.label}</span>
-<LevelPill level={f.level} text={f.pct != null ? `${f.pct}% (${f.evidenceCount} registros)` : "Sin evidencia registrada"} />
-</div>
-))}
-</div>
-</Modal>
+      {/* ── TENDENCIAS ──────────────────────────────────────── */}
+      {dashTab === "tendencias" && (
+        <div className="space-y-4">
+          {/* Patients by month bar chart */}
+          {monthlyOps.length > 0 && (
+            <div className="rounded-lg border border-gray-100 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-700">Pacientes por mes</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={monthlyOps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="patients" fill="#3b82f6" radius={[3, 3, 0, 0]} name="Pacientes" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
-<Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Personalizar Dashboard" size="sm">
-<div className="space-y-2">
-{ZONES.map((z) => (
-<label key={z.key} className="flex items-center gap-2 text-sm">
-<input type="checkbox" checked={isVisible(z.key)} onChange={() => toggleZone(z.key)} />
-{z.label}
-</label>
-))}
-</div>
-</Modal>
-</div>
-);
+          {/* Operating vs downtime line chart */}
+          {monthlyOps.length > 0 && (
+            <div className="rounded-lg border border-gray-100 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-700">Horas operación vs paro</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={monthlyOps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="operating_hours" stroke="#3b82f6" strokeWidth={2} dot={false} name="Op. (h)" />
+                  <Line type="monotone" dataKey="downtime_hours"  stroke="#ef4444" strokeWidth={2} dot={false} name="Paro (h)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Treatment type pie chart */}
+          {treatmentTypes.length > 0 && (
+            <div className="rounded-lg border border-gray-100 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-700">Tipos de tratamiento</h3>
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width="50%" height={160}>
+                  <PieChart>
+                    <Pie data={treatmentTypes} dataKey="count" nameKey="treatment_type" cx="50%" cy="50%" outerRadius={70} paddingAngle={2}>
+                      {treatmentTypes.map((_: any, idx: number) => (
+                        <Cell key={idx} fill={PIE_COLORS_DASH[idx % PIE_COLORS_DASH.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <ul className="flex-1 space-y-1 text-xs">
+                  {treatmentTypes.map((t: any, idx: number) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ background: PIE_COLORS_DASH[idx % PIE_COLORS_DASH.length] }} />
+                      <span className="truncate text-gray-600">{t.treatment_type}</span>
+                      <span className="ml-auto font-medium text-gray-700">{t.count}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Maintenance by type horizontal bar chart */}
+          {maintenanceStats.length > 0 && (
+            <div className="rounded-lg border border-gray-100 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-gray-700">Órdenes de mantenimiento por tipo</h3>
+              <ResponsiveContainer width="100%" height={maintenanceStats.length * 36 + 20}>
+                <BarChart layout="vertical" data={maintenanceStats} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} />
+                  <YAxis type="category" dataKey="maintenance_type" width={110} tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#a855f7" radius={[0, 3, 3, 0]} name="Órdenes" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -124,6 +124,7 @@ export function TransportApp({
   const [editing, setEditing] = useState<ShipmentRecord | null>(null);
   const [defaultDate, setDefaultDate] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [dashTab, setDashTab] = useState("resumen");
 
   const loadShipments = useCallback(async () => {
     setLoading(true);
@@ -402,6 +403,19 @@ export function TransportApp({
     rojo: "text-danger",
   };
 
+  const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }> = {
+    blue:   { border: "border-blue-100",   text: "text-blue-600",   bg: "bg-blue-50" },
+    indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
+    orange: { border: "border-orange-100", text: "text-orange-600", bg: "bg-orange-50" },
+    red:    { border: "border-red-100",    text: "text-red-600",    bg: "bg-red-50" },
+    rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
+    green:  { border: "border-green-100",  text: "text-green-600",  bg: "bg-green-50" },
+    yellow: { border: "border-yellow-100", text: "text-yellow-600", bg: "bg-yellow-50" },
+    sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
+    purple: { border: "border-purple-100", text: "text-purple-600", bg: "bg-purple-50" },
+    teal:   { border: "border-teal-100",   text: "text-teal-600",   bg: "bg-teal-50" },
+  };
+
   return (
     <div className="space-y-5 p-4 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -448,70 +462,296 @@ export function TransportApp({
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Dashboard Ejecutivo</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Transportes por mes (ultimos 12 meses)</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={stats?.monthlyTrend ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
-                <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      {/* ── Dashboard Profesional ── */}
+      <div className="rounded-lg border border-border bg-surface">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 className="text-sm font-semibold text-foreground">Dashboard Ejecutivo — Transporte IAEA SSR-6</h2>
+          <div className="flex gap-1">
+            {(["resumen","materiales","cumplimiento","tendencias"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setDashTab(t)}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${dashTab === t ? "bg-accent text-white" : "text-muted-foreground hover:bg-accent/10"}`}
+              >
+                {t === "resumen" ? "Resumen" : t === "materiales" ? "Materiales" : t === "cumplimiento" ? "Cumplimiento" : "Tendencias"}
+              </button>
+            ))}
           </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Tendencia anual</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={stats?.yearlyTrend ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="year" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
-                <Line type="monotone" dataKey="total" stroke="#22c55e" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Distribucion por radioisotopo</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={materialPieData} dataKey="value" nameKey="name" outerRadius={70} label>
-                  {materialPieData.map((entry, i) => (
-                    <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Cumplimiento normativo (%)</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={complianceData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
-                <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Actividad total por radioisotopo (mCi)</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={activityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
-                <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        </div>
+
+        <div className="p-4">
+          {/* ── RESUMEN ── */}
+          {dashTab === "resumen" && (() => {
+            const complianceAvgVal = stats ? (() => {
+              const c = stats.compliance;
+              const vals = [c.dosimeterPct, c.radiactivo7Pct, c.nu2915Pct, c.driverPct, c.oprPct].filter((v) => v !== null && v !== undefined) as number[];
+              return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+            })() : null;
+            const semColor = complianceAvgVal === null ? "gray" : complianceAvgVal >= 75 ? "green" : complianceAvgVal >= 50 ? "yellow" : "red";
+            const semMap: Record<string, string> = { green: "text-green-600", yellow: "text-yellow-600", red: "text-red-600", gray: "text-muted-foreground" };
+            const kpis = [
+              { label: "Total transportes", value: stats?.totalTransports ?? "—", color: "blue", sub: "histórico total" },
+              { label: "Hoy", value: stats?.transportsToday ?? "—", color: "sky", sub: "transportes hoy" },
+              { label: "Este mes", value: stats?.transportsThisMonth ?? "—", color: "indigo", sub: "mes en curso" },
+              { label: "Este año", value: stats?.transportsThisYear ?? "—", color: "purple", sub: "año en curso" },
+              { label: "Excedieron límites", value: stats?.exceededLimits ?? 0, color: (stats?.exceededLimits ?? 0) > 0 ? "red" : "green", sub: "registros con exceso" },
+              { label: "Cumplimiento prom.", value: complianceAvgVal !== null ? complianceAvgVal + "%" : "—", color: semColor === "green" ? "green" : semColor === "yellow" ? "yellow" : semColor === "red" ? "red" : "blue", sub: "normativa IAEA" },
+            ];
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                  {kpis.map((k) => {
+                    const cls = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP["blue"];
+                    return (
+                      <div key={k.label} className={`rounded-lg border p-3 ${cls.border} ${cls.bg}`}>
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className={`mt-1 text-2xl font-bold ${cls.text}`}>{k.value}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{k.sub}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Estado autorización */}
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Estado Autorización SEREMI</p>
+                  {stats?.authorization ? (
+                    <div className="flex flex-wrap items-center gap-6">
+                      <div>
+                        <p className="text-xs text-muted-foreground">N° Autorización</p>
+                        <p className="text-sm font-semibold text-foreground">{stats.authorization.number}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Vigencia restante</p>
+                        <p className={`text-sm font-semibold ${semMap[stats.authorization.alertLevel] ?? "text-foreground"}`}>
+                          {stats.authorization.daysRemaining !== null ? `${stats.authorization.daysRemaining} días` : "Sin vencimiento"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Vencimiento</p>
+                        <p className="text-sm font-semibold text-foreground">{stats.authorization.expiryDate ?? "—"}</p>
+                      </div>
+                      <div className="ml-auto">
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${stats.authorization.alertLevel === "verde" ? "bg-green-100 text-green-700" : stats.authorization.alertLevel === "amarillo" ? "bg-yellow-100 text-yellow-700" : stats.authorization.alertLevel === "naranjo" ? "bg-orange-100 text-orange-700" : "bg-red-100 text-red-700"}`}>
+                          {stats.authorization.alertLevel === "verde" ? "Vigente" : stats.authorization.alertLevel === "amarillo" ? "Próximo a vencer" : stats.authorization.alertLevel === "naranjo" ? "Urgente" : "Vencido / Sin autorización"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-semibold text-red-600">Sin autorización registrada</p>
+                  )}
+                </div>
+                {/* Promedios radiológicos */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    { label: "IT promedio", value: stats ? stats.averages.it.toFixed(2) : "—", color: "blue" },
+                    { label: "Dosis contacto (µSv/h)", value: stats ? stats.averages.doseContact.toFixed(1) : "—", color: "orange" },
+                    { label: "Dosis 1 m (µSv/h)", value: stats ? stats.averages.dose1m.toFixed(1) : "—", color: "yellow" },
+                    { label: "Dosis vehículo (µSv/h)", value: stats ? stats.averages.doseVehicle.toFixed(1) : "—", color: "teal" },
+                  ].map((k) => {
+                    const cls = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP["blue"];
+                    return (
+                      <div key={k.label} className={`rounded-lg border p-3 ${cls.border} ${cls.bg}`}>
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className={`mt-1 text-xl font-bold ${cls.text}`}>{k.value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── MATERIALES ── */}
+          {dashTab === "materiales" && (() => {
+            const materials = stats?.materialCounts ?? {};
+            const totalMat = Object.values(materials).reduce((a, b) => a + b, 0) || 1;
+            const matColors = ["blue","indigo","purple","teal","orange","rose"];
+            const matEntries = Object.entries(materials).sort(([,a],[,b]) => b - a);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {[
+                    { label: "Generadores Mo/Tc-99m", value: stats?.materialCounts?.MO_TC99 ?? 0, color: "blue", sub: `${Math.round(((stats?.materialCounts?.MO_TC99 ?? 0) / totalMat) * 100)}% del total` },
+                    { label: "Transportes I-131", value: stats?.materialCounts?.I131 ?? 0, color: "indigo", sub: `${Math.round(((stats?.materialCounts?.I131 ?? 0) / totalMat) * 100)}% del total` },
+                    { label: "Actividad Tc-99m (mCi)", value: stats ? stats.generatorStats.totalActivityMci.toFixed(1) : "—", color: "sky", sub: "actividad acumulada" },
+                    { label: "Actividad I-131 (mCi)", value: stats ? stats.i131Stats.totalActivityMci.toFixed(1) : "—", color: "purple", sub: "actividad acumulada" },
+                  ].map((k) => {
+                    const cls = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP["blue"];
+                    return (
+                      <div key={k.label} className={`rounded-lg border p-3 ${cls.border} ${cls.bg}`}>
+                        <p className="text-xs text-muted-foreground">{k.label}</p>
+                        <p className={`mt-1 text-2xl font-bold ${cls.text}`}>{k.value}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{k.sub}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Distribución por radioisótopo</p>
+                  <div className="space-y-2">
+                    {matEntries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">Sin datos</p>
+                    ) : matEntries.map(([mat, count], idx) => {
+                      const pct = Math.round((count / totalMat) * 100);
+                      const cls = KPI_COLOR_MAP[matColors[idx % matColors.length]];
+                      return (
+                        <div key={mat}>
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="font-medium text-foreground">{mat}</span>
+                            <span className={cls.text}>{count} ({pct}%)</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-gray-100">
+                            <div className={`h-2 rounded-full ${cls.bg.replace("bg-", "bg-").replace("-50", "-400")}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Generadores Mo/Tc-99m</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Total transportes</span><span className="font-medium">{stats?.generatorStats.totalTransports ?? "—"}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Actividad total</span><span className="font-medium">{stats ? stats.generatorStats.totalActivityMci.toFixed(1) : "—"} mCi</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Actividad promedio</span><span className="font-medium">{stats ? stats.generatorStats.avgActivityMci.toFixed(1) : "—"} mCi</span></div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">I-131</p>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between"><span className="text-muted-foreground">Total transportes</span><span className="font-medium">{stats?.i131Stats.totalTransports ?? "—"}</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Actividad total</span><span className="font-medium">{stats ? stats.i131Stats.totalActivityMci.toFixed(1) : "—"} mCi</span></div>
+                      <div className="flex justify-between"><span className="text-muted-foreground">Actividad promedio</span><span className="font-medium">{stats ? stats.i131Stats.avgActivityMci.toFixed(1) : "—"} mCi</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── CUMPLIMIENTO ── */}
+          {dashTab === "cumplimiento" && (() => {
+            const c = stats?.compliance;
+            const fields = [
+              { label: "Dosímetro", value: c?.dosimeterPct ?? null, color: "blue" },
+              { label: "Radiactivo Art. 7", value: c?.radiactivo7Pct ?? null, color: "indigo" },
+              { label: "NCh 2915", value: c?.nu2915Pct ?? null, color: "purple" },
+              { label: "Conductor", value: c?.driverPct ?? null, color: "teal" },
+              { label: "OPR", value: c?.oprPct ?? null, color: "orange" },
+            ];
+            const getColor = (v: number | null) => v === null ? "gray" : v >= 75 ? "green" : v >= 50 ? "yellow" : "red";
+            const semBg: Record<string,string> = { green: "bg-green-400", yellow: "bg-yellow-400", red: "bg-red-400", gray: "bg-gray-300" };
+            const semText: Record<string,string> = { green: "text-green-700", yellow: "text-yellow-700", red: "text-red-700", gray: "text-muted-foreground" };
+            const totalChecked = c?.total ?? 0;
+            const compVals = fields.map(f => f.value).filter(v => v !== null) as number[];
+            const avg = compVals.length ? Math.round(compVals.reduce((a,b) => a+b, 0) / compVals.length) : null;
+            const avgColor = getColor(avg);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className={`rounded-lg border p-3 ${avg !== null && avg >= 75 ? "border-green-100 bg-green-50" : avg !== null && avg >= 50 ? "border-yellow-100 bg-yellow-50" : "border-red-100 bg-red-50"}`}>
+                    <p className="text-xs text-muted-foreground">Cumplimiento promedio</p>
+                    <p className={`mt-1 text-3xl font-bold ${semText[avgColor]}`}>{avg !== null ? avg + "%" : "—"}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">sobre {totalChecked} registros</p>
+                  </div>
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+                    <p className="text-xs text-muted-foreground">Total registros</p>
+                    <p className="mt-1 text-3xl font-bold text-blue-600">{totalChecked}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">con check normativo</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 ${(stats?.exceededLimits ?? 0) > 0 ? "border-red-100 bg-red-50" : "border-green-100 bg-green-50"}`}>
+                    <p className="text-xs text-muted-foreground">Excedieron límites</p>
+                    <p className={`mt-1 text-3xl font-bold ${(stats?.exceededLimits ?? 0) > 0 ? "text-red-600" : "text-green-600"}`}>{stats?.exceededLimits ?? 0}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">registros con exceso</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Detalle por normativa</p>
+                  <div className="space-y-3">
+                    {fields.map((f) => {
+                      const col = getColor(f.value);
+                      return (
+                        <div key={f.label}>
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="font-medium text-foreground">{f.label}</span>
+                            <span className={semText[col]}>{f.value !== null ? f.value + "%" : "Sin datos"}</span>
+                          </div>
+                          <div className="h-3 rounded-full bg-gray-100">
+                            {f.value !== null && (
+                              <div className={`h-3 rounded-full transition-all ${semBg[col]}`} style={{ width: `${f.value}%` }} />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Semáforo:</strong> ≥75% cumplimiento = 🟢 | 50–74% = 🟡 | &lt;50% = 🔴. Basado en registros con documentación completa según IAEA SSR-6.
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── TENDENCIAS ── */}
+          {dashTab === "tendencias" && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Transportes por mes (últimos 12 meses)</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={stats?.monthlyTrend ?? []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                      <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tendencia anual</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={stats?.yearlyTrend ?? []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="year" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                      <Line type="monotone" dataKey="total" stroke="#22c55e" strokeWidth={2} dot={{ r: 4, fill: "#22c55e" }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Distribución por radioisótopo</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={materialPieData} dataKey="value" nameKey="name" outerRadius={70} label={({ name, percent }) => `${name} ${Math.round((percent ?? 0) * 100)}%`}>
+                        {materialPieData.map((entry, i) => (
+                          <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="rounded-lg border border-border bg-background p-4">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Actividad por radioisótopo (mCi)</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={activityData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <YAxis tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                      <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+                      <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
