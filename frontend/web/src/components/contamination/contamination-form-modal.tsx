@@ -17,6 +17,43 @@ import {
   type ContaminationMeasurementPoint,
 } from "@/lib/contamination-points-db";
 
+// Presets de selección rápida por isótopo
+const TC99M_PRESETS: { label: string; points: string[] }[] = [
+  {
+    label: "Laboratorio",
+    points: [
+      "Mesón de laboratorio",
+      "Bandejas",
+      "Mesa de punción",
+      "Portajeringas",
+      "Camilla de laboratorio",
+      "Piso gammacámara",
+    ],
+  },
+  {
+    label: "Sala de Pacientes",
+    points: [
+      "Sala de espera",
+      "Lavamanos baño pacientes",
+      "WC baño pacientes",
+      "Piso baño de pacientes",
+      "Lavamanos baño del personal",
+      "Piso baño del personal",
+    ],
+  },
+];
+
+const I131_PRESETS: string[] = [
+  "Piso de baño y sala",
+  "Manilla de puertas",
+  "Interior de lavamanos",
+  "Contorno WC",
+  "Bolsa ropa de cama",
+  "Bolsa basura común",
+  "Bolsa basura de baño",
+  "Almohada",
+];
+
 type FormState = {
   monitor_year: string;
   monitor_month: string;
@@ -365,7 +402,62 @@ export function ContaminationFormModal({
               </div>
             </div>
 
-            {quickPoints.length > 0 && (
+            {/* Selección rápida por isótopo */}
+            {form.radionuclido === "TC-99M" ? (
+              <div className="rounded-md border border-dashed border-border p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                  Selección rápida — Tc-99m
+                </p>
+                <div className="space-y-2">
+                  {TC99M_PRESETS.map((group) => (
+                    <div key={group.label}>
+                      <p className="mb-1 text-[10px] uppercase text-muted-foreground">{group.label}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.points.map((pt) => (
+                          <button
+                            key={pt}
+                            type="button"
+                            onClick={() => set("punto_medicion", pt)}
+                            className={`rounded-full border px-2.5 py-1 text-xs ${
+                              form.punto_medicion === pt
+                                ? "border-accent bg-accent-subtle font-medium"
+                                : "border-border hover:bg-muted"
+                            }`}
+                          >
+                            {pt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : form.radionuclido === "I-131" ? (
+              <div className="rounded-md border border-dashed border-border p-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">
+                  Selección rápida — I-131
+                </p>
+                <div>
+                  <p className="mb-1 text-[10px] uppercase text-muted-foreground">Sala de hospitalización</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {I131_PRESETS.map((pt) => (
+                      <button
+                        key={pt}
+                        type="button"
+                        onClick={() => set("punto_medicion", pt)}
+                        className={`rounded-full border px-2.5 py-1 text-xs ${
+                          form.punto_medicion === pt
+                            ? "border-accent bg-accent-subtle font-medium"
+                            : "border-border hover:bg-muted"
+                        }`}
+                      >
+                        {pt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : quickPoints.length > 0 ? (
               <div className="rounded-md border border-dashed border-border p-3">
                 <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">
                   Selección rápida de punto de medición (lista configurable)
@@ -401,7 +493,7 @@ export function ContaminationFormModal({
                   })}
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="rounded-md border border-border p-3">
               <p className="mb-2 text-[11px] font-semibold uppercase text-muted-foreground">Instrumento y radionúclido</p>
