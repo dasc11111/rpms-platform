@@ -16,6 +16,7 @@ export interface Equipment {
     equipmentName: string;
     brand: string;
     model: string;
+    category: 'gamma_camera' | 'pet_ct' | 'dose_calibrator' | 'survey_meter' | 'rad_therapy' | 'xray' | 'ct' | 'mri' | 'mammography' | 'densitometry' | 'fluoroscopy' | 'ultrasound' | 'other';
     equipmentSerialNumber: string;
     tubeSerialNumber: string;
     resolutionNumber: string;
@@ -93,6 +94,25 @@ function applyFilters(equipment: Equipment[], filters: FilterState): Equipment[]
           }
           if (filters.serviceFilter.length > 0 && !filters.serviceFilter.includes(eq.service)) return false;
           if (filters.brandFilter.length > 0 && !filters.brandFilter.includes(eq.brand)) return false;
+          if (filters.equipmentTypeFilter.length > 0) {
+                  const categoryLabels: Record<string, string> = {
+                            gamma_camera: 'Gammacámara SPECT',
+                            pet_ct: 'PET/CT',
+                            dose_calibrator: 'Calibrador de Dosis',
+                            survey_meter: 'Monitor de Área',
+                            rad_therapy: 'Radioterapia',
+                            xray: 'Rayos X',
+                            ct: 'Tomógrafo CT',
+                            mri: 'Resonancia Magnética',
+                            mammography: 'Mamógrafo',
+                            densitometry: 'Densitómetro',
+                            fluoroscopy: 'Fluoroscopía',
+                            ultrasound: 'Ecógrafo',
+                            other: 'Otro',
+                  };
+                  const label = categoryLabels[eq.category] ?? eq.category;
+                  if (!filters.equipmentTypeFilter.includes(label)) return false;
+          }
           if (filters.statusFilter.length > 0) {
                   const statusLabels: Record<string, string> = {
                             operativo: 'Operativo',

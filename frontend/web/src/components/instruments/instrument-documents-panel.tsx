@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Download,
   Eye,
+  FileSpreadsheet,
   FileText,
   Printer,
   RotateCw,
@@ -195,6 +196,15 @@ export function InstrumentDocumentsPanel({
               </option>
             ))}
           </select>
+          <a
+            href="/api/instruments/export/xls"
+            download
+            className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium hover:border-accent"
+            title="Exportar listado a Excel"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 text-green-700" />
+            Exportar XLS
+          </a>
           <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border bg-background px-3 text-xs font-medium hover:border-accent">
             <Upload className="h-3.5 w-3.5" />
             {uploading ? "Subiendo..." : "Adjuntar documento"}

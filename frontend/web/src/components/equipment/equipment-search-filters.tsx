@@ -95,7 +95,11 @@ const EquipmentSearchFilters: React.FC<SearchFiltersProps> = ({
     }, [onFiltersChange]);
 
     const serviceOptions = ['Radiología', 'Oncología', 'Cardiología', 'Urgencias'];
-    const equipmentTypes = ['Rayos X', 'Tomógrafo', 'Resonancia', 'Mamógrafo', 'Densitómetro'];
+    const equipmentTypes = [
+          'Gammacámara SPECT', 'PET/CT', 'Calibrador de Dosis', 'Monitor de Área',
+          'Rayos X', 'Tomógrafo CT', 'Resonancia Magnética', 'Mamógrafo',
+          'Densitómetro', 'Fluoroscopía', 'Ecógrafo', 'Radioterapia', 'Otro',
+    ];
     const brandOptions = ['GE', 'Siemens', 'Philips', 'Canon', 'Carestream'];
     const statusOptions = ['Operativo', 'Fuera de servicio', 'En préstamo', 'Dado de baja'];
     const authorizationOptions = ['Vigente', 'Vencida', 'En trámite'];
