@@ -131,7 +131,7 @@ const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }
   sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
   rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
   indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
-  gray:   { border: "border-gray-100",   text: "text-gray-600",   bg: "bg-gray-50" },
+  gray:   { border: "border-border/50",   text: "text-muted-foreground",   bg: "bg-muted/50" },
 };
 
 // ── Pie chart colors ───────────────────────────────────────────────────────────

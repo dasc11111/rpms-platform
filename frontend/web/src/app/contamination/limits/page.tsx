@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Save, AlertTriangle, Info, Pencil, X, Check } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
 
 interface Limit {
   id: number;
@@ -107,8 +107,8 @@ export default function ContaminationLimitsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Límites de Contaminación Superficial</h1>
-          <p className="text-sm text-gray-500 mt-1">Configuración de límites Bq/m² por radionúclido — DS 3/1985 MINSAL / IAEA GSR Part 3</p>
+          <h1 className="text-2xl font-bold text-foreground">Límites de Contaminación Superficial</h1>
+          <p className="text-sm text-muted-foreground mt-1">Configuración de límites Bq/m² por radionúclido — DS 3/1985 MINSAL / IAEA GSR Part 3</p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
           className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition">
@@ -138,37 +138,37 @@ export default function ContaminationLimitsPage() {
           <h2 className="font-semibold text-orange-800">Nuevo radionúclido</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Radionúclido *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Radionúclido *</label>
               <input value={newForm.radionuclido} onChange={e => setNewForm(f => ({ ...f, radionuclido: e.target.value.toUpperCase() }))}
                 placeholder="I131" className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Límite Bq/m² *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Límite Bq/m² *</label>
               <input type="number" value={newForm.limite_bq_m2} onChange={e => setNewForm(f => ({ ...f, limite_bq_m2: e.target.value }))}
                 placeholder="1000000" className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Unidad</label>
+              <label className="block text-xs text-muted-foreground mb-1">Unidad</label>
               <input value={newForm.unidad} onChange={e => setNewForm(f => ({ ...f, unidad: e.target.value }))}
                 placeholder="Bq/m²" className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">% Registro</label>
+              <label className="block text-xs text-muted-foreground mb-1">% Registro</label>
               <input type="number" value={newForm.pct_registro} onChange={e => setNewForm(f => ({ ...f, pct_registro: e.target.value }))}
                 className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">% Investigación</label>
+              <label className="block text-xs text-muted-foreground mb-1">% Investigación</label>
               <input type="number" value={newForm.pct_investigacion} onChange={e => setNewForm(f => ({ ...f, pct_investigacion: e.target.value }))}
                 className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">% Intervención</label>
+              <label className="block text-xs text-muted-foreground mb-1">% Intervención</label>
               <input type="number" value={newForm.pct_intervencion} onChange={e => setNewForm(f => ({ ...f, pct_intervencion: e.target.value }))}
                 className={inp} />
             </div>
             <div className="col-span-2 md:col-span-3">
-              <label className="block text-xs text-gray-600 mb-1">Notas</label>
+              <label className="block text-xs text-muted-foreground mb-1">Notas</label>
               <input value={newForm.notas} onChange={e => setNewForm(f => ({ ...f, notas: e.target.value }))}
                 placeholder="Referencia normativa…" className={inp} />
             </div>
@@ -178,7 +178,7 @@ export default function ContaminationLimitsPage() {
               className="bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50">
               {saving ? "Guardando…" : "Guardar"}
             </button>
-            <button onClick={() => setShowAdd(false)} className="bg-white border border-gray-200 px-5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+            <button onClick={() => setShowAdd(false)} className="bg-background border border-border px-5 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted/50">
               Cancelar
             </button>
           </div>
@@ -188,29 +188,29 @@ export default function ContaminationLimitsPage() {
       {/* Limits list */}
       <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">Cargando…</div>
+          <div className="bg-background rounded-xl border border-border p-8 text-center text-muted-foreground">Cargando…</div>
         ) : limits.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400">Sin límites configurados</div>
+          <div className="bg-background rounded-xl border border-border p-8 text-center text-muted-foreground">Sin límites configurados</div>
         ) : limits.map(l => (
-          <div key={l.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div key={l.id} className="bg-background rounded-xl border border-border overflow-hidden">
             <div className="px-5 py-4 flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-lg text-gray-900">{l.radionuclido}</h3>
-                <p className="text-sm text-gray-500">Límite máximo: {fmtBq(l.limite_bq_m2)} · {l.unidad}</p>
-                {l.notas && <p className="text-xs text-gray-400 mt-0.5">{l.notas}</p>}
+                <h3 className="font-bold text-lg text-foreground">{l.radionuclido}</h3>
+                <p className="text-sm text-muted-foreground">Límite máximo: {fmtBq(l.limite_bq_m2)} · {l.unidad}</p>
+                {l.notas && <p className="text-xs text-muted-foreground mt-0.5">{l.notas}</p>}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   {l.updated_at ? `Actualizado ${new Date(l.updated_at).toLocaleDateString("es-CL")}` : ""}
                 </span>
                 {editing === l.id ? (
                   <button onClick={() => { setEditing(null); setEditForm({}); }}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                    className="p-2 text-muted-foreground hover:text-muted-foreground rounded-lg hover:bg-muted">
                     <X size={16} />
                   </button>
                 ) : (
                   <button onClick={() => { setEditing(l.id); setEditForm({ limite_bq_m2: l.limite_bq_m2, pct_registro: l.pct_registro, pct_investigacion: l.pct_investigacion, pct_intervencion: l.pct_intervencion, notas: l.notas }); setMsg(""); }}
-                    className="p-2 text-gray-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50">
+                    className="p-2 text-muted-foreground hover:text-indigo-600 rounded-lg hover:bg-indigo-50">
                     <Pencil size={16} />
                   </button>
                 )}
@@ -218,35 +218,35 @@ export default function ContaminationLimitsPage() {
             </div>
 
             {editing === l.id ? (
-              <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
+              <div className="px-5 pb-5 border-t border-border/50 pt-4 space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Límite Bq/m²</label>
+                    <label className="block text-xs text-muted-foreground mb-1">Límite Bq/m²</label>
                     <input type="number" value={editForm.limite_bq_m2 ?? l.limite_bq_m2}
                       onChange={e => setEditForm(f => ({ ...f, limite_bq_m2: Number(e.target.value) }))}
                       className={inp} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">% Registro</label>
+                    <label className="block text-xs text-muted-foreground mb-1">% Registro</label>
                     <input type="number" value={editForm.pct_registro ?? l.pct_registro}
                       onChange={e => setEditForm(f => ({ ...f, pct_registro: Number(e.target.value) }))}
                       className={inp} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">% Investigación</label>
+                    <label className="block text-xs text-muted-foreground mb-1">% Investigación</label>
                     <input type="number" value={editForm.pct_investigacion ?? l.pct_investigacion}
                       onChange={e => setEditForm(f => ({ ...f, pct_investigacion: Number(e.target.value) }))}
                       className={inp} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">% Intervención</label>
+                    <label className="block text-xs text-muted-foreground mb-1">% Intervención</label>
                     <input type="number" value={editForm.pct_intervencion ?? l.pct_intervencion}
                       onChange={e => setEditForm(f => ({ ...f, pct_intervencion: Number(e.target.value) }))}
                       className={inp} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Notas</label>
+                  <label className="block text-xs text-muted-foreground mb-1">Notas</label>
                   <input value={editForm.notas ?? l.notas ?? ""}
                     onChange={e => setEditForm(f => ({ ...f, notas: e.target.value }))}
                     className={inp} />
@@ -257,13 +257,13 @@ export default function ContaminationLimitsPage() {
                     <Save size={14} /> {saving ? "Guardando…" : "Guardar cambios"}
                   </button>
                   <button onClick={() => { setEditing(null); setEditForm({}); }}
-                    className="flex items-center gap-1 bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+                    className="flex items-center gap-1 bg-background border border-border px-4 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted/50">
                     <X size={14} /> Cancelar
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+              <div className="px-5 pb-5 border-t border-border/50 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {thresholdLevels(l).map(t => (
                     <div key={t.label} className={`rounded-lg border p-3 ${t.color}`}>

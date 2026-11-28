@@ -66,27 +66,27 @@ function PreviewModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
         onClick={e => e.stopPropagation()}
       >
         {/* header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+        <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/50">
           <div className="flex items-center gap-2 min-w-0">
             <FileText size={16} className="text-blue-600 shrink-0" />
             <span className="text-sm font-medium truncate">{doc.original_name}</span>
-            <span className="text-xs text-gray-400 shrink-0">{fmtSize(doc.size_bytes)}</span>
+            <span className="text-xs text-muted-foreground shrink-0">{fmtSize(doc.size_bytes)}</span>
           </div>
           <div className="flex items-center gap-1 ml-2">
             {isImage && (
               <>
-                <button onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="p-1.5 rounded hover:bg-gray-200" title="Alejar"><ZoomOut size={15} /></button>
-                <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="p-1.5 rounded hover:bg-gray-200" title="Acercar"><ZoomIn size={15} /></button>
-                <button onClick={() => setRotation(r => (r + 90) % 360)} className="p-1.5 rounded hover:bg-gray-200" title="Rotar"><RotateCw size={15} /></button>
+                <button onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="p-1.5 rounded hover:bg-muted" title="Alejar"><ZoomOut size={15} /></button>
+                <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="p-1.5 rounded hover:bg-muted" title="Acercar"><ZoomIn size={15} /></button>
+                <button onClick={() => setRotation(r => (r + 90) % 360)} className="p-1.5 rounded hover:bg-muted" title="Rotar"><RotateCw size={15} /></button>
               </>
             )}
-            <a href={`${previewUrl}?dl=1`} className="p-1.5 rounded hover:bg-gray-200" title="Descargar" download><Download size={15} /></a>
-            <button onClick={() => window.open(previewUrl, "_blank")} className="p-1.5 rounded hover:bg-gray-200" title="Imprimir"><Printer size={15} /></button>
+            <a href={`${previewUrl}?dl=1`} className="p-1.5 rounded hover:bg-muted" title="Descargar" download><Download size={15} /></a>
+            <button onClick={() => window.open(previewUrl, "_blank")} className="p-1.5 rounded hover:bg-muted" title="Imprimir"><Printer size={15} /></button>
             <button onClick={onClose} className="p-1.5 rounded hover:bg-red-100 text-red-500 ml-1" title="Cerrar"><X size={15} /></button>
           </div>
         </div>
         {/* content */}
-        <div className="flex-1 overflow-auto bg-gray-100 flex items-center justify-center p-4">
+        <div className="flex-1 overflow-auto bg-muted flex items-center justify-center p-4">
           {isImage ? (
             <img
               src={previewUrl}
@@ -104,7 +104,7 @@ function PreviewModal({ doc, onClose }: { doc: Doc; onClose: () => void }) {
           )}
         </div>
         {doc.description && (
-          <div className="px-4 py-2 text-xs text-gray-500 border-t bg-gray-50 truncate">
+          <div className="px-4 py-2 text-xs text-muted-foreground border-t bg-muted/50 truncate">
             {doc.description}
           </div>
         )}
@@ -153,12 +153,12 @@ function EditModal({
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm text-gray-800">Editar descripción</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400"><X size={14} /></button>
+          <h3 className="font-semibold text-sm text-foreground">Editar descripción</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground"><X size={14} /></button>
         </div>
-        <p className="text-xs text-gray-500 truncate">{doc.original_name}</p>
+        <p className="text-xs text-muted-foreground truncate">{doc.original_name}</p>
         <textarea
-          className="border border-gray-300 rounded-lg p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={3}
           value={desc}
           onChange={e => setDesc(e.target.value)}
@@ -167,7 +167,7 @@ function EditModal({
         />
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-lg border hover:bg-gray-50">Cancelar</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-lg border hover:bg-muted/50">Cancelar</button>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -229,8 +229,8 @@ function UploadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-5 flex flex-col gap-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm text-gray-800">Subir documento</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400"><X size={14} /></button>
+          <h3 className="font-semibold text-sm text-foreground">Subir documento</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground"><X size={14} /></button>
         </div>
         <input
           type="file"
@@ -244,11 +244,11 @@ function UploadModal({
           placeholder="Descripción (opcional)"
           value={desc}
           onChange={e => setDesc(e.target.value)}
-          className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {err && <p className="text-xs text-red-600">{err}</p>}
         <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-lg border hover:bg-gray-50">Cancelar</button>
+          <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-lg border hover:bg-muted/50">Cancelar</button>
           <button
             onClick={handleUpload}
             disabled={uploading || !files || files.length === 0}
@@ -306,8 +306,8 @@ export function RowPdfActions({
 
   const btnBase =
     size === "xs"
-      ? "p-1 rounded hover:bg-gray-100 transition-colors"
-      : "p-1.5 rounded hover:bg-gray-100 transition-colors";
+      ? "p-1 rounded hover:bg-muted transition-colors"
+      : "p-1.5 rounded hover:bg-muted transition-colors";
   const iconSz = size === "xs" ? 13 : 14;
 
   const previewable = docs.filter(d => isPreviewable(d.mime_type));
@@ -332,7 +332,7 @@ export function RowPdfActions({
         {/* upload */}
         <button
           onClick={() => setShowUpload(true)}
-          className={`${btnBase} text-gray-400 hover:text-blue-600`}
+          className={`${btnBase} text-muted-foreground hover:text-blue-600`}
           title="Subir documento"
         >
           <Upload size={iconSz} />
@@ -342,7 +342,7 @@ export function RowPdfActions({
         {previewable.length > 0 && (
           <button
             onClick={() => setPreviewDoc(previewable[0])}
-            className={`${btnBase} text-gray-400 hover:text-emerald-600`}
+            className={`${btnBase} text-muted-foreground hover:text-emerald-600`}
             title="Previsualizar"
           >
             <Eye size={iconSz} />
@@ -353,7 +353,7 @@ export function RowPdfActions({
         {hasDoc && (
           <button
             onClick={() => setEditDoc(docs[0])}
-            className={`${btnBase} text-gray-400 hover:text-amber-600`}
+            className={`${btnBase} text-muted-foreground hover:text-amber-600`}
             title="Editar descripción"
           >
             <Pencil size={iconSz} />
@@ -365,7 +365,7 @@ export function RowPdfActions({
           <button
             onClick={() => handleDelete(docs[0])}
             disabled={deleting === docs[0].id}
-            className={`${btnBase} text-gray-400 hover:text-red-600 disabled:opacity-50`}
+            className={`${btnBase} text-muted-foreground hover:text-red-600 disabled:opacity-50`}
             title="Eliminar documento"
           >
             <Trash2 size={iconSz} />
@@ -375,17 +375,17 @@ export function RowPdfActions({
 
       {/* expandable doc list */}
       {showList && docs.length > 0 && (
-        <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-sm text-xs divide-y divide-gray-100 max-w-xs">
+        <div className="mt-1 border border-border rounded-lg bg-white shadow-sm text-xs divide-y divide-gray-100 max-w-xs">
           {docs.map(doc => (
             <div key={doc.id} className="flex items-center gap-1 px-2 py-1.5">
-              <FileText size={12} className="text-gray-400 shrink-0" />
-              <span className="truncate flex-1 text-gray-700">{doc.description || doc.original_name}</span>
+              <FileText size={12} className="text-muted-foreground shrink-0" />
+              <span className="truncate flex-1 text-foreground/80">{doc.description || doc.original_name}</span>
               <div className="flex items-center gap-0.5 ml-1 shrink-0">
                 {isPreviewable(doc.mime_type) && (
-                  <button onClick={() => { setPreviewDoc(doc); setShowList(false); }} className="p-0.5 rounded hover:bg-gray-100" title="Previsualizar"><Eye size={11} className="text-emerald-600" /></button>
+                  <button onClick={() => { setPreviewDoc(doc); setShowList(false); }} className="p-0.5 rounded hover:bg-muted" title="Previsualizar"><Eye size={11} className="text-emerald-600" /></button>
                 )}
-                <button onClick={() => { setEditDoc(doc); setShowList(false); }} className="p-0.5 rounded hover:bg-gray-100" title="Editar"><Pencil size={11} className="text-amber-600" /></button>
-                <button onClick={() => handleDelete(doc)} disabled={deleting === doc.id} className="p-0.5 rounded hover:bg-gray-100 disabled:opacity-50" title="Eliminar"><Trash2 size={11} className="text-red-500" /></button>
+                <button onClick={() => { setEditDoc(doc); setShowList(false); }} className="p-0.5 rounded hover:bg-muted" title="Editar"><Pencil size={11} className="text-amber-600" /></button>
+                <button onClick={() => handleDelete(doc)} disabled={deleting === doc.id} className="p-0.5 rounded hover:bg-muted disabled:opacity-50" title="Eliminar"><Trash2 size={11} className="text-red-500" /></button>
               </div>
             </div>
           ))}

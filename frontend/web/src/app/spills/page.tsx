@@ -75,7 +75,7 @@ function SpillCard({ ev, onEdit }: { ev: SpillEvent; onEdit: (e: SpillEvent) => 
   const st  = STATUS_CFG[ev.status] ?? STATUS_CFG.open;
 
   return (
-    <div className={`rounded-xl border-2 ${sev.border} bg-white shadow-sm mb-3`}>
+    <div className={`rounded-xl border-2 ${sev.border} bg-background shadow-sm mb-3`}>
       <button
         className="w-full text-left p-4 flex items-start gap-3"
         onClick={() => setOpen(o => !o)}
@@ -86,42 +86,42 @@ function SpillCard({ ev, onEdit }: { ev: SpillEvent; onEdit: (e: SpillEvent) => 
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${sev.bg} ${sev.text}`}>{sev.label}</span>
-            <span className="flex items-center gap-1 text-xs text-gray-500">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <span className={`inline-block w-2 h-2 rounded-full ${st.dot}`} />
               {st.label}
             </span>
             {ev.radionuclide && (
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-mono">{ev.radionuclide}</span>
+              <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-mono">{ev.radionuclide}</span>
             )}
           </div>
-          <div className="font-semibold text-gray-800 text-sm truncate">{ev.location}</div>
-          <div className="text-xs text-gray-500 mt-0.5">
+          <div className="font-semibold text-foreground text-sm truncate">{ev.location}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
             {fDate(ev.event_date)}{ev.event_time ? ` · ${ev.event_time.slice(0,5)}` : ""}
             {ev.service_area ? ` · ${ev.service_area}` : ""}
           </div>
           {ev.description && (
-            <div className="text-xs text-gray-600 mt-1 truncate">{ev.description}</div>
+            <div className="text-xs text-muted-foreground mt-1 truncate">{ev.description}</div>
           )}
         </div>
-        <div className="ml-2 text-gray-400 flex-shrink-0">
+        <div className="ml-2 text-muted-foreground flex-shrink-0">
           {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
 
       {open && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-3">
+        <div className="px-4 pb-4 border-t border-border/50 pt-3 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-xs">
             {ev.radionuclide && (
-              <div><span className="text-gray-500">Radionúclido:</span> <span className="font-medium">{ev.radionuclide}</span></div>
+              <div><span className="text-muted-foreground">Radionúclido:</span> <span className="font-medium">{ev.radionuclide}</span></div>
             )}
             {ev.activity_mbq != null && (
-              <div><span className="text-gray-500">Actividad:</span> <span className="font-medium">{Number(ev.activity_mbq).toFixed(3)} MBq</span></div>
+              <div><span className="text-muted-foreground">Actividad:</span> <span className="font-medium">{Number(ev.activity_mbq).toFixed(3)} MBq</span></div>
             )}
             {ev.volume_ml != null && (
-              <div><span className="text-gray-500">Volumen:</span> <span className="font-medium">{ev.volume_ml} mL</span></div>
+              <div><span className="text-muted-foreground">Volumen:</span> <span className="font-medium">{ev.volume_ml} mL</span></div>
             )}
             {ev.detected_by && (
-              <div><span className="text-gray-500">Detectado por:</span> <span className="font-medium">{ev.detected_by}</span></div>
+              <div><span className="text-muted-foreground">Detectado por:</span> <span className="font-medium">{ev.detected_by}</span></div>
             )}
           </div>
 
@@ -135,20 +135,20 @@ function SpillCard({ ev, onEdit }: { ev: SpillEvent; onEdit: (e: SpillEvent) => 
 
           {ev.immediate_actions && (
             <div>
-              <div className="text-xs font-semibold text-gray-700 mb-1">Acciones inmediatas</div>
-              <div className="text-xs text-gray-600 bg-blue-50 rounded p-2">{ev.immediate_actions}</div>
+              <div className="text-xs font-semibold text-foreground/80 mb-1">Acciones inmediatas</div>
+              <div className="text-xs text-muted-foreground bg-blue-50 rounded p-2">{ev.immediate_actions}</div>
             </div>
           )}
           {ev.decontamination_steps && (
             <div>
-              <div className="text-xs font-semibold text-gray-700 mb-1">Descontaminación</div>
-              <div className="text-xs text-gray-600 bg-green-50 rounded p-2">{ev.decontamination_steps}</div>
+              <div className="text-xs font-semibold text-foreground/80 mb-1">Descontaminación</div>
+              <div className="text-xs text-muted-foreground bg-green-50 rounded p-2">{ev.decontamination_steps}</div>
             </div>
           )}
           {ev.clearance_survey && (
             <div>
-              <div className="text-xs font-semibold text-gray-700 mb-1">Medición de liberación{ev.clearance_date ? ` — ${fDate(ev.clearance_date)}` : ""}</div>
-              <div className="text-xs text-gray-600 bg-gray-50 rounded p-2">{ev.clearance_survey}</div>
+              <div className="text-xs font-semibold text-foreground/80 mb-1">Medición de liberación{ev.clearance_date ? ` — ${fDate(ev.clearance_date)}` : ""}</div>
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">{ev.clearance_survey}</div>
             </div>
           )}
           {(ev.persons_exposed || ev.dose_estimate_msv != null) && (
@@ -158,23 +158,23 @@ function SpillCard({ ev, onEdit }: { ev: SpillEvent; onEdit: (e: SpillEvent) => 
             </div>
           )}
           {(ev.reported_to || ev.report_date) && (
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               <span className="font-semibold">Notificado a:</span> {ev.reported_to ?? "—"} {ev.report_date ? `· ${fDate(ev.report_date)}` : ""}
             </div>
           )}
           {ev.investigation_findings && (
             <div>
-              <div className="text-xs font-semibold text-gray-700 mb-1">Hallazgos investigación</div>
-              <div className="text-xs text-gray-600">{ev.investigation_findings}</div>
+              <div className="text-xs font-semibold text-foreground/80 mb-1">Hallazgos investigación</div>
+              <div className="text-xs text-muted-foreground">{ev.investigation_findings}</div>
             </div>
           )}
           {ev.corrective_actions && (
             <div>
-              <div className="text-xs font-semibold text-gray-700 mb-1">Acciones correctivas</div>
-              <div className="text-xs text-gray-600">{ev.corrective_actions}</div>
+              <div className="text-xs font-semibold text-foreground/80 mb-1">Acciones correctivas</div>
+              <div className="text-xs text-muted-foreground">{ev.corrective_actions}</div>
             </div>
           )}
-          {ev.notes && <div className="text-xs italic text-gray-500">{ev.notes}</div>}
+          {ev.notes && <div className="text-xs italic text-muted-foreground">{ev.notes}</div>}
           <button
             onClick={() => onEdit(ev)}
             className="mt-1 text-xs text-blue-600 hover:text-blue-800 underline"
@@ -254,17 +254,17 @@ function SpillForm({
     onSaved();
   }
 
-  const inp = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
-  const lbl = "block text-xs font-medium text-gray-700 mb-1";
+  const inp = "w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
+  const lbl = "block text-xs font-medium text-foreground/80 mb-1";
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-bold text-gray-800">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background px-6 py-4 border-b flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-bold text-foreground">
             {initial ? "Editar derrame" : "Registrar derrame / contaminación"}
           </h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-700" /></button>
+          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground hover:text-foreground/80" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -378,8 +378,8 @@ function SpillForm({
             <textarea className={inp} rows={2} value={form.notes} onChange={set("notes")} />
           </div>
         </div>
-        <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex gap-3 justify-end rounded-b-2xl">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+        <div className="sticky bottom-0 bg-background px-6 py-4 border-t flex gap-3 justify-end rounded-b-2xl">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm text-foreground/80 hover:bg-muted/50">Cancelar</button>
           <button
             onClick={save}
             disabled={saving || !form.event_date || !form.location}
@@ -428,8 +428,8 @@ export default function SpillsPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Derrames Radiactivos</h1>
-          <p className="text-sm text-gray-500 mt-1">Gestión de incidentes · DS 3/1985 Art. 42</p>
+          <h1 className="text-2xl font-bold text-foreground">Derrames Radiactivos</h1>
+          <p className="text-sm text-muted-foreground mt-1">Gestión de incidentes · DS 3/1985 Art. 42</p>
         </div>
         <button
           onClick={() => { setEditing(undefined); setShowForm(true); }}
@@ -460,10 +460,10 @@ export default function SpillsPage() {
             { label: "Abiertos", val: stats.open_count, sub: `Cerrados: ${stats.closed_count}` },
             { label: "Último evento", val: stats.last_event ? fDate(stats.last_event) : "—", sub: "" },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">{k.label}</div>
-              <div className="text-xl font-bold text-gray-900">{k.val}</div>
-              {k.sub && <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>}
+            <div key={k.label} className="bg-background rounded-xl border border-border p-4 shadow-sm">
+              <div className="text-xs text-muted-foreground mb-1">{k.label}</div>
+              <div className="text-xl font-bold text-foreground">{k.val}</div>
+              {k.sub && <div className="text-xs text-muted-foreground mt-0.5">{k.sub}</div>}
             </div>
           ))}
         </div>
@@ -474,7 +474,7 @@ export default function SpillsPage() {
         <select
           value={year}
           onChange={e => setYear(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Todos los años</option>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -482,7 +482,7 @@ export default function SpillsPage() {
         <select
           value={severity}
           onChange={e => setSeverity(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Toda severidad</option>
           <option value="minor">Menor</option>
@@ -492,7 +492,7 @@ export default function SpillsPage() {
         <select
           value={status}
           onChange={e => setStatus(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Todo estado</option>
           <option value="open">Abierto</option>
@@ -504,9 +504,9 @@ export default function SpillsPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando…</div>
       ) : events.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <Biohazard className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <div className="font-medium">Sin eventos registrados</div>
           <div className="text-sm mt-1">Use "Registrar derrame" para documentar un incidente.</div>

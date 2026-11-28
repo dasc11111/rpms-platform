@@ -116,7 +116,7 @@ function CalBadge({ status, days }: { status: CalibrationInstrument["cal_status"
     proximo:     { label: "Próx. 90d",      cls: "bg-blue-100 text-blue-800 border-blue-300" },
     por_vencer:  { label: "Por vencer 30d", cls: "bg-orange-100 text-orange-800 border-orange-300" },
     vencida:     { label: "VENCIDA",        cls: "bg-red-100 text-red-800 border-red-300" },
-    sin_calibrar:{ label: "Sin calibrar",   cls: "bg-gray-100 text-gray-700 border-gray-300" },
+    sin_calibrar:{ label: "Sin calibrar",   cls: "bg-muted text-foreground/80 border-border" },
   };
   const { label, cls } = map[status] ?? map["sin_calibrar"];
   return (
@@ -138,7 +138,7 @@ function MaintBadge({ status, days }: { status: MaintenanceInstrument["maint_sta
     proximo:         { label: "Próx. 90d",        cls: "bg-blue-100 text-blue-800 border-blue-300" },
     urgente:         { label: "Urgente 30d",      cls: "bg-orange-100 text-orange-800 border-orange-300" },
     vencido:         { label: "VENCIDO",          cls: "bg-red-100 text-red-800 border-red-300" },
-    sin_mantenimiento:{ label: "Sin mantención", cls: "bg-gray-100 text-gray-700 border-gray-300" },
+    sin_mantenimiento:{ label: "Sin mantención", cls: "bg-muted text-foreground/80 border-border" },
   };
   const { label, cls } = map[status] ?? map["sin_mantenimiento"];
   return (
@@ -562,7 +562,7 @@ export default function InstrumentsMaintenancePage() {
               <KpiTile label="Próx. 90d" value={calStats.proximo} color="bg-blue-50 text-blue-900 border-blue-200" icon={Calendar} />
               <KpiTile label="Por vencer 30d" value={calStats.por_vencer} color="bg-orange-50 text-orange-900 border-orange-200" icon={Clock} />
               <KpiTile label="Vencidas" value={calStats.vencida} color="bg-red-50 text-red-900 border-red-200" icon={AlertTriangle} />
-              <KpiTile label="Sin calibrar" value={calStats.sin_calibrar} color="bg-gray-50 text-gray-700 border-gray-200" icon={Info} />
+              <KpiTile label="Sin calibrar" value={calStats.sin_calibrar} color="bg-muted/50 text-foreground/80 border-border" icon={Info} />
             </div>
           )}
 

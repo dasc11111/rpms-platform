@@ -39,7 +39,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
 };
 
 function TypeBadge({ type }: { type: string }) {
-  const cfg = TYPE_CONFIG[type] ?? { label: type, color: "text-gray-700", bg: "bg-gray-100", icon: ArrowRightLeft };
+  const cfg = TYPE_CONFIG[type] ?? { label: type, color: "text-foreground/80", bg: "bg-muted", icon: ArrowRightLeft };
   const Icon = cfg.icon;
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg.bg, cfg.color)}>
@@ -190,16 +190,16 @@ export default function SourceMovementsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <ArrowRightLeft className="w-7 h-7 text-blue-600" />
             Movimientos IMAR — Fuentes Radiactivas
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Registro de altas, bajas y traslados de fuentes · NS-04 / NS-06.0 — CCHEN
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchData} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+          <button onClick={fetchData} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-lg hover:bg-muted/50">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
@@ -240,11 +240,11 @@ export default function SourceMovementsPage() {
               onClick={() => setFilterType(filterType === type ? "" : type)}
               className={cn(
                 "border rounded-xl p-3 text-left transition-all shadow-sm",
-                filterType === type ? `${cfg.bg} border-current` : "bg-white hover:bg-gray-50"
+                filterType === type ? `${cfg.bg} border-current` : "bg-background hover:bg-muted/50"
               )}
             >
               <Icon className={cn("w-4 h-4 mb-1", cfg.color)} />
-              <p className="text-xs text-gray-500">{cfg.label}</p>
+              <p className="text-xs text-muted-foreground">{cfg.label}</p>
               <p className={cn("text-2xl font-bold", cfg.color)}>{countByType(type)}</p>
             </button>
           );
@@ -252,11 +252,11 @@ export default function SourceMovementsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-gray-500" />
-            <h2 className="font-semibold text-gray-800">
+            <Package className="w-4 h-4 text-muted-foreground" />
+            <h2 className="font-semibold text-foreground">
               {filterType ? `Movimientos: ${TYPE_CONFIG[filterType]?.label ?? filterType}` : "Todos los movimientos IMAR"}
             </h2>
           </div>
@@ -265,16 +265,16 @@ export default function SourceMovementsPage() {
           )}
         </div>
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Cargando movimientos…</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando movimientos…</div>
         ) : movements.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-muted-foreground">
             <ArrowRightLeft className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>Sin movimientos registrados{filterType ? ` del tipo "${TYPE_CONFIG[filterType]?.label}"` : ""}.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+              <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-5 py-3">Fecha</th>
                   <th className="text-left px-4 py-3">Tipo</th>
@@ -289,34 +289,34 @@ export default function SourceMovementsPage() {
               </thead>
               <tbody className="divide-y">
                 {movements.map(m => (
-                  <tr key={m.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 text-gray-700 text-xs whitespace-nowrap">
+                  <tr key={m.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-5 py-3 text-foreground/80 text-xs whitespace-nowrap">
                       {new Date(m.movement_date).toLocaleDateString("es-CL")}
                     </td>
                     <td className="px-4 py-3"><TypeBadge type={m.movement_type} /></td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{m.source_name}</p>
-                      <p className="text-xs text-gray-500">{[m.isotope, m.serial_number].filter(Boolean).join(" · ")}</p>
+                      <p className="font-medium text-foreground">{m.source_name}</p>
+                      <p className="text-xs text-muted-foreground">{[m.isotope, m.serial_number].filter(Boolean).join(" · ")}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {m.origin_location && <span>{m.origin_location}</span>}
                       {m.origin_location && m.destination_location && <span className="mx-1">→</span>}
                       {m.destination_location && <span className="font-medium">{m.destination_location}</span>}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-gray-700">
+                    <td className="px-4 py-3 tabular-nums text-foreground/80">
                       {m.activity_gbq != null ? `${Number(m.activity_gbq).toFixed(3)} GBq` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       <p>{m.responsible ?? "—"}</p>
-                      {m.authorized_by && <p className="text-gray-400">Aut: {m.authorized_by}</p>}
+                      {m.authorized_by && <p className="text-muted-foreground">Aut: {m.authorized_by}</p>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{m.document_ref ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{m.document_ref ?? "—"}</td>
                     <td className="px-4 py-3 text-xs">
                       {m.expected_return_date ? (
                         <span className={cn(
                           new Date(m.expected_return_date) < new Date() && m.movement_type === "prestamo"
                             ? "text-red-600 font-medium"
-                            : "text-gray-600"
+                            : "text-muted-foreground"
                         )}>
                           {new Date(m.expected_return_date).toLocaleDateString("es-CL")}
                         </span>
@@ -326,7 +326,7 @@ export default function SourceMovementsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => openEdit(m)}
-                          className="text-gray-400 hover:text-blue-600 p-1 rounded"
+                          className="text-muted-foreground hover:text-blue-600 p-1 rounded"
                           title="Editar"
                         >
                           <Pencil className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function SourceMovementsPage() {
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={deleting === m.id}
-                          className="text-gray-400 hover:text-red-600 p-1 rounded"
+                          className="text-muted-foreground hover:text-red-600 p-1 rounded"
                           title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -359,15 +359,15 @@ export default function SourceMovementsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-background rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">{editing ? "Editar Movimiento IMAR" : "Registrar Movimiento IMAR"}</h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={closeModal} className="text-muted-foreground hover:text-muted-foreground text-xl">×</button>
             </div>
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de movimiento *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Tipo de movimiento *</label>
                   <select required value={form.movement_type}
                     onChange={e => setForm(f => ({ ...f, movement_type: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -377,87 +377,87 @@ export default function SourceMovementsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Fecha *</label>
                   <input required type="date" value={form.movement_date}
                     onChange={e => setForm(f => ({ ...f, movement_date: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la fuente *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Nombre de la fuente *</label>
                   <input required value={form.source_name}
                     onChange={e => setForm(f => ({ ...f, source_name: e.target.value }))}
                     placeholder="Ej: Fuente sellada Ir-192 HDR"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Isótopo</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Isótopo</label>
                   <input value={form.isotope}
                     onChange={e => setForm(f => ({ ...f, isotope: e.target.value }))}
                     placeholder="Ej: Ir-192, Tc-99m"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">N° serie</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">N° serie</label>
                   <input value={form.serial_number}
                     onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación origen</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Ubicación origen</label>
                   <input value={form.origin_location}
                     onChange={e => setForm(f => ({ ...f, origin_location: e.target.value }))}
                     placeholder="Bodega Radiofarmacia"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación destino</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Ubicación destino</label>
                   <input value={form.destination_location}
                     onChange={e => setForm(f => ({ ...f, destination_location: e.target.value }))}
                     placeholder="Sala de Braquiterapia"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Actividad (GBq)</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Actividad (GBq)</label>
                   <input type="number" step="0.001" value={form.activity_gbq}
                     onChange={e => setForm(f => ({ ...f, activity_gbq: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 {form.movement_type === "prestamo" && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha retorno esperada</label>
+                    <label className="block text-sm font-medium text-foreground/80 mb-1">Fecha retorno esperada</label>
                     <input type="date" value={form.expected_return_date}
                       onChange={e => setForm(f => ({ ...f, expected_return_date: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Responsable</label>
                   <input value={form.responsible}
                     onChange={e => setForm(f => ({ ...f, responsible: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Autorizado por</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Autorizado por</label>
                   <input value={form.authorized_by}
                     onChange={e => setForm(f => ({ ...f, authorized_by: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Referencia documental</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Referencia documental</label>
                   <input value={form.document_ref}
                     onChange={e => setForm(f => ({ ...f, document_ref: e.target.value }))}
                     placeholder="N° acta, resolución, guía despacho..."
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID fuente (radioactive_sources)</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">ID fuente (radioactive_sources)</label>
                   <input type="number" value={form.source_id}
                     onChange={e => setForm(f => ({ ...f, source_id: e.target.value }))}
                     placeholder="ID interno"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Notas</label>
                   <textarea value={form.notes} rows={2}
                     onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" />
@@ -465,7 +465,7 @@ export default function SourceMovementsPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeModal}
-                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
+                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-muted/50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                   {saving ? "Guardando…" : editing ? "Actualizar Movimiento" : "Guardar Movimiento"}

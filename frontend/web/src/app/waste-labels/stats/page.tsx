@@ -40,11 +40,11 @@ function DistBar({ rows, colorClass }: { rows: DistRow[]; colorClass: string }) 
     <div className="space-y-1.5">
       {rows.slice(0, 10).map((r, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
-          <span className="text-gray-700 w-28 shrink-0 truncate">{r.label || "Sin dato"}</span>
-          <div className="flex-1 h-2 bg-gray-100 rounded-full">
+          <span className="text-foreground/80 w-28 shrink-0 truncate">{r.label || "Sin dato"}</span>
+          <div className="flex-1 h-2 bg-muted rounded-full">
             <div className={`h-2 rounded-full ${colorClass}`} style={{ width: `${(r.count / max) * 100}%` }} />
           </div>
-          <span className="text-xs text-gray-500 w-8 text-right">{r.count}</span>
+          <span className="text-xs text-muted-foreground w-8 text-right">{r.count}</span>
         </div>
       ))}
     </div>
@@ -71,7 +71,7 @@ export default function WasteLabelStatsPage() {
   const maxAnual   = data ? Math.max(...data.anual.map(a => Number(a.total) || 0), 1) : 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -81,17 +81,17 @@ export default function WasteLabelStatsPage() {
               <Tag className="h-6 w-6 text-orange-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Estadísticas de Rótulos de Residuos</h1>
-              <p className="text-sm text-gray-500">Análisis de rótulos radiactivos — ciclo de vida, distribuciones y próximos a liberar</p>
+              <h1 className="text-2xl font-bold text-foreground">Estadísticas de Rótulos de Residuos</h1>
+              <p className="text-sm text-muted-foreground">Análisis de rótulos radiactivos — ciclo de vida, distribuciones y próximos a liberar</p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Cargando estadísticas...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando estadísticas...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar datos.</div>
         ) : (
@@ -113,9 +113,9 @@ export default function WasteLabelStatsPage() {
                 { label: "Pendientes",       value: data.totals.pendientes,       color: "yellow" },
                 { label: "Tiempo prom. (d)", value: data.totals.tiempoPromedioAlmacenamientoDias.toFixed(1), color: "gray" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-4 py-4 shadow-sm">
-                  <div className="text-2xl font-bold text-gray-900">{typeof value === "number" ? value.toLocaleString("es-CL") : value}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                <div key={label} className="bg-background rounded-xl border border-border px-4 py-4 shadow-sm">
+                  <div className="text-2xl font-bold text-foreground">{typeof value === "number" ? value.toLocaleString("es-CL") : value}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
                 </div>
               ))}
             </div>
@@ -123,35 +123,35 @@ export default function WasteLabelStatsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Por radionúclido */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Radionúclido</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Radionúclido</h2>
                 <DistBar rows={data.porRadionuclido} colorClass="bg-orange-400" />
               </div>
 
               {/* Por tipo */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Tipo de Residuo</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Tipo de Residuo</h2>
                 <DistBar rows={data.porTipo} colorClass="bg-blue-400" />
               </div>
 
               {/* Por sala */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Sala</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Sala</h2>
                 <DistBar rows={data.porSala} colorClass="bg-teal-400" />
               </div>
 
               {/* Por servicio */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Servicio</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Servicio</h2>
                 <DistBar rows={data.porServicio} colorClass="bg-violet-400" />
               </div>
 
               {/* Mensual */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-orange-400" /> Tendencia Mensual
                 </h2>
-                {data.mensual.length === 0 ? <p className="text-xs text-gray-400">Sin datos.</p> : (
+                {data.mensual.length === 0 ? <p className="text-xs text-muted-foreground">Sin datos.</p> : (
                   <div className="flex items-end gap-1 h-32">
                     {data.mensual.map((m, i) => {
                       const tot = Number(m.total) || 0;
@@ -164,33 +164,33 @@ export default function WasteLabelStatsPage() {
                             <div className="bg-green-400 w-full" style={{ height: `${libH}px` }} />
                             <div className="bg-orange-300 w-full flex-1" />
                           </div>
-                          <span className="text-[9px] text-gray-400">{m.mes.slice(5)}</span>
+                          <span className="text-[9px] text-muted-foreground">{m.mes.slice(5)}</span>
                         </div>
                       );
                     })}
                   </div>
                 )}
-                <div className="flex gap-4 mt-3 text-xs text-gray-500">
+                <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-orange-300 inline-block" /> Total</span>
                   <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-green-400 inline-block" /> Liberados</span>
                 </div>
               </div>
 
               {/* Anual */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-blue-400" /> Histórico Anual
                 </h2>
-                {data.anual.length === 0 ? <p className="text-xs text-gray-400">Sin datos.</p> : (
+                {data.anual.length === 0 ? <p className="text-xs text-muted-foreground">Sin datos.</p> : (
                   <div className="flex items-end gap-2 h-32">
                     {data.anual.map((a, i) => {
                       const tot = Number(a.total) || 0;
                       const h = Math.round((tot / maxAnual) * 96);
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                          <span className="text-[9px] text-gray-400">{tot > 0 ? tot : ""}</span>
+                          <span className="text-[9px] text-muted-foreground">{tot > 0 ? tot : ""}</span>
                           <div className="w-full bg-blue-400 rounded-t" style={{ height: `${Math.max(h, tot > 0 ? 2 : 0)}px` }} />
-                          <span className="text-[9px] text-gray-400">{a.anio}</span>
+                          <span className="text-[9px] text-muted-foreground">{a.anio}</span>
                         </div>
                       );
                     })}
@@ -200,14 +200,14 @@ export default function WasteLabelStatsPage() {
 
               {/* Próximos a decaer */}
               {data.proximosDecaimiento.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 col-span-full">
-                  <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <div className="bg-background rounded-xl border border-border shadow-sm p-5 col-span-full">
+                  <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-yellow-500" /> Próximos a Decaer (30 días)
                   </h2>
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs text-left">
                       <thead>
-                        <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wide">
+                        <tr className="border-b border-border/50 text-muted-foreground uppercase tracking-wide">
                           <th className="py-2 pr-3">Código</th>
                           <th className="py-2 pr-3">Radionúclido</th>
                           <th className="py-2 pr-3">Sala</th>
@@ -218,14 +218,14 @@ export default function WasteLabelStatsPage() {
                       </thead>
                       <tbody>
                         {data.proximosDecaimiento.map((d, i) => (
-                          <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-                            <td className="py-1.5 pr-3 font-mono text-gray-700">{d.waste_code}</td>
+                          <tr key={i} className="border-b border-border/50 hover:bg-muted/50">
+                            <td className="py-1.5 pr-3 font-mono text-foreground/80">{d.waste_code}</td>
                             <td className="py-1.5 pr-3">{d.radionuclide}</td>
-                            <td className="py-1.5 pr-3 text-gray-500">{d.room || "—"}</td>
+                            <td className="py-1.5 pr-3 text-muted-foreground">{d.room || "—"}</td>
                             <td className="py-1.5 pr-3">{d.activity_bq?.toLocaleString("es-CL")} Bq</td>
-                            <td className="py-1.5 pr-3 text-gray-500">{fmtDate(d.label_date)}</td>
+                            <td className="py-1.5 pr-3 text-muted-foreground">{fmtDate(d.label_date)}</td>
                             <td className="py-1.5">
-                              <span className={`font-semibold ${d.dias_restantes <= 0 ? "text-green-600" : d.dias_restantes <= 7 ? "text-yellow-600" : "text-gray-600"}`}>
+                              <span className={`font-semibold ${d.dias_restantes <= 0 ? "text-green-600" : d.dias_restantes <= 7 ? "text-yellow-600" : "text-muted-foreground"}`}>
                                 {d.dias_restantes <= 0 ? "¡Listo!" : d.dias_restantes + " días"}
                               </span>
                             </td>
@@ -239,8 +239,8 @@ export default function WasteLabelStatsPage() {
             </div>
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°133/1984 Ministerio de Minería — Reglamento de Seguridad Radiológica, rotulado y gestión de residuos.
                 Decreto Supremo N°12/2010 MINSAL — Reglamento de protección radiológica de instalaciones radiactivas.

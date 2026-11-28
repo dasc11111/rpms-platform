@@ -47,7 +47,7 @@ const RESULT_CFG = {
   approved:    { label: "Aprobado",     bg: "bg-green-100",  text: "text-green-800",  icon: CheckCircle2  },
   conditional: { label: "Condicional",  bg: "bg-amber-100",  text: "text-amber-800",  icon: AlertTriangle },
   failed:      { label: "No aprobado",  bg: "bg-red-100",    text: "text-red-800",    icon: AlertCircle   },
-  pending:     { label: "Pendiente",    bg: "bg-gray-100",   text: "text-gray-700",   icon: Clock         },
+  pending:     { label: "Pendiente",    bg: "bg-muted",   text: "text-foreground/80",   icon: Clock         },
 } as const;
 
 function fmtDate(d: string | null) {
@@ -352,7 +352,7 @@ export default function InspectionsPage() {
             { label: "Total",         value: stats.total,       icon: ClipboardCheck, color: "text-blue-600" },
             { label: "Aprobadas",     value: stats.approved,    icon: CheckCircle2,   color: "text-green-600" },
             { label: "Condicionales", value: stats.conditional, icon: AlertTriangle,  color: "text-amber-600" },
-            { label: "Seguim. venc.", value: stats.overdue_followup, icon: AlertCircle, color: overdueFollowups > 0 ? "text-red-600" : "text-gray-400" },
+            { label: "Seguim. venc.", value: stats.overdue_followup, icon: AlertCircle, color: overdueFollowups > 0 ? "text-red-600" : "text-muted-foreground" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className={cn("border rounded-xl p-3 flex items-center gap-3",
               label === "Seguim. venc." && overdueFollowups > 0 ? "border-red-200 bg-red-50/40" : "")}>

@@ -55,7 +55,7 @@ interface DashData {
   proximosALiberar: { id: number; label_number: string; dias_restantes: number }[];
 }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300";
 
 const WASTE_TYPE_LABELS: Record<string, string> = {
   capacho_i131: "Capacho I-131",
@@ -203,26 +203,26 @@ export default function WasteStoragePage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-6">
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Warehouse className="h-4 w-4 text-emerald-500" />
             <span>Gestión de Residuos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Almacenamiento Temporal de Residuos Radiactivos</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Almacenamiento Temporal de Residuos Radiactivos</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Inventario en almacenamiento con cálculo automático de decaimiento y criterio de liberación (10 T½).
             DS 3/1985 · NS-06.0 §9.5 · IAEA GSG-1 §5.
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowLocations((p) => !p)} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={() => setShowLocations((p) => !p)} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
             <MapPin className="h-4 w-4" />
             Ubicaciones
           </button>
-          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
             <RefreshCw className="h-4 w-4" />
             Actualizar
           </button>
@@ -246,10 +246,10 @@ export default function WasteStoragePage() {
             { label: "Próx. 30 días", value: dash.totales.proximos30Dias, cls: "text-yellow-700", dot: "bg-yellow-500" },
             { label: "Tiempo prom. (días)", value: dash.totales.tiempoPromedioAlmacenamientoDias, cls: "text-blue-700", dot: "bg-blue-500" },
           ].map((k) => (
-            <div key={k.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div key={k.label} className="rounded-xl border border-border bg-background p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`h-2 w-2 rounded-full ${k.dot}`} />
-                <span className="text-xs text-gray-500">{k.label}</span>
+                <span className="text-xs text-muted-foreground">{k.label}</span>
               </div>
               <span className={`text-2xl font-bold ${k.cls}`}>{k.value}</span>
             </div>
@@ -261,13 +261,13 @@ export default function WasteStoragePage() {
       {dash && (dash.porUbicacion.length > 0 || dash.proximosALiberar.length > 0) && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2">
           {dash.porUbicacion.length > 0 && (
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-500" />Por ubicación</h3>
+            <div className="rounded-xl border border-border bg-background p-4">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3 flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-500" />Por ubicación</h3>
               <div className="space-y-2">
                 {dash.porUbicacion.map((u) => (
                   <div key={u.location} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 truncate max-w-[200px]">{u.location}</span>
-                    <span className="font-semibold text-gray-900 ml-2">{u.count}</span>
+                    <span className="text-muted-foreground truncate max-w-[200px]">{u.location}</span>
+                    <span className="font-semibold text-foreground ml-2">{u.count}</span>
                   </div>
                 ))}
               </div>
@@ -291,34 +291,34 @@ export default function WasteStoragePage() {
 
       {/* ── Locations panel ── */}
       {showLocations && (
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-500" />Ubicaciones de almacenamiento</h3>
+        <div className="mb-6 rounded-xl border border-border bg-background p-5">
+          <h3 className="text-sm font-semibold text-foreground/80 mb-4 flex items-center gap-2"><MapPin className="h-4 w-4 text-emerald-500" />Ubicaciones de almacenamiento</h3>
           <div className="space-y-2 mb-4">
             {locations.map((loc) => (
-              <div key={loc.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm">
+              <div key={loc.id} className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2 text-sm">
                 <div>
-                  <span className={`font-medium ${loc.active ? "text-gray-800" : "text-gray-400 line-through"}`}>{loc.name}</span>
-                  {loc.description && <span className="text-xs text-gray-500 ml-2">— {loc.description}</span>}
-                  {loc.capacity && <span className="text-xs text-gray-400 ml-2">(cap. {loc.capacity})</span>}
+                  <span className={`font-medium ${loc.active ? "text-foreground" : "text-muted-foreground line-through"}`}>{loc.name}</span>
+                  {loc.description && <span className="text-xs text-muted-foreground ml-2">— {loc.description}</span>}
+                  {loc.capacity && <span className="text-xs text-muted-foreground ml-2">(cap. {loc.capacity})</span>}
                   <span className="ml-3 text-xs font-medium text-emerald-600">{loc.current_count ?? 0} activos</span>
                 </div>
-                <button onClick={() => openEditLoc(loc)} className="rounded p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"><Pencil className="h-3.5 w-3.5" /></button>
+                <button onClick={() => openEditLoc(loc)} className="rounded p-1 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50"><Pencil className="h-3.5 w-3.5" /></button>
               </div>
             ))}
           </div>
           {locError && <p className="text-xs text-red-600 mb-2">{locError}</p>}
           <div className="flex gap-2 items-end flex-wrap">
             <div className="flex-1 min-w-[150px]">
-              <label className="block text-xs text-gray-500 mb-1">Nueva ubicación</label>
+              <label className="block text-xs text-muted-foreground mb-1">Nueva ubicación</label>
               <input type="text" value={newLocForm.name} onChange={(e) => setNewLocForm((p) => ({ ...p, name: e.target.value }))} placeholder="Nombre de la ubicación" className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Descripción</label>
-              <input type="text" value={newLocForm.description} onChange={(e) => setNewLocForm((p) => ({ ...p, description: e.target.value }))} placeholder="Opcional" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 w-40" />
+              <label className="block text-xs text-muted-foreground mb-1">Descripción</label>
+              <input type="text" value={newLocForm.description} onChange={(e) => setNewLocForm((p) => ({ ...p, description: e.target.value }))} placeholder="Opcional" className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 w-40" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Capacidad</label>
-              <input type="number" min="1" value={newLocForm.capacity} onChange={(e) => setNewLocForm((p) => ({ ...p, capacity: e.target.value }))} placeholder="N°" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 w-20" />
+              <label className="block text-xs text-muted-foreground mb-1">Capacidad</label>
+              <input type="number" min="1" value={newLocForm.capacity} onChange={(e) => setNewLocForm((p) => ({ ...p, capacity: e.target.value }))} placeholder="N°" className="rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 w-20" />
             </div>
             <button onClick={handleAddLoc} disabled={addingLoc} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60">
               <Plus className="h-4 w-4" />Agregar
@@ -329,36 +329,36 @@ export default function WasteStoragePage() {
 
       {/* ── Filters ── */}
       <div className="mb-4 flex flex-wrap gap-3">
-        <select value={filterLoc} onChange={(e) => setFilterLoc(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterLoc} onChange={(e) => setFilterLoc(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todas las ubicaciones</option>
           {locations.filter((l) => l.active).map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
         </select>
-        <select value={filterEligible} onChange={(e) => setFilterEligible(e.target.value as "" | "si" | "no")} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterEligible} onChange={(e) => setFilterEligible(e.target.value as "" | "si" | "no")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los estados de decaimiento</option>
           <option value="si">Listos para liberar</option>
           <option value="no">En decaimiento</option>
         </select>
-        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los radionúclidos</option>
           {radionuclides.map((r) => <option key={r!} value={r!}>{r}</option>)}
         </select>
-        <label className="flex items-center gap-2 text-sm text-gray-600 self-center">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground self-center">
           <input type="checkbox" checked={includeReleased} onChange={(e) => setIncludeReleased(e.target.checked)} className="rounded" />
           Incluir liberados
         </label>
-        <span className="ml-auto self-center text-xs text-gray-400">
+        <span className="ml-auto self-center text-xs text-muted-foreground">
           {filtered.length} de {inventory.length} ítem{inventory.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* ── Content ── */}
-      {loading && <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-400">Cargando…</div>}
+      {loading && <div className="rounded-xl border border-border bg-background p-12 text-center text-muted-foreground">Cargando…</div>}
       {error && !loading && <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">{error}</div>}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <Warehouse className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">{inventory.length === 0 ? "No hay residuos en almacenamiento." : "No hay ítems que coincidan con los filtros."}</p>
+          <p className="text-muted-foreground text-sm">{inventory.length === 0 ? "No hay residuos en almacenamiento." : "No hay ítems que coincidan con los filtros."}</p>
         </div>
       )}
 
@@ -368,31 +368,31 @@ export default function WasteStoragePage() {
             const isOpen = expanded.has(it.id);
             const db = decayBadge(it);
             return (
-              <div key={it.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                <button onClick={() => toggle(it.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50">
+              <div key={it.id} className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
+                <button onClick={() => toggle(it.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50">
                   <Package className="h-5 w-5 text-emerald-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-bold text-gray-900">{it.label_number}</span>
+                      <span className="font-mono text-sm font-bold text-foreground">{it.label_number}</span>
                       {it.radionuclide_code && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700">{it.radionuclide_code}</span>}
-                      {it.waste_type && <span className="rounded bg-gray-50 px-2 py-0.5 text-xs text-gray-600">{WASTE_TYPE_LABELS[it.waste_type] ?? it.waste_type}</span>}
+                      {it.waste_type && <span className="rounded bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">{WASTE_TYPE_LABELS[it.waste_type] ?? it.waste_type}</span>}
                       <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${db.cls}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${db.dot}`} />
                         {db.label}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       {it.location_name && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{it.location_name}</span>}
                       {it.entry_date && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(it.entry_date)}</span>}
                       {it.elapsed_days !== null && it.elapsed_days !== undefined && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{it.elapsed_days} días almacenado</span>}
                       {it.half_lives_elapsed !== null && it.half_lives_elapsed !== undefined && <span className="flex items-center gap-1"><Activity className="h-3 w-3" />{it.half_lives_elapsed} T½ transcurridos</span>}
                     </div>
                   </div>
-                  {isOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+                  <div className="border-t border-border/50 px-4 py-4 bg-muted/50">
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
                       <Field label="Rótulo" value={it.label_number} mono />
                       <Field label="Radionúclido" value={it.radionuclide_code ?? "—"} />
@@ -418,11 +418,11 @@ export default function WasteStoragePage() {
       )}
 
       {/* ── Regulatory footer ── */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="mt-8 rounded-xl border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600">Marco normativo aplicable</p>
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-medium text-muted-foreground">Marco normativo aplicable</p>
             <p>DS 3/1985 (MINSAL) — Almacenamiento temporal obligatorio hasta cumplir criterio de 10 períodos de semivida</p>
             <p>NS-06.0 §9.5 — Requisitos de infraestructura para almacenamiento y seguimiento de residuos en instalaciones</p>
             <p>IAEA GSG-1 §5 — Predisposal management: storage, monitoring and release conditions for radioactive waste</p>
@@ -434,10 +434,10 @@ export default function WasteStoragePage() {
       {/* ── Edit location modal ── */}
       {editLoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-background shadow-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-gray-900">Editar ubicación</h2>
-              <button onClick={() => setEditLoc(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <h2 className="font-semibold text-foreground">Editar ubicación</h2>
+              <button onClick={() => setEditLoc(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-3">
               <FormField label="Nombre">
@@ -449,13 +449,13 @@ export default function WasteStoragePage() {
               <FormField label="Capacidad (N° rótulos)">
                 <input type="number" min="1" value={editLocForm.capacity} onChange={(e) => setEditLocForm((p) => ({ ...p, capacity: e.target.value }))} className={inp} />
               </FormField>
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm text-foreground/80">
                 <input type="checkbox" checked={editLocForm.active} onChange={(e) => setEditLocForm((p) => ({ ...p, active: e.target.checked }))} />
                 Ubicación activa
               </label>
             </div>
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setEditLoc(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setEditLoc(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={handleSaveLoc} disabled={savingLoc} className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-60">
                 <Save className="h-4 w-4" />{savingLoc ? "Guardando…" : "Guardar"}
               </button>
@@ -472,8 +472,8 @@ export default function WasteStoragePage() {
 function Field({ label, value, mono = false }: { label: string; value: string | number; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-      <dd className={`text-sm text-gray-800 font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+      <dt className="text-xs text-muted-foreground mb-0.5">{label}</dt>
+      <dd className={`text-sm text-foreground font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -481,7 +481,7 @@ function Field({ label, value, mono = false }: { label: string; value: string | 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       {children}
     </div>
   );

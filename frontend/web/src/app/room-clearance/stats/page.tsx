@@ -65,7 +65,7 @@ export default function RoomClearanceStatsPage() {
   const totalRnuclido = data ? data.distribucion_radionuclido.reduce((s, r) => s + r.total, 0) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -75,17 +75,17 @@ export default function RoomClearanceStatsPage() {
               <ScanLine className="h-6 w-6 text-teal-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Estadísticas de Liberación de Salas MN</h1>
-              <p className="text-sm text-gray-500">Resumen de evaluaciones de liberación radiológica de salas de Medicina Nuclear</p>
+              <h1 className="text-2xl font-bold text-foreground">Estadísticas de Liberación de Salas MN</h1>
+              <p className="text-sm text-muted-foreground">Resumen de evaluaciones de liberación radiológica de salas de Medicina Nuclear</p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Cargando estadísticas...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando estadísticas...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar datos.</div>
         ) : (
@@ -106,12 +106,12 @@ export default function RoomClearanceStatsPage() {
                 { label: "Este mes",             value: data.mes,                icon: BarChart3,   color: "blue"   },
                 { label: "Descontaminaciones",   value: data.descontaminaciones, icon: AlertTriangle, color: "red"  },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
+                <div key={label} className="bg-background rounded-xl border border-border px-5 py-4 shadow-sm">
                   <div className={`inline-flex p-2 rounded-lg bg-${color}-100 mb-2`}>
                     <Icon className={`h-4 w-4 text-${color}-600`} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{value.toLocaleString("es-CL")}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">{value.toLocaleString("es-CL")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
                 </div>
               ))}
             </div>
@@ -119,8 +119,8 @@ export default function RoomClearanceStatsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Liberation results */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" /> Resultados de Liberación
                 </h2>
                 <div className="space-y-3 text-sm">
@@ -133,11 +133,11 @@ export default function RoomClearanceStatsPage() {
                     const pct = data.total > 0 ? (value / data.total) * 100 : 0;
                     return (
                       <div key={label} className="flex items-center gap-3">
-                        <span className="text-gray-600 w-48 shrink-0">{label}</span>
-                        <div className="flex-1 h-2 bg-gray-100 rounded-full">
+                        <span className="text-muted-foreground w-48 shrink-0">{label}</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full">
                           <div className={`h-2 rounded-full ${cls}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-xs font-semibold text-gray-700 w-16 text-right">{value} ({pct.toFixed(0)}%)</span>
+                        <span className="text-xs font-semibold text-foreground/80 w-16 text-right">{value} ({pct.toFixed(0)}%)</span>
                       </div>
                     );
                   })}
@@ -145,20 +145,20 @@ export default function RoomClearanceStatsPage() {
               </div>
 
               {/* Dose metrics */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Métricas de Contaminación</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Métricas de Contaminación</h2>
                 <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500 mb-1">Actividad prom.</div>
-                    <div className="font-bold text-gray-800">{fmtBq(data.avg_bq_cm2)}</div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground mb-1">Actividad prom.</div>
+                    <div className="font-bold text-foreground">{fmtBq(data.avg_bq_cm2)}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500 mb-1">Actividad máx.</div>
-                    <div className="font-bold text-gray-800">{fmtBq(data.max_bq_cm2)}</div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground mb-1">Actividad máx.</div>
+                    <div className="font-bold text-foreground">{fmtBq(data.max_bq_cm2)}</div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-xs text-gray-500 mb-1">Tasa dosis prom.</div>
-                    <div className="font-bold text-gray-800">
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="text-xs text-muted-foreground mb-1">Tasa dosis prom.</div>
+                    <div className="font-bold text-foreground">
                       {data.avg_usv_h ? data.avg_usv_h.toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " µSv/h" : "—"}
                     </div>
                   </div>
@@ -176,8 +176,8 @@ export default function RoomClearanceStatsPage() {
               </div>
 
               {/* Por radionúclido */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Radionúclido</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Radionúclido</h2>
                 <div className="space-y-2">
                   {data.distribucion_radionuclido.map((r, i) => {
                     const pct = totalRnuclido > 0 ? (r.total / totalRnuclido) * 100 : 0;
@@ -185,10 +185,10 @@ export default function RoomClearanceStatsPage() {
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <div className="flex-1">
                           <div className="flex justify-between mb-0.5">
-                            <span className="text-gray-700">{r.radionuclido || "Sin dato"}</span>
-                            <span className="text-gray-500 ml-2">{r.total}</span>
+                            <span className="text-foreground/80">{r.radionuclido || "Sin dato"}</span>
+                            <span className="text-muted-foreground ml-2">{r.total}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full">
+                          <div className="h-1.5 bg-muted rounded-full">
                             <div className="h-1.5 bg-teal-500 rounded-full" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
@@ -199,27 +199,27 @@ export default function RoomClearanceStatsPage() {
               </div>
 
               {/* Monthly trend */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-teal-400" /> Historial Mensual
                 </h2>
                 {data.historial_mensual.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin datos.</p>
+                  <p className="text-xs text-muted-foreground">Sin datos.</p>
                 ) : (
                   <div className="flex items-end gap-1 h-32 overflow-x-auto">
                     {data.historial_mensual.map((m, i) => (
                       <div key={i} className="flex-1 min-w-[22px] flex flex-col items-center gap-0.5">
-                        <span className="text-[9px] text-gray-500">{m.total}</span>
+                        <span className="text-[9px] text-muted-foreground">{m.total}</span>
                         <div className="w-full flex flex-col-reverse rounded-t overflow-hidden" style={{ height: `${Math.round((m.total / maxMonth) * 96)}px`, minHeight: "2px" }}>
                           <div className="bg-teal-500 w-full" style={{ height: `${m.total > 0 ? Math.round((m.liberados / m.total) * 100) : 0}%` }} />
                           <div className="bg-teal-200 w-full flex-1" />
                         </div>
-                        <span className="text-[9px] text-gray-400">{m.mes.slice(5)}</span>
+                        <span className="text-[9px] text-muted-foreground">{m.mes.slice(5)}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-teal-500 inline-block" /> Liberadas</div>
                   <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-teal-200 inline-block" /> No liberadas</div>
                 </div>
@@ -228,8 +228,8 @@ export default function RoomClearanceStatsPage() {
             </div>
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°3/1985 MINSAL Art. 60-64 — Monitoreo de contaminación superficial en instalaciones radiactivas.
                 DS N°594/1999 MINSAL — Límites de contaminación superficial en lugares de trabajo controlados.

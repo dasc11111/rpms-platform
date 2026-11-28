@@ -234,7 +234,7 @@ export default function PetCtComparisonApp({ equipment }: { equipment: Equipment
                             <img
                               src={ev.file_url}
                               alt={ev.file_name ?? col.label}
-                              className="w-full h-40 object-contain border rounded bg-slate-50"
+                              className="w-full h-40 object-contain border rounded bg-muted/50"
                             />
                           </a>
                         ) : ev.file_url ? (

@@ -7,7 +7,7 @@ import { RefreshCw, Bell, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } f
 interface Alert { id: number; linac_id: number; module: string; level: string; status: string; title: string; description: string | null; created_at: string; resolved_at: string | null; resolved_by: string | null; criteria_parameter: string | null; criteria_source: string | null; }
 
 const LEVEL_STYLE: Record<string, string> = { critica: "bg-red-100 text-red-700", alta: "bg-orange-100 text-orange-700", media: "bg-yellow-100 text-yellow-700", baja: "bg-blue-100 text-blue-700" };
-const inp = "rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
 
@@ -48,14 +48,14 @@ export default function LinacAlertsPage() {
   const modules = [...new Set(alerts.map(a => a.module))];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-red-100"><Bell className="h-6 w-6 text-red-700" /></div>
-            <div><h1 className="text-2xl font-bold text-gray-900">Alertas LINAC</h1><p className="text-sm text-gray-500">Alertas científicas y de control de calidad</p></div>
+            <div><h1 className="text-2xl font-bold text-foreground">Alertas LINAC</h1><p className="text-sm text-muted-foreground">Alertas científicas y de control de calidad</p></div>
           </div>
-          <button onClick={load} disabled={loading}><RefreshCw className={`h-5 w-5 text-gray-400 ${loading ? "animate-spin" : ""}`} /></button>
+          <button onClick={load} disabled={loading}><RefreshCw className={`h-5 w-5 text-muted-foreground ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
         {criticas > 0 && <div className="bg-red-50 border border-red-200 rounded-xl px-5 py-3 flex items-center gap-2 text-red-700 font-semibold text-sm"><AlertTriangle className="h-4 w-4" /> {criticas} alerta{criticas > 1 ? "s" : ""} crítica{criticas > 1 ? "s" : ""} abiert{criticas > 1 ? "as" : "a"}</div>}
@@ -65,13 +65,13 @@ export default function LinacAlertsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Total", value: alerts.length },
-            { label: "Abiertas", value: abiertas, color: abiertas > 0 ? "text-orange-600" : "text-gray-700" },
-            { label: "Críticas", value: criticas, color: criticas > 0 ? "text-red-600" : "text-gray-700" },
+            { label: "Abiertas", value: abiertas, color: abiertas > 0 ? "text-orange-600" : "text-foreground/80" },
+            { label: "Críticas", value: criticas, color: criticas > 0 ? "text-red-600" : "text-foreground/80" },
             { label: "Resueltas", value: alerts.filter(a => a.status === "resuelta").length },
           ].map(t => (
-            <div key={t.label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-              <div className={`text-2xl font-bold ${t.color ?? "text-gray-700"}`}>{t.value}</div>
-              <div className="text-xs text-gray-400 mt-1">{t.label}</div>
+            <div key={t.label} className="bg-background rounded-xl border border-border shadow-sm p-4 text-center">
+              <div className={`text-2xl font-bold ${t.color ?? "text-foreground/80"}`}>{t.value}</div>
+              <div className="text-xs text-muted-foreground mt-1">{t.label}</div>
             </div>
           ))}
         </div>
@@ -101,24 +101,24 @@ export default function LinacAlertsPage() {
         {/* Alert cards */}
         <div className="space-y-3">
           {alerts.map(alert => (
-            <div key={alert.id} className={`bg-white rounded-xl border shadow-sm ${alert.status === "abierta" && alert.level === "critica" ? "border-red-200" : "border-gray-200"}`}>
+            <div key={alert.id} className={`bg-background rounded-xl border shadow-sm ${alert.status === "abierta" && alert.level === "critica" ? "border-red-200" : "border-border"}`}>
               <button className="w-full flex items-start justify-between px-5 py-4 text-left" onClick={() => setExpanded(expanded === alert.id ? null : alert.id)}>
                 <div className="flex items-start gap-3">
                   {alert.status === "resuelta" ? <CheckCircle className="h-5 w-5 text-green-400 mt-0.5 shrink-0" /> : <AlertTriangle className="h-5 w-5 text-orange-400 mt-0.5 shrink-0" />}
                   <div>
-                    <div className="text-sm font-semibold text-gray-800">{alert.title}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{alert.module} · {fmtDate(alert.created_at)}</div>
+                    <div className="text-sm font-semibold text-foreground">{alert.title}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{alert.module} · {fmtDate(alert.created_at)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${LEVEL_STYLE[alert.level] ?? "bg-gray-100 text-gray-600"}`}>{alert.level}</span>
-                  {expanded === alert.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${LEVEL_STYLE[alert.level] ?? "bg-muted text-muted-foreground"}`}>{alert.level}</span>
+                  {expanded === alert.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </div>
               </button>
               {expanded === alert.id && (
-                <div className="px-5 pb-4 pt-0 border-t border-gray-50 space-y-2">
-                  {alert.description && <p className="text-sm text-gray-600">{alert.description}</p>}
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                <div className="px-5 pb-4 pt-0 border-t border-border/50 space-y-2">
+                  {alert.description && <p className="text-sm text-muted-foreground">{alert.description}</p>}
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     {alert.criteria_parameter && <span>Parámetro: {alert.criteria_parameter}</span>}
                     {alert.criteria_source && <span>Fuente: {alert.criteria_source}</span>}
                     {alert.resolved_at && <span>Resuelto: {fmtDate(alert.resolved_at)}</span>}
@@ -133,10 +133,10 @@ export default function LinacAlertsPage() {
           ))}
         </div>
 
-        {alerts.length === 0 && !loading && <div className="text-center py-12 text-gray-400">No hay alertas para los filtros seleccionados</div>}
+        {alerts.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">No hay alertas para los filtros seleccionados</div>}
 
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo</p>
           <p>AAPM TG-142 — Gestión de alertas y no conformidades en CC de aceleradores. IAEA TECDOC-1040 — Sistema de notificación de eventos en radioterapia. DS N°12/2010 MINSAL — Requisitos de registro y seguimiento de incidencias.</p>
         </div>
       </div>

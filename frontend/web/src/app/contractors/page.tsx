@@ -72,10 +72,10 @@ function DoseBar({ dose, limit = DOSE_LIMIT }: { dose: number; limit?: number })
   const color = pct >= 90 ? "bg-red-500" : pct >= 75 ? "bg-orange-500" : pct >= 50 ? "bg-yellow-500" : "bg-green-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-gray-600 w-20 text-right">
+      <span className="text-xs text-muted-foreground w-20 text-right">
         {Number(dose).toFixed(1)} / {limit} mSv
       </span>
     </div>
@@ -111,7 +111,7 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
   });
   const [savingVisit, setSavingVisit] = useState(false);
 
-  const sp = SPECIALTY_CONFIG[contractor.specialty] ?? { label: contractor.specialty, color: "bg-gray-100 text-gray-800" };
+  const sp = SPECIALTY_CONFIG[contractor.specialty] ?? { label: contractor.specialty, color: "bg-muted text-foreground" };
   const hasIssues = contractor.compliance_issues && contractor.compliance_issues.length > 0;
   const dosePct = (Number(contractor.annual_dose_mSv) / DOSE_LIMIT) * 100;
 
@@ -151,21 +151,21 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
   }
 
   return (
-    <div className={`bg-white rounded-xl border-2 shadow-sm ${hasIssues ? "border-orange-300" : "border-gray-200"}`}>
+    <div className={`bg-background rounded-xl border-2 shadow-sm ${hasIssues ? "border-orange-300" : "border-border"}`}>
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-full ${hasIssues ? "bg-orange-100" : "bg-gray-100"} flex-shrink-0`}>
-            <User className={`w-5 h-5 ${hasIssues ? "text-orange-600" : "text-gray-600"}`} />
+          <div className={`p-2 rounded-full ${hasIssues ? "bg-orange-100" : "bg-muted"} flex-shrink-0`}>
+            <User className={`w-5 h-5 ${hasIssues ? "text-orange-600" : "text-muted-foreground"}`} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="font-semibold text-gray-900 text-sm">{contractor.full_name}</h3>
+              <h3 className="font-semibold text-foreground text-sm">{contractor.full_name}</h3>
               <span className={`text-xs px-2 py-0.5 rounded-full ${sp.color}`}>{sp.label}</span>
               {contractor.status === "inactive" && (
-                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Inactivo</span>
+                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactivo</span>
               )}
             </div>
-            <p className="text-xs text-gray-500">{contractor.company} · {contractor.role}</p>
+            <p className="text-xs text-muted-foreground">{contractor.company} · {contractor.role}</p>
             {hasIssues && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {contractor.compliance_issues.map(issue => (
@@ -177,7 +177,7 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
               <RowPdfActions module="contractors" ownerType="contractor" ownerId={String(contractor.id)} size="xs" />
             </div>
           </div>
-          <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <button onClick={toggleExpand} className="text-muted-foreground hover:text-muted-foreground flex-shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -193,7 +193,7 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
         {/* Dose bar */}
         {Number(contractor.annual_dose_mSv) > 0 && (
           <div className="mt-3">
-            <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span>Dosis anual acumulada</span>
               <span>{dosePct.toFixed(0)}% del límite</span>
             </div>
@@ -204,16 +204,16 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
         {/* Quick stats */}
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div>
-            <span className="text-gray-400 block">Última visita</span>
-            <span className="text-gray-700 font-medium">{formatDate(contractor.last_visit_date)}</span>
+            <span className="text-muted-foreground block">Última visita</span>
+            <span className="text-foreground/80 font-medium">{formatDate(contractor.last_visit_date)}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Visitas este año</span>
-            <span className="text-gray-700 font-medium">{contractor.visits_this_year ?? 0}</span>
+            <span className="text-muted-foreground block">Visitas este año</span>
+            <span className="text-foreground/80 font-medium">{contractor.visits_this_year ?? 0}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Dosis acum. total</span>
-            <span className="text-gray-700 font-medium">{Number(contractor.cumulative_dose_mSv).toFixed(1)} mSv</span>
+            <span className="text-muted-foreground block">Dosis acum. total</span>
+            <span className="text-foreground/80 font-medium">{Number(contractor.cumulative_dose_mSv).toFixed(1)} mSv</span>
           </div>
         </div>
 
@@ -228,10 +228,10 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-gray-100 p-4 space-y-4">
+        <div className="border-t border-border/50 p-4 space-y-4">
           {/* Compliance checklist */}
           <div>
-            <span className="text-xs font-semibold text-gray-700 block mb-2">Requisitos PR</span>
+            <span className="text-xs font-semibold text-foreground/80 block mb-2">Requisitos PR</span>
             <div className="grid grid-cols-2 gap-2">
               <CheckItem ok={contractor.has_dosimeter} label={contractor.has_dosimeter ? `Dosímetro ${contractor.dosimeter_number}` : "Dosímetro asignado"} />
               <CheckItem ok={contractor.has_pr_training} label={`Capacitación PR${contractor.pr_training_expiry ? ` (vence ${formatDate(contractor.pr_training_expiry)})` : ""}`} />
@@ -239,7 +239,7 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
               <CheckItem ok={!!contractor.authorized_areas} label="Áreas autorizadas definidas" />
             </div>
             {contractor.authorized_areas && (
-              <p className="text-xs text-gray-600 mt-2 bg-gray-50 rounded p-2">
+              <p className="text-xs text-muted-foreground mt-2 bg-muted/50 rounded p-2">
                 <strong>Áreas:</strong> {contractor.authorized_areas}
               </p>
             )}
@@ -251,32 +251,32 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
               <h4 className="text-xs font-semibold text-blue-800">Registrar visita</h4>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-0.5">Fecha *</label>
-                  <input type="date" className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <label className="block text-xs text-muted-foreground mb-0.5">Fecha *</label>
+                  <input type="date" className="w-full border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     value={visitForm.visit_date} onChange={e => setVisitForm(f => ({ ...f, visit_date: e.target.value }))} required />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-0.5">Dosis recibida (mSv)</label>
-                  <input type="number" step="0.001" min="0" className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  <label className="block text-xs text-muted-foreground mb-0.5">Dosis recibida (mSv)</label>
+                  <input type="number" step="0.001" min="0" className="w-full border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder="0.000" value={visitForm.dose_received_mSv}
                     onChange={e => setVisitForm(f => ({ ...f, dose_received_mSv: e.target.value }))} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-0.5">Propósito *</label>
-                <input type="text" required className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                <label className="block text-xs text-muted-foreground mb-0.5">Propósito *</label>
+                <input type="text" required className="w-full border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="Mantención, instalación, visita técnica..."
                   value={visitForm.purpose} onChange={e => setVisitForm(f => ({ ...f, purpose: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-0.5">Áreas accedidas</label>
-                <input type="text" className="w-full border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+                <label className="block text-xs text-muted-foreground mb-0.5">Áreas accedidas</label>
+                <input type="text" className="w-full border border-border rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder="Sala técnica, sala de control..." value={visitForm.areas_accessed}
                   onChange={e => setVisitForm(f => ({ ...f, areas_accessed: e.target.value }))} />
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setShowVisitForm(false)}
-                  className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-50">
+                  className="flex-1 px-3 py-1.5 border border-border rounded text-xs text-foreground/80 hover:bg-muted/50">
                   Cancelar
                 </button>
                 <button type="submit" disabled={savingVisit}
@@ -289,21 +289,21 @@ function ContractorCard({ contractor, onRefresh }: { contractor: Contractor; onR
 
           {/* Visits */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-700 mb-2">Historial de visitas</h4>
+            <h4 className="text-xs font-semibold text-foreground/80 mb-2">Historial de visitas</h4>
             {loadingVisits ? (
-              <p className="text-xs text-gray-400">Cargando...</p>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             ) : visits.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin visitas registradas</p>
+              <p className="text-xs text-muted-foreground">Sin visitas registradas</p>
             ) : (
               <div className="space-y-1.5">
                 {visits.map(v => (
-                  <div key={v.id} className="flex items-start gap-3 text-xs bg-gray-50 rounded px-3 py-2">
-                    <span className="text-gray-400 w-20 flex-shrink-0">{formatDate(v.visit_date)}</span>
-                    <span className="font-medium text-gray-700 flex-1">{v.purpose}</span>
+                  <div key={v.id} className="flex items-start gap-3 text-xs bg-muted/50 rounded px-3 py-2">
+                    <span className="text-muted-foreground w-20 flex-shrink-0">{formatDate(v.visit_date)}</span>
+                    <span className="font-medium text-foreground/80 flex-1">{v.purpose}</span>
                     {v.dose_received_mSv && (
                       <span className="text-blue-600 font-mono">{Number(v.dose_received_mSv).toFixed(3)} mSv</span>
                     )}
-                    <span className="text-gray-400">{v.supervisor}</span>
+                    <span className="text-muted-foreground">{v.supervisor}</span>
                   </div>
                 ))}
               </div>
@@ -352,11 +352,11 @@ export default function ContractorsPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Truck className="w-7 h-7 text-blue-600" />
           Personal Externo y Contratistas POE
         </h1>
-        <p className="text-sm text-gray-500 mt-1">DS 3/1985 Arts. 20–23 · CCHEN NS-05.0 §7.4 · IAEA GSR Part 3 Req. 24</p>
+        <p className="text-sm text-muted-foreground mt-1">DS 3/1985 Arts. 20–23 · CCHEN NS-05.0 §7.4 · IAEA GSR Part 3 Req. 24</p>
       </div>
 
       {/* Critical banner */}
@@ -386,7 +386,7 @@ export default function ContractorsPage() {
           <div key={t.label} className={`${t.bg} rounded-xl p-3`}>
             <div className={`${t.color} mb-1`}>{t.icon}</div>
             <div className={`text-2xl font-bold ${t.color}`}>{t.value}</div>
-            <div className="text-xs text-gray-600">{t.label}</div>
+            <div className="text-xs text-muted-foreground">{t.label}</div>
           </div>
         ))}
       </div>
@@ -394,7 +394,7 @@ export default function ContractorsPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterSpecialty}
           onChange={e => setFilterSpecialty(e.target.value)}
         >
@@ -404,7 +404,7 @@ export default function ContractorsPage() {
           ))}
         </select>
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterCompliance}
           onChange={e => setFilterCompliance(e.target.value)}
         >
@@ -412,12 +412,12 @@ export default function ContractorsPage() {
           <option value="issues">Con incumplimientos</option>
           <option value="ok">Conformes</option>
         </select>
-        <span className="text-sm text-gray-500 self-center">{filtered.length} contratista(s)</span>
+        <span className="text-sm text-muted-foreground self-center">{filtered.length} contratista(s)</span>
       </div>
 
       {/* Cards */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Cargando contratistas...</div>
+        <div className="text-center py-12 text-muted-foreground">Cargando contratistas...</div>
       ) : (
         <div className="space-y-4">
           {filtered.map(c => (
@@ -427,8 +427,8 @@ export default function ContractorsPage() {
       )}
 
       {/* Regulatory framework */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-600 space-y-1">
-        <p className="font-semibold text-gray-800 mb-2">Marco regulatorio aplicable</p>
+      <div className="bg-muted/50 border border-border rounded-xl p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground mb-2">Marco regulatorio aplicable</p>
         <p>• <strong>DS 3/1985 Arts. 20–23:</strong> Responsabilidades del empleador y contratista en la PR del trabajador externo</p>
         <p>• <strong>CCHEN NS-05.0 §7.4:</strong> Requisitos de capacitación para trabajadores externos en zona controlada</p>
         <p>• <strong>IAEA GSR Part 3 Req. 24:</strong> Coordinación de responsabilidades entre empleadores para trabajadores externos</p>

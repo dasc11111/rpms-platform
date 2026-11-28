@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, FileText, Filter } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
 
 type ExportFormat = "csv" | "xlsx" | "pdf";
 
@@ -58,23 +58,23 @@ export default function I131ExportPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Exportar Registros I-131</h1>
-        <p className="text-sm text-gray-500 mt-1">Genera un reporte de administraciones de I-131 en el formato requerido</p>
+        <h1 className="text-2xl font-bold text-foreground">Exportar Registros I-131</h1>
+        <p className="text-sm text-muted-foreground mt-1">Genera un reporte de administraciones de I-131 en el formato requerido</p>
       </div>
 
       {/* Format selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><FileSpreadsheet size={18} /> Formato de exportación</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><FileSpreadsheet size={18} /> Formato de exportación</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {formatOptions.map(opt => (
             <label key={opt.value}
-              className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${format === opt.value ? "border-purple-500 bg-purple-50" : "border-gray-200 hover:bg-gray-50"}`}>
+              className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${format === opt.value ? "border-purple-500 bg-purple-50" : "border-border hover:bg-muted/50"}`}>
               <input type="radio" name="format" value={opt.value} checked={format === opt.value}
                 onChange={() => setFormat(opt.value)} className="sr-only" />
-              <span className={format === opt.value ? "text-purple-600" : "text-gray-500"}>{opt.icon}</span>
+              <span className={format === opt.value ? "text-purple-600" : "text-muted-foreground"}>{opt.icon}</span>
               <div>
-                <p className={`text-sm font-semibold ${format === opt.value ? "text-purple-700" : "text-gray-700"}`}>{opt.label}</p>
-                <p className="text-xs text-gray-500">{opt.desc}</p>
+                <p className={`text-sm font-semibold ${format === opt.value ? "text-purple-700" : "text-foreground/80"}`}>{opt.label}</p>
+                <p className="text-xs text-muted-foreground">{opt.desc}</p>
               </div>
             </label>
           ))}
@@ -82,45 +82,45 @@ export default function I131ExportPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Filter size={18} /> Filtros opcionales</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><Filter size={18} /> Filtros opcionales</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Nombre paciente</label>
+            <label className="block text-xs text-muted-foreground mb-1">Nombre paciente</label>
             <input value={filters.paciente} onChange={e => setF("paciente", e.target.value)}
               placeholder="Apellido o nombre…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">RUN paciente</label>
+            <label className="block text-xs text-muted-foreground mb-1">RUN paciente</label>
             <input value={filters.run} onChange={e => setF("run", e.target.value)}
               placeholder="12345678-9" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Radiofármaco</label>
+            <label className="block text-xs text-muted-foreground mb-1">Radiofármaco</label>
             <input value={filters.radiofarmaco} onChange={e => setF("radiofarmaco", e.target.value)}
               placeholder="Na¹³¹I…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Médico Nuclear</label>
+            <label className="block text-xs text-muted-foreground mb-1">Médico Nuclear</label>
             <input value={filters.medico_solicitante} onChange={e => setF("medico_solicitante", e.target.value)}
               placeholder="Dr/Dra…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Tipo de examen</label>
+            <label className="block text-xs text-muted-foreground mb-1">Tipo de examen</label>
             <input value={filters.tipo_examen} onChange={e => setF("tipo_examen", e.target.value)}
               placeholder="Diagnóstico, terapia…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Procedencia</label>
+            <label className="block text-xs text-muted-foreground mb-1">Procedencia</label>
             <input value={filters.procedencia} onChange={e => setF("procedencia", e.target.value)}
               placeholder="Servicio de origen…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Fecha desde</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha desde</label>
             <input type="date" value={filters.fechaDesde} onChange={e => setF("fechaDesde", e.target.value)} className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Fecha hasta</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha hasta</label>
             <input type="date" value={filters.fechaHasta} onChange={e => setF("fechaHasta", e.target.value)} className={inp} />
           </div>
         </div>

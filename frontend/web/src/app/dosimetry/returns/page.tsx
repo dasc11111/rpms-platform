@@ -35,7 +35,7 @@ const RETURN_STATUSES = [
   "Irradiado el dosimetro, no la persona",
 ];
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
 
 function fmtDateTime(d: string) {
   return new Date(d).toLocaleString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -151,7 +151,7 @@ export default function DosimetryReturnsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
@@ -160,23 +160,23 @@ export default function DosimetryReturnsPage() {
             <Package className="h-6 w-6 text-green-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Lista de Devolución de Dosímetros</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-foreground">Lista de Devolución de Dosímetros</h1>
+            <p className="text-sm text-muted-foreground">
               Hoja oficial de devolución — ingresa el código del dosímetro para registrar su estado
             </p>
           </div>
         </div>
 
         {/* Entry form */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
-          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <div className="bg-background rounded-xl border border-border shadow-sm px-5 py-5">
+          <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
             <Plus className="h-4 w-4 text-blue-500" /> Registrar Devolución
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
 
             {/* Code lookup */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Código Dosímetro *</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">Código Dosímetro *</label>
               <div className="flex gap-2">
                 <input
                   ref={codeRef}
@@ -204,11 +204,11 @@ export default function DosimetryReturnsPage() {
                 <div className="flex items-center gap-2 text-green-700 font-semibold mb-2">
                   <CheckCircle2 className="h-4 w-4" /> Dosímetro encontrado
                 </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-gray-700">
-                  <div><span className="text-gray-500">Nombre:</span> {info.worker_name ?? "—"}</div>
-                  <div><span className="text-gray-500">RUN:</span> <span className="font-mono">{info.worker_rut ?? "—"}</span></div>
-                  <div><span className="text-gray-500">Unidad:</span> {info.unidad ?? "—"}</div>
-                  <div><span className="text-gray-500">Período:</span> {info.period_label ?? "—"}</div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-foreground/80">
+                  <div><span className="text-muted-foreground">Nombre:</span> {info.worker_name ?? "—"}</div>
+                  <div><span className="text-muted-foreground">RUN:</span> <span className="font-mono">{info.worker_rut ?? "—"}</span></div>
+                  <div><span className="text-muted-foreground">Unidad:</span> {info.unidad ?? "—"}</div>
+                  <div><span className="text-muted-foreground">Período:</span> {info.period_label ?? "—"}</div>
                 </div>
               </div>
             )}
@@ -222,7 +222,7 @@ export default function DosimetryReturnsPage() {
             {/* Estado */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Estado *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Estado *</label>
                 <select
                   className={inp}
                   value={estado}
@@ -234,7 +234,7 @@ export default function DosimetryReturnsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Registrado por</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Registrado por</label>
                 <input
                   className={inp}
                   placeholder="Nombre del operador"
@@ -243,7 +243,7 @@ export default function DosimetryReturnsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">Observaciones</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Observaciones</label>
                 <input
                   className={inp}
                   placeholder="Opcional"
@@ -277,53 +277,53 @@ export default function DosimetryReturnsPage() {
         </div>
 
         {/* History */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
-            <span className="font-semibold text-sm text-gray-800">Historial de devoluciones (últimas 100)</span>
+        <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between gap-3">
+            <span className="font-semibold text-sm text-foreground">Historial de devoluciones (últimas 100)</span>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground" />
                 <input
-                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  className="pl-8 pr-3 py-1.5 text-xs rounded-lg border border-border focus:outline-none focus:ring-1 focus:ring-blue-300"
                   placeholder="Buscar..."
                   value={filterQ}
                   onChange={e => setFilterQ(e.target.value)}
                 />
               </div>
-              <button onClick={fetchHistory} disabled={loading} className="text-gray-400 hover:text-gray-600">
+              <button onClick={fetchHistory} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               </button>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-muted/50 border-b border-border/50">
                 <tr>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Código</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Nombre</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Unidad</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Período</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Estado</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Registrado</th>
-                  <th className="text-left px-4 py-2.5 font-semibold text-gray-600 text-xs uppercase tracking-wide">Por</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Código</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Nombre</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Unidad</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Período</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Estado</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Registrado</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Por</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={7} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Cargando...</td></tr>
                 ) : filteredReturns.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-8 text-gray-400">Sin registros de devolución.</td></tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Sin registros de devolución.</td></tr>
                 ) : filteredReturns.map(r => (
-                  <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-mono text-xs font-medium text-gray-800">{r.dosimeter_code}</td>
-                    <td className="px-4 py-2.5 text-gray-900">{r.worker_name ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-600 max-w-[140px] truncate">{r.unidad ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-600">{r.period_label ?? "—"}</td>
+                  <tr key={r.id} className="border-b border-border/50 last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-2.5 font-mono text-xs font-medium text-foreground">{r.dosimeter_code}</td>
+                    <td className="px-4 py-2.5 text-foreground">{r.worker_name ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground max-w-[140px] truncate">{r.unidad ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{r.period_label ?? "—"}</td>
                     <td className="px-4 py-2.5">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{r.estado}</span>
+                      <span className="text-xs bg-muted text-foreground/80 px-2 py-0.5 rounded-full">{r.estado}</span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">{fmtDateTime(r.registered_at)}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">{r.registered_by ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{fmtDateTime(r.registered_at)}</td>
+                    <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.registered_by ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -332,8 +332,8 @@ export default function DosimetryReturnsPage() {
         </div>
 
         {/* Regulatory footer */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
           <p>
             Decreto Supremo N°3/1985 MINSAL Art. 65-67 — Obligatoriedad del registro de devolución de dosímetros individuales.
             CCHEN ORD. sobre registros dosimétricos de trabajadores POE.

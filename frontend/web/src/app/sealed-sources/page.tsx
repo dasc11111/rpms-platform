@@ -53,7 +53,7 @@ interface SourceEvent {
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   active:          { label: "Activa",           color: "text-green-700",  bg: "bg-green-100" },
   in_use:          { label: "En uso",           color: "text-blue-700",   bg: "bg-blue-100" },
-  stored:          { label: "Almacenada",       color: "text-gray-700",   bg: "bg-gray-100" },
+  stored:          { label: "Almacenada",       color: "text-foreground/80",   bg: "bg-muted" },
   withdrawn:       { label: "Retirada",         color: "text-orange-700", bg: "bg-orange-100" },
   returned_cchen:  { label: "Dev. CCHEN",       color: "text-purple-700", bg: "bg-purple-100" },
   lost:            { label: "Extraviada",       color: "text-red-700",    bg: "bg-red-100" },
@@ -63,7 +63,7 @@ const CONDITION_CONFIG: Record<string, { label: string; icon: React.ReactNode; c
   good:         { label: "Buena",          icon: <CheckCircle className="w-4 h-4" />, color: "text-green-600" },
   damaged:      { label: "Dañada",         icon: <AlertTriangle className="w-4 h-4" />, color: "text-orange-600" },
   suspect_leak: { label: "Fuga sospechosa",icon: <AlertTriangle className="w-4 h-4" />, color: "text-red-600" },
-  decommissioned:{ label: "Dada de baja", icon: <X className="w-4 h-4" />, color: "text-gray-500" },
+  decommissioned:{ label: "Dada de baja", icon: <X className="w-4 h-4" />, color: "text-muted-foreground" },
 };
 
 const IAEA_CATEGORY: Record<number, { label: string; color: string; bg: string }> = {
@@ -96,10 +96,10 @@ function ActivityBar({ current, reference }: { current: number; reference: numbe
   const color = pct > 50 ? "bg-green-500" : pct > 20 ? "bg-yellow-500" : "bg-orange-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-gray-500 w-10 text-right">{pct.toFixed(0)}%</span>
+      <span className="text-xs text-muted-foreground w-10 text-right">{pct.toFixed(0)}%</span>
     </div>
   );
 }
@@ -137,7 +137,7 @@ function SourceCard({ source, onAddEvent }: {
   }
 
   return (
-    <div className={`bg-white rounded-xl border-2 shadow-sm ${isCritical ? "border-red-300" : "border-gray-200"}`}>
+    <div className={`bg-background rounded-xl border-2 shadow-sm ${isCritical ? "border-red-300" : "border-border"}`}>
       {/* Header */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -147,7 +147,7 @@ function SourceCard({ source, onAddEvent }: {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-gray-900 text-sm">{source.radionuclide}</h3>
+                <h3 className="font-bold text-foreground text-sm">{source.radionuclide}</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.bg} ${st.color}`}>{st.label}</span>
                 {cat && (
                   <span className={`text-xs px-2 py-0.5 rounded border font-medium ${cat.bg} ${cat.color}`}>
@@ -155,13 +155,13 @@ function SourceCard({ source, onAddEvent }: {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">{source.purpose}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{source.purpose}</p>
               <div className="mt-1.5">
                 <RowPdfActions module="sealed-sources" ownerType="sealed_source" ownerId={String(source.id)} size="xs" />
               </div>
             </div>
           </div>
-          <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <button onClick={toggleExpand} className="text-muted-foreground hover:text-muted-foreground flex-shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -197,8 +197,8 @@ function SourceCard({ source, onAddEvent }: {
 
         {/* Activity bar */}
         <div className="mt-3">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Actividad actual: <strong className="text-gray-800">{Number(source.current_activity_GBq).toFixed(3)} GBq</strong></span>
+          <div className="flex justify-between text-xs text-muted-foreground mb-1">
+            <span>Actividad actual: <strong className="text-foreground">{Number(source.current_activity_GBq).toFixed(3)} GBq</strong></span>
             <span>Ref: {Number(source.reference_activity_GBq).toFixed(3)} GBq</span>
           </div>
           <ActivityBar current={Number(source.current_activity_GBq)} reference={Number(source.reference_activity_GBq)} />
@@ -207,18 +207,18 @@ function SourceCard({ source, onAddEvent }: {
         {/* Key stats row */}
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div>
-            <span className="text-gray-400 block">Ubicación</span>
-            <span className="text-gray-700 font-medium">{source.location ?? "—"}</span>
+            <span className="text-muted-foreground block">Ubicación</span>
+            <span className="text-foreground/80 font-medium">{source.location ?? "—"}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Próx. prueba fuga</span>
-            <span className={`font-medium ${source.leak_test_overdue ? "text-red-600" : "text-gray-700"}`}>
+            <span className="text-muted-foreground block">Próx. prueba fuga</span>
+            <span className={`font-medium ${source.leak_test_overdue ? "text-red-600" : "text-foreground/80"}`}>
               {formatDate(source.next_leak_test_date)}
             </span>
           </div>
           <div>
-            <span className="text-gray-400 block">Licencia CCHEN</span>
-            <span className={`font-medium ${source.license_expired ? "text-red-600" : licDays !== null && licDays < 60 ? "text-orange-600" : "text-gray-700"}`}>
+            <span className="text-muted-foreground block">Licencia CCHEN</span>
+            <span className={`font-medium ${source.license_expired ? "text-red-600" : licDays !== null && licDays < 60 ? "text-orange-600" : "text-foreground/80"}`}>
               {formatDate(source.license_expiry)}
             </span>
           </div>
@@ -227,7 +227,7 @@ function SourceCard({ source, onAddEvent }: {
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-gray-100 p-4 space-y-4">
+        <div className="border-t border-border/50 p-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             {[
               ["ID CCHEN", source.source_id_cchen],
@@ -245,8 +245,8 @@ function SourceCard({ source, onAddEvent }: {
               ["Última prueba fuga", `${formatDate(source.last_leak_test_date)} — ${source.last_leak_test_result ?? "—"}`],
             ].map(([label, value]) => (
               <div key={String(label)}>
-                <span className="text-gray-400 block">{label}</span>
-                <span className="text-gray-800 font-medium">{value ?? "—"}</span>
+                <span className="text-muted-foreground block">{label}</span>
+                <span className="text-foreground font-medium">{value ?? "—"}</span>
               </div>
             ))}
           </div>
@@ -254,7 +254,7 @@ function SourceCard({ source, onAddEvent }: {
           {/* Events */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-semibold text-gray-700">Historial de eventos</h4>
+              <h4 className="text-xs font-semibold text-foreground/80">Historial de eventos</h4>
               <button
                 onClick={() => onAddEvent(source.id)}
                 className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
@@ -263,23 +263,23 @@ function SourceCard({ source, onAddEvent }: {
               </button>
             </div>
             {loadingEvents ? (
-              <p className="text-xs text-gray-400">Cargando...</p>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             ) : events.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin eventos registrados</p>
+              <p className="text-xs text-muted-foreground">Sin eventos registrados</p>
             ) : (
               <div className="space-y-1.5">
                 {events.map(ev => (
-                  <div key={ev.id} className="flex items-start gap-3 text-xs bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="text-gray-400 w-20 flex-shrink-0">{formatDate(ev.event_date)}</span>
-                    <span className="font-medium text-gray-700">{EVENT_TYPE_LABELS[ev.event_type] ?? ev.event_type}</span>
+                  <div key={ev.id} className="flex items-start gap-3 text-xs bg-muted/50 rounded-lg px-3 py-2">
+                    <span className="text-muted-foreground w-20 flex-shrink-0">{formatDate(ev.event_date)}</span>
+                    <span className="font-medium text-foreground/80">{EVENT_TYPE_LABELS[ev.event_type] ?? ev.event_type}</span>
                     {ev.result && (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         ev.result === "pass" ? "bg-green-100 text-green-700" :
                         ev.result === "fail" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                       }`}>{ev.result}</span>
                     )}
-                    <span className="text-gray-500 flex-1">{ev.notes}</span>
-                    <span className="text-gray-400">{ev.measured_by}</span>
+                    <span className="text-muted-foreground flex-1">{ev.notes}</span>
+                    <span className="text-muted-foreground">{ev.measured_by}</span>
                   </div>
                 ))}
               </div>
@@ -323,16 +323,16 @@ function AddEventModal({ sourceId, onClose, onSaved }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-md">
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-bold text-gray-900">Registrar evento</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+          <h3 className="font-bold text-foreground">Registrar evento</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Tipo de evento</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Tipo de evento</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={form.event_type}
               onChange={e => setForm(f => ({ ...f, event_type: e.target.value }))}
             >
@@ -343,14 +343,14 @@ function AddEventModal({ sourceId, onClose, onSaved }: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Fecha</label>
-              <input type="date" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <label className="block text-xs font-medium text-foreground/80 mb-1">Fecha</label>
+              <input type="date" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} required />
             </div>
             {(form.event_type === "leak_test" || form.event_type === "inventory_check") && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Resultado</label>
-                <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Resultado</label>
+                <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.result} onChange={e => setForm(f => ({ ...f, result: e.target.value }))}>
                   <option value="pass">Pasa</option>
                   <option value="fail">Falla</option>
@@ -360,20 +360,20 @@ function AddEventModal({ sourceId, onClose, onSaved }: {
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Realizado por</label>
-            <input type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Realizado por</label>
+            <input type="text" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Nombre del profesional" value={form.measured_by}
               onChange={e => setForm(f => ({ ...f, measured_by: e.target.value }))} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Observaciones</label>
-            <textarea className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows={3}
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Observaciones</label>
+            <textarea className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows={3}
               placeholder="Resultados, mediciones, observaciones..." value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+              className="flex-1 px-4 py-2 border border-border rounded-lg text-sm text-foreground/80 hover:bg-muted/50">
               Cancelar
             </button>
             <button type="submit" disabled={saving}
@@ -426,11 +426,11 @@ export default function SealedSourcesPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Atom className="w-7 h-7 text-blue-600" />
           Gestión de Fuentes Selladas
         </h1>
-        <p className="text-sm text-gray-500 mt-1">DS 3/1985 Arts. 55–62 · CCHEN NS-05.0 §5 · IAEA SSG-32</p>
+        <p className="text-sm text-muted-foreground mt-1">DS 3/1985 Arts. 55–62 · CCHEN NS-05.0 §5 · IAEA SSG-32</p>
       </div>
 
       {/* Critical banner */}
@@ -460,7 +460,7 @@ export default function SealedSourcesPage() {
           <div key={t.label} className={`${t.bg} rounded-xl p-3`}>
             <div className={`${t.color} mb-1`}>{t.icon}</div>
             <div className={`text-2xl font-bold ${t.color}`}>{t.value}</div>
-            <div className="text-xs text-gray-600">{t.label}</div>
+            <div className="text-xs text-muted-foreground">{t.label}</div>
           </div>
         ))}
       </div>
@@ -468,7 +468,7 @@ export default function SealedSourcesPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
         >
@@ -478,7 +478,7 @@ export default function SealedSourcesPage() {
           ))}
         </select>
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterCat}
           onChange={e => setFilterCat(e.target.value)}
         >
@@ -487,14 +487,14 @@ export default function SealedSourcesPage() {
             <option key={c} value={String(c)}>Categoría {c}</option>
           ))}
         </select>
-        <span className="text-sm text-gray-500 self-center">{filtered.length} fuente(s)</span>
+        <span className="text-sm text-muted-foreground self-center">{filtered.length} fuente(s)</span>
       </div>
 
       {/* Source cards */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Cargando inventario...</div>
+        <div className="text-center py-12 text-muted-foreground">Cargando inventario...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No hay fuentes con estos filtros</div>
+        <div className="text-center py-12 text-muted-foreground">No hay fuentes con estos filtros</div>
       ) : (
         <div className="grid gap-4">
           {filtered.map(s => (
@@ -504,8 +504,8 @@ export default function SealedSourcesPage() {
       )}
 
       {/* Regulatory framework */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-600 space-y-1">
-        <p className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <div className="bg-muted/50 border border-border rounded-xl p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground mb-2 flex items-center gap-2">
           <FlaskConical className="w-4 h-4" /> Marco regulatorio aplicable
         </p>
         <p>• <strong>DS 3/1985 Arts. 55–62:</strong> Requisitos de registro, control y devolución de fuentes a CCHEN</p>

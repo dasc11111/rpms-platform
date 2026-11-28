@@ -49,7 +49,7 @@ const TYPE_CFG = {
 const STATUS_CFG = {
   draft:     { label: "Borrador",  bg: "bg-amber-100",  text: "text-amber-800",  icon: Clock        },
   approved:  { label: "Aprobada",  bg: "bg-green-100",  text: "text-green-800",  icon: CheckCircle2 },
-  cancelled: { label: "Cancelada", bg: "bg-gray-100",   text: "text-gray-600",   icon: X            },
+  cancelled: { label: "Cancelada", bg: "bg-muted",   text: "text-muted-foreground",   icon: X            },
 } as const;
 
 function fmtDate(d: string | null) {
@@ -237,7 +237,7 @@ function MeetingCard({
     <div className={cn(
       "border rounded-xl overflow-hidden",
       meeting.status === "approved" ? "border-green-200" :
-      meeting.status === "cancelled" ? "border-gray-200 opacity-70" : "border-border"
+      meeting.status === "cancelled" ? "border-border opacity-70" : "border-border"
     )}>
       {/* Header */}
       <div

@@ -35,14 +35,14 @@ const TYPE_CFG: Record<string, { label: string; bg: string; text: string }> = {
   installation:  { label: "Instalación",       bg: "bg-indigo-100", text: "text-indigo-800" },
   transport:     { label: "Transporte",        bg: "bg-cyan-100",   text: "text-cyan-800"   },
   research:      { label: "Investigación",     bg: "bg-pink-100",   text: "text-pink-800"   },
-  other:         { label: "Otra",              bg: "bg-gray-100",   text: "text-gray-800"   },
+  other:         { label: "Otra",              bg: "bg-muted",   text: "text-foreground"   },
 };
 
 const STATUS_CFG: Record<string, { label: string; bg: string; text: string; icon: React.ReactNode }> = {
   active:    { label: "VIGENTE",    bg: "bg-green-100",  text: "text-green-800",  icon: <CheckCircle className="h-3 w-3" /> },
   expiring:  { label: "POR VENCER", bg: "bg-amber-100",  text: "text-amber-800",  icon: <Clock       className="h-3 w-3" /> },
   expired:   { label: "VENCIDA",    bg: "bg-red-100",    text: "text-red-800",    icon: <XCircle     className="h-3 w-3" /> },
-  suspended: { label: "SUSPENDIDA", bg: "bg-gray-100",   text: "text-gray-700",   icon: <AlertTriangle className="h-3 w-3" /> },
+  suspended: { label: "SUSPENDIDA", bg: "bg-muted",   text: "text-foreground/80",   icon: <AlertTriangle className="h-3 w-3" /> },
   revoked:   { label: "REVOCADA",   bg: "bg-red-200",    text: "text-red-900",    icon: <XCircle     className="h-3 w-3" /> },
 };
 
@@ -85,70 +85,70 @@ function LicenseForm({ form, onChange, onSubmit, onCancel, saving }: {
 }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="p-5 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900">Nueva Autorización / Licencia</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <h2 className="font-semibold text-foreground">Nueva Autorización / Licencia</h2>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground text-xl leading-none">×</button>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">N° Autorización *</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">N° Autorización *</label>
             <input value={form.license_number} onChange={e => onChange("license_number", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="RA-2024-00001" required />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Tipo *</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Tipo *</label>
             <select value={form.license_type} onChange={e => onChange("license_type", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
               {Object.entries(TYPE_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Descripción</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Descripción</label>
             <input value={form.description} onChange={e => onChange("description", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Organismo *</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Organismo *</label>
             <input value={form.issuing_body} onChange={e => onChange("issuing_body", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Emisión *</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Fecha Emisión *</label>
             <input type="date" value={form.issue_date} onChange={e => onChange("issue_date", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Fecha Vencimiento</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Fecha Vencimiento</label>
             <input type="date" value={form.expiry_date} onChange={e => onChange("expiry_date", e.target.value)}
               disabled={form.indefinite}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100" />
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-muted" />
           </div>
           <div className="flex items-center gap-2 mt-2">
             <input type="checkbox" id="indef" checked={form.indefinite} onChange={e => onChange("indefinite", e.target.checked)}
               className="rounded" />
-            <label htmlFor="indef" className="text-xs text-gray-700">Sin vencimiento (indefinida)</label>
+            <label htmlFor="indef" className="text-xs text-foreground/80">Sin vencimiento (indefinida)</label>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Alcance</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Alcance</label>
             <textarea value={form.scope} onChange={e => onChange("scope", e.target.value)} rows={2}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Condiciones especiales</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Condiciones especiales</label>
             <textarea value={form.conditions} onChange={e => onChange("conditions", e.target.value)} rows={2}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Referencia Documento</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Referencia Documento</label>
             <input value={form.document_ref} onChange={e => onChange("document_ref", e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Folio o ruta del documento" />
           </div>
         </div>
         <div className="p-5 border-t flex gap-3 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+          <button onClick={onCancel} className="px-4 py-2 rounded-lg border text-sm font-medium text-foreground/80 hover:bg-muted/50">Cancelar</button>
           <button onClick={onSubmit} disabled={saving}
             className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Registrar Licencia"}
@@ -170,10 +170,10 @@ function RenewalModal({ lic, onSubmit, onCancel, saving }: {
   });
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-sm">
         <div className="p-5 border-b">
-          <h2 className="font-semibold text-gray-900">Registrar Renovación</h2>
-          <p className="text-xs text-gray-500 mt-1">{lic.license_number}</p>
+          <h2 className="font-semibold text-foreground">Registrar Renovación</h2>
+          <p className="text-xs text-muted-foreground mt-1">{lic.license_number}</p>
         </div>
         <div className="p-5 space-y-3">
           {[
@@ -182,20 +182,20 @@ function RenewalModal({ lic, onSubmit, onCancel, saving }: {
             ["Presentado por", "submitted_by", "text"],
           ].map(([label, key, type]) => (
             <div key={key}>
-              <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+              <label className="block text-xs font-medium text-foreground/80 mb-1">{label}</label>
               <input type={type} value={form[key as keyof RenForm] as string}
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
             </div>
           ))}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Notas</label>
+            <label className="block text-xs font-medium text-foreground/80 mb-1">Notas</label>
             <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
           </div>
         </div>
         <div className="p-5 border-t flex gap-3 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+          <button onClick={onCancel} className="px-4 py-2 rounded-lg border text-sm font-medium text-foreground/80 hover:bg-muted/50">Cancelar</button>
           <button onClick={() => onSubmit(form)} disabled={saving}
             className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Registrar"}
@@ -219,16 +219,16 @@ function LicCard({ lic, onDelete, onRenew }: { lic: License; onDelete: () => voi
                       lic.status === "suspended" ? "border-gray-400"  : "border-green-400";
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 shadow-sm ${borderColor}`}>
+    <div className={`bg-background rounded-xl border-l-4 shadow-sm ${borderColor}`}>
       <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setOpen(o => !o)}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="font-mono text-sm font-semibold text-gray-900">{lic.license_number}</span>
+            <span className="font-mono text-sm font-semibold text-foreground">{lic.license_number}</span>
             <TypeBadge type={lic.license_type} />
             <StatusBadge status={lic.status} />
           </div>
-          {lic.description && <p className="text-xs text-gray-600 mt-0.5">{lic.description}</p>}
-          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+          {lic.description && <p className="text-xs text-muted-foreground mt-0.5">{lic.description}</p>}
+          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
             <span><Calendar className="inline h-3 w-3 mr-1" />Emitida: {issDate}</span>
             {lic.indefinite ? (
               <span className="text-green-700 font-medium">Sin vencimiento</span>
@@ -245,18 +245,18 @@ function LicCard({ lic, onDelete, onRenew }: { lic: License; onDelete: () => voi
         </div>
         <div className="flex items-center gap-1">
           <button onClick={e => { e.stopPropagation(); onRenew(); }}
-            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Renovar">
+            className="p-1.5 text-muted-foreground hover:text-green-600 hover:bg-green-50 rounded-lg" title="Renovar">
             <RotateCcw className="h-4 w-4" />
           </button>
           <button onClick={e => { e.stopPropagation(); onDelete(); }}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+            className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg">
             <Trash2 className="h-4 w-4" />
           </button>
-          {open ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </div>
       </div>
       {open && (
-        <div className="px-4 pb-4 space-y-1 text-xs text-gray-700">
+        <div className="px-4 pb-4 space-y-1 text-xs text-foreground/80">
           {lic.scope      && <p><span className="font-medium">Alcance:</span> {lic.scope}</p>}
           {lic.conditions && <p><span className="font-medium">Condiciones:</span> {lic.conditions}</p>}
           {lic.document_ref && <p><span className="font-medium">Documento:</span> {lic.document_ref}</p>}
@@ -336,12 +336,12 @@ export default function LicensesPage() {
             <FileText className="h-6 w-6 text-green-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Autorizaciones y Licencias CCHEN</h1>
-            <p className="text-sm text-gray-500">Registro y control de autorizaciones radiológicas — DS 3/1985, DS 133/1984, Ley 18.302</p>
+            <h1 className="text-2xl font-bold text-foreground">Autorizaciones y Licencias CCHEN</h1>
+            <p className="text-sm text-muted-foreground">Registro y control de autorizaciones radiológicas — DS 3/1985, DS 133/1984, Ley 18.302</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <button onClick={load} className="p-2 text-muted-foreground hover:text-foreground/80 hover:bg-muted rounded-lg">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button onClick={() => setShowForm(true)}
@@ -378,14 +378,14 @@ export default function LicensesPage() {
       {s && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Total autorizaciones", value: s.total,    color: "text-gray-900" },
+            { label: "Total autorizaciones", value: s.total,    color: "text-foreground" },
             { label: "Vigentes",             value: s.active,   color: "text-green-700" },
-            { label: "Por vencer (≤90d)",    value: s.expiring, color: parseInt(s.expiring) > 0 ? "text-amber-700" : "text-gray-500" },
-            { label: "Vencidas",             value: s.expired,  color: parseInt(s.expired)  > 0 ? "text-red-700"   : "text-gray-500" },
+            { label: "Por vencer (≤90d)",    value: s.expiring, color: parseInt(s.expiring) > 0 ? "text-amber-700" : "text-muted-foreground" },
+            { label: "Vencidas",             value: s.expired,  color: parseInt(s.expired)  > 0 ? "text-red-700"   : "text-muted-foreground" },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-xl border p-4 text-center shadow-sm">
+            <div key={k.label} className="bg-background rounded-xl border p-4 text-center shadow-sm">
               <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{k.label}</p>
+              <p className="text-xs text-muted-foreground mt-1">{k.label}</p>
             </div>
           ))}
         </div>
@@ -405,7 +405,7 @@ export default function LicensesPage() {
       )}
 
       {/* Filters + List */}
-      <div className="bg-white rounded-xl border shadow-sm">
+      <div className="bg-background rounded-xl border shadow-sm">
         <div className="p-4 border-b flex flex-wrap gap-3 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
@@ -417,13 +417,13 @@ export default function LicensesPage() {
             <option value="">Todos los estados</option>
             {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
-          <span className="text-xs text-gray-500 ml-auto">{data?.licenses?.length ?? 0} autorización(es)</span>
+          <span className="text-xs text-muted-foreground ml-auto">{data?.licenses?.length ?? 0} autorización(es)</span>
         </div>
         <div className="p-4 space-y-3">
           {loading ? (
-            <p className="text-sm text-gray-500 text-center py-8">Cargando…</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Cargando…</p>
           ) : !data?.licenses?.length ? (
-            <p className="text-sm text-gray-500 text-center py-8">Sin autorizaciones registradas.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Sin autorizaciones registradas.</p>
           ) : (
             data.licenses.map(lic => (
               <LicCard key={lic.id} lic={lic}
@@ -437,17 +437,17 @@ export default function LicensesPage() {
 
       {/* Renewal history */}
       {data?.renewals && data.renewals.length > 0 && (
-        <div className="bg-white rounded-xl border shadow-sm p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <div className="bg-background rounded-xl border shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-foreground/80 mb-3 flex items-center gap-2">
             <RotateCcw className="h-4 w-4" /> Historial de Renovaciones
           </h2>
           <div className="space-y-2">
             {data.renewals.map(r => (
-              <div key={r.id} className="flex items-center gap-4 text-xs text-gray-700 py-1.5 border-b border-gray-50 last:border-0">
-                <span className="font-mono font-semibold text-gray-900 w-36 shrink-0">{r.license_number}</span>
+              <div key={r.id} className="flex items-center gap-4 text-xs text-foreground/80 py-1.5 border-b border-border/50 last:border-0">
+                <span className="font-mono font-semibold text-foreground w-36 shrink-0">{r.license_number}</span>
                 <span>Renovada: {new Date(r.renewal_date + "T12:00:00").toLocaleDateString("es-CL", { day:"numeric",month:"short",year:"numeric" })}</span>
                 {r.new_expiry && <span className="text-green-700">Nuevo venc.: {new Date(r.new_expiry + "T12:00:00").toLocaleDateString("es-CL", { day:"numeric",month:"short",year:"numeric" })}</span>}
-                {r.submitted_by && <span className="text-gray-500">por {r.submitted_by}</span>}
+                {r.submitted_by && <span className="text-muted-foreground">por {r.submitted_by}</span>}
               </div>
             ))}
           </div>

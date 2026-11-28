@@ -167,7 +167,7 @@ export default function CalibrationsOverviewPage() {
           <div className="flex flex-wrap gap-2">
             {upcoming.map(u => (
               <Link key={u.id} href={`/instruments/${u.id}`}
-                className="flex items-center gap-2 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs hover:bg-orange-50 transition-colors">
+                className="flex items-center gap-2 bg-background border border-orange-200 rounded-lg px-3 py-2 text-xs hover:bg-orange-50 transition-colors">
                 <span className={cn("w-2 h-2 rounded-full flex-shrink-0",
                   u.cal_status === "vencida" ? "bg-red-500" :
                   u.cal_status === "por_vencer" ? "bg-orange-500" : "bg-yellow-400")} />

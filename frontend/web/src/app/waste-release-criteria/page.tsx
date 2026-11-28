@@ -93,7 +93,7 @@ function fmtDate(d: string | null) {
 function activeBadge(active: boolean) {
   return active
     ? { label: "Activo", cls: "bg-green-100 text-green-700 border border-green-200", icon: <CheckCircle2 className="h-3.5 w-3.5" /> }
-    : { label: "Inactivo", cls: "bg-gray-100 text-gray-500 border border-gray-200", icon: <XCircle className="h-3.5 w-3.5" /> };
+    : { label: "Inactivo", cls: "bg-muted text-muted-foreground border border-border", icon: <XCircle className="h-3.5 w-3.5" /> };
 }
 
 function viaIcon(via: string | null) {
@@ -105,16 +105,16 @@ function viaIcon(via: string | null) {
 }
 
 function viaColor(via: string | null) {
-  if (!via) return "bg-gray-50 text-gray-600";
+  if (!via) return "bg-muted/50 text-muted-foreground";
   if (via.includes("alcantarillado")) return "bg-blue-50 text-blue-700";
   if (via.includes("basura")) return "bg-green-50 text-green-700";
   if (via.includes("incineración")) return "bg-orange-50 text-orange-700";
   if (via.includes("atmosférica")) return "bg-sky-50 text-sky-700";
   if (via.includes("decaimiento")) return "bg-purple-50 text-purple-700";
-  return "bg-gray-50 text-gray-600";
+  return "bg-muted/50 text-muted-foreground";
 }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300";
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -291,24 +291,24 @@ export default function WasteReleaseCriteriaPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-6">
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Recycle className="h-4 w-4 text-teal-500" />
             <span>Gestión de Residuos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Criterios de Liberación / Dispensa de Residuos
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Umbrales bajo los cuales un residuo puede liberarse sin restricción radiológica.
             DS 133/1984 · IAEA GSR Part 5 · IAEA SSG-45 · CCHEN.
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
             <RefreshCw className="h-4 w-4" />
             Actualizar
           </button>
@@ -337,9 +337,9 @@ export default function WasteReleaseCriteriaPage() {
           { label: "Vías de eliminación", value: vias, icon: <Droplets className="h-5 w-5 text-blue-500" />, cls: "text-blue-700" },
           { label: "Documentos fuente", value: documentos, icon: <FileText className="h-5 w-5 text-indigo-500" />, cls: "text-indigo-700" },
         ].map((k) => (
-          <div key={k.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div key={k.label} className="rounded-xl border border-border bg-background p-4 shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">{k.label}</span>
+              <span className="text-xs text-muted-foreground">{k.label}</span>
               {k.icon}
             </div>
             <span className={`text-2xl font-bold ${k.cls}`}>{k.value}</span>
@@ -349,37 +349,37 @@ export default function WasteReleaseCriteriaPage() {
 
       {/* ── Filters ── */}
       <div className="mb-4 flex flex-wrap gap-3">
-        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los radionúclidos</option>
           <option value="__generic__">Solo genéricos</option>
           {radionuclides.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
         </select>
-        <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los tipos</option>
           {TIPO_RESIDUO_OPTS.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select value={filterVia} onChange={(e) => setFilterVia(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterVia} onChange={(e) => setFilterVia(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todas las vías</option>
           {VIA_ELIMINACION_OPTS.map((v) => <option key={v} value={v}>{v}</option>)}
         </select>
-        <select value={filterActive} onChange={(e) => setFilterActive(e.target.value as typeof filterActive)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterActive} onChange={(e) => setFilterActive(e.target.value as typeof filterActive)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="all">Todos</option>
           <option value="active">Solo activos</option>
           <option value="inactive">Solo inactivos</option>
         </select>
-        <span className="ml-auto self-center text-xs text-gray-400">
+        <span className="ml-auto self-center text-xs text-muted-foreground">
           {filtered.length} de {total} criterio{total !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* ── Content ── */}
-      {loading && <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-400">Cargando…</div>}
+      {loading && <div className="rounded-xl border border-border bg-background p-12 text-center text-muted-foreground">Cargando…</div>}
       {error && !loading && <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">{error}</div>}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <Recycle className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             {total === 0 ? "No hay criterios de liberación registrados." : "No hay criterios que coincidan con los filtros."}
           </p>
           {total === 0 && (
@@ -396,31 +396,31 @@ export default function WasteReleaseCriteriaPage() {
             const isOpen = expanded.has(c.id);
             const badge = activeBadge(c.active);
             return (
-              <div key={c.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div key={c.id} className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
                 <button
                   onClick={() => toggle(c.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
                 >
                   <Recycle className="h-5 w-5 text-teal-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       {c.radionuclide_code
                         ? <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700">{c.radionuclide_code}</span>
-                        : <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">Genérico</span>
+                        : <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Genérico</span>
                       }
                       {c.via_eliminacion && (
                         <span className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium ${viaColor(c.via_eliminacion)}`}>
                           {viaIcon(c.via_eliminacion)}{c.via_eliminacion}
                         </span>
                       )}
-                      <span className="font-semibold text-gray-900 text-sm">
+                      <span className="font-semibold text-foreground text-sm">
                         {c.parametro}: {c.valor} {c.unidad}
                       </span>
                       <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${badge.cls}`}>
                         {badge.icon}{badge.label}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span>{c.documento_fuente}{c.version ? ` v${c.version}` : ""}</span>
                       <span>{c.jurisdiccion}</span>
                       {c.tipo_residuo && <span>Tipo: {c.tipo_residuo}</span>}
@@ -428,18 +428,18 @@ export default function WasteReleaseCriteriaPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} className="rounded p-1 text-gray-400 hover:text-teal-600 hover:bg-teal-50">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} className="rounded p-1 text-muted-foreground hover:text-teal-600 hover:bg-teal-50">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }} className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }} className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50">
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    {isOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+                  <div className="border-t border-border/50 px-4 py-4 bg-muted/50">
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
                       <Field label="Jurisdicción" value={c.jurisdiccion} />
                       <Field label="Documento fuente" value={c.documento_fuente} />
@@ -465,11 +465,11 @@ export default function WasteReleaseCriteriaPage() {
       )}
 
       {/* ── Regulatory footer ── */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="mt-8 rounded-xl border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600">Marco normativo aplicable</p>
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-medium text-muted-foreground">Marco normativo aplicable</p>
             <p>DS 133/1984 (MINSAL) — Criterios de liberación de residuos radiactivos al ambiente en Chile</p>
             <p>IAEA GSR Part 5 — Radiation Protection and Safety of Radiation Sources: clearance levels for radioactive material</p>
             <p>IAEA SSG-45 — Predisposal Management of Radioactive Waste including decommissioning waste</p>
@@ -481,12 +481,12 @@ export default function WasteReleaseCriteriaPage() {
       {/* ── Form modal ── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="w-full max-w-2xl rounded-2xl bg-background shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
                 {editId !== null ? "Cambiar estado del criterio" : "Nuevo criterio de liberación"}
               </h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-muted-foreground">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -497,12 +497,12 @@ export default function WasteReleaseCriteriaPage() {
               {editId !== null ? (
                 /* Edit: API PATCH only supports toggling active */
                 <div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     La API actual permite cambiar el estado activo/inactivo del criterio.
                   </p>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={formData.active} onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-teal-600" />
-                    <span className="text-sm text-gray-700">Criterio activo</span>
+                    <input type="checkbox" checked={formData.active} onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))} className="h-4 w-4 rounded border-border text-teal-600" />
+                    <span className="text-sm text-foreground/80">Criterio activo</span>
                   </label>
                 </div>
               ) : (
@@ -567,16 +567,16 @@ export default function WasteReleaseCriteriaPage() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.active} onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-teal-600" />
-                      <span className="text-sm text-gray-700">Criterio activo</span>
+                      <input type="checkbox" checked={formData.active} onChange={(e) => setFormData((p) => ({ ...p, active: e.target.checked }))} className="h-4 w-4 rounded border-border text-teal-600" />
+                      <span className="text-sm text-foreground/80">Criterio activo</span>
                     </label>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
-              <button onClick={() => setShowForm(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">
+            <div className="flex justify-end gap-3 border-t border-border/50 px-6 py-4">
+              <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60">
@@ -591,18 +591,18 @@ export default function WasteReleaseCriteriaPage() {
       {/* ── Delete confirm ── */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-background shadow-2xl p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="rounded-full bg-red-100 p-2">
                 <Trash2 className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Eliminar criterio</h3>
-                <p className="mt-1 text-sm text-gray-500">¿Confirmas la eliminación de este criterio de liberación? Esta acción no se puede deshacer.</p>
+                <h3 className="font-semibold text-foreground">Eliminar criterio</h3>
+                <p className="mt-1 text-sm text-muted-foreground">¿Confirmas la eliminación de este criterio de liberación? Esta acción no se puede deshacer.</p>
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={() => handleDelete(deleteId)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Eliminar</button>
             </div>
           </div>
@@ -617,8 +617,8 @@ export default function WasteReleaseCriteriaPage() {
 function Field({ label, value, mono = false, className = "" }: { label: string; value: string | number; mono?: boolean; className?: string }) {
   return (
     <div className={className}>
-      <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-      <dd className={`text-sm text-gray-800 font-medium ${mono ? "font-mono" : ""}`}>{value}</dd>
+      <dt className="text-xs text-muted-foreground mb-0.5">{label}</dt>
+      <dd className={`text-sm text-foreground font-medium ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -626,7 +626,7 @@ function Field({ label, value, mono = false, className = "" }: { label: string; 
 function FormField({ label, required = false, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-muted-foreground mb-1">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}

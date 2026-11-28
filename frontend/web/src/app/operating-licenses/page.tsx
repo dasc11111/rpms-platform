@@ -93,12 +93,12 @@ function StatusBadge({ status }: { status: string }) {
     active: "bg-green-100 text-green-800",
     expired: "bg-red-100 text-red-800",
     suspended: "bg-orange-100 text-orange-800",
-    cancelled: "bg-gray-200 text-gray-700",
+    cancelled: "bg-muted text-foreground/80",
     pending_renewal: "bg-yellow-100 text-yellow-800",
     in_process: "bg-blue-100 text-blue-800",
   };
   return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? "bg-gray-100 text-gray-700"}`}>
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? "bg-muted text-foreground/80"}`}>
       {STATUS_LABELS[status] ?? status}
     </span>
   );
@@ -166,42 +166,42 @@ function RenewalModal({ license, onClose, onSaved }: { license: License; onClose
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-lg">
         <div className="p-5 border-b">
-          <h2 className="font-bold text-gray-800">Registrar Renovación</h2>
-          <p className="text-xs text-gray-500 mt-1">{license.equipment_name} — {license.license_code}</p>
+          <h2 className="font-bold text-foreground">Registrar Renovación</h2>
+          <p className="text-xs text-muted-foreground mt-1">{license.equipment_name} — {license.license_code}</p>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label className="text-xs font-medium text-gray-600">Nueva fecha de vencimiento *</label>
+            <label className="text-xs font-medium text-muted-foreground">Nueva fecha de vencimiento *</label>
             <input type="date" value={form.new_expiry} onChange={e => setForm(p => ({ ...p, new_expiry: e.target.value }))}
               className="mt-1 w-full border rounded px-3 py-2 text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600">Presentado por</label>
+              <label className="text-xs font-medium text-muted-foreground">Presentado por</label>
               <input value={form.submitted_by} onChange={e => setForm(p => ({ ...p, submitted_by: e.target.value }))}
                 className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Nombre" />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">N° Referencia CCHEN</label>
+              <label className="text-xs font-medium text-muted-foreground">N° Referencia CCHEN</label>
               <input value={form.cchen_reference} onChange={e => setForm(p => ({ ...p, cchen_reference: e.target.value }))}
                 className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="CCH-REN-..." />
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Documentos presentados</label>
+            <label className="text-xs font-medium text-muted-foreground">Documentos presentados</label>
             <input value={form.documents} onChange={e => setForm(p => ({ ...p, documents: e.target.value }))}
               className="mt-1 w-full border rounded px-3 py-2 text-sm" placeholder="Lista de documentos adjuntos" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Observaciones</label>
+            <label className="text-xs font-medium text-muted-foreground">Observaciones</label>
             <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
               rows={2} className="mt-1 w-full border rounded px-3 py-2 text-sm resize-none" />
           </div>
         </div>
         <div className="p-5 border-t flex justify-end gap-3">
-          <button onClick={onClose} className="text-sm text-gray-600 hover:underline">Cancelar</button>
+          <button onClick={onClose} className="text-sm text-muted-foreground hover:underline">Cancelar</button>
           <button onClick={save} disabled={saving || !form.new_expiry}
             className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 disabled:opacity-50">
             {saving ? "Registrando…" : "Registrar Renovación"}
@@ -245,20 +245,20 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
   useEffect(() => { if (expanded) loadRenewals(); }, [expanded]);
 
   return (
-    <div className={`border-l-4 ${borderColor} bg-white rounded-r-xl shadow p-4`}>
+    <div className={`border-l-4 ${borderColor} bg-background rounded-r-xl shadow p-4`}>
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-gray-500">{TYPE_ICONS[lic.license_type]}</span>
-            <span className="text-xs font-mono text-gray-400">{lic.license_code}</span>
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{TYPE_LABELS[lic.license_type]}</span>
+            <span className="text-muted-foreground">{TYPE_ICONS[lic.license_type]}</span>
+            <span className="text-xs font-mono text-muted-foreground">{lic.license_code}</span>
+            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">{TYPE_LABELS[lic.license_type]}</span>
             <StatusBadge status={lic.status} />
           </div>
-          <h3 className="mt-1 font-semibold text-gray-800 text-sm leading-tight">{lic.equipment_name}</h3>
-          {lic.equipment_model && <p className="text-xs text-gray-500 mt-0.5">{lic.manufacturer ? `${lic.manufacturer} · ` : ""}{lic.equipment_model}{lic.equipment_serial ? ` · S/N: ${lic.equipment_serial}` : ""}</p>}
-          {lic.area && <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><Building2 size={11} />{lic.area}{lic.location ? ` — ${lic.location}` : ""}</p>}
+          <h3 className="mt-1 font-semibold text-foreground text-sm leading-tight">{lic.equipment_name}</h3>
+          {lic.equipment_model && <p className="text-xs text-muted-foreground mt-0.5">{lic.manufacturer ? `${lic.manufacturer} · ` : ""}{lic.equipment_model}{lic.equipment_serial ? ` · S/N: ${lic.equipment_serial}` : ""}</p>}
+          {lic.area && <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1"><Building2 size={11} />{lic.area}{lic.location ? ` — ${lic.location}` : ""}</p>}
         </div>
-        <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-700">
+        <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground hover:text-foreground/80">
           {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       </div>
@@ -267,10 +267,10 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
       <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4 flex-wrap">
           {lic.cchen_license_number && (
-            <span className="text-xs text-gray-500 flex items-center gap-1"><Shield size={11} />{lic.cchen_license_number}</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1"><Shield size={11} />{lic.cchen_license_number}</span>
           )}
-          <span className="text-xs text-gray-500 flex items-center gap-1"><Calendar size={11} />Vence: {fmtDate(lic.expiry_date)}</span>
-          {lic.responsible && <span className="text-xs text-gray-500 flex items-center gap-1"><User size={11} />{lic.responsible}</span>}
+          <span className="text-xs text-muted-foreground flex items-center gap-1"><Calendar size={11} />Vence: {fmtDate(lic.expiry_date)}</span>
+          {lic.responsible && <span className="text-xs text-muted-foreground flex items-center gap-1"><User size={11} />{lic.responsible}</span>}
         </div>
         <ExpiryBadge days={days} status={lic.status} />
       </div>
@@ -299,7 +299,7 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
 
       {expanded && (
         <div className="mt-4 border-t pt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+          <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
             {lic.radiation_type && <div><strong>Radiación:</strong> {lic.radiation_type}</div>}
             {lic.activity_or_kvp && <div><strong>Actividad/kVp:</strong> {lic.activity_or_kvp}</div>}
             {lic.issue_date && <div><strong>Emisión:</strong> {fmtDate(lic.issue_date)}</div>}
@@ -309,13 +309,13 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
           {lic.conditions && (
             <div className="bg-blue-50 rounded p-3 text-xs">
               <strong className="text-blue-800">Condiciones de licencia:</strong>
-              <p className="mt-1 text-gray-700">{lic.conditions}</p>
+              <p className="mt-1 text-foreground/80">{lic.conditions}</p>
             </div>
           )}
           {lic.renewal_notes && (
             <div className="bg-yellow-50 rounded p-3 text-xs">
               <strong className="text-yellow-800">Notas de renovación:</strong>
-              <p className="mt-1 text-gray-700">{lic.renewal_notes}</p>
+              <p className="mt-1 text-foreground/80">{lic.renewal_notes}</p>
             </div>
           )}
           {lic.renewal_submitted_date && (
@@ -323,13 +323,13 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
               <Calendar size={12} />Renovación presentada el {fmtDate(lic.renewal_submitted_date)}
             </div>
           )}
-          {lic.notes && <div className="text-xs text-gray-500">{lic.notes}</div>}
+          {lic.notes && <div className="text-xs text-muted-foreground">{lic.notes}</div>}
 
           {/* Renewal history */}
           <div>
-            <h4 className="font-semibold text-sm text-gray-700 mb-2">Historial de Renovaciones</h4>
+            <h4 className="font-semibold text-sm text-foreground/80 mb-2">Historial de Renovaciones</h4>
             {renewals.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin renovaciones registradas</p>
+              <p className="text-xs text-muted-foreground">Sin renovaciones registradas</p>
             ) : (
               <div className="space-y-2">
                 {renewals.map(r => (
@@ -337,13 +337,13 @@ function LicenseCard({ lic, onUpdate }: { lic: License; onUpdate: () => void }) 
                     <div className="flex items-center gap-2">
                       <CheckCircle2 size={12} className="text-green-600" />
                       <span className="font-medium">Renovada el {fmtDate(r.renewal_date)}</span>
-                      {r.cchen_reference && <span className="text-gray-500">— Ref: {r.cchen_reference}</span>}
+                      {r.cchen_reference && <span className="text-muted-foreground">— Ref: {r.cchen_reference}</span>}
                     </div>
-                    <div className="mt-1 text-gray-500">
+                    <div className="mt-1 text-muted-foreground">
                       {r.previous_expiry && `Anterior: ${fmtDate(r.previous_expiry)} → `}Nueva: {fmtDate(r.new_expiry)}
                     </div>
-                    {r.submitted_by && <div className="text-gray-500">Presentado por: {r.submitted_by}</div>}
-                    {r.notes && <div className="text-gray-600 mt-1">{r.notes}</div>}
+                    {r.submitted_by && <div className="text-muted-foreground">Presentado por: {r.submitted_by}</div>}
+                    {r.notes && <div className="text-muted-foreground mt-1">{r.notes}</div>}
                   </div>
                 ))}
               </div>
@@ -393,7 +393,7 @@ function LicenseModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
   const F = (label: string, key: keyof typeof form, type: string = "text", options?: Record<string, string>) => (
     <div>
-      <label className="text-xs font-medium text-gray-600">{label}</label>
+      <label className="text-xs font-medium text-muted-foreground">{label}</label>
       {options ? (
         <select value={String(form[key])} onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
           className="mt-1 w-full border rounded px-2 py-1.5 text-sm">
@@ -411,10 +411,10 @@ function LicenseModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b">
-          <h2 className="text-lg font-bold text-gray-800">Nueva Licencia de Operación</h2>
-          <p className="text-xs text-gray-500 mt-1">DS 3/1985 Art. 6-7 — NS-06.0 §3.1</p>
+          <h2 className="text-lg font-bold text-foreground">Nueva Licencia de Operación</h2>
+          <p className="text-xs text-muted-foreground mt-1">DS 3/1985 Art. 6-7 — NS-06.0 §3.1</p>
         </div>
         <div className="p-6 space-y-4">
           {F("Tipo de licencia", "license_type", "select", TYPE_LABELS)}
@@ -436,7 +436,7 @@ function LicenseModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           {F("Observaciones", "notes", "textarea")}
         </div>
         <div className="p-6 border-t flex justify-end gap-3">
-          <button onClick={onClose} className="text-sm text-gray-600 hover:underline">Cancelar</button>
+          <button onClick={onClose} className="text-sm text-muted-foreground hover:underline">Cancelar</button>
           <button onClick={save} disabled={saving || !form.equipment_name || !form.expiry_date}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Registrar Licencia"}
@@ -476,14 +476,14 @@ export default function OperatingLicensesPage() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FileCheck className="text-blue-600" size={28} />
             Licencias de Operación CCHEN
           </h1>
-          <p className="text-sm text-gray-500 mt-1">DS 3/1985 Art. 6-7 · NS-06.0 §3.1 — Por equipo, fuente y área</p>
+          <p className="text-sm text-muted-foreground mt-1">DS 3/1985 Art. 6-7 · NS-06.0 §3.1 — Por equipo, fuente y área</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+          <button onClick={load} className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg">
             <RefreshCw size={18} />
           </button>
           <button onClick={() => setShowModal(true)}
@@ -521,17 +521,17 @@ export default function OperatingLicensesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: "Total Licencias", value: stats.total, sub: `${stats.active} vigentes`, color: "text-blue-600", icon: <FileCheck size={18} /> },
-            { label: "Vencidas / Susp.", value: (stats.expired ?? 0) + (stats.suspended ?? 0), sub: stats.expired + stats.suspended > 0 ? "⚠ Acción requerida" : "Sin vencidas", color: stats.expired + stats.suspended > 0 ? "text-red-600" : "text-gray-500", icon: <XCircle size={18} /> },
+            { label: "Vencidas / Susp.", value: (stats.expired ?? 0) + (stats.suspended ?? 0), sub: stats.expired + stats.suspended > 0 ? "⚠ Acción requerida" : "Sin vencidas", color: stats.expired + stats.suspended > 0 ? "text-red-600" : "text-muted-foreground", icon: <XCircle size={18} /> },
             { label: "Vencen en 90d", value: stats.expiring_90d, sub: `${stats.expiring_30d} en 30d`, color: stats.expiring_30d > 0 ? "text-orange-600" : "text-yellow-600", icon: <AlertTriangle size={18} /> },
             { label: "Renv. Pendiente", value: stats.pending_renewal, sub: "En proceso", color: "text-yellow-700", icon: <Calendar size={18} /> },
           ].map((tile, i) => (
-            <div key={i} className="bg-white rounded-xl shadow p-4">
+            <div key={i} className="bg-background rounded-xl shadow p-4">
               <div className={`flex items-center gap-2 ${tile.color}`}>
                 {tile.icon}
-                <span className="text-xs font-medium text-gray-600">{tile.label}</span>
+                <span className="text-xs font-medium text-muted-foreground">{tile.label}</span>
               </div>
               <div className={`text-3xl font-bold mt-2 ${tile.color}`}>{tile.value ?? "—"}</div>
-              <div className="text-xs text-gray-400 mt-1">{tile.sub}</div>
+              <div className="text-xs text-muted-foreground mt-1">{tile.sub}</div>
             </div>
           ))}
         </div>
@@ -556,9 +556,9 @@ export default function OperatingLicensesPage() {
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando licencias…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando licencias…</div>
       ) : licenses.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <FileCheck size={40} className="mx-auto mb-3 opacity-30" />
           <p>No hay licencias registradas</p>
           <button onClick={() => setShowModal(true)} className="mt-3 text-blue-600 hover:underline text-sm">

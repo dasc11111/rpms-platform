@@ -140,7 +140,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
         <div>
           <label className="text-sm font-medium block mb-1">Equipo</label>
           <select
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             value={equipmentId}
             onChange={(e) => setEquipmentId(e.target.value ? Number(e.target.value) : "")}
           >
@@ -156,7 +156,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
           <label className="text-sm font-medium block mb-1">ID de prueba (opcional)</label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             value={filterTestId}
             onChange={(e) => setFilterTestId(e.target.value)}
           />
@@ -178,7 +178,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
           <div>
             <label className="text-sm font-medium block mb-1">Tipo de evidencia</label>
             <select
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.evidence_type}
               onChange={(e) => updateField("evidence_type", e.target.value)}
             >
@@ -193,7 +193,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
             <label className="text-sm font-medium block mb-1">ID de prueba asociada (opcional)</label>
             <input
               type="number"
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.test_id}
               onChange={(e) => updateField("test_id", e.target.value)}
             />
@@ -202,7 +202,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
             <label className="text-sm font-medium block mb-1">Nombre del archivo</label>
             <input
               type="text"
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.file_name}
               onChange={(e) => updateField("file_name", e.target.value)}
             />
@@ -212,7 +212,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
             <input
               type="text"
               placeholder="https://..."
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.file_url}
               onChange={(e) => updateField("file_url", e.target.value)}
             />
@@ -220,7 +220,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
           <div className="md:col-span-2">
             <label className="text-sm font-medium block mb-1">Descripcion</label>
             <textarea
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               rows={2}
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
@@ -230,7 +230,7 @@ export default function ActivimetroEvidenceApp({ equipment }: { equipment: Equip
             <label className="text-sm font-medium block mb-1">Registrado por</label>
             <input
               type="text"
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.uploaded_by}
               onChange={(e) => updateField("uploaded_by", e.target.value)}
             />

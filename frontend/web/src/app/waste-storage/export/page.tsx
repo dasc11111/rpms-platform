@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, Package, MapPin, ArrowLeftRight } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-300";
 
 type Dataset = "inventory" | "movements" | "locations";
 type ExportFormat = "csv" | "xlsx";
@@ -91,23 +91,23 @@ export default function WasteStorageExportPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Exportar Almacenamiento de Residuos</h1>
-        <p className="text-sm text-gray-500 mt-1">Descarga datos del inventario, movimientos o ubicaciones en formato CSV o Excel</p>
+        <h1 className="text-2xl font-bold text-foreground">Exportar Almacenamiento de Residuos</h1>
+        <p className="text-sm text-muted-foreground mt-1">Descarga datos del inventario, movimientos o ubicaciones en formato CSV o Excel</p>
       </div>
 
       {/* Dataset selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800">¿Qué datos exportar?</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground">¿Qué datos exportar?</h2>
         <div className="space-y-3">
           {DATASETS.map(ds => (
             <label key={ds.value}
-              className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition ${dataset === ds.value ? "border-green-500 bg-green-50" : "border-gray-200 hover:bg-gray-50"}`}>
+              className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition ${dataset === ds.value ? "border-green-500 bg-green-50" : "border-border hover:bg-muted/50"}`}>
               <input type="radio" name="dataset" value={ds.value} checked={dataset === ds.value}
                 onChange={() => setDataset(ds.value)} className="sr-only" />
-              <span className={`mt-0.5 ${dataset === ds.value ? "text-green-600" : "text-gray-500"}`}>{ds.icon}</span>
+              <span className={`mt-0.5 ${dataset === ds.value ? "text-green-600" : "text-muted-foreground"}`}>{ds.icon}</span>
               <div>
-                <p className={`font-semibold text-sm ${dataset === ds.value ? "text-green-700" : "text-gray-700"}`}>{ds.label}</p>
-                <p className="text-xs text-gray-500">{ds.desc}</p>
+                <p className={`font-semibold text-sm ${dataset === ds.value ? "text-green-700" : "text-foreground/80"}`}>{ds.label}</p>
+                <p className="text-xs text-muted-foreground">{ds.desc}</p>
               </div>
             </label>
           ))}
@@ -115,12 +115,12 @@ export default function WasteStorageExportPage() {
       </div>
 
       {/* Format selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><FileSpreadsheet size={18} /> Formato</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><FileSpreadsheet size={18} /> Formato</h2>
         <div className="flex gap-3">
           {(["xlsx", "csv"] as ExportFormat[]).map(f => (
             <label key={f}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === f ? "border-green-500 bg-green-50 text-green-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === f ? "border-green-500 bg-green-50 text-green-700" : "border-border text-muted-foreground hover:bg-muted/50"}`}>
               <input type="radio" name="format" value={f} checked={format === f} onChange={() => setFormat(f)} className="sr-only" />
               {f === "xlsx" ? "XLSX (Excel)" : "CSV"}
             </label>

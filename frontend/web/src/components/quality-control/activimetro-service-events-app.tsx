@@ -191,7 +191,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
         <div>
           <label className="text-sm font-medium block mb-1">Filtrar por equipo</label>
           <select
-            className="border rounded px-2 py-1 text-sm min-w-[260px] text-slate-800"
+            className="border rounded px-2 py-1 text-sm min-w-[260px] text-foreground"
             value={filterEquipment}
             onChange={(e) => setFilterEquipment(e.target.value ? Number(e.target.value) : "")}
           >
@@ -217,7 +217,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
           <div>
             <label className="text-sm font-medium block mb-1">Equipo</label>
             <select
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.equipment_id}
               onChange={(e) => updateField("equipment_id", e.target.value ? Number(e.target.value) : "")}
             >
@@ -235,7 +235,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
             <label className="text-sm font-medium block mb-1">Fecha del servicio</label>
             <input
               type="date"
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               value={form.service_date}
               onChange={(e) => updateField("service_date", e.target.value)}
             />
@@ -248,7 +248,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
           <div className="md:col-span-2">
             <label className="text-sm font-medium block mb-1">Descripcion</label>
             <textarea
-              className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+              className="w-full border rounded px-2 py-1 text-sm text-foreground"
               rows={2}
               value={form.description}
               onChange={(e) => updateField("description", e.target.value)}
@@ -303,7 +303,7 @@ export default function ActivimetroServiceEventsApp({ equipment }: { equipment: 
                 {ev.company && <span className="text-xs text-muted-foreground">Empresa: {ev.company}</span>}
                 {ev.work_order_number && <span className="text-xs text-muted-foreground">OT: {ev.work_order_number}</span>}
                 <select
-                  className="ml-auto border rounded px-2 py-1 text-xs text-slate-800"
+                  className="ml-auto border rounded px-2 py-1 text-xs text-foreground"
                   value={ev.status}
                   onChange={(e) => updateStatus(ev, e.target.value)}
                 >
@@ -340,7 +340,7 @@ function TextField({ label, value, onChange }: { label: string; value: string; o
   return (
     <div>
       <label className="text-sm font-medium block mb-1">{label}</label>
-      <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

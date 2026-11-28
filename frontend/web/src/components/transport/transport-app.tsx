@@ -600,7 +600,7 @@ export function TransportApp({
                             <span className="font-medium text-foreground">{mat}</span>
                             <span className={cls.text}>{count} ({pct}%)</span>
                           </div>
-                          <div className="h-2 rounded-full bg-gray-100">
+                          <div className="h-2 rounded-full bg-muted">
                             <div className={`h-2 rounded-full ${cls.bg.replace("bg-", "bg-").replace("-50", "-400")}`} style={{ width: `${pct}%` }} />
                           </div>
                         </div>
@@ -641,7 +641,7 @@ export function TransportApp({
               { label: "OPR", value: c?.oprPct ?? null, color: "orange" },
             ];
             const getColor = (v: number | null) => v === null ? "gray" : v >= 75 ? "green" : v >= 50 ? "yellow" : "red";
-            const semBg: Record<string,string> = { green: "bg-green-400", yellow: "bg-yellow-400", red: "bg-red-400", gray: "bg-gray-300" };
+            const semBg: Record<string,string> = { green: "bg-green-400", yellow: "bg-yellow-400", red: "bg-red-400", gray: "bg-muted" };
             const semText: Record<string,string> = { green: "text-green-700", yellow: "text-yellow-700", red: "text-red-700", gray: "text-muted-foreground" };
             const totalChecked = c?.total ?? 0;
             const compVals = fields.map(f => f.value).filter(v => v !== null) as number[];
@@ -677,7 +677,7 @@ export function TransportApp({
                             <span className="font-medium text-foreground">{f.label}</span>
                             <span className={semText[col]}>{f.value !== null ? f.value + "%" : "Sin datos"}</span>
                           </div>
-                          <div className="h-3 rounded-full bg-gray-100">
+                          <div className="h-3 rounded-full bg-muted">
                             {f.value !== null && (
                               <div className={`h-3 rounded-full transition-all ${semBg[col]}`} style={{ width: `${f.value}%` }} />
                             )}

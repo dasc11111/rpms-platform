@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, ChevronDown, ChevronUp, CheckCircle, Clock } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 const CATEGORIES = ["dosimetria", "geometria", "dosis_profundidad", "perfiles", "mlc", "imrt", "sbrt", "verificacion_independiente", "otro"];
 
@@ -97,8 +97,8 @@ export default function LinacCommissioningPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Commissioning LINAC</h1>
-          <p className="text-sm text-gray-500 mt-1">Datasets de puesta en marcha y medidas de referencia — IAEA TRS-398 / AAPM TG-51</p>
+          <h1 className="text-2xl font-bold text-foreground">Commissioning LINAC</h1>
+          <p className="text-sm text-muted-foreground mt-1">Datasets de puesta en marcha y medidas de referencia — IAEA TRS-398 / AAPM TG-51</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
@@ -109,26 +109,26 @@ export default function LinacCommissioningPage() {
       {/* KPI tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Datasets totales", val: stats.total, color: "text-gray-900" },
+          { label: "Datasets totales", val: stats.total, color: "text-foreground" },
           { label: "Aprobados", val: stats.aprobados, color: "text-green-600" },
           { label: "Vigentes (is_current)", val: stats.corrientes, color: "text-indigo-600" },
-          { label: "Categorías", val: stats.categorias, color: "text-gray-700" },
+          { label: "Categorías", val: stats.categorias, color: "text-foreground/80" },
         ].map(t => (
-          <div key={t.label} className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs text-gray-500">{t.label}</p>
+          <div key={t.label} className="bg-background rounded-xl border border-border p-4">
+            <p className="text-xs text-muted-foreground">{t.label}</p>
             <p className={`text-2xl font-bold ${t.color}`}>{t.val}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-background rounded-xl border border-border p-4 flex flex-wrap gap-3 items-end">
         <div className="flex-1 min-w-[120px]">
-          <label className="block text-xs text-gray-500 mb-1">LINAC ID</label>
+          <label className="block text-xs text-muted-foreground mb-1">LINAC ID</label>
           <input value={linacId} onChange={e => setLinacId(e.target.value)} placeholder="1" className={inp} />
         </div>
         <div className="flex-1 min-w-[180px]">
-          <label className="block text-xs text-gray-500 mb-1">Categoría</label>
+          <label className="block text-xs text-muted-foreground mb-1">Categoría</label>
           <select value={category} onChange={e => setCategory(e.target.value)} className={inp}>
             <option value="">Todas</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
@@ -142,38 +142,38 @@ export default function LinacCommissioningPage() {
           <h2 className="font-semibold text-indigo-800">Nuevo dataset de commissioning</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">LINAC ID *</label>
+              <label className="block text-xs text-muted-foreground mb-1">LINAC ID *</label>
               <input value={form.linacId} onChange={e => setForm(f => ({ ...f, linacId: e.target.value }))} className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Categoría *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Categoría *</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={inp}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Tipo de medición *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Tipo de medición *</label>
               <input value={form.measurementType} onChange={e => setForm(f => ({ ...f, measurementType: e.target.value }))}
                 placeholder="PDD 6MV, Output factor, PDDs…" className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Fecha de medición *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Fecha de medición *</label>
               <input type="date" value={form.measurementDate} onChange={e => setForm(f => ({ ...f, measurementDate: e.target.value }))} className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Medido por</label>
+              <label className="block text-xs text-muted-foreground mb-1">Medido por</label>
               <input value={form.measuredBy} onChange={e => setForm(f => ({ ...f, measuredBy: e.target.value }))} className={inp} />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Instrumento</label>
+              <label className="block text-xs text-muted-foreground mb-1">Instrumento</label>
               <input value={form.instrumentUsed} onChange={e => setForm(f => ({ ...f, instrumentUsed: e.target.value }))} className={inp} />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">Notas</label>
+              <label className="block text-xs text-muted-foreground mb-1">Notas</label>
               <input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} className={inp} />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">Datos (JSON)</label>
+              <label className="block text-xs text-muted-foreground mb-1">Datos (JSON)</label>
               <textarea value={form.data} onChange={e => setForm(f => ({ ...f, data: e.target.value }))}
                 rows={3} placeholder='{"energia":"6MV","valor":1.000}' className={inp + " font-mono text-xs"} />
             </div>
@@ -182,43 +182,43 @@ export default function LinacCommissioningPage() {
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
               className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
-            <button onClick={() => setShowForm(false)} className="bg-white border border-gray-200 px-5 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="bg-background border border-border px-5 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
           </div>
         </div>
       )}
 
       {/* Dataset list */}
-      <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+      <div className="bg-background rounded-xl border border-border divide-y divide-gray-100">
         {loading ? (
-          <div className="p-8 text-center text-gray-400">Cargando…</div>
+          <div className="p-8 text-center text-muted-foreground">Cargando…</div>
         ) : datasets.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">Sin datasets para los filtros seleccionados</div>
+          <div className="p-8 text-center text-muted-foreground">Sin datasets para los filtros seleccionados</div>
         ) : datasets.map(d => (
           <div key={d.id}>
-            <div className="px-5 py-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer transition"
+            <div className="px-5 py-4 flex items-center gap-4 hover:bg-muted/50 cursor-pointer transition"
               onClick={() => setExpanded(expanded === d.id ? null : d.id)}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-gray-900">{d.measurement_type}</span>
+                  <span className="font-semibold text-foreground">{d.measurement_type}</span>
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{d.category?.replace(/_/g, " ")}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEM[d.status] ?? "bg-gray-100 text-gray-600"}`}>{d.status}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${SEM[d.status] ?? "bg-muted text-muted-foreground"}`}>{d.status}</span>
                   {d.is_current && <span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle size={12} /> vigente</span>}
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {new Date(d.measurement_date).toLocaleDateString("es-CL")} · v{d.version}
                   {d.measured_by && ` · ${d.measured_by}`}
                   {d.instrument_used && ` · ${d.instrument_used}`}
                 </p>
               </div>
-              {expanded === d.id ? <ChevronUp size={16} className="text-gray-400 shrink-0" /> : <ChevronDown size={16} className="text-gray-400 shrink-0" />}
+              {expanded === d.id ? <ChevronUp size={16} className="text-muted-foreground shrink-0" /> : <ChevronDown size={16} className="text-muted-foreground shrink-0" />}
             </div>
             {expanded === d.id && (
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 space-y-2">
-                {d.notes && <p className="text-sm text-gray-700"><span className="font-medium">Notas:</span> {d.notes}</p>}
+              <div className="px-6 py-4 bg-muted/50 border-t border-border/50 space-y-2">
+                {d.notes && <p className="text-sm text-foreground/80"><span className="font-medium">Notas:</span> {d.notes}</p>}
                 {d.data && Object.keys(d.data).length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Datos:</p>
-                    <pre className="text-xs font-mono bg-white border border-gray-200 rounded-lg p-3 overflow-auto max-h-40">
+                    <p className="text-xs text-muted-foreground mb-1">Datos:</p>
+                    <pre className="text-xs font-mono bg-background border border-border rounded-lg p-3 overflow-auto max-h-40">
                       {JSON.stringify(d.data, null, 2)}
                     </pre>
                   </div>

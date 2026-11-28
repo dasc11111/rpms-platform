@@ -78,20 +78,20 @@ function AlertCard({ alert }: { alert: Alert }) {
             <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.badge}`}>
               {cfg.label}
             </span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
               {alert.module}
             </span>
           </div>
-          <p className="mt-1 font-medium text-gray-900 text-sm leading-snug">{alert.title}</p>
-          <p className="mt-0.5 text-xs text-gray-600">{alert.detail}</p>
+          <p className="mt-1 font-medium text-foreground text-sm leading-snug">{alert.title}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{alert.detail}</p>
           {alert.regulation && (
-            <p className="mt-1 text-xs text-gray-400 italic">{alert.regulation}</p>
+            <p className="mt-1 text-xs text-muted-foreground italic">{alert.regulation}</p>
           )}
         </div>
         {alert.action && (
           <Link
             href={alert.action}
-            className="shrink-0 flex items-center gap-1 rounded-md bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition"
+            className="shrink-0 flex items-center gap-1 rounded-md bg-background px-2.5 py-1.5 text-xs font-medium text-foreground/80 shadow-sm border border-border hover:bg-muted/50 transition"
           >
             Ir <ExternalLink className="h-3 w-3" />
           </Link>
@@ -147,8 +147,8 @@ export default function AlertsPage() {
         <div className="flex items-center gap-3">
           <ShieldAlert className="h-7 w-7 text-red-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Alertas y Notificaciones</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-foreground">Alertas y Notificaciones</h1>
+            <p className="text-sm text-muted-foreground">
               Monitoreo centralizado de irregularidades radiológicas · DS 3/1985 · NS-06.0
             </p>
           </div>
@@ -156,7 +156,7 @@ export default function AlertsPage() {
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 transition"
+          className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground/80 shadow-sm hover:bg-muted/50 disabled:opacity-50 transition"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -166,9 +166,9 @@ export default function AlertsPage() {
       {/* KPI Row */}
       {data && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 text-center">
-            <div className="text-3xl font-bold text-gray-900">{data.total}</div>
-            <div className="text-xs text-gray-500 mt-1">Alertas activas</div>
+          <div className="rounded-xl bg-background border border-border shadow-sm p-4 text-center">
+            <div className="text-3xl font-bold text-foreground">{data.total}</div>
+            <div className="text-xs text-muted-foreground mt-1">Alertas activas</div>
           </div>
           <div className="rounded-xl bg-red-500 p-4 text-center text-white">
             <div className="text-3xl font-bold">{data.danger}</div>
@@ -199,11 +199,11 @@ export default function AlertsPage() {
       {/* Filters */}
       {data && data.total > 0 && (
         <div className="flex flex-wrap items-center gap-3">
-          <Filter className="h-4 w-4 text-gray-400" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground/80 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos los tipos</option>
             <option value="danger">Peligro</option>
@@ -213,7 +213,7 @@ export default function AlertsPage() {
           <select
             value={filterModule}
             onChange={(e) => setFilterModule(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground/80 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos los módulos</option>
             {modules.map((m) => (
@@ -228,7 +228,7 @@ export default function AlertsPage() {
               Limpiar filtros
             </button>
           )}
-          <span className="ml-auto text-xs text-gray-400">
+          <span className="ml-auto text-xs text-muted-foreground">
             {filtered.length} de {data.total} alertas
             {lastUpdated && ` · Actualizado: ${lastUpdated}`}
           </span>
@@ -237,7 +237,7 @@ export default function AlertsPage() {
 
       {/* Alert list — by type */}
       {loading && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-2" />
           Cargando alertas…
         </div>
@@ -297,8 +297,8 @@ export default function AlertsPage() {
 
       {/* Module summary */}
       {data && data.total > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Resumen por módulo</h2>
+        <section className="rounded-xl border border-border bg-background shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-foreground/80 mb-4">Resumen por módulo</h2>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((mod) => {
               const modAlerts = data.alerts.filter((a) => a.module === mod);
@@ -312,10 +312,10 @@ export default function AlertsPage() {
                   className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-left transition hover:shadow-sm ${
                     filterModule === mod
                       ? "border-blue-300 bg-blue-50"
-                      : "border-gray-100 bg-gray-50 hover:border-gray-200"
+                      : "border-border/50 bg-muted/50 hover:border-border"
                   }`}
                 >
-                  <span className="text-sm font-medium text-gray-800">{mod}</span>
+                  <span className="text-sm font-medium text-foreground">{mod}</span>
                   <div className="flex items-center gap-1">
                     {danger > 0 && (
                       <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-700">
@@ -341,8 +341,8 @@ export default function AlertsPage() {
       )}
 
       {/* Regulatory footer */}
-      <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-xs text-gray-500">
-        <span className="font-medium text-gray-600">Marco normativo:</span>{" "}
+      <div className="rounded-lg bg-muted/50 border border-border px-4 py-3 text-xs text-muted-foreground">
+        <span className="font-medium text-muted-foreground">Marco normativo:</span>{" "}
         DS 3/1985 MINSAL · NS-06.0 CCHEN · ICRP 103 · IAEA-TECDOC-1683 · NS-04 CCHEN.
         Las alertas se generan automáticamente al detectar desviaciones respecto a los límites
         reglamentarios. El encargado de protección radiológica debe revisar y gestionar cada alerta.

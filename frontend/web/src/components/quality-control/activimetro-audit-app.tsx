@@ -99,7 +99,7 @@ export default function ActivimetroAuditApp({ initialRecords }: { initialRecords
           <input
             type="text"
             list="entity-type-options"
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             placeholder="qc_activimetro_baseline"
             value={entityType}
             onChange={(e) => setEntityType(e.target.value)}
@@ -116,7 +116,7 @@ export default function ActivimetroAuditApp({ initialRecords }: { initialRecords
           <label className="text-sm font-medium block mb-1">ID de entidad</label>
           <input
             type="number"
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             value={entityId}
             onChange={(e) => setEntityId(e.target.value)}
           />

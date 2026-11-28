@@ -54,7 +54,7 @@ interface StatsData {
 }
 
 const DIS_CFG: Record<DisStateKey, { label: string; cls: string; dot: string }> = {
-  pendiente:            { label: "Pendiente",             cls: "bg-gray-100 text-gray-700 border border-gray-200",     dot: "bg-gray-500" },
+  pendiente:            { label: "Pendiente",             cls: "bg-muted text-foreground/80 border border-border",     dot: "bg-gray-500" },
   en_decaimiento:       { label: "En decaimiento",        cls: "bg-blue-100 text-blue-700 border border-blue-200",     dot: "bg-blue-500" },
   listo_para_liberar:   { label: "Listo para liberar",    cls: "bg-green-100 text-green-700 border border-green-200",  dot: "bg-green-500" },
   liberado:             { label: "Liberado",               cls: "bg-teal-100 text-teal-700 border border-teal-200",    dot: "bg-teal-500" },
@@ -87,7 +87,7 @@ const WASTE_TYPE_LABELS: Record<string, string> = {
   otro: "Otro",
 };
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -240,24 +240,24 @@ export default function WasteLabelsPage() {
   const radionuclides = Array.from(new Set(rows.map((r) => r.radionuclide_code).filter(Boolean))).sort();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-6">
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Tag className="h-4 w-4 text-orange-500" />
             <span>Gestión de Residuos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Rótulos de Gestión de Residuos Radiactivos
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Rótulos individuales con correlativo anual, estado de decaimiento y proyección de liberación.
             DS 3/1985 · NS-06.0 §9.4 · IAEA GSG-1.
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
             <RefreshCw className="h-4 w-4" />
             Actualizar
           </button>
@@ -273,10 +273,10 @@ export default function WasteLabelsPage() {
             { label: "Almacenados", value: stats.almacenados, cls: "text-blue-700", dot: "bg-blue-500" },
             { label: "Liberados", value: stats.liberados, cls: "text-green-700", dot: "bg-green-500" },
           ].map((k) => (
-            <div key={k.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div key={k.label} className="rounded-xl border border-border bg-background p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`h-2 w-2 rounded-full ${k.dot}`} />
-                <span className="text-xs text-gray-500">{k.label}</span>
+                <span className="text-xs text-muted-foreground">{k.label}</span>
               </div>
               <span className={`text-2xl font-bold ${k.cls}`}>{k.value}</span>
             </div>
@@ -291,41 +291,41 @@ export default function WasteLabelsPage() {
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="Buscar nro., sala, servicio, paciente…"
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 min-w-[220px]"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80 min-w-[220px]"
         />
-        <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los estados</option>
           {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={filterDispensa} onChange={(e) => { setFilterDispensa(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterDispensa} onChange={(e) => { setFilterDispensa(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los estados de dispensa</option>
           {DISPENSA_ESTADOS.map((s) => <option key={s} value={s}>{DIS_CFG[s].label}</option>)}
         </select>
-        <select value={filterYear} onChange={(e) => { setFilterYear(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterYear} onChange={(e) => { setFilterYear(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los años</option>
           {years.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
-        <select value={filterService} onChange={(e) => { setFilterService(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterService} onChange={(e) => { setFilterService(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los servicios</option>
           {services.map((s) => <option key={s!} value={s!}>{s}</option>)}
         </select>
-        <select value={filterRn} onChange={(e) => { setFilterRn(e.target.value); setPage(1); }} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterRn} onChange={(e) => { setFilterRn(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los radionúclidos</option>
           {radionuclides.map((r) => <option key={r!} value={r!}>{r}</option>)}
         </select>
-        <span className="ml-auto self-center text-xs text-gray-400">
+        <span className="ml-auto self-center text-xs text-muted-foreground">
           {rows.length} mostrados · {total} total
         </span>
       </div>
 
       {/* ── Content ── */}
-      {loading && <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-400">Cargando…</div>}
+      {loading && <div className="rounded-xl border border-border bg-background p-12 text-center text-muted-foreground">Cargando…</div>}
       {error && !loading && <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">{error}</div>}
 
       {!loading && !error && rows.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <Tag className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             {total === 0 ? "No hay rótulos generados aún." : "No hay rótulos que coincidan con los filtros."}
           </p>
         </div>
@@ -338,12 +338,12 @@ export default function WasteLabelsPage() {
             const dcfg = dispensaCfg(lbl);
             const sCfg = STATUS_CFG[lbl.status] ?? STATUS_CFG.pendiente;
             return (
-              <div key={lbl.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                <button onClick={() => toggle(lbl.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+              <div key={lbl.id} className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
+                <button onClick={() => toggle(lbl.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors">
                   <Tag className="h-5 w-5 text-orange-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-bold text-gray-900">{lbl.label_number}</span>
+                      <span className="font-mono text-sm font-bold text-foreground">{lbl.label_number}</span>
                       {lbl.radionuclide_code && (
                         <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700">{lbl.radionuclide_code}</span>
                       )}
@@ -356,7 +356,7 @@ export default function WasteLabelsPage() {
                         {dcfg.label}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(lbl.generation_date)}</span>
                       {lbl.service && <span>{lbl.service}</span>}
                       {lbl.sala && <span>· {lbl.sala}</span>}
@@ -369,18 +369,18 @@ export default function WasteLabelsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(lbl); }} className="rounded p-1 text-gray-400 hover:text-orange-600 hover:bg-orange-50">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(lbl); }} className="rounded p-1 text-muted-foreground hover:text-orange-600 hover:bg-orange-50">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(lbl.id); }} className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(lbl.id); }} className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50">
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    {isOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+                  <div className="border-t border-border/50 px-4 py-4 bg-muted/50">
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
                       <Field label="Nro. rótulo" value={lbl.label_number} mono />
                       <Field label="Año" value={String(lbl.label_year)} />
@@ -404,7 +404,7 @@ export default function WasteLabelsPage() {
                       {lbl.observations && <Field label="Observaciones" value={lbl.observations} className="col-span-3" />}
                     </dl>
                     <div className="mt-3 flex justify-end">
-                      <a href={`/waste-labels/${lbl.id}`} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-white hover:text-orange-600">
+                      <a href={`/waste-labels/${lbl.id}`} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-background hover:text-orange-600">
                         <FlaskConical className="h-3 w-3" />
                         Ver mediciones y proyección
                       </a>
@@ -420,18 +420,18 @@ export default function WasteLabelsPage() {
       {/* pagination */}
       {total > pageSize && (
         <div className="mt-4 flex items-center justify-center gap-3">
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-gray-50">Anterior</button>
-          <span className="text-sm text-gray-500">Página {page} · {Math.ceil(total / pageSize)} total</span>
-          <button disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-gray-50">Siguiente</button>
+          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="rounded-lg border border-border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted/50">Anterior</button>
+          <span className="text-sm text-muted-foreground">Página {page} · {Math.ceil(total / pageSize)} total</span>
+          <button disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)} className="rounded-lg border border-border px-3 py-1.5 text-sm disabled:opacity-40 hover:bg-muted/50">Siguiente</button>
         </div>
       )}
 
       {/* ── Regulatory footer ── */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="mt-8 rounded-xl border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600">Marco normativo aplicable</p>
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-medium text-muted-foreground">Marco normativo aplicable</p>
             <p>DS 3/1985 (MINSAL) — Obligación de rótulo individualizado para residuos radiactivos generados en instalaciones médicas</p>
             <p>NS-06.0 §9.4 — Identificación, seguimiento y trazabilidad de rótulos de gestión de residuos con correlativo anual</p>
             <p>IAEA GSG-1 §4.5 — Labeling requirements for radioactive waste packages: mandatory fields and tracking</p>
@@ -443,13 +443,13 @@ export default function WasteLabelsPage() {
       {/* ── Edit modal ── */}
       {editLabel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div className="w-full max-w-md rounded-2xl bg-background shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Actualizar rótulo</h2>
-                <p className="text-xs text-gray-500 font-mono mt-0.5">{editLabel.label_number}</p>
+                <h2 className="text-lg font-semibold text-foreground">Actualizar rótulo</h2>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">{editLabel.label_number}</p>
               </div>
-              <button onClick={() => setEditLabel(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <button onClick={() => setEditLabel(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="overflow-y-auto px-6 py-4 space-y-4">
               {editError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{editError}</div>}
@@ -468,8 +468,8 @@ export default function WasteLabelsPage() {
                 <textarea rows={3} value={editForm.observaciones} onChange={(e) => setEditForm((p) => ({ ...p, observaciones: e.target.value }))} className={`${inp} resize-none`} />
               </FormField>
             </div>
-            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
-              <button onClick={() => setEditLabel(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <div className="flex justify-end gap-3 border-t border-border/50 px-6 py-4">
+              <button onClick={() => setEditLabel(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={handleEdit} disabled={editSaving} className="flex items-center gap-2 rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-60">
                 <Save className="h-4 w-4" />
                 {editSaving ? "Guardando…" : "Guardar cambios"}
@@ -482,16 +482,16 @@ export default function WasteLabelsPage() {
       {/* ── Delete confirm ── */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-background shadow-2xl p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="rounded-full bg-red-100 p-2"><Trash2 className="h-5 w-5 text-red-600" /></div>
               <div>
-                <h3 className="font-semibold text-gray-900">Eliminar rótulo</h3>
-                <p className="mt-1 text-sm text-gray-500">El rótulo cambiará su estado de dispensa a "Eliminado" (soft delete). Se mantiene el historial para trazabilidad.</p>
+                <h3 className="font-semibold text-foreground">Eliminar rótulo</h3>
+                <p className="mt-1 text-sm text-muted-foreground">El rótulo cambiará su estado de dispensa a "Eliminado" (soft delete). Se mantiene el historial para trazabilidad.</p>
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={() => handleDelete(deleteId)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Confirmar</button>
             </div>
           </div>
@@ -506,8 +506,8 @@ export default function WasteLabelsPage() {
 function Field({ label, value, mono = false, className = "" }: { label: string; value: string | number; mono?: boolean; className?: string }) {
   return (
     <div className={className}>
-      <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-      <dd className={`text-sm text-gray-800 font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+      <dt className="text-xs text-muted-foreground mb-0.5">{label}</dt>
+      <dd className={`text-sm text-foreground font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -515,7 +515,7 @@ function Field({ label, value, mono = false, className = "" }: { label: string; 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       {children}
     </div>
   );

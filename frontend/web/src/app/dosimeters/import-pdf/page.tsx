@@ -86,7 +86,7 @@ const DOSIMETER_TYPES = [
 
 function RowBadge({ row }: { row: ParsedRow }) {
   if (row.resolution === "ya_asignado")
-    return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium"><CheckCircle className="h-3 w-3" />Ya asignado</span>;
+    return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium"><CheckCircle className="h-3 w-3" />Ya asignado</span>;
   if (row.resolution === "sin_trabajador")
     return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium"><UserX className="h-3 w-3" />Sin trabajador</span>;
   if (row.resolution === "reasignar")
@@ -550,7 +550,7 @@ export default function DosimetersImportPdfPage() {
                   {toAssign > 0 && <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium"><UserCheck className="h-3 w-3" />{toAssign} a asignar</span>}
                   {conflictCount > 0 && <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-medium"><RotateCcw className="h-3 w-3" />{conflictCount} conflictos</span>}
                   {noWorkerCount > 0 && <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 font-medium"><UserX className="h-3 w-3" />{noWorkerCount} sin trabajador</span>}
-                  {alreadyCount > 0 && <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium"><CheckCircle className="h-3 w-3" />{alreadyCount} ya asignados</span>}
+                  {alreadyCount > 0 && <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-medium"><CheckCircle className="h-3 w-3" />{alreadyCount} ya asignados</span>}
                 </div>
               </div>
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Download, FileSpreadsheet, Filter } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
 
 export default function ContaminationExportPage() {
   const [format, setFormat] = useState<"csv" | "xlsx">("xlsx");
@@ -40,19 +40,19 @@ export default function ContaminationExportPage() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Exportar Contaminación Superficial</h1>
-        <p className="text-sm text-gray-500 mt-1">Descarga los registros de control de contaminación en CSV o XLSX</p>
+        <h1 className="text-2xl font-bold text-foreground">Exportar Contaminación Superficial</h1>
+        <p className="text-sm text-muted-foreground mt-1">Descarga los registros de control de contaminación en CSV o XLSX</p>
       </div>
 
       {/* Format selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><FileSpreadsheet size={18} /> Formato de exportación</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><FileSpreadsheet size={18} /> Formato de exportación</h2>
         <div className="flex gap-3">
-          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === "xlsx" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === "xlsx" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border text-muted-foreground hover:bg-muted/50"}`}>
             <input type="radio" name="format" value="xlsx" checked={format === "xlsx"} onChange={() => setFormat("xlsx")} className="sr-only" />
             XLSX (Excel)
           </label>
-          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === "csv" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+          <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition ${format === "csv" ? "border-orange-500 bg-orange-50 text-orange-700" : "border-border text-muted-foreground hover:bg-muted/50"}`}>
             <input type="radio" name="format" value="csv" checked={format === "csv"} onChange={() => setFormat("csv")} className="sr-only" />
             CSV
           </label>
@@ -60,23 +60,23 @@ export default function ContaminationExportPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Filter size={18} /> Filtros opcionales</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground flex items-center gap-2"><Filter size={18} /> Filtros opcionales</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Área</label>
+            <label className="block text-xs text-muted-foreground mb-1">Área</label>
             <input value={filters.area} onChange={e => setF("area", e.target.value)} placeholder="Medicina Nuclear…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Sala</label>
+            <label className="block text-xs text-muted-foreground mb-1">Sala</label>
             <input value={filters.sala} onChange={e => setF("sala", e.target.value)} placeholder="Sala 1…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Radionúclido</label>
+            <label className="block text-xs text-muted-foreground mb-1">Radionúclido</label>
             <input value={filters.radionuclido} onChange={e => setF("radionuclido", e.target.value)} placeholder="I131, TC99M…" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Estado</label>
+            <label className="block text-xs text-muted-foreground mb-1">Estado</label>
             <select value={filters.estado} onChange={e => setF("estado", e.target.value)} className={inp}>
               <option value="">Todos</option>
               <option value="normal">Normal</option>
@@ -86,11 +86,11 @@ export default function ContaminationExportPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Fecha desde</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha desde</label>
             <input type="date" value={filters.fechaDesde} onChange={e => setF("fechaDesde", e.target.value)} className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Fecha hasta</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha hasta</label>
             <input type="date" value={filters.fechaHasta} onChange={e => setF("fechaHasta", e.target.value)} className={inp} />
           </div>
         </div>

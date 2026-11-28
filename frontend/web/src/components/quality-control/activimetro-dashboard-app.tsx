@@ -90,7 +90,7 @@ const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }
   sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
   rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
   indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
-  gray:   { border: "border-gray-100",   text: "text-gray-600",   bg: "bg-gray-50" },
+  gray:   { border: "border-border/50",   text: "text-muted-foreground",   bg: "bg-muted/50" },
 };
 
 const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
@@ -158,13 +158,13 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Tablero — Activímetro QC</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-foreground">Tablero — Activímetro QC</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             Control de Calidad de Activímetros · Hospital Dr. Hernán Henríquez Aravena
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400">Act.: {data.checkedAt}</span>
+          <span className="text-xs text-muted-foreground">Act.: {data.checkedAt}</span>
           <button
             type="button"
             onClick={refresh}
@@ -179,7 +179,7 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
 
       {/* Tab Nav */}
-      <div className="flex gap-1 border-b border-slate-200">
+      <div className="flex gap-1 border-b border-border">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -187,8 +187,8 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
             onClick={() => setDashTab(t.id)}
             className={`px-4 py-2 text-sm font-medium rounded-t transition-colors ${
               dashTab === t.id
-                ? "border border-b-white border-slate-200 bg-white text-slate-800 -mb-px"
-                : "text-slate-500 hover:text-slate-700"
+                ? "border border-b-white border-border bg-white text-foreground -mb-px"
+                : "text-muted-foreground hover:text-foreground/80"
             }`}
           >
             {t.label}
@@ -219,9 +219,9 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                 const c = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP.gray;
                 return (
                   <div key={k.label} className={`rounded-xl border p-4 ${c.border} ${c.bg}`}>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">{k.label}</p>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">{k.label}</p>
                     <p className={`text-3xl font-bold mt-1 ${c.text}`}>{k.value}</p>
-                    {k.sub && <p className="text-xs text-slate-400 mt-0.5">{k.sub}</p>}
+                    {k.sub && <p className="text-xs text-muted-foreground mt-0.5">{k.sub}</p>}
                   </div>
                 );
               })}
@@ -237,12 +237,12 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                       <span className={`px-1.5 py-0.5 rounded border font-semibold ${ALERT_STYLES[a.status]}`}>
                         {ALERT_LABELS[a.status]}
                       </span>
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-foreground/80">
                         {a.instrumentName ?? "Equipo"} ({a.instrumentCode ?? "s/código"})
                       </span>
-                      <span className="text-slate-500">{testTypeLabel(a.testType)}</span>
+                      <span className="text-muted-foreground">{testTypeLabel(a.testType)}</span>
                       {a.daysUntilDue !== null && (
-                        <span className={a.daysUntilDue < 0 ? "text-red-600 font-medium" : "text-slate-500"}>
+                        <span className={a.daysUntilDue < 0 ? "text-red-600 font-medium" : "text-muted-foreground"}>
                           {a.daysUntilDue < 0 ? `${Math.abs(a.daysUntilDue)} días de retraso` : `${a.daysUntilDue} días restantes`}
                         </span>
                       )}
@@ -256,15 +256,15 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
             )}
 
             {/* Equipos y baseline */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Equipos y estado de baseline</h3>
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">Equipos y estado de baseline</h3>
               {data.equipment.length === 0 ? (
-                <p className="text-xs text-slate-400">No hay equipos activos registrados.</p>
+                <p className="text-xs text-muted-foreground">No hay equipos activos registrados.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-left text-slate-400 border-b border-slate-100">
+                      <tr className="text-left text-muted-foreground border-b border-border">
                         <th className="py-1.5 pr-3 font-semibold">Equipo</th>
                         <th className="py-1.5 pr-3 font-semibold">Código</th>
                         <th className="py-1.5 font-semibold">Baseline</th>
@@ -272,11 +272,11 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                     </thead>
                     <tbody>
                       {data.equipment.map((eq) => (
-                        <tr key={eq.id} className="border-b border-slate-50 last:border-0">
-                          <td className="py-1.5 pr-3 font-medium text-slate-700">
+                        <tr key={eq.id} className="border-b border-border last:border-0">
+                          <td className="py-1.5 pr-3 font-medium text-foreground/80">
                             {eq.manufacturer ?? ""} {eq.model ?? ""}
                           </td>
-                          <td className="py-1.5 pr-3 text-slate-500">{eq.internal_code ?? "s/código"}</td>
+                          <td className="py-1.5 pr-3 text-muted-foreground">{eq.internal_code ?? "s/código"}</td>
                           <td className="py-1.5">
                             {eq.baseline_count > 0 ? (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700">Establecido</span>
@@ -301,14 +301,14 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
           { label: "Cumple", value: kpis.testsCumple, color: "bg-green-500" },
           { label: "Advertencia", value: kpis.testsAdvertencia, color: "bg-yellow-400" },
           { label: "No cumple", value: kpis.testsNoCumple, color: "bg-red-500" },
-          { label: "Pendiente", value: kpis.testsPendiente, color: "bg-slate-300" },
+          { label: "Pendiente", value: kpis.testsPendiente, color: "bg-muted" },
         ];
         const total = kpis.testsTotal || 1;
         return (
           <div className="space-y-5">
             {/* Distribución global */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Distribución global de resultados</h3>
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">Distribución global de resultados</h3>
               <div className="flex h-5 rounded-full overflow-hidden mb-3">
                 {complianceItems.map((item) => (
                   <div
@@ -323,19 +323,19 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                 {complianceItems.map((item) => (
                   <div key={item.label} className="flex items-center gap-1.5">
                     <div className={`w-2.5 h-2.5 rounded-sm ${item.color}`} />
-                    <span className="text-slate-600">{item.label}</span>
-                    <span className="font-semibold text-slate-800">{item.value}</span>
-                    <span className="text-slate-400">({((item.value / total) * 100).toFixed(0)}%)</span>
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold text-foreground">{item.value}</span>
+                    <span className="text-muted-foreground">({((item.value / total) * 100).toFixed(0)}%)</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Por tipo de prueba */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Cumplimiento por tipo de prueba</h3>
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">Cumplimiento por tipo de prueba</h3>
               {data.testsByType.length === 0 ? (
-                <p className="text-xs text-slate-400">Aún no hay pruebas registradas.</p>
+                <p className="text-xs text-muted-foreground">Aún no hay pruebas registradas.</p>
               ) : (
                 <div className="space-y-3">
                   {data.testsByType.map((row) => {
@@ -344,20 +344,20 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                     return (
                       <div key={row.test_type} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="font-medium text-slate-700">{testTypeLabel(row.test_type)}</span>
-                          <span className="text-slate-500">{row.total} pruebas</span>
+                          <span className="font-medium text-foreground/80">{testTypeLabel(row.test_type)}</span>
+                          <span className="text-muted-foreground">{row.total} pruebas</span>
                         </div>
-                        <div className="flex h-3 rounded overflow-hidden bg-slate-100">
+                        <div className="flex h-3 rounded overflow-hidden bg-muted">
                           <div className="bg-green-500 h-full" style={{ width: `${(row.cumple / rowTotal) * 100}%` }} title={`Cumple: ${row.cumple}`} />
                           <div className="bg-yellow-400 h-full" style={{ width: `${(row.advertencia / rowTotal) * 100}%` }} title={`Advertencia: ${row.advertencia}`} />
                           <div className="bg-red-500 h-full" style={{ width: `${(row.no_cumple / rowTotal) * 100}%` }} title={`No cumple: ${row.no_cumple}`} />
                         </div>
-                        <div className="flex gap-3 text-[11px] text-slate-500">
+                        <div className="flex gap-3 text-[11px] text-muted-foreground">
                           <span className="text-green-700">✓ {row.cumple}</span>
                           <span className="text-yellow-600">⚠ {row.advertencia}</span>
                           <span className="text-red-600">✗ {row.no_cumple}</span>
-                          {row.pendiente_revision > 0 && <span className="text-slate-400">⏳ {row.pendiente_revision}</span>}
-                          <span className="ml-auto font-medium text-slate-700">{cumplePct.toFixed(0)}% cumple</span>
+                          {row.pendiente_revision > 0 && <span className="text-muted-foreground">⏳ {row.pendiente_revision}</span>}
+                          <span className="ml-auto font-medium text-foreground/80">{cumplePct.toFixed(0)}% cumple</span>
                         </div>
                       </div>
                     );
@@ -368,29 +368,29 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
 
             {/* Tabla detallada */}
             {data.testsByType.length > 0 && (
-              <div className="border border-slate-100 rounded-xl p-4 bg-white">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3">Tabla detallada por tipo</h3>
+              <div className="border border-border rounded-xl p-4 bg-white">
+                <h3 className="text-sm font-semibold text-foreground/80 mb-3">Tabla detallada por tipo</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-left text-slate-400 border-b border-slate-100">
+                      <tr className="text-left text-muted-foreground border-b border-border">
                         <th className="py-1.5 pr-3 font-semibold">Prueba</th>
                         <th className="py-1.5 pr-2 font-semibold text-right">Total</th>
                         <th className="py-1.5 pr-2 font-semibold text-right text-green-600">Cumple</th>
                         <th className="py-1.5 pr-2 font-semibold text-right text-yellow-600">Advertencia</th>
                         <th className="py-1.5 pr-2 font-semibold text-right text-red-600">No cumple</th>
-                        <th className="py-1.5 font-semibold text-right text-slate-400">Pendiente</th>
+                        <th className="py-1.5 font-semibold text-right text-muted-foreground">Pendiente</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.testsByType.map((row) => (
-                        <tr key={row.test_type} className="border-b border-slate-50 last:border-0">
-                          <td className="py-1.5 pr-3 font-medium text-slate-700">{testTypeLabel(row.test_type)}</td>
-                          <td className="py-1.5 pr-2 text-right text-slate-600">{row.total}</td>
+                        <tr key={row.test_type} className="border-b border-border last:border-0">
+                          <td className="py-1.5 pr-3 font-medium text-foreground/80">{testTypeLabel(row.test_type)}</td>
+                          <td className="py-1.5 pr-2 text-right text-muted-foreground">{row.total}</td>
                           <td className="py-1.5 pr-2 text-right text-green-700 font-semibold">{row.cumple}</td>
                           <td className="py-1.5 pr-2 text-right text-yellow-700 font-semibold">{row.advertencia}</td>
                           <td className="py-1.5 pr-2 text-right text-red-700 font-semibold">{row.no_cumple}</td>
-                          <td className="py-1.5 text-right text-slate-400">{row.pendiente_revision}</td>
+                          <td className="py-1.5 text-right text-muted-foreground">{row.pendiente_revision}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -416,9 +416,9 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                 const c = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP.gray;
                 return (
                   <div key={k.label} className={`rounded-xl border p-4 ${c.border} ${c.bg}`}>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">{k.label}</p>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">{k.label}</p>
                     <p className={`text-3xl font-bold mt-1 ${c.text}`}>{k.value}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{k.sub}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{k.sub}</p>
                   </div>
                 );
               })}
@@ -426,10 +426,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
 
             {/* Inspecciones y servicio técnico */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border border-slate-100 rounded-xl p-4 bg-white">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3">Inspecciones físico-funcionales (ACTIV-01)</h3>
+              <div className="border border-border rounded-xl p-4 bg-white">
+                <h3 className="text-sm font-semibold text-foreground/80 mb-3">Inspecciones físico-funcionales (ACTIV-01)</h3>
                 {data.inspectionsByResult.length === 0 ? (
-                  <p className="text-xs text-slate-400">Sin inspecciones registradas.</p>
+                  <p className="text-xs text-muted-foreground">Sin inspecciones registradas.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.inspectionsByResult.map((row) => {
@@ -439,10 +439,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                       return (
                         <div key={row.overall_result}>
                           <div className="flex justify-between text-xs mb-0.5">
-                            <span className="font-medium text-slate-600">{row.overall_result}</span>
-                            <span className="text-slate-500">{row.total} ({pct.toFixed(0)}%)</span>
+                            <span className="font-medium text-muted-foreground">{row.overall_result}</span>
+                            <span className="text-muted-foreground">{row.total} ({pct.toFixed(0)}%)</span>
                           </div>
-                          <div className="h-2 rounded bg-slate-100">
+                          <div className="h-2 rounded bg-muted">
                             <div
                               className={`h-full rounded ${isOk ? "bg-green-500" : "bg-red-400"}`}
                               style={{ width: `${pct}%` }}
@@ -455,10 +455,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                 )}
               </div>
 
-              <div className="border border-slate-100 rounded-xl p-4 bg-white">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3">Eventos de servicio técnico</h3>
+              <div className="border border-border rounded-xl p-4 bg-white">
+                <h3 className="text-sm font-semibold text-foreground/80 mb-3">Eventos de servicio técnico</h3>
                 {data.serviceEventsByStatus.length === 0 ? (
-                  <p className="text-xs text-slate-400">Sin eventos registrados.</p>
+                  <p className="text-xs text-muted-foreground">Sin eventos registrados.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.serviceEventsByStatus.map((row) => {
@@ -468,10 +468,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                       return (
                         <div key={row.status}>
                           <div className="flex justify-between text-xs mb-0.5">
-                            <span className="font-medium text-slate-600">{row.status}</span>
-                            <span className="text-slate-500">{row.total} ({pct.toFixed(0)}%)</span>
+                            <span className="font-medium text-muted-foreground">{row.status}</span>
+                            <span className="text-muted-foreground">{row.total} ({pct.toFixed(0)}%)</span>
                           </div>
-                          <div className="h-2 rounded bg-slate-100">
+                          <div className="h-2 rounded bg-muted">
                             <div
                               className={`h-full rounded ${isOpen ? "bg-orange-400" : "bg-blue-400"}`}
                               style={{ width: `${pct}%` }}
@@ -486,8 +486,8 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
             </div>
 
             {/* Todos los avisos */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">
                 Todos los avisos de vencimiento y retraso
                 {data.dueAlerts.length > 0 && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700">
@@ -500,18 +500,18 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
               ) : (
                 <div className="space-y-2">
                   {data.dueAlerts.map((a, idx) => (
-                    <div key={`${a.instrumentId}-${a.testType}-${idx}`} className="border border-slate-100 rounded-lg p-2.5 text-xs flex flex-wrap items-center gap-2">
+                    <div key={`${a.instrumentId}-${a.testType}-${idx}`} className="border border-border rounded-lg p-2.5 text-xs flex flex-wrap items-center gap-2">
                       <span className={`px-1.5 py-0.5 rounded border font-semibold ${ALERT_STYLES[a.status]}`}>
                         {ALERT_LABELS[a.status]}
                       </span>
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-foreground/80">
                         {a.instrumentName ?? "Equipo"} ({a.instrumentCode ?? "s/código"})
                       </span>
-                      <span className="text-slate-500">{testTypeLabel(a.testType)}</span>
-                      {a.lastTestDate && <span className="text-slate-400">Última: {a.lastTestDate}</span>}
-                      {a.nextDueDate && <span className="text-slate-400">Vence: {a.nextDueDate}</span>}
+                      <span className="text-muted-foreground">{testTypeLabel(a.testType)}</span>
+                      {a.lastTestDate && <span className="text-muted-foreground">Última: {a.lastTestDate}</span>}
+                      {a.nextDueDate && <span className="text-muted-foreground">Vence: {a.nextDueDate}</span>}
                       {a.daysUntilDue !== null && (
-                        <span className={a.daysUntilDue < 0 ? "text-red-600 font-semibold" : "text-slate-400"}>
+                        <span className={a.daysUntilDue < 0 ? "text-red-600 font-semibold" : "text-muted-foreground"}>
                           {a.daysUntilDue < 0 ? `${Math.abs(a.daysUntilDue)} días de retraso` : `${a.daysUntilDue} días restantes`}
                         </span>
                       )}
@@ -522,25 +522,25 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
             </div>
 
             {/* Auditoría reciente */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">
                 Últimos movimientos de auditoría
-                <span className="ml-2 text-xs text-slate-400 font-normal">(30 días)</span>
+                <span className="ml-2 text-xs text-muted-foreground font-normal">(30 días)</span>
               </h3>
               {data.recentAudit.length === 0 ? (
-                <p className="text-xs text-slate-400">Sin movimientos recientes.</p>
+                <p className="text-xs text-muted-foreground">Sin movimientos recientes.</p>
               ) : (
                 <div className="space-y-2">
                   {data.recentAudit.map((r) => (
-                    <div key={r.id} className="border border-slate-100 rounded-lg p-2.5 text-xs flex flex-wrap items-center gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 font-semibold">
+                    <div key={r.id} className="border border-border rounded-lg p-2.5 text-xs flex flex-wrap items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border font-semibold">
                         {r.entity_type} #{r.entity_id}
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200">{r.action}</span>
-                      <span className="text-slate-400">{new Date(r.changed_at).toLocaleString("es-CL")}</span>
-                      {r.changed_by && <span className="text-slate-500">por {r.changed_by}</span>}
+                      <span className="text-muted-foreground">{new Date(r.changed_at).toLocaleString("es-CL")}</span>
+                      {r.changed_by && <span className="text-muted-foreground">por {r.changed_by}</span>}
                       {r.field_name && (
-                        <span className="text-slate-400">
+                        <span className="text-muted-foreground">
                           campo: <span className="font-medium">{r.field_name}</span>
                         </span>
                       )}
@@ -557,10 +557,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
       {dashTab === "tendencias" && (
         <div className="space-y-5">
           {/* Cumplimiento por prueba — BarChart */}
-          <div className="border border-slate-100 rounded-xl p-4 bg-white">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Cumplimiento por tipo de prueba</h3>
+          <div className="border border-border rounded-xl p-4 bg-white">
+            <h3 className="text-sm font-semibold text-foreground/80 mb-4">Cumplimiento por tipo de prueba</h3>
             {data.testsByType.length === 0 ? (
-              <p className="text-xs text-slate-400">Sin datos disponibles.</p>
+              <p className="text-xs text-muted-foreground">Sin datos disponibles.</p>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data.testsByType.map((r) => ({
@@ -585,10 +585,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Inspecciones — PieChart */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Inspecciones por resultado (ACTIV-01)</h3>
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">Inspecciones por resultado (ACTIV-01)</h3>
               {data.inspectionsByResult.length === 0 ? (
-                <p className="text-xs text-slate-400">Sin datos.</p>
+                <p className="text-xs text-muted-foreground">Sin datos.</p>
               ) : (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -612,10 +612,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
             </div>
 
             {/* Servicio técnico — PieChart */}
-            <div className="border border-slate-100 rounded-xl p-4 bg-white">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">Eventos de servicio por estado</h3>
+            <div className="border border-border rounded-xl p-4 bg-white">
+              <h3 className="text-sm font-semibold text-foreground/80 mb-3">Eventos de servicio por estado</h3>
               {data.serviceEventsByStatus.length === 0 ? (
-                <p className="text-xs text-slate-400">Sin datos.</p>
+                <p className="text-xs text-muted-foreground">Sin datos.</p>
               ) : (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -640,8 +640,8 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
           </div>
 
           {/* Alertas por estado — BarChart horizontal */}
-          <div className="border border-slate-100 rounded-xl p-4 bg-white">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Distribución de alertas de vencimiento</h3>
+          <div className="border border-border rounded-xl p-4 bg-white">
+            <h3 className="text-sm font-semibold text-foreground/80 mb-4">Distribución de alertas de vencimiento</h3>
             {(() => {
               const alertCounts = [
                 { name: "Retrasadas", value: kpis.overdueCount, fill: "#ef4444" },
@@ -654,10 +654,10 @@ export default function ActivimetroDashboardApp({ initialData }: { initialData: 
                   {alertCounts.map((a) => (
                     <div key={a.name}>
                       <div className="flex justify-between text-xs mb-1">
-                        <span className="font-medium text-slate-600">{a.name}</span>
-                        <span className="font-semibold text-slate-700">{a.value}</span>
+                        <span className="font-medium text-muted-foreground">{a.name}</span>
+                        <span className="font-semibold text-foreground/80">{a.value}</span>
                       </div>
-                      <div className="h-3 rounded bg-slate-100">
+                      <div className="h-3 rounded bg-muted">
                         <div
                           className="h-full rounded transition-all"
                           style={{ width: `${(a.value / maxVal) * 100}%`, backgroundColor: a.fill }}

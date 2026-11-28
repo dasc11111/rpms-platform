@@ -45,16 +45,16 @@ interface AlaraData {
 
 // ── config ─────────────────────────────────────────────────────────────────
 const STATUS_CFG: Record<string, { label:string; color:string; icon: React.ComponentType<{className?:string}> }> = {
-  planned:       { label:"Planificado",   color:"bg-gray-100   text-gray-700",   icon: Clock         },
+  planned:       { label:"Planificado",   color:"bg-muted   text-foreground/80",   icon: Clock         },
   in_progress:   { label:"En Progreso",   color:"bg-blue-100   text-blue-700",   icon: BarChart3     },
   achieved:      { label:"Logrado",       color:"bg-emerald-100 text-emerald-700",icon: CheckCircle2  },
   not_achieved:  { label:"No Logrado",    color:"bg-red-100    text-red-700",    icon: XCircle       },
-  cancelled:     { label:"Cancelado",     color:"bg-gray-100   text-gray-500",   icon: XCircle       },
+  cancelled:     { label:"Cancelado",     color:"bg-muted   text-muted-foreground",   icon: XCircle       },
 };
 const PRIORITY_CFG: Record<string, string> = {
   high:   "bg-red-100    text-red-700",
   medium: "bg-amber-100  text-amber-700",
-  low:    "bg-gray-100   text-gray-600",
+  low:    "bg-muted   text-muted-foreground",
 };
 const PRIORITY_LABEL: Record<string, string> = { high:"Alta", medium:"Media", low:"Baja" };
 const CATEGORY_LABEL: Record<string, string> = {
@@ -62,7 +62,7 @@ const CATEGORY_LABEL: Record<string, string> = {
   technical:"Técnica", administrative:"Administrativa",
 };
 const MEASURE_STATUS_CFG: Record<string, { label:string; color:string }> = {
-  proposed:     { label:"Propuesta",    color:"bg-gray-100  text-gray-700"   },
+  proposed:     { label:"Propuesta",    color:"bg-muted  text-foreground/80"   },
   approved:     { label:"Aprobada",     color:"bg-blue-100  text-blue-700"   },
   implementing: { label:"Implementando",color:"bg-amber-100 text-amber-700"  },
   completed:    { label:"Completada",   color:"bg-emerald-100 text-emerald-700" },

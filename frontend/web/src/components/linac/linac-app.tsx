@@ -270,7 +270,7 @@ purple: { border: "border-purple-100", text: "text-purple-600", bg: "bg-purple-5
 sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
 rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
 indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
-gray:   { border: "border-gray-100",   text: "text-gray-600",   bg: "bg-gray-50" },
+gray:   { border: "border-border/50",   text: "text-muted-foreground",   bg: "bg-muted/50" },
 };
 
 const PIE_COLORS_DASH = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#06b6d4"];
@@ -449,7 +449,7 @@ return (
                 <div className="space-y-2">
                   {risks.map((r: any, i: number) => {
                     const lvlColor: Record<string, string> = { alto: "bg-red-100 text-red-700", medio: "bg-yellow-100 text-yellow-700", bajo: "bg-green-100 text-green-700" };
-                    const cls = lvlColor[r.risk_level?.toLowerCase()] || "bg-gray-100 text-gray-700";
+                    const cls = lvlColor[r.risk_level?.toLowerCase()] || "bg-muted text-foreground/80";
                     return (
                       <div key={i} className="flex items-start justify-between gap-2">
                         <span className="text-xs">{r.risk}</span>

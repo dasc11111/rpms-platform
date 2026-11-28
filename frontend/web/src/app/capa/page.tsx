@@ -47,7 +47,7 @@ const STATUS_COLOR: Record<string, string> = {
   in_progress:          "bg-amber-100 text-amber-700",
   pending_verification: "bg-purple-100 text-purple-700",
   closed:               "bg-emerald-100 text-emerald-700",
-  cancelled:            "bg-gray-100 text-gray-500",
+  cancelled:            "bg-muted text-muted-foreground",
 };
 const STATUS_LABEL: Record<string, string> = {
   open: "Abierta", in_progress: "En Proceso",

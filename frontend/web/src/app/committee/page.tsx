@@ -39,10 +39,10 @@ const AGMT_STATUS: Record<string,{label:string;color:string}> = {
   pending:     { label:"Pendiente",    color:"bg-amber-100  text-amber-700"   },
   in_progress: { label:"En progreso",  color:"bg-blue-100   text-blue-700"    },
   completed:   { label:"Completado",   color:"bg-emerald-100 text-emerald-700" },
-  cancelled:   { label:"Cancelado",    color:"bg-gray-100   text-gray-400"    },
+  cancelled:   { label:"Cancelado",    color:"bg-muted   text-muted-foreground"    },
 };
 const PRIORITY_CFG: Record<string,string> = {
-  low:"bg-gray-100 text-gray-500", medium:"bg-amber-100 text-amber-700", high:"bg-red-100 text-red-700",
+  low:"bg-muted text-muted-foreground", medium:"bg-amber-100 text-amber-700", high:"bg-red-100 text-red-700",
 };
 function fmtDate(d: string | null) {
   if (!d) return "—";

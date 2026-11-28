@@ -88,9 +88,9 @@ const inp = "mt-1 block w-full rounded-md border border-input bg-background px-3
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (v: string | number | null | undefined) => {
-  if (v === null || v === undefined || v === "") return <span className="text-gray-400">—</span>;
+  if (v === null || v === undefined || v === "") return <span className="text-muted-foreground">—</span>;
   const n = parseFloat(String(v));
-  if (isNaN(n)) return <span className="text-gray-500 text-xs">{String(v)}</span>;
+  if (isNaN(n)) return <span className="text-muted-foreground text-xs">{String(v)}</span>;
   return <span className={ALERTA_COLOR(n)}>{n.toFixed(2)}</span>;
 };
 
@@ -103,10 +103,10 @@ function MiniBar({ value, max = 20 }: { value: number; max?: number }) {
   const color = pct > 75 ? "bg-red-500" : pct > 50 ? "bg-orange-400" : pct > 25 ? "bg-yellow-400" : "bg-green-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-gray-600">{value.toFixed(2)}</span>
+      <span className="text-xs text-muted-foreground">{value.toFixed(2)}</span>
     </div>
   );
 }
@@ -168,16 +168,16 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
   };
   const fi = (label: string, key: string, type="text", required=false) => (
     <div>
-      <label className="text-xs font-medium text-gray-600">{label}{required && " *"}</label>
+      <label className="text-xs font-medium text-muted-foreground">{label}{required && " *"}</label>
       <input type={type} value={form[key]??""} onChange={e=>set(key,e.target.value)}
         className="w-full mt-1 px-2 py-1.5 border rounded text-sm focus:ring-2 focus:ring-blue-400 outline-none" />
     </div>
   );
   const sel = (label: string, key: string, opts: Record<string,string>, required=false) => (
     <div>
-      <label className="text-xs font-medium text-gray-600">{label}{required && " *"}</label>
+      <label className="text-xs font-medium text-muted-foreground">{label}{required && " *"}</label>
       <select value={form[key]??""} onChange={e=>set(key,e.target.value)}
-        className="w-full mt-1 px-2 py-1.5 border rounded text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-white">
+        className="w-full mt-1 px-2 py-1.5 border rounded text-sm focus:ring-2 focus:ring-blue-400 outline-none bg-background">
         <option value="">— Seleccionar —</option>
         {Object.entries(opts).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
       </select>
@@ -186,10 +186,10 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
   const titles = { registro:"Nuevo Registro Trimestral", devuelto_fp:"Devuelto Fuera de Plazo", no_devuelto:"No Devuelto" };
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
         <div className="p-5 border-b flex justify-between items-center">
-          <h3 className="font-bold text-gray-800">➕ {titles[tabla]}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          <h3 className="font-bold text-foreground">➕ {titles[tabla]}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground text-xl">✕</button>
         </div>
         <div className="p-5 grid grid-cols-2 gap-3">
           {fi("RUT *","rut","text",true)}
@@ -202,13 +202,13 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
             {fi("N° dosímetro","numero_dosimetro")}
             {sel("Proceso","proceso",{"":"Sin especificar","PH":"PH – Fotón alta energía","PM":"PM – Fotón mediana energía","PL":"PL – Fotón baja energía","BH":"BH – Beta alta","BM":"BM – Beta mediana","BL":"BL – Beta baja"})}
             {fi("Fecha proceso","fecha_proceso","date")}
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Dosis Hp(10) — Cuerpo entero</div>
+            <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Dosis Hp(10) — Cuerpo entero</div>
             {fi("Cuantitativo trim. mSv","hp10_trim","number")}
             {fi("Acum. año calendario","hp10_anio","number")}
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Dosis Hp(3) — Cristalino</div>
+            <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Dosis Hp(3) — Cristalino</div>
             {fi("Cuantitativo trim. mSv","hp3_trim","number")}
             {fi("Acum. año calendario","hp3_anio","number")}
-            <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">Dosis Hp(0.07) — Piel</div>
+            <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">Dosis Hp(0.07) — Piel</div>
             {fi("Cuantitativo trim. mSv","hp007_trim","number")}
             {fi("Acum. año calendario","hp007_anio","number")}
           </>}
@@ -217,9 +217,9 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
             {fi("Período (ej: T 2-2024)","periodo")}
             {fi("Fecha de lectura","fecha_lectura","date")}
             <div>
-              <label className="text-xs font-medium text-gray-600">¿Alerta de dosis?</label>
+              <label className="text-xs font-medium text-muted-foreground">¿Alerta de dosis?</label>
               <select value={form.alerta_dosis??"false"} onChange={e=>set("alerta_dosis",e.target.value)}
-                className="w-full mt-1 px-2 py-1.5 border rounded text-sm bg-white">
+                className="w-full mt-1 px-2 py-1.5 border rounded text-sm bg-background">
                 <option value="false">No</option><option value="true">Sí</option>
               </select>
             </div>
@@ -230,9 +230,9 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
             {fi("N° dosímetro","numero_dosimetro")}
             {fi("Período (ej: T 3-2026)","periodo")}
             <div>
-              <label className="text-xs font-medium text-gray-600">¿Extraviado?</label>
+              <label className="text-xs font-medium text-muted-foreground">¿Extraviado?</label>
               <select value={form.extraviado??"false"} onChange={e=>set("extraviado",e.target.value)}
-                className="w-full mt-1 px-2 py-1.5 border rounded text-sm bg-white">
+                className="w-full mt-1 px-2 py-1.5 border rounded text-sm bg-background">
                 <option value="false">No confirmado</option><option value="true">Sí — extraviado</option>
               </select>
             </div>
@@ -240,7 +240,7 @@ function ModalNuevoRegistro({ tabla, onClose, onSaved }: {
           </>}
         </div>
         <div className="p-5 border-t flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-muted/50">Cancelar</button>
           <button onClick={save} disabled={saving}
             className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Guardar"}
@@ -287,7 +287,7 @@ function EditableRow({
         <div className="flex gap-1">
           <button onClick={() => onSave({ worker_rut: rut, worker_name_report: nombre })}
             className="p-1 rounded bg-green-100 hover:bg-green-200 text-green-700"><Save className="h-3.5 w-3.5" /></button>
-          <button onClick={onCancel} className="p-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-500"><X className="h-3.5 w-3.5" /></button>
+          <button onClick={onCancel} className="p-1 rounded bg-muted hover:bg-muted text-muted-foreground"><X className="h-3.5 w-3.5" /></button>
         </div>
       </td>
       <td className="px-3 py-2">
@@ -742,15 +742,15 @@ function TabImportarXLS() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 space-y-6">
+    <div className="bg-background rounded-xl shadow-sm border p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">📊 Importar XLS CCHEN</h2>
-          <p className="text-sm text-gray-500 mt-1">Lee todas las hojas del reporte CCHEN y actualiza la base de datos automáticamente.</p>
+          <h2 className="text-lg font-bold text-foreground">📊 Importar XLS CCHEN</h2>
+          <p className="text-sm text-muted-foreground mt-1">Lee todas las hojas del reporte CCHEN y actualiza la base de datos automáticamente.</p>
         </div>
         {info && (
-          <div className="text-right text-xs text-gray-400">
-            <div>Registros XLS en BD: <span className="font-semibold text-gray-700">{info.xls_records}</span></div>
+          <div className="text-right text-xs text-muted-foreground">
+            <div>Registros XLS en BD: <span className="font-semibold text-foreground/80">{info.xls_records}</span></div>
             {info.ultima_importacion && (
               <div>Última importación: <span className="font-semibold">{new Date(info.ultima_importacion).toLocaleString("es-CL")}</span></div>
             )}
@@ -759,19 +759,19 @@ function TabImportarXLS() {
       </div>
 
       {/* Upload */}
-      <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
+      <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-blue-400 transition-colors cursor-pointer"
         onClick={() => fileRef.current?.click()}>
         <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
         {file ? (
           <div className="space-y-1">
             <div className="text-green-700 font-semibold text-sm">📂 {file.name}</div>
-            <div className="text-xs text-gray-400">{(file.size / 1024).toFixed(1)} KB · Haz clic para cambiar</div>
+            <div className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB · Haz clic para cambiar</div>
           </div>
         ) : (
           <div className="space-y-2">
-            <Upload className="h-8 w-8 text-gray-400 mx-auto" />
-            <div className="text-sm text-gray-600">Arrastra o haz clic para seleccionar el archivo XLS/XLSX de CCHEN</div>
-            <div className="text-xs text-gray-400">Soporta .xlsx y .xls con múltiples hojas</div>
+            <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
+            <div className="text-sm text-muted-foreground">Arrastra o haz clic para seleccionar el archivo XLS/XLSX de CCHEN</div>
+            <div className="text-xs text-muted-foreground">Soporta .xlsx y .xls con múltiples hojas</div>
           </div>
         )}
       </div>
@@ -792,24 +792,24 @@ function TabImportarXLS() {
       {/* Preview */}
       {step === "preview" && preview?.ok && (
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-800">Vista previa — primeras 10 filas por hoja</h3>
+          <h3 className="font-semibold text-foreground">Vista previa — primeras 10 filas por hoja</h3>
           {preview.sheets.map(sheet => (
             <div key={sheet.name} className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-50 px-4 py-2 flex justify-between items-center border-b">
+              <div className="bg-muted/50 px-4 py-2 flex justify-between items-center border-b">
                 <span className="font-medium text-sm">{sheetLabel[sheet.name] ?? sheet.name}</span>
-                <span className="text-xs text-gray-400">{sheet.total} filas totales · mostrando {sheet.rows.length}</span>
+                <span className="text-xs text-muted-foreground">{sheet.total} filas totales · mostrando {sheet.rows.length}</span>
               </div>
               {sheet.rows.length > 0 && (
                 <div className="overflow-x-auto max-h-48">
                   <table className="w-full text-xs">
-                    <thead className="bg-gray-100 sticky top-0">
-                      <tr>{Object.keys(sheet.rows[0]).map(k => <th key={k} className="px-2 py-1.5 text-left font-medium text-gray-600 whitespace-nowrap">{k}</th>)}</tr>
+                    <thead className="bg-muted sticky top-0">
+                      <tr>{Object.keys(sheet.rows[0]).map(k => <th key={k} className="px-2 py-1.5 text-left font-medium text-muted-foreground whitespace-nowrap">{k}</th>)}</tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {sheet.rows.map((row, i) => (
-                        <tr key={i} className="hover:bg-gray-50">
+                        <tr key={i} className="hover:bg-muted/50">
                           {Object.values(row).map((v, j) => (
-                            <td key={j} className="px-2 py-1.5 text-gray-700 whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis">{String(v ?? "")}</td>
+                            <td key={j} className="px-2 py-1.5 text-foreground/80 whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis">{String(v ?? "")}</td>
                           ))}
                         </tr>
                       ))}
@@ -826,7 +826,7 @@ function TabImportarXLS() {
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Importando…</> : <><CheckCircle className="h-4 w-4" />Confirmar importación</>}
             </button>
             {countdown > 0 && (
-              <div className="flex items-center text-sm text-gray-500 px-4">Auto en {countdown}s…</div>
+              <div className="flex items-center text-sm text-muted-foreground px-4">Auto en {countdown}s…</div>
             )}
             <button onClick={reset} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-4 py-2.5 rounded-xl border border-border hover:bg-muted transition-colors">
               <X className="h-3.5 w-3.5" />Cancelar
@@ -850,11 +850,11 @@ function TabImportarXLS() {
               {Object.entries(result.stats).map(([key, s]) => {
                 const labels: Record<string, string> = { trimestral:"Trimestral", anual:"Anual", devueltos_fp:"Dev. F.P.", no_devueltos:"No Dev.", u2t:"U2T" };
                 return (
-                  <div key={key} className="bg-gray-50 rounded-lg p-3 text-center border">
-                    <div className="text-xs text-gray-500 mb-1">{labels[key] ?? key}</div>
+                  <div key={key} className="bg-muted/50 rounded-lg p-3 text-center border">
+                    <div className="text-xs text-muted-foreground mb-1">{labels[key] ?? key}</div>
                     <div className="text-green-700 font-bold text-sm">+{s.inserted}</div>
                     <div className="text-blue-600 text-xs">↺ {s.updated}</div>
-                    <div className="text-gray-400 text-xs">— {s.skipped}</div>
+                    <div className="text-muted-foreground text-xs">— {s.skipped}</div>
                   </div>
                 );
               })}
@@ -868,7 +868,7 @@ function TabImportarXLS() {
             </button>
             {file && (
               <button onClick={() => { setStep("idle"); setResult(null); doPreview(); }}
-                className="flex items-center gap-2 text-sm border border-gray-300 px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                className="flex items-center gap-2 text-sm border border-border px-5 py-2.5 rounded-xl hover:bg-muted/50 transition-colors">
                 <RefreshCw className="h-3.5 w-3.5" />Re-importar mismo archivo
               </button>
             )}
@@ -883,7 +883,7 @@ function TabImportarXLS() {
         </div>
       )}
 
-      <div className="text-xs text-gray-400 border-t pt-4 space-y-1">
+      <div className="text-xs text-muted-foreground border-t pt-4 space-y-1">
         <p><strong>Hojas soportadas:</strong> Reporte_trimestral, Resumen_anual, Devueltos_fuera_de_plazo, No_devueltos, Lista_U2T</p>
         <p>Los registros existentes se actualizan por (RUT + período + tipo_dosímetro). Los nuevos se insertan automáticamente.</p>
       </div>
@@ -955,18 +955,18 @@ export default function DosimetriaPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">☢️ Dosimetría POE</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">☢️ Dosimetría POE</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Hospital Dr. Hernán Henríquez Aravena · DS 3/1985 · CCHEN NS-05.0 · IAEA GSR Part 3
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white p-1 rounded-xl shadow-sm border flex-wrap">
+        <div className="flex gap-1 mb-6 bg-background p-1 rounded-xl shadow-sm border flex-wrap">
           {TABS.map(t => (
             <button key={t.key} onClick={() => setTab(t.key as MainTab)}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -976,7 +976,7 @@ export default function DosimetriaPage() {
                     : t.key === "importar_xls"
                       ? "bg-emerald-600 text-white shadow"
                       : "bg-blue-600 text-white shadow"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-muted-foreground hover:bg-muted"
               }`}>
               {t.label}
             </button>
@@ -995,36 +995,36 @@ export default function DosimetriaPage() {
 
         {/* Filtros globales (excepto summary, dashboard e importar_pdf/xls) */}
         {tab !== "summary" && tab !== "dashboard" && tab !== "importar_pdf" && tab !== "importar_xls" && (
-          <div className="bg-white rounded-xl shadow-sm border p-4 mb-5 flex flex-wrap gap-3 items-end">
+          <div className="bg-background rounded-xl shadow-sm border p-4 mb-5 flex flex-wrap gap-3 items-end">
             <div>
-              <label className="text-xs text-gray-500">Año</label>
+              <label className="text-xs text-muted-foreground">Año</label>
               <select value={fAnio} onChange={e=>setFAnio(e.target.value)}
-                className="block mt-1 px-3 py-1.5 border rounded text-sm bg-white min-w-[90px]">
+                className="block mt-1 px-3 py-1.5 border rounded text-sm bg-background min-w-[90px]">
                 <option value="">Todos</option>
                 {ANIOS.map(a=><option key={a}>{a}</option>)}
               </select>
             </div>
             {tab !== "anual" && (
               <div>
-                <label className="text-xs text-gray-500">Trimestre</label>
+                <label className="text-xs text-muted-foreground">Trimestre</label>
                 <select value={fTrim} onChange={e=>setFTrim(e.target.value)}
-                  className="block mt-1 px-3 py-1.5 border rounded text-sm bg-white min-w-[80px]">
+                  className="block mt-1 px-3 py-1.5 border rounded text-sm bg-background min-w-[80px]">
                   <option value="">Todos</option>
                   {TRIMS.map(t=><option key={t} value={t}>T{t}</option>)}
                 </select>
               </div>
             )}
             <div>
-              <label className="text-xs text-gray-500">Departamento</label>
+              <label className="text-xs text-muted-foreground">Departamento</label>
               <select value={fDepto} onChange={e=>setFDepto(e.target.value)}
-                className="block mt-1 px-3 py-1.5 border rounded text-sm bg-white min-w-[180px]">
+                className="block mt-1 px-3 py-1.5 border rounded text-sm bg-background min-w-[180px]">
                 <option value="">Todos</option>
                 {DEPTOS.map(d=><option key={d}>{d}</option>)}
               </select>
             </div>
             {tab === "trimestral" && (
               <div>
-                <label className="text-xs text-gray-500">RUT trabajador</label>
+                <label className="text-xs text-muted-foreground">RUT trabajador</label>
                 <input value={fRut} onChange={e=>setFRut(e.target.value)} placeholder="12345678-9"
                   className="block mt-1 px-3 py-1.5 border rounded text-sm w-36" />
               </div>
@@ -1053,7 +1053,7 @@ export default function DosimetriaPage() {
         )}
 
         {loading && tab !== "importar_pdf" && tab !== "importar_xls" && (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-muted-foreground">
             <div className="text-4xl mb-3 animate-spin inline-block">⚛️</div>
             <div>Cargando datos…</div>
           </div>
@@ -1072,19 +1072,19 @@ export default function DosimetriaPage() {
               ].map(k => {
                 const c = KPI_COLOR_MAP[k.color] ?? KPI_COLOR_MAP.blue;
                 return (
-                  <div key={k.label} className={`bg-white rounded-xl p-4 shadow-sm border ${c.border}`}>
+                  <div key={k.label} className={`bg-background rounded-xl p-4 shadow-sm border ${c.border}`}>
                     <div className="text-2xl mb-1">{k.icon}</div>
                     <div className={`text-3xl font-bold ${c.text}`}>{k.val}</div>
-                    <div className="text-xs text-gray-500 mt-1">{k.label}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{k.label}</div>
                   </div>
                 );
               })}
             </div>
-            <div className="bg-white rounded-xl shadow-sm border p-5">
-              <h3 className="font-semibold text-gray-700 mb-4">📅 Dosis promedio Hp(10) por año — Hospital (mSv)</h3>
+            <div className="bg-background rounded-xl shadow-sm border p-5">
+              <h3 className="font-semibold text-foreground/80 mb-4">📅 Dosis promedio Hp(10) por año — Hospital (mSv)</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="bg-gray-50">
+                  <thead><tr className="bg-muted/50">
                     <th className="px-3 py-2 text-left">Año</th>
                     <th className="px-3 py-2 text-center">Avg Hp(10)</th>
                     <th className="px-3 py-2 text-center">Avg Hp(3)</th>
@@ -1094,12 +1094,12 @@ export default function DosimetriaPage() {
                   </tr></thead>
                   <tbody>
                     {summary.promedios_por_anio.map(p => (
-                      <tr key={p.anio} className="border-t hover:bg-gray-50">
+                      <tr key={p.anio} className="border-t hover:bg-muted/50">
                         <td className="px-3 py-2 font-medium">{p.anio}</td>
                         <td className="px-3 py-2 text-center">{fmt(p.avg_hp10)}</td>
                         <td className="px-3 py-2 text-center">{fmt(p.avg_hp3)}</td>
                         <td className="px-3 py-2 text-center">{fmt(p.avg_hp007)}</td>
-                        <td className="px-3 py-2 text-center text-gray-500">{p.n_registros}</td>
+                        <td className="px-3 py-2 text-center text-muted-foreground">{p.n_registros}</td>
                         <td className="px-3 py-2"><MiniBar value={parseFloat(p.avg_hp10)||0} /></td>
                       </tr>
                     ))}
@@ -1107,15 +1107,15 @@ export default function DosimetriaPage() {
                 </table>
               </div>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border p-5">
-              <h3 className="font-semibold text-gray-700 mb-4">🏥 Por departamento — Dosis promedio Hp(10) trimestral (mSv)</h3>
+            <div className="bg-background rounded-xl shadow-sm border p-5">
+              <h3 className="font-semibold text-foreground/80 mb-4">🏥 Por departamento — Dosis promedio Hp(10) trimestral (mSv)</h3>
               <div className="space-y-2">
                 {summary.por_departamento.map(d => (
                   <div key={d.departamento} className="flex items-center gap-3">
-                    <div className="w-44 text-sm text-gray-700 truncate">{d.departamento}</div>
+                    <div className="w-44 text-sm text-foreground/80 truncate">{d.departamento}</div>
                     <MiniBar value={parseFloat(d.avg_hp10)||0} />
-                    <span className="text-xs text-gray-400 w-10">n={d.n}</span>
-                    <span className="text-xs text-gray-400">máx {parseFloat(d.max_hp10||"0").toFixed(2)}</span>
+                    <span className="text-xs text-muted-foreground w-10">n={d.n}</span>
+                    <span className="text-xs text-muted-foreground">máx {parseFloat(d.max_hp10||"0").toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -1130,9 +1130,9 @@ export default function DosimetriaPage() {
                   <tbody>
                     {summary.sobre_75_limite.map((s,i) => (
                       <tr key={i} className="border-t border-red-100">
-                        <td className="py-1.5 font-medium text-gray-800">{s.nombre}</td>
-                        <td className="text-center text-gray-600">{s.departamento}</td>
-                        <td className="text-center text-gray-600">{s.anio}</td>
+                        <td className="py-1.5 font-medium text-foreground">{s.nombre}</td>
+                        <td className="text-center text-muted-foreground">{s.departamento}</td>
+                        <td className="text-center text-muted-foreground">{s.anio}</td>
                         <td className="text-center"><span className="text-red-600 font-bold">{parseFloat(s.hp10_anio).toFixed(2)} mSv</span></td>
                       </tr>
                     ))}
@@ -1140,8 +1140,8 @@ export default function DosimetriaPage() {
                 </table>
               </div>
             )}
-            <div className="bg-gray-50 rounded-xl border p-4">
-              <h4 className="font-semibold text-gray-600 mb-3 text-sm">📖 Glosario de siglas</h4>
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <h4 className="font-semibold text-muted-foreground mb-3 text-sm">📖 Glosario de siglas</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                 {[["MNR","Mínimo Nivel de Registro"],["NU","No Usado"],["NS","No Solicitado"],
                   ["NR","No Recepcionado"],["FF","Devuelto fuera de fecha"],["DD","Dosímetro Dañado"],
@@ -1151,7 +1151,7 @@ export default function DosimetriaPage() {
                 ].map(([s,d]) => (
                   <div key={s} className="flex gap-1.5">
                     <Badge color="bg-blue-100 text-blue-700" label={s} />
-                    <span className="text-gray-600">{d}</span>
+                    <span className="text-muted-foreground">{d}</span>
                   </div>
                 ))}
               </div>
@@ -1161,31 +1161,31 @@ export default function DosimetriaPage() {
 
         {/* ══ TRIMESTRAL ════════════════════════════════════════════════════════ */}
         {!loading && tab === "trimestral" && (
-          <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
+          <div className="bg-background rounded-xl shadow-sm border overflow-x-auto">
             <div className="p-4 border-b flex justify-between items-center">
-              <span className="font-semibold text-gray-700">Registros trimestrales ({registros.length})</span>
-              <span className="text-xs text-gray-400">Límite: 20 mSv/año | Alerta: 15 mSv (75%)</span>
+              <span className="font-semibold text-foreground/80">Registros trimestrales ({registros.length})</span>
+              <span className="text-xs text-muted-foreground">Límite: 20 mSv/año | Alerta: 15 mSv (75%)</span>
             </div>
             <table className="w-full text-xs">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-muted/50 sticky top-0">
                 <tr>
                   {["Período","Nombre","RUT","Departamento","Estamento","Dosímetro","Tipo","Proceso",
                     "Hp10 Trim","Hp3 Trim","Hp0.07 Trim","Hp10 Año","Hp10 12m","Hp10 60m","Adjunto"
-                  ].map(h => <th key={h} className="px-2 py-2 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>)}
+                  ].map(h => <th key={h} className="px-2 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {registros.length === 0 && (
-                  <tr><td colSpan={15} className="text-center py-10 text-gray-400">No hay registros con los filtros actuales</td></tr>
+                  <tr><td colSpan={15} className="text-center py-10 text-muted-foreground">No hay registros con los filtros actuales</td></tr>
                 )}
                 {registros.map(r => (
                   <tr key={r.id} className="border-t hover:bg-blue-50 transition-colors">
                     <td className="px-2 py-1.5 font-medium text-blue-700 whitespace-nowrap">{r.periodo}</td>
                     <td className="px-2 py-1.5 whitespace-nowrap max-w-[160px] truncate" title={r.nombre}>{r.nombre}</td>
-                    <td className="px-2 py-1.5 text-gray-500">{r.rut}</td>
+                    <td className="px-2 py-1.5 text-muted-foreground">{r.rut}</td>
                     <td className="px-2 py-1.5 max-w-[120px] truncate" title={r.departamento}>{r.departamento}</td>
                     <td className="px-2 py-1.5">{r.estamento && <Badge color="bg-purple-100 text-purple-700" label={r.estamento} />}</td>
-                    <td className="px-2 py-1.5 font-mono text-gray-500 whitespace-nowrap">{r.numero_dosimetro}</td>
+                    <td className="px-2 py-1.5 font-mono text-muted-foreground whitespace-nowrap">{r.numero_dosimetro}</td>
                     <td className="px-2 py-1.5"><Badge color="bg-indigo-100 text-indigo-700" label={r.tipo_dosimetro} /></td>
                     <td className="px-2 py-1.5">{r.proceso && <Badge color="bg-cyan-100 text-cyan-700" label={r.proceso} />}</td>
                     <td className="px-2 py-1.5 text-center">{fmt(r.hp10_trim)}</td>
@@ -1204,29 +1204,29 @@ export default function DosimetriaPage() {
 
         {/* ══ ANUAL ═════════════════════════════════════════════════════════════ */}
         {!loading && tab === "anual" && (
-          <div className="bg-white rounded-xl shadow-sm border overflow-x-auto">
+          <div className="bg-background rounded-xl shadow-sm border overflow-x-auto">
             <div className="p-4 border-b flex justify-between items-center">
-              <span className="font-semibold text-gray-700">Resumen anual Hp(10) ({regAnual.length} trabajadores)</span>
-              <span className="text-xs text-gray-400">DS 3/1985 · Límite 20 mSv/año</span>
+              <span className="font-semibold text-foreground/80">Resumen anual Hp(10) ({regAnual.length} trabajadores)</span>
+              <span className="text-xs text-muted-foreground">DS 3/1985 · Límite 20 mSv/año</span>
             </div>
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-muted/50">
                 <tr>
                   {["Año","Nombre","RUT","Departamento","T1 mSv","T2 mSv","T3 mSv","T4 mSv","Total Anual","Trims. reportados","Estado"]
-                    .map(h => <th key={h} className="px-3 py-2 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>)}
+                    .map(h => <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {regAnual.length === 0 && <tr><td colSpan={11} className="text-center py-10 text-gray-400">Sin datos</td></tr>}
+                {regAnual.length === 0 && <tr><td colSpan={11} className="text-center py-10 text-muted-foreground">Sin datos</td></tr>}
                 {regAnual.map((r,i) => {
                   const total = parseFloat(r.total_anual)||0;
                   const over = total > 15;
                   return (
-                    <tr key={i} className={`border-t hover:bg-gray-50 ${over?"bg-red-50":""}`}>
+                    <tr key={i} className={`border-t hover:bg-muted/50 ${over?"bg-red-50":""}`}>
                       <td className="px-3 py-2 font-semibold">{r.anio}</td>
                       <td className="px-3 py-2 max-w-[180px] truncate" title={r.nombre}>{r.nombre}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{r.rut}</td>
-                      <td className="px-3 py-2 text-xs text-gray-600">{r.departamento}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{r.rut}</td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">{r.departamento}</td>
                       <td className="px-3 py-2 text-center">{fmt(r.t1)}</td>
                       <td className="px-3 py-2 text-center">{fmt(r.t2)}</td>
                       <td className="px-3 py-2 text-center">{fmt(r.t3)}</td>
@@ -1234,7 +1234,7 @@ export default function DosimetriaPage() {
                       <td className="px-3 py-2 text-center font-bold">
                         <span className={over?"text-red-600":"text-green-700"}>{total.toFixed(2)}</span>
                       </td>
-                      <td className="px-3 py-2 text-center text-gray-400 text-xs">{r.n_trimestres}/4</td>
+                      <td className="px-3 py-2 text-center text-muted-foreground text-xs">{r.n_trimestres}/4</td>
                       <td className="px-3 py-2">
                         {over ? <Badge color="bg-red-100 text-red-700" label="⚠ Sobre 75%" /> :
                           total > 10 ? <Badge color="bg-orange-100 text-orange-700" label="Moderado" /> :
@@ -1250,10 +1250,10 @@ export default function DosimetriaPage() {
 
         {/* ══ DEVUELTOS FUERA DE PLAZO ════════════════════════════════════════ */}
         {!loading && tab === "devueltos_fp" && (
-          <div className="bg-white rounded-xl shadow-sm border">
+          <div className="bg-background rounded-xl shadow-sm border">
             <div className="p-4 border-b">
-              <span className="font-semibold text-gray-700">Devueltos fuera de plazo — {devFP.length} registros</span>
-              <p className="text-xs text-gray-400 mt-0.5">Dosímetros procesados después de los 60 días que otorga el ISP/CCHEN</p>
+              <span className="font-semibold text-foreground/80">Devueltos fuera de plazo — {devFP.length} registros</span>
+              <p className="text-xs text-muted-foreground mt-0.5">Dosímetros procesados después de los 60 días que otorga el ISP/CCHEN</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1264,19 +1264,19 @@ export default function DosimetriaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {devFP.length === 0 && <tr><td colSpan={9} className="text-center py-10 text-gray-400">Sin registros</td></tr>}
+                  {devFP.length === 0 && <tr><td colSpan={9} className="text-center py-10 text-muted-foreground">Sin registros</td></tr>}
                   {devFP.map(d => (
                     <tr key={d.id} className="border-t hover:bg-orange-50">
                       <td className="px-3 py-2 font-medium text-orange-700 whitespace-nowrap">{d.periodo}</td>
                       <td className="px-3 py-2 max-w-[180px] truncate" title={d.nombre}>{d.nombre}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{d.rut}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{d.rut}</td>
                       <td className="px-3 py-2 text-xs">{d.departamento}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{d.numero_dosimetro}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{d.numero_dosimetro}</td>
                       <td className="px-3 py-2 text-xs">{d.fecha_lectura ? new Date(d.fecha_lectura).toLocaleDateString("es-CL") : "—"}</td>
                       <td className="px-3 py-2">
                         {d.alerta_dosis ? <Badge color="bg-red-100 text-red-700" label="⚠ Sí" /> : <Badge color="bg-green-100 text-green-700" label="No" />}
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-400 max-w-[150px] truncate">{d.observacion}</td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground max-w-[150px] truncate">{d.observacion}</td>
                       <td className="px-3 py-2"><AdjuntoBtn registroId={d.id} tabla="devueltos" nombre={d.adjunto_nombre} /></td>
                     </tr>
                   ))}
@@ -1288,10 +1288,10 @@ export default function DosimetriaPage() {
 
         {/* ══ NO DEVUELTOS ═════════════════════════════════════════════════════ */}
         {!loading && tab === "no_devueltos" && (
-          <div className="bg-white rounded-xl shadow-sm border">
+          <div className="bg-background rounded-xl shadow-sm border">
             <div className="p-4 border-b">
-              <span className="font-semibold text-gray-700">No devueltos — {noDev.length} dosímetros</span>
-              <p className="text-xs text-gray-400 mt-0.5">Dosímetros no retornados al CCHEN/ISP en el período correspondiente</p>
+              <span className="font-semibold text-foreground/80">No devueltos — {noDev.length} dosímetros</span>
+              <p className="text-xs text-muted-foreground mt-0.5">Dosímetros no retornados al CCHEN/ISP en el período correspondiente</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -1302,19 +1302,19 @@ export default function DosimetriaPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {noDev.length === 0 && <tr><td colSpan={9} className="text-center py-10 text-gray-400">Sin registros</td></tr>}
+                  {noDev.length === 0 && <tr><td colSpan={9} className="text-center py-10 text-muted-foreground">Sin registros</td></tr>}
                   {noDev.map(n => (
                     <tr key={n.id} className={`border-t hover:bg-red-50 ${n.extraviado?"bg-rose-50":""}`}>
                       <td className="px-3 py-2 font-medium text-red-700 whitespace-nowrap">{n.periodo}</td>
                       <td className="px-3 py-2 max-w-[180px] truncate" title={n.nombre}>{n.nombre}</td>
-                      <td className="px-3 py-2 text-gray-500 text-xs">{n.rut}</td>
+                      <td className="px-3 py-2 text-muted-foreground text-xs">{n.rut}</td>
                       <td className="px-3 py-2 text-xs">{n.departamento}</td>
                       <td className="px-3 py-2"><Badge color="bg-indigo-100 text-indigo-700" label={n.tipo_dosimetro} /></td>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{n.numero_dosimetro}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{n.numero_dosimetro}</td>
                       <td className="px-3 py-2">
                         {n.extraviado ? <Badge color="bg-rose-200 text-rose-800" label="🔴 Extraviado" /> : <Badge color="bg-orange-100 text-orange-700" label="⏳ Pendiente" />}
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-400 max-w-[150px] truncate">{n.observacion}</td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground max-w-[150px] truncate">{n.observacion}</td>
                       <td className="px-3 py-2"><AdjuntoBtn registroId={n.id} tabla="no_devueltos" nombre={n.adjunto_nombre} /></td>
                     </tr>
                   ))}
@@ -1346,10 +1346,10 @@ export default function DosimetriaPage() {
             <div className="space-y-4">
 
               {/* ── Sub-nav pills ── */}
-              <div className="flex gap-2 bg-gray-100 rounded-xl p-1 w-fit">
+              <div className="flex gap-2 bg-muted rounded-xl p-1 w-fit">
                 {([["institucion","🏥 Institución"],["departamentos","🏢 Departamentos"],["trabajador","👷 Trabajador"]] as [DashTab,string][]).map(([k,label])=>(
                   <button key={k} onClick={()=>setDashTab(k)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${dashTab===k?"bg-white shadow text-blue-700":"text-gray-500 hover:text-gray-700"}`}>
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${dashTab===k?"bg-background shadow text-blue-700":"text-muted-foreground hover:text-foreground/80"}`}>
                     {label}
                   </button>
                 ))}
@@ -1369,11 +1369,11 @@ export default function DosimetriaPage() {
                     ].map(k=>{
                       const c=KPI_COLOR_MAP[k.color]||KPI_COLOR_MAP.blue;
                       return (
-                        <div key={k.label} className={`bg-white rounded-xl border ${c.border} p-4`}>
+                        <div key={k.label} className={`bg-background rounded-xl border ${c.border} p-4`}>
                           <div className="text-2xl mb-1">{k.icon}</div>
                           <div className={`text-xl font-bold ${c.text}`}>{k.value}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{k.label}</div>
-                          <div className="text-xs text-gray-400">{k.sub}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{k.label}</div>
+                          <div className="text-xs text-muted-foreground">{k.sub}</div>
                         </div>
                       );
                     })}
@@ -1412,9 +1412,9 @@ export default function DosimetriaPage() {
                   </div>
 
                   {/* Tendencia anual */}
-                  <div className="bg-white rounded-xl border p-5">
-                    <h3 className="font-semibold text-gray-800 mb-1">📈 Tendencia anual — Hp(10) promedio</h3>
-                    <p className="text-xs text-gray-400 mb-4">Dosis media del personal ocupacionalmente expuesto por año</p>
+                  <div className="bg-background rounded-xl border p-5">
+                    <h3 className="font-semibold text-foreground mb-1">📈 Tendencia anual — Hp(10) promedio</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Dosis media del personal ocupacionalmente expuesto por año</p>
                     <div className="flex items-end gap-4 h-36 px-2">
                       {dashData.tendencia_anual.map((a: DashAnio) => {
                         const v=parseFloat(a.avg_hp10)||0;
@@ -1422,16 +1422,16 @@ export default function DosimetriaPage() {
                         const pct=(v/20)*100;
                         return (
                           <div key={a.anio} className="flex flex-col items-center gap-1 flex-1 min-w-0">
-                            <span className="text-xs font-bold text-gray-700">{v.toFixed(2)}</span>
+                            <span className="text-xs font-bold text-foreground/80">{v.toFixed(2)}</span>
                             <div className={`w-full ${doseBar(pct)} rounded-t-md hover:opacity-80 transition-opacity cursor-default`}
                               style={{height:`${h}px`}} title={`${a.anio}: ${v.toFixed(3)} mSv · ${a.n_trabajadores} trab.`} />
-                            <span className="text-xs font-semibold text-gray-600">{a.anio}</span>
-                            <span className="text-xs text-gray-400">{a.n_trabajadores}p</span>
+                            <span className="text-xs font-semibold text-muted-foreground">{a.anio}</span>
+                            <span className="text-xs text-muted-foreground">{a.n_trabajadores}p</span>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="mt-3 flex gap-4 text-xs text-gray-400 flex-wrap">
+                    <div className="mt-3 flex gap-4 text-xs text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block"/>0–25%</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-400 inline-block"/>25–50%</span>
                       <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-400 inline-block"/>50–75%</span>
@@ -1456,21 +1456,21 @@ export default function DosimetriaPage() {
                 <div className="space-y-4">
 
                   {/* Metric selector */}
-                  <div className="bg-white border rounded-xl p-4 flex items-center gap-3 flex-wrap">
-                    <span className="text-sm font-medium text-gray-600">Métrica:</span>
+                  <div className="bg-background border rounded-xl p-4 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm font-medium text-muted-foreground">Métrica:</span>
                     {(["hp10","hp3","hp007"] as const).map(m=>(
                       <button key={m} onClick={()=>setDashMetric(m)}
-                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all border ${dashMetric===m?"bg-blue-600 text-white border-blue-600":"bg-white text-gray-600 border-gray-200 hover:border-blue-300"}`}>
+                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-all border ${dashMetric===m?"bg-blue-600 text-white border-blue-600":"bg-background text-muted-foreground border-border hover:border-blue-300"}`}>
                         {metricLabel(m)}
                       </button>
                     ))}
-                    <span className="ml-auto text-xs text-gray-400">Límite: {metricLim(dashMetric)} mSv/año</span>
+                    <span className="ml-auto text-xs text-muted-foreground">Límite: {metricLim(dashMetric)} mSv/año</span>
                   </div>
 
                   {/* Bar chart sorted by dose */}
-                  <div className="bg-white rounded-xl border p-5">
-                    <h3 className="font-semibold text-gray-800 mb-1">🏢 Comparativo departamentos — {metricLabel(dashMetric)}</h3>
-                    <p className="text-xs text-gray-400 mb-4">Dosis promedio trimestral por unidad. Ordenado de mayor a menor.</p>
+                  <div className="bg-background rounded-xl border p-5">
+                    <h3 className="font-semibold text-foreground mb-1">🏢 Comparativo departamentos — {metricLabel(dashMetric)}</h3>
+                    <p className="text-xs text-muted-foreground mb-4">Dosis promedio trimestral por unidad. Ordenado de mayor a menor.</p>
                     <div className="space-y-2.5">
                       {[...dashData.por_departamento]
                         .sort((a,b)=>(parseFloat((b as Record<string,string>)[metricKey(dashMetric)])||0)-(parseFloat((a as Record<string,string>)[metricKey(dashMetric)])||0))
@@ -1480,16 +1480,16 @@ export default function DosimetriaPage() {
                           const pct=Math.min((avg/metricLim(dashMetric))*100,100);
                           return (
                             <div key={d.departamento} className="flex items-center gap-3">
-                              <span className="text-xs text-gray-400 w-4 text-right flex-shrink-0">{i+1}</span>
-                              <div className="w-40 text-xs text-gray-700 flex-shrink-0 truncate font-medium" title={d.departamento}>{d.departamento}</div>
-                              <div className="flex-1 h-7 bg-gray-100 rounded-lg overflow-hidden relative">
+                              <span className="text-xs text-muted-foreground w-4 text-right flex-shrink-0">{i+1}</span>
+                              <div className="w-40 text-xs text-foreground/80 flex-shrink-0 truncate font-medium" title={d.departamento}>{d.departamento}</div>
+                              <div className="flex-1 h-7 bg-muted rounded-lg overflow-hidden relative">
                                 <div className={`h-full ${doseBar(pct)} rounded-lg transition-all`} style={{width:`${pct}%`}} />
                                 <span className="absolute left-2 top-1 text-xs font-semibold text-white drop-shadow-sm">
                                   {avg.toFixed(3)} mSv
                                 </span>
                               </div>
                               <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${doseBadge(pct)}`}>{doseText(pct)}</span>
-                              <span className="text-xs text-gray-400 w-16 text-right flex-shrink-0">n={d.n}</span>
+                              <span className="text-xs text-muted-foreground w-16 text-right flex-shrink-0">n={d.n}</span>
                               {parseInt(d.sobre_alerta)>0 && <Badge color="bg-red-100 text-red-700" label={`⚠ ${d.sobre_alerta}`} />}
                             </div>
                           );
@@ -1498,14 +1498,14 @@ export default function DosimetriaPage() {
                   </div>
 
                   {/* Summary table */}
-                  <div className="bg-white rounded-xl border overflow-hidden">
-                    <div className="px-5 py-3 border-b bg-gray-50">
-                      <span className="text-sm font-semibold text-gray-700">Resumen por departamento — todas las métricas</span>
+                  <div className="bg-background rounded-xl border overflow-hidden">
+                    <div className="px-5 py-3 border-b bg-muted/50">
+                      <span className="text-sm font-semibold text-foreground/80">Resumen por departamento — todas las métricas</span>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="text-gray-500 border-b">
+                          <tr className="text-muted-foreground border-b">
                             <th className="text-left px-4 py-2 font-medium">Departamento</th>
                             <th className="text-right px-3 py-2 font-medium">Hp(10)</th>
                             <th className="text-right px-3 py-2 font-medium">Hp(3)</th>
@@ -1521,12 +1521,12 @@ export default function DosimetriaPage() {
                             .map((d: DashDepto) => {
                               const pct=Math.min(((parseFloat(d.avg_hp10)||0)/20)*100,100);
                               return (
-                                <tr key={d.departamento} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                  <td className="px-4 py-2 font-medium text-gray-700 max-w-[160px] truncate" title={d.departamento}>{d.departamento}</td>
+                                <tr key={d.departamento} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                                  <td className="px-4 py-2 font-medium text-foreground/80 max-w-[160px] truncate" title={d.departamento}>{d.departamento}</td>
                                   <td className="px-3 py-2 text-right font-mono">{(parseFloat(d.avg_hp10)||0).toFixed(3)}</td>
-                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{d.avg_hp3?(parseFloat(d.avg_hp3)).toFixed(3):"—"}</td>
-                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{d.avg_hp007?(parseFloat(d.avg_hp007)).toFixed(3):"—"}</td>
-                                  <td className="px-3 py-2 text-right font-mono text-gray-500">{(parseFloat(d.max_hp10||"0")||0).toFixed(3)}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">{d.avg_hp3?(parseFloat(d.avg_hp3)).toFixed(3):"—"}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">{d.avg_hp007?(parseFloat(d.avg_hp007)).toFixed(3):"—"}</td>
+                                  <td className="px-3 py-2 text-right font-mono text-muted-foreground">{(parseFloat(d.max_hp10||"0")||0).toFixed(3)}</td>
                                   <td className="px-3 py-2 text-right">{d.n}</td>
                                   <td className="px-3 py-2 text-center">
                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${doseBadge(pct)}`}>{doseText(pct)}</span>
@@ -1546,25 +1546,25 @@ export default function DosimetriaPage() {
                 <div className="space-y-4">
 
                   {/* Search */}
-                  <div className="bg-white rounded-xl border p-5">
-                    <h3 className="font-semibold text-gray-800 mb-3">👷 Historial individual de dosimetría</h3>
+                  <div className="bg-background rounded-xl border p-5">
+                    <h3 className="font-semibold text-foreground mb-3">👷 Historial individual de dosimetría</h3>
                     <div className="flex gap-3 items-end flex-wrap">
                       <div>
-                        <label className="text-xs text-gray-500 font-medium">RUT trabajador</label>
+                        <label className="text-xs text-muted-foreground font-medium">RUT trabajador</label>
                         <input value={fRut} onChange={e=>setFRut(e.target.value)} placeholder="12345678-9"
-                          className="block mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm w-44 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                          className="block mt-1 px-3 py-2 border border-border rounded-lg text-sm w-44 focus:outline-none focus:ring-2 focus:ring-blue-300" />
                       </div>
                       <button onClick={fetchData}
                         className="px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
                         Ver historial
                       </button>
-                      <p className="text-xs text-gray-400 self-center">Ingresa el RUT para ver el historial de dosis personal y evaluación de riesgo</p>
+                      <p className="text-xs text-muted-foreground self-center">Ingresa el RUT para ver el historial de dosis personal y evaluación de riesgo</p>
                     </div>
                   </div>
 
                   {/* Dose limits reference card */}
-                  <div className="bg-white rounded-xl border p-5">
-                    <h3 className="font-semibold text-gray-700 mb-3">📏 Límites de dosis DS 3/1985 — Personal POE</h3>
+                  <div className="bg-background rounded-xl border p-5">
+                    <h3 className="font-semibold text-foreground/80 mb-3">📏 Límites de dosis DS 3/1985 — Personal POE</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {[
                         {label:"Hp(10) — Cuerpo entero",lim:20,alert:15,color:"blue",unit:"mSv/año"},
@@ -1576,11 +1576,11 @@ export default function DosimetriaPage() {
                           <div key={item.label} className={`rounded-xl ${c.bg} border ${c.border} p-4`}>
                             <div className={`text-sm font-semibold ${c.text} mb-2`}>{item.label}</div>
                             <div className={`text-3xl font-black ${c.text}`}>{item.lim}</div>
-                            <div className="text-xs text-gray-500 mb-2">{item.unit} · DS 3/1985</div>
-                            <div className="h-1.5 bg-white rounded-full overflow-hidden">
+                            <div className="text-xs text-muted-foreground mb-2">{item.unit} · DS 3/1985</div>
+                            <div className="h-1.5 bg-background rounded-full overflow-hidden">
                               <div className="h-full bg-current rounded-full" style={{width:`${(item.alert/item.lim)*100}%`,color:"inherit",opacity:0.5}} />
                             </div>
-                            <div className="text-xs text-gray-400 mt-1">🔔 Alerta: {item.alert} mSv/año</div>
+                            <div className="text-xs text-muted-foreground mt-1">🔔 Alerta: {item.alert} mSv/año</div>
                           </div>
                         );
                       })}
@@ -1588,8 +1588,8 @@ export default function DosimetriaPage() {
                   </div>
 
                   {/* Traffic light info */}
-                  <div className="bg-white rounded-xl border p-5">
-                    <h3 className="font-semibold text-gray-700 mb-3">🚦 Semáforo de riesgo dosimétrico</h3>
+                  <div className="bg-background rounded-xl border p-5">
+                    <h3 className="font-semibold text-foreground/80 mb-3">🚦 Semáforo de riesgo dosimétrico</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {[
                         {color:"🟢",label:"Normal",range:"0–25%",desc:"≤5 mSv/año Hp(10)",bg:"bg-green-50 border-green-100"},
@@ -1599,9 +1599,9 @@ export default function DosimetriaPage() {
                       ].map(s=>(
                         <div key={s.label} className={`rounded-xl border p-3 ${s.bg}`}>
                           <div className="text-2xl mb-1">{s.color}</div>
-                          <div className="text-sm font-semibold text-gray-700">{s.label}</div>
-                          <div className="text-xs text-gray-500">{s.range} del límite</div>
-                          <div className="text-xs text-gray-400 mt-1">{s.desc}</div>
+                          <div className="text-sm font-semibold text-foreground/80">{s.label}</div>
+                          <div className="text-xs text-muted-foreground">{s.range} del límite</div>
+                          <div className="text-xs text-muted-foreground mt-1">{s.desc}</div>
                         </div>
                       ))}
                     </div>

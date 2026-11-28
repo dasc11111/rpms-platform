@@ -6,7 +6,7 @@ import { RefreshCw, Shield, Plus, Pencil, Trash2, Check, X } from "lucide-react"
 
 interface OPR { id: number; name: string; }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
 
 export default function TransportOPRsPage() {
   const [oprs, setOprs] = useState<OPR[]>([]);
@@ -60,17 +60,17 @@ export default function TransportOPRsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-purple-100"><Shield className="h-6 w-6 text-purple-700" /></div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">OPRs de Transporte Radiactivo</h1>
-              <p className="text-sm text-gray-500">Oficiales de Protección Radiológica autorizados para transporte</p>
+              <h1 className="text-2xl font-bold text-foreground">OPRs de Transporte Radiactivo</h1>
+              <p className="text-sm text-muted-foreground">Oficiales de Protección Radiológica autorizados para transporte</p>
             </div>
           </div>
-          <button onClick={() => fetchData()} disabled={loading}><RefreshCw className={`h-5 w-5 text-gray-400 hover:text-gray-600 ${loading ? "animate-spin" : ""}`} /></button>
+          <button onClick={() => fetchData()} disabled={loading}><RefreshCw className={`h-5 w-5 text-muted-foreground hover:text-muted-foreground ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
         {msg && <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-sm text-purple-700">{msg}</div>}
@@ -81,8 +81,8 @@ export default function TransportOPRsPage() {
         </div>
 
         {/* Add form */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><Plus className="h-4 w-4 text-green-500" /> Nuevo OPR</h2>
+        <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+          <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2"><Plus className="h-4 w-4 text-green-500" /> Nuevo OPR</h2>
           <div className="flex gap-3">
             <input className={inp} value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre completo del OPR" onKeyDown={e => e.key === "Enter" && handleAdd()} />
             <button onClick={handleAdd} disabled={adding} className="shrink-0 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg">
@@ -92,30 +92,30 @@ export default function TransportOPRsPage() {
         </div>
 
         {/* Search & list */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-background rounded-xl border border-border shadow-sm p-5">
           <div className="mb-4">
             <input className={inp} value={search} onChange={e => { setSearch(e.target.value); fetchData(e.target.value); }} placeholder="Buscar OPR por nombre…" />
           </div>
-          <div className="text-xs text-gray-400 mb-2">{oprs.length} OPR{oprs.length !== 1 ? "s" : ""} registrado{oprs.length !== 1 ? "s" : ""}</div>
+          <div className="text-xs text-muted-foreground mb-2">{oprs.length} OPR{oprs.length !== 1 ? "s" : ""} registrado{oprs.length !== 1 ? "s" : ""}</div>
           {loading && oprs.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">Cargando…</div>
+            <div className="text-center py-8 text-muted-foreground text-sm">Cargando…</div>
           ) : oprs.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">Sin OPRs registrados.</div>
+            <div className="text-center py-8 text-muted-foreground text-sm">Sin OPRs registrados.</div>
           ) : (
             <div className="space-y-1">
               {oprs.map(o => (
-                <div key={o.id} className="flex items-center justify-between border-b border-gray-50 pb-1 last:border-0">
+                <div key={o.id} className="flex items-center justify-between border-b border-border/50 pb-1 last:border-0">
                   <div className="flex-1 mr-4">
                     {editId === o.id
                       ? <input className={inp} value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => e.key === "Enter" && handleEdit(o.id)} />
-                      : <span className="text-sm font-medium text-gray-800">{o.name}</span>
+                      : <span className="text-sm font-medium text-foreground">{o.name}</span>
                     }
                   </div>
                   <div className="flex gap-2">
                     {editId === o.id ? (
                       <>
                         <button onClick={() => handleEdit(o.id)} className="text-green-600 hover:text-green-800"><Check className="h-4 w-4" /></button>
-                        <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+                        <button onClick={cancelEdit} className="text-muted-foreground hover:text-muted-foreground"><X className="h-4 w-4" /></button>
                       </>
                     ) : (
                       <>
@@ -131,8 +131,8 @@ export default function TransportOPRsPage() {
         </div>
 
         {/* Regulatory footer */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
           <p>DS N°12/2010 MINSAL — Artículo 32: requisitos del Oficial de Protección Radiológica para transporte. IAEA Safety Standards SSR-6 (Rev.1) — Responsabilidades de los OPRs en operaciones de transporte. CCHEN ORD — Habilitación y registro de OPRs para transporte de materiales radiactivos.</p>
         </div>
       </div>

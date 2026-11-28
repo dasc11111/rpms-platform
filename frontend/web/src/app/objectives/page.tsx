@@ -96,20 +96,20 @@ function StatusIcon({ status }: { status: string }) {
   if (status === "in_progress") return <Clock size={16} className="text-blue-600" />;
   if (status === "partial") return <AlertTriangle size={16} className="text-yellow-600" />;
   if (status === "not_achieved") return <XCircle size={16} className="text-red-600" />;
-  return <Minus size={16} className="text-gray-400" />;
+  return <Minus size={16} className="text-muted-foreground" />;
 }
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    planned: "bg-gray-100 text-gray-700",
+    planned: "bg-muted text-foreground/80",
     in_progress: "bg-blue-100 text-blue-700",
     achieved: "bg-green-100 text-green-700",
     partial: "bg-yellow-100 text-yellow-700",
     not_achieved: "bg-red-100 text-red-700",
-    cancelled: "bg-gray-100 text-gray-500",
+    cancelled: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? "bg-gray-100"}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? "bg-muted"}`}>
       <StatusIcon status={status} />
       {STATUS_LABELS[status] ?? status}
     </span>
@@ -121,10 +121,10 @@ function PriorityBadge({ priority }: { priority: string }) {
     critical: "bg-red-100 text-red-800 border border-red-300",
     high: "bg-orange-100 text-orange-800",
     medium: "bg-yellow-100 text-yellow-800",
-    low: "bg-gray-100 text-gray-700",
+    low: "bg-muted text-foreground/80",
   };
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[priority] ?? "bg-gray-100"}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-medium ${colors[priority] ?? "bg-muted"}`}>
       <Flag size={10} className="inline mr-1" />
       {PRIORITY_LABELS[priority] ?? priority}
     </span>
@@ -139,10 +139,10 @@ function ProgressBar({ value, status }: { value?: number; status: string }) {
     status === "not_achieved" ? "bg-red-500" : "bg-blue-500";
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-2 rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs font-mono text-gray-600 w-10 text-right">{pct}%</span>
+      <span className="text-xs font-mono text-muted-foreground w-10 text-right">{pct}%</span>
     </div>
   );
 }
@@ -157,15 +157,15 @@ function QuarterGrid({ obj }: { obj: Objective }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {quarters.map(({ q, p, n }) => (
-        <div key={q} className="bg-gray-50 rounded-lg p-2 border border-gray-100">
-          <div className="text-xs font-semibold text-gray-500 mb-1">{q}</div>
+        <div key={q} className="bg-muted/50 rounded-lg p-2 border border-border/50">
+          <div className="text-xs font-semibold text-muted-foreground mb-1">{q}</div>
           {p != null ? (
             <>
-              <div className="text-lg font-bold text-gray-800">{p}%</div>
-              {n && <div className="text-xs text-gray-500 mt-1 leading-tight">{n}</div>}
+              <div className="text-lg font-bold text-foreground">{p}%</div>
+              {n && <div className="text-xs text-muted-foreground mt-1 leading-tight">{n}</div>}
             </>
           ) : (
-            <div className="text-sm text-gray-400 italic">—</div>
+            <div className="text-sm text-muted-foreground italic">—</div>
           )}
         </div>
       ))}
@@ -210,24 +210,24 @@ function ObjectiveCard({
     : 0;
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 shadow-sm transition-all ${
+    <div className={`bg-background rounded-xl border-l-4 shadow-sm transition-all ${
       obj.priority === "critical" ? "border-red-500" :
       obj.priority === "high" ? "border-orange-400" :
-      obj.priority === "medium" ? "border-yellow-400" : "border-gray-300"
+      obj.priority === "medium" ? "border-yellow-400" : "border-border"
     }`}>
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-gray-400">{obj.obj_code}</span>
+              <span className="text-xs font-mono text-muted-foreground">{obj.obj_code}</span>
               <StatusBadge status={obj.status} />
               <PriorityBadge priority={obj.priority} />
               <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                 {CATEGORIES[obj.category] ?? obj.category}
               </span>
             </div>
-            <h3 className="font-semibold text-gray-900 leading-snug mb-1">{obj.title}</h3>
-            <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-2">
+            <h3 className="font-semibold text-foreground leading-snug mb-1">{obj.title}</h3>
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-2">
               {obj.responsible && (
                 <span className="flex items-center gap-1">
                   <User size={11} />
@@ -244,13 +244,13 @@ function ObjectiveCard({
             <ProgressBar value={latestProgress} status={obj.status} />
           </div>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-            <button onClick={() => onEdit(obj)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+            <button onClick={() => onEdit(obj)} className="p-1.5 text-muted-foreground hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
               <Edit2 size={15} />
             </button>
-            <button onClick={() => onDelete(obj.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+            <button onClick={() => onDelete(obj.id)} className="p-1.5 text-muted-foreground hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
               <Trash2 size={15} />
             </button>
-            <button onClick={toggleExpand} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <button onClick={toggleExpand} className="p-1.5 text-muted-foreground hover:text-foreground/80 rounded-lg hover:bg-muted transition-colors">
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           </div>
@@ -284,9 +284,9 @@ function ObjectiveCard({
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-100 p-4 space-y-4">
+        <div className="border-t border-border/50 p-4 space-y-4">
           {obj.description && (
-            <p className="text-sm text-gray-600">{obj.description}</p>
+            <p className="text-sm text-muted-foreground">{obj.description}</p>
           )}
 
           <QuarterGrid obj={obj} />
@@ -294,10 +294,10 @@ function ObjectiveCard({
           {obj.work_items_total > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Actividades del Plan ({obj.work_items_done}/{obj.work_items_total})
                 </span>
-                <span className="text-xs text-gray-500">{workPct}%</span>
+                <span className="text-xs text-muted-foreground">{workPct}%</span>
               </div>
               <ProgressBar value={workPct} status={workPct >= 100 ? "achieved" : "in_progress"} />
               {workItems.length > 0 && (
@@ -307,14 +307,14 @@ function ObjectiveCard({
                       <div className={`mt-0.5 w-3 h-3 rounded-full flex-shrink-0 ${
                         wi.status === "completed" ? "bg-green-500" :
                         wi.status === "in_progress" ? "bg-blue-500" :
-                        wi.status === "cancelled" ? "bg-gray-300" : "bg-gray-200"
+                        wi.status === "cancelled" ? "bg-muted" : "bg-muted"
                       }`} />
                       <div className="flex-1">
-                        <span className={wi.status === "completed" ? "line-through text-gray-400" : "text-gray-700"}>
+                        <span className={wi.status === "completed" ? "line-through text-muted-foreground" : "text-foreground/80"}>
                           {wi.title}
                         </span>
                         {wi.due_date && (
-                          <span className="ml-2 text-gray-400">
+                          <span className="ml-2 text-muted-foreground">
                             <Calendar size={10} className="inline" /> {new Date(wi.due_date).toLocaleDateString("es-CL")}
                           </span>
                         )}
@@ -333,7 +333,7 @@ function ObjectiveCard({
           )}
 
           {obj.ns_reference && (
-            <div className="text-xs text-gray-400 italic">
+            <div className="text-xs text-muted-foreground italic">
               Referencia normativa: {obj.ns_reference}
             </div>
           )}
@@ -399,35 +399,35 @@ function ObjectiveModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-bold text-gray-900">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background border-b border-border/50 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-bold text-foreground">
             {obj?.id ? "Editar Objetivo" : "Nuevo Objetivo PR"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground/80 text-2xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Título del Objetivo *</label>
-            <input required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Título del Objetivo *</label>
+            <input required className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={form.title as string} onChange={e => set("title", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Descripción</label>
-            <textarea rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Descripción</label>
+            <textarea rows={2} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={form.description as string} onChange={e => set("description", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Categoría</label>
-              <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Categoría</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.category as string} onChange={e => set("category", e.target.value)}>
                 {Object.entries(CATEGORIES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Prioridad</label>
-              <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Prioridad</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.priority as string} onChange={e => set("priority", e.target.value)}>
                 {Object.entries(PRIORITY_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
@@ -435,13 +435,13 @@ function ObjectiveModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Responsable</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Responsable</label>
+              <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.responsible as string} onChange={e => set("responsible", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Estado</label>
-              <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Estado</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.status as string} onChange={e => set("status", e.target.value)}>
                 {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
@@ -449,18 +449,18 @@ function ObjectiveModal({
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Meta (valor)</label>
-              <input type="number" step="any" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Meta (valor)</label>
+              <input type="number" step="any" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.target_value as string} onChange={e => set("target_value", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Unidad</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Unidad</label>
+              <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="mSv, %, N°…" value={form.target_unit as string} onChange={e => set("target_unit", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Dirección meta</label>
-              <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Dirección meta</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.target_direction as string} onChange={e => set("target_direction", e.target.value)}>
                 <option value="higher_better">Mayor es mejor</option>
                 <option value="lower_better">Menor es mejor</option>
@@ -469,32 +469,32 @@ function ObjectiveModal({
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Progreso por trimestre (%)</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Progreso por trimestre (%)</label>
             <div className="grid grid-cols-4 gap-2">
               {["q1", "q2", "q3", "q4"].map(q => (
                 <div key={q}>
-                  <label className="block text-xs text-gray-400 mb-1 text-center">{q.toUpperCase()}</label>
-                  <input type="number" min="0" max="100" className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  <label className="block text-xs text-muted-foreground mb-1 text-center">{q.toUpperCase()}</label>
+                  <input type="number" min="0" max="100" className="w-full border border-border rounded-lg px-2 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={form[`${q}_progress`] as string} onChange={e => set(`${q}_progress`, e.target.value)} />
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Referencia NS-06.0</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Referencia NS-06.0</label>
+            <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="NS-06.0 §8.1" value={form.ns_reference as string} onChange={e => set("ns_reference", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Evidencia de cumplimiento</label>
-            <textarea rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Evidencia de cumplimiento</label>
+            <textarea rows={2} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={form.evidence as string} onChange={e => set("evidence", e.target.value)} />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
               {obj?.id ? "Guardar Cambios" : "Crear Objetivo"}
             </button>
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 bg-muted text-foreground/80 py-2 rounded-xl font-semibold hover:bg-muted transition-colors">
               Cancelar
             </button>
           </div>
@@ -553,21 +553,21 @@ export default function ObjectivesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Target className="text-blue-600" size={26} />
             Objetivos PR — Plan de Trabajo Anual
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">NS-06.0 §8.1 — Planificación del Programa de Protección Radiológica</p>
+          <p className="text-sm text-muted-foreground mt-0.5">NS-06.0 §8.1 — Planificación del Programa de Protección Radiológica</p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-          <button onClick={load} className="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Actualizar">
+          <button onClick={load} className="p-2 text-muted-foreground hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Actualizar">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
           <button
@@ -583,51 +583,51 @@ export default function ObjectivesPage() {
       {/* KPI tiles */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+          <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+            <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
               <BarChart2 size={12} /> Total Objetivos
             </div>
-            <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-            <div className="text-xs text-gray-400 mt-1">Año {year}</div>
+            <div className="text-3xl font-bold text-foreground">{stats.total}</div>
+            <div className="text-xs text-muted-foreground mt-1">Año {year}</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+          <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+            <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
               <CheckCircle2 size={12} className="text-green-600" /> Logrados
             </div>
             <div className={`text-3xl font-bold ${scoreColor}`}>{stats.achieved}</div>
-            <div className="text-xs text-gray-400 mt-1">{achievedPct}% del total</div>
+            <div className="text-xs text-muted-foreground mt-1">{achievedPct}% del total</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+          <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+            <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
               <Clock size={12} className="text-blue-600" /> En Progreso
             </div>
             <div className="text-3xl font-bold text-blue-600">{stats.in_progress}</div>
-            <div className="text-xs text-gray-400 mt-1">{stats.partial} parciales</div>
+            <div className="text-xs text-muted-foreground mt-1">{stats.partial} parciales</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+          <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+            <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
               <TrendingUp size={12} /> Avance Prom.
             </div>
             <div className="text-3xl font-bold text-purple-600">{stats.avg_progress ?? 0}%</div>
-            <div className="text-xs text-gray-400 mt-1">{stats.critical} críticos</div>
+            <div className="text-xs text-muted-foreground mt-1">{stats.critical} críticos</div>
           </div>
         </div>
       )}
 
       {/* Progress bar overall */}
       {stats && stats.total > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700">Cumplimiento Global del Plan Anual</span>
+            <span className="text-sm font-semibold text-foreground/80">Cumplimiento Global del Plan Anual</span>
             <span className={`text-lg font-bold ${scoreColor}`}>{achievedPct}%</span>
           </div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-3 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-3 rounded-full transition-all ${achievedPct >= 80 ? "bg-green-500" : achievedPct >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
               style={{ width: `${achievedPct}%` }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
             <span>0%</span>
             <span>Meta: 100% de objetivos logrados al cierre del año</span>
             <span>100%</span>
@@ -640,7 +640,7 @@ export default function ObjectivesPage() {
         <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Todas las categorías</option>
           {Object.entries(CATEGORIES).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -648,13 +648,13 @@ export default function ObjectivesPage() {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           <option value="">Todos los estados</option>
           {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
         {(categoryFilter || statusFilter) && (
-          <button onClick={() => { setCategoryFilter(""); setStatusFilter(""); }} className="text-xs text-gray-500 hover:text-red-600 px-2">
+          <button onClick={() => { setCategoryFilter(""); setStatusFilter(""); }} className="text-xs text-muted-foreground hover:text-red-600 px-2">
             × Limpiar filtros
           </button>
         )}
@@ -662,11 +662,11 @@ export default function ObjectivesPage() {
 
       {/* Objectives list */}
       {loading ? (
-        <div className="flex justify-center py-16 text-gray-400">
+        <div className="flex justify-center py-16 text-muted-foreground">
           <RefreshCw size={28} className="animate-spin" />
         </div>
       ) : objectives.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <ListChecks size={48} className="mx-auto mb-3 opacity-30" />
           <p className="font-medium">No hay objetivos para {year}</p>
           <p className="text-sm mt-1">Crea el primer objetivo del plan de trabajo anual</p>
@@ -686,7 +686,7 @@ export default function ObjectivesPage() {
       )}
 
       {/* Footer */}
-      <div className="text-center text-xs text-gray-400 pt-4 border-t border-gray-100">
+      <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border/50">
         NS-06.0 §8.1 — Planificación del Programa PR · Hospital Hernán Henríquez Aravena · CCHEN
       </div>
 

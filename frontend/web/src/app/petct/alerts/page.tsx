@@ -85,7 +85,7 @@ export default function PetctAlertsPage() {
   const filtered = filterSev === "all" ? alerts : alerts.filter(a => a.severity === filterSev);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Header */}
@@ -95,24 +95,24 @@ export default function PetctAlertsPage() {
               <AlertTriangle className="h-6 w-6 text-red-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Alertas PET/CT en Tiempo Real</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-foreground">Alertas PET/CT en Tiempo Real</h1>
+              <p className="text-sm text-muted-foreground">
                 Alertas radiológicas activas — generadas automáticamente según estado de exámenes
                 {data?.generated_at && (
-                  <span className="ml-2 text-gray-400">
+                  <span className="ml-2 text-muted-foreground">
                     (actualizado: {new Date(data.generated_at).toLocaleTimeString("es-CL")})
                   </span>
                 )}
               </p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Calculando alertas...</div>
+          <div className="text-center py-16 text-muted-foreground">Calculando alertas...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar alertas.</div>
         ) : (
@@ -124,12 +124,12 @@ export default function PetctAlertsPage() {
                 { label: "Avisos",     count: warning.length,  color: "yellow", icon: AlertCircle },
                 { label: "Informativas",count: info.length,    color: "blue",   icon: Info },
               ].map(({ label, count, color, icon: Icon }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
+                <div key={label} className="bg-background rounded-xl border border-border px-5 py-4 shadow-sm">
                   <div className={`inline-flex p-2 rounded-lg bg-${color}-100 mb-2`}>
                     <Icon className={`h-4 w-4 text-${color}-600`} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{count}</div>
-                  <div className="text-xs text-gray-500">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">{count}</div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
                 </div>
               ))}
             </div>
@@ -154,7 +154,7 @@ export default function PetctAlertsPage() {
                       key={sev}
                       onClick={() => setFilterSev(sev)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        filterSev === sev ? "bg-gray-800 text-white" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-400"
+                        filterSev === sev ? "bg-gray-800 text-white" : "bg-background border border-border text-muted-foreground hover:border-gray-400"
                       }`}
                     >
                       {sev === "all" ? `Todas (${alerts.length})` : sev === "critical" ? `Críticas (${critical.length})` : sev === "warning" ? `Avisos (${warning.length})` : `Info (${info.length})`}
@@ -172,11 +172,11 @@ export default function PetctAlertsPage() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className={`font-semibold text-sm ${sevText(a.severity)}`}>{a.message}</span>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sevBadge(a.severity)}`}>{a.severity}</span>
-                            <span className="text-xs bg-white/60 px-2 py-0.5 rounded-full text-gray-600 border border-gray-200">
+                            <span className="text-xs bg-background/60 px-2 py-0.5 rounded-full text-muted-foreground border border-border">
                               {ALERT_LABELS[a.type] ?? a.type}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                             {a.patient_name && <span>Paciente: <strong>{a.patient_name}</strong></span>}
                             {a.patient_id && <span>ID: {a.patient_id}</span>}
                             {a.radiopharmaceutical && <span>Radiofármaco: {a.radiopharmaceutical}</span>}
@@ -191,8 +191,8 @@ export default function PetctAlertsPage() {
             )}
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°3/1985 MINSAL Art. 32-38 — Procedimientos de trabajo con fuentes radiactivas no encapsuladas.
                 IAEA Safety Reports Series No. 58 — Nuclear Medicine Resources Manual.

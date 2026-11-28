@@ -53,12 +53,12 @@ const CATEGORY_CFG: Record<string, { label: string; color: string; bg: string }>
   waste:         { label: "Residuos",           color: "text-orange-700", bg: "bg-orange-100" },
   transport:     { label: "Transporte",         color: "text-yellow-700", bg: "bg-yellow-100" },
   equipment:     { label: "Equipos",            color: "text-indigo-700", bg: "bg-indigo-100" },
-  general:       { label: "General",            color: "text-gray-700",   bg: "bg-gray-100"   },
+  general:       { label: "General",            color: "text-foreground/80",   bg: "bg-muted"   },
 };
 
 const STATUS_CFG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   approved: { label: "Aprobado",   color: "text-green-700",  icon: <CheckCircle2 size={14} /> },
-  draft:    { label: "Borrador",   color: "text-gray-500",   icon: <FileText size={14} />     },
+  draft:    { label: "Borrador",   color: "text-muted-foreground",   icon: <FileText size={14} />     },
   review:   { label: "En revisión",color: "text-amber-600",  icon: <RefreshCw size={14} />    },
   retired:  { label: "Retirado",   color: "text-red-500",    icon: <X size={14} />            },
 };
@@ -88,17 +88,17 @@ function ProcedureCard({ p, onEdit, onDelete }: { p: Procedure; onEdit: () => vo
   const upcoming = !overdue && days !== null && days <= 90 && days >= 0;
 
   return (
-    <div className={`bg-white rounded-lg border shadow-sm ${overdue ? "border-red-300" : "border-gray-200"}`}>
+    <div className={`bg-background rounded-lg border shadow-sm ${overdue ? "border-red-300" : "border-border"}`}>
       <button className="w-full text-left px-5 py-4 flex items-start gap-3" onClick={() => setOpen(!open)}>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-sm font-semibold text-gray-600">{p.code}</span>
+            <span className="font-mono text-sm font-semibold text-muted-foreground">{p.code}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cat.bg} ${cat.color}`}>{cat.label}</span>
             <span className={`text-xs flex items-center gap-1 ${st.color}`}>{st.icon}{st.label}</span>
-            <span className="text-xs text-gray-400">v{p.version}</span>
+            <span className="text-xs text-muted-foreground">v{p.version}</span>
           </div>
-          <p className="font-medium text-gray-900 truncate">{p.title}</p>
-          <div className="flex flex-wrap gap-4 mt-1 text-xs text-gray-500">
+          <p className="font-medium text-foreground truncate">{p.title}</p>
+          <div className="flex flex-wrap gap-4 mt-1 text-xs text-muted-foreground">
             {p.service && <span>Servicio: {p.service}</span>}
             {p.responsible && <span><User size={11} className="inline mr-1" />{p.responsible}</span>}
             {p.next_review && (
@@ -109,17 +109,17 @@ function ProcedureCard({ p, onEdit, onDelete }: { p: Procedure; onEdit: () => vo
             )}
           </div>
         </div>
-        {open ? <ChevronUp size={18} className="text-gray-400 mt-1 shrink-0" />
-               : <ChevronDown size={18} className="text-gray-400 mt-1 shrink-0" />}
+        {open ? <ChevronUp size={18} className="text-muted-foreground mt-1 shrink-0" />
+               : <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />}
       </button>
 
       {open && (
-        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-3 text-sm">
-          {p.description && <p className="text-gray-700">{p.description}</p>}
+        <div className="px-5 pb-5 border-t border-border/50 pt-4 space-y-3 text-sm">
+          {p.description && <p className="text-foreground/80">{p.description}</p>}
           {p.scope && (
-            <div><span className="font-medium text-gray-600">Alcance: </span><span className="text-gray-700">{p.scope}</span></div>
+            <div><span className="font-medium text-muted-foreground">Alcance: </span><span className="text-foreground/80">{p.scope}</span></div>
           )}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-gray-600">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-muted-foreground">
             <div><span className="font-medium">Responsable:</span><br/>{p.responsible ?? "—"}</div>
             <div><span className="font-medium">Revisor:</span><br/>{p.reviewer ?? "—"}</div>
             <div><span className="font-medium">Aprobador:</span><br/>{p.approver ?? "—"}</div>
@@ -138,9 +138,9 @@ function ProcedureCard({ p, onEdit, onDelete }: { p: Procedure; onEdit: () => vo
               <span>{p.references_norm}</span>
             </div>
           )}
-          {p.notes && <p className="text-xs text-gray-500 italic">{p.notes}</p>}
+          {p.notes && <p className="text-xs text-muted-foreground italic">{p.notes}</p>}
           <div className="flex gap-2 pt-2">
-            <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-700">
+            <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-muted hover:bg-muted rounded text-foreground/80">
               <Edit2 size={12} />Editar
             </button>
             <button onClick={onDelete} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded text-red-600">
@@ -173,19 +173,19 @@ function ProcedureForm({ initial, onSave, onClose }: {
     try { await onSave(form); } finally { setSaving(false); }
   }
 
-  const lbl = "block text-xs font-medium text-gray-600 mb-1";
-  const inp = "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const lbl = "block text-xs font-medium text-muted-foreground mb-1";
+  const inp = "w-full border border-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
   const sel = inp;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background px-6 py-4 border-b flex items-center justify-between">
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
             <ClipboardList size={18} className="text-blue-600" />
             {initial.id ? "Editar procedimiento" : "Nuevo procedimiento"}
           </h2>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-600" /></button>
+          <button onClick={onClose}><X size={20} className="text-muted-foreground hover:text-muted-foreground" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -271,7 +271,7 @@ function ProcedureForm({ initial, onSave, onClose }: {
             <textarea className={inp} rows={2} value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancelar</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-muted/50">Cancelar</button>
             <button type="submit" disabled={saving} className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
               {saving ? "Guardando…" : "Guardar"}
             </button>
@@ -341,8 +341,8 @@ export default function ProceduresPage() {
         <div className="flex items-center gap-3">
           <ClipboardList size={28} className="text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Procedimientos de Trabajo</h1>
-            <p className="text-sm text-gray-500">DS 3/1985 Art. 15 — Control documental de procedimientos radiológicos</p>
+            <h1 className="text-2xl font-bold text-foreground">Procedimientos de Trabajo</h1>
+            <p className="text-sm text-muted-foreground">DS 3/1985 Art. 15 — Control documental de procedimientos radiológicos</p>
           </div>
         </div>
         <button
@@ -382,15 +382,15 @@ export default function ProceduresPage() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           {[
-            { label: "Total",         value: stats.total,           color: "text-gray-700"  },
+            { label: "Total",         value: stats.total,           color: "text-foreground/80"  },
             { label: "Aprobados",     value: stats.approved,        color: "text-green-700" },
             { label: "En revisión",   value: stats.review,          color: "text-amber-600" },
-            { label: "Borradores",    value: stats.draft,           color: "text-gray-500"  },
+            { label: "Borradores",    value: stats.draft,           color: "text-muted-foreground"  },
             { label: "Revisión venc.",value: stats.overdue_review,  color: "text-red-600"   },
           ].map(k => (
-            <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-3 text-center shadow-sm">
+            <div key={k.label} className="bg-background border border-border rounded-lg p-3 text-center shadow-sm">
               <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{k.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
             </div>
           ))}
         </div>
@@ -399,27 +399,27 @@ export default function ProceduresPage() {
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-5">
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          className="border border-border rounded-lg px-3 py-2 text-sm bg-background">
           <option value="">Todas las categorías</option>
           {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
         <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          className="border border-border rounded-lg px-3 py-2 text-sm bg-background">
           <option value="">Todos los estados</option>
           {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         {(filterCat || filterSt) && (
           <button onClick={() => { setFilterCat(""); setFilterSt(""); }}
-            className="text-xs text-gray-500 hover:text-gray-700 px-2">Limpiar filtros</button>
+            className="text-xs text-muted-foreground hover:text-foreground/80 px-2">Limpiar filtros</button>
         )}
       </div>
 
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando procedimientos…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando procedimientos…</div>
       ) : procedures.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <ClipboardList size={40} className="mx-auto mb-3 opacity-30" />
           <p>No hay procedimientos registrados</p>
         </div>

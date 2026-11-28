@@ -79,7 +79,7 @@ const STATUS_CFG: Record<string, { label: string; color: string; bg: string; ico
   planned:     { label: "Planificada",   color: "text-blue-600",   bg: "bg-blue-50",   icon: <Calendar size={13} />     },
   in_progress: { label: "En curso",      color: "text-amber-600",  bg: "bg-amber-50",  icon: <Clock size={13} />        },
   completed:   { label: "Completada",    color: "text-green-700",  bg: "bg-green-50",  icon: <CheckCircle2 size={13} /> },
-  cancelled:   { label: "Cancelada",     color: "text-gray-500",   bg: "bg-gray-50",   icon: <X size={13} />            },
+  cancelled:   { label: "Cancelada",     color: "text-muted-foreground",   bg: "bg-muted/50",   icon: <X size={13} />            },
 };
 
 function SessionCard({ session, onEdit, onDelete }: {
@@ -125,33 +125,33 @@ function SessionCard({ session, onEdit, onDelete }: {
   const attendedCount = participants.filter(p => p.attended).length;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div className="bg-background rounded-lg border border-border shadow-sm">
       <button className="w-full text-left px-5 py-4 flex items-start gap-3" onClick={handleOpen}>
         <div className={`mt-1 p-1.5 rounded-md ${cat.bg} shrink-0`}>
           <span className={cat.color}>{cat.icon}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-sm font-semibold text-gray-600">{session.session_code}</span>
+            <span className="font-mono text-sm font-semibold text-muted-foreground">{session.session_code}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cat.bg} ${cat.color}`}>{cat.label}</span>
             <span className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full ${st.bg} ${st.color}`}>{st.icon}{st.label}</span>
-            <span className={`text-xs flex items-center gap-1 text-gray-500`}>{mod.icon}{mod.label}</span>
+            <span className={`text-xs flex items-center gap-1 text-muted-foreground`}>{mod.icon}{mod.label}</span>
           </div>
-          <p className="font-medium text-gray-900 truncate">{session.title}</p>
-          <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-500">
+          <p className="font-medium text-foreground truncate">{session.title}</p>
+          <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
             {session.session_date && <span><Calendar size={11} className="inline mr-1" />{new Date(session.session_date).toLocaleDateString("es-CL")}</span>}
             {session.duration_hours && <span>{session.duration_hours}h</span>}
             {session.attendees_count && <span><Users size={11} className="inline mr-1" />{session.attendees_count} asistentes</span>}
             {session.certification && <span className="flex items-center gap-1 text-green-700"><Award size={11} />Certificación</span>}
           </div>
         </div>
-        {open ? <ChevronUp size={18} className="text-gray-400 mt-1 shrink-0" />
-               : <ChevronDown size={18} className="text-gray-400 mt-1 shrink-0" />}
+        {open ? <ChevronUp size={18} className="text-muted-foreground mt-1 shrink-0" />
+               : <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />}
       </button>
 
       {open && (
-        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4 text-sm">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-gray-600">
+        <div className="px-5 pb-5 border-t border-border/50 pt-4 space-y-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs text-muted-foreground">
             {session.trainer && <div><span className="font-medium">Relator:</span> {session.trainer}</div>}
             {session.trainer_entity && <div><span className="font-medium">Entidad:</span> {session.trainer_entity}</div>}
             {session.location && <div><span className="font-medium">Lugar:</span> {session.location}</div>}
@@ -167,16 +167,16 @@ function SessionCard({ session, onEdit, onDelete }: {
             </div>
           )}
           {session.content_summary && (
-            <div className="bg-gray-50 rounded p-3 text-xs">
-              <p className="font-medium text-gray-700 mb-1">Contenidos</p>
-              <p className="text-gray-600">{session.content_summary}</p>
+            <div className="bg-muted/50 rounded p-3 text-xs">
+              <p className="font-medium text-foreground/80 mb-1">Contenidos</p>
+              <p className="text-muted-foreground">{session.content_summary}</p>
             </div>
           )}
 
           {/* Participantes */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-gray-700">
+              <p className="text-xs font-semibold text-foreground/80">
                 Participantes ({attendedCount} asistieron{passedCount > 0 ? `, ${passedCount} aprobaron` : ""})
               </p>
               <button onClick={() => setShowAddP(!showAddP)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
@@ -200,7 +200,7 @@ function SessionCard({ session, onEdit, onDelete }: {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={addParticipant} className="text-xs px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Guardar</button>
-                  <button onClick={() => setShowAddP(false)} className="text-xs px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">Cancelar</button>
+                  <button onClick={() => setShowAddP(false)} className="text-xs px-3 py-1 bg-muted rounded hover:bg-muted">Cancelar</button>
                 </div>
               </div>
             )}
@@ -209,7 +209,7 @@ function SessionCard({ session, onEdit, onDelete }: {
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-gray-200 text-gray-500">
+                    <tr className="border-b border-border text-muted-foreground">
                       <th className="text-left pb-1 pr-3">Nombre</th>
                       <th className="text-left pb-1 pr-3">Cargo</th>
                       <th className="text-center pb-1 pr-3">Nota</th>
@@ -219,14 +219,14 @@ function SessionCard({ session, onEdit, onDelete }: {
                   </thead>
                   <tbody>
                     {participants.map(p => (
-                      <tr key={p.id} className="border-b border-gray-100 last:border-0">
+                      <tr key={p.id} className="border-b border-border/50 last:border-0">
                         <td className="py-1 pr-3">{p.worker_name}</td>
-                        <td className="py-1 pr-3 text-gray-500">{p.role ?? "—"}</td>
+                        <td className="py-1 pr-3 text-muted-foreground">{p.role ?? "—"}</td>
                         <td className="py-1 pr-3 text-center">{p.score ?? "—"}</td>
                         <td className="py-1 pr-3 text-center">
                           {p.passed === true  ? <span className="text-green-700 font-medium">Aprobado</span>
                           : p.passed === false ? <span className="text-red-600">Reprobado</span>
-                          : <span className="text-gray-400">S/E</span>}
+                          : <span className="text-muted-foreground">S/E</span>}
                         </td>
                         <td className="py-1 text-center">{p.cert_issued ? <Award size={13} className="text-green-600 mx-auto" /> : "—"}</td>
                       </tr>
@@ -235,7 +235,7 @@ function SessionCard({ session, onEdit, onDelete }: {
                 </table>
               </div>
             ) : (
-              <p className="text-xs text-gray-400 italic">Sin participantes registrados</p>
+              <p className="text-xs text-muted-foreground italic">Sin participantes registrados</p>
             )}
           </div>
 
@@ -245,7 +245,7 @@ function SessionCard({ session, onEdit, onDelete }: {
 
           <div className="flex gap-2 pt-1 flex-wrap">
             <RowPdfActions module="training" ownerType="training_session" ownerId={String(session.id)} size="xs" />
-            <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-700">
+            <button onClick={onEdit} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-muted hover:bg-muted rounded text-foreground/80">
               <Edit2 size={12} />Editar
             </button>
             <button onClick={onDelete} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded text-red-600">
@@ -279,18 +279,18 @@ function SessionForm({ initial, onSave, onClose }: {
     try { await onSave(form); } finally { setSaving(false); }
   }
 
-  const lbl = "block text-xs font-medium text-gray-600 mb-1";
-  const inp = "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const lbl = "block text-xs font-medium text-muted-foreground mb-1";
+  const inp = "w-full border border-border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background px-6 py-4 border-b flex items-center justify-between">
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
             <GraduationCap size={18} className="text-blue-600" />
             {initial.id ? "Editar capacitación" : "Nueva capacitación"}
           </h2>
-          <button onClick={onClose}><X size={20} className="text-gray-400 hover:text-gray-600" /></button>
+          <button onClick={onClose}><X size={20} className="text-muted-foreground hover:text-muted-foreground" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -386,7 +386,7 @@ function SessionForm({ initial, onSave, onClose }: {
             </label>
             {form.certification && (
               <div>
-                <input type="number" placeholder="Meses vigencia cert." className="border border-gray-300 rounded px-3 py-2 text-sm w-40"
+                <input type="number" placeholder="Meses vigencia cert." className="border border-border rounded px-3 py-2 text-sm w-40"
                   value={form.cert_valid_months ?? ""} onChange={e => set("cert_valid_months", parseInt(e.target.value))} />
               </div>
             )}
@@ -400,7 +400,7 @@ function SessionForm({ initial, onSave, onClose }: {
             <textarea className={inp} rows={2} value={form.notes ?? ""} onChange={e => set("notes", e.target.value)} />
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-gray-50">Cancelar</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm border rounded hover:bg-muted/50">Cancelar</button>
             <button type="submit" disabled={saving} className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
               {saving ? "Guardando…" : "Guardar"}
             </button>
@@ -465,8 +465,8 @@ export default function TrainingPage() {
         <div className="flex items-center gap-3">
           <GraduationCap size={28} className="text-blue-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Capacitación y Competencias</h1>
-            <p className="text-sm text-gray-500">DS 3/1985 Art. 25 — IAEA GSG-7 — Capacitación anual obligatoria TOE</p>
+            <h1 className="text-2xl font-bold text-foreground">Capacitación y Competencias</h1>
+            <p className="text-sm text-muted-foreground">DS 3/1985 Art. 25 — IAEA GSG-7 — Capacitación anual obligatoria TOE</p>
           </div>
         </div>
         <button
@@ -496,15 +496,15 @@ export default function TrainingPage() {
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "Total",         value: stats.total,           sub: "capacitaciones",    color: "text-gray-800"   },
+            { label: "Total",         value: stats.total,           sub: "capacitaciones",    color: "text-foreground"   },
             { label: "Completadas",   value: stats.completed,       sub: "realizadas",         color: "text-green-700"  },
             { label: "Asistentes",    value: stats.total_attendees, sub: "participaciones",    color: "text-blue-700"   },
             { label: "Horas totales", value: `${parseFloat(stats.total_hours || "0").toFixed(0)}h`, sub: "formación", color: "text-purple-700" },
           ].map(k => (
-            <div key={k.label} className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
+            <div key={k.label} className="bg-background border border-border rounded-lg p-4 text-center shadow-sm">
               <p className={`text-2xl font-bold ${k.color}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{k.label}</p>
-              <p className="text-xs text-gray-400">{k.sub}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
+              <p className="text-xs text-muted-foreground">{k.sub}</p>
             </div>
           ))}
         </div>
@@ -513,32 +513,32 @@ export default function TrainingPage() {
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-5">
         <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          className="border border-border rounded-lg px-3 py-2 text-sm bg-background">
           <option value="">Todas las categorías</option>
           {Object.entries(CAT_CFG).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
         </select>
         <select value={filterSt} onChange={e => setFilterSt(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          className="border border-border rounded-lg px-3 py-2 text-sm bg-background">
           <option value="">Todos los estados</option>
           {Object.entries(STATUS_CFG).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}
         </select>
         <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          className="border border-border rounded-lg px-3 py-2 text-sm bg-background">
           <option value="">Todos los años</option>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         {(filterCat || filterSt || filterYear) && (
           <button onClick={() => { setFilterCat(""); setFilterSt(""); setFilterYear(""); }}
-            className="text-xs text-gray-500 hover:text-gray-700 px-2">Limpiar filtros</button>
+            className="text-xs text-muted-foreground hover:text-foreground/80 px-2">Limpiar filtros</button>
         )}
       </div>
 
       {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando capacitaciones…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando capacitaciones…</div>
       ) : sessions.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <GraduationCap size={40} className="mx-auto mb-3 opacity-30" />
           <p>No hay capacitaciones registradas</p>
         </div>

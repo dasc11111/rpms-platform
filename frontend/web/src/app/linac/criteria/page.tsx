@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Search } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 const STATUS_MAP: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
   aprobado:   { label: "Aprobado",   cls: "bg-green-100 text-green-700",  icon: <CheckCircle size={12} /> },
@@ -73,105 +73,105 @@ export default function LinacCriteriaPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Criterios Técnicos LINAC</h1>
-        <p className="text-sm text-gray-500 mt-1">Criterios de tolerancia y niveles de acción — IPEM Report 81 · AAPM TG-142 · IAEA Safety Report 38</p>
+        <h1 className="text-2xl font-bold text-foreground">Criterios Técnicos LINAC</h1>
+        <p className="text-sm text-muted-foreground mt-1">Criterios de tolerancia y niveles de acción — IPEM Report 81 · AAPM TG-142 · IAEA Safety Report 38</p>
       </div>
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Total criterios</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Total criterios</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Aprobados/Vigentes</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Aprobados/Vigentes</p>
           <p className="text-2xl font-bold text-green-600">{stats.aprobados}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Pendientes</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Pendientes</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pendientes}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Categorías</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Categorías</p>
           <p className="text-2xl font-bold text-indigo-600">{stats.categorias}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-background rounded-xl border border-border p-4 flex flex-wrap gap-3 items-end">
         <div className="min-w-[100px]">
-          <label className="block text-xs text-gray-500 mb-1">LINAC ID</label>
+          <label className="block text-xs text-muted-foreground mb-1">LINAC ID</label>
           <input value={linacId} onChange={e => setLinacId(e.target.value)} className={inp} />
         </div>
         <div className="min-w-[160px]">
-          <label className="block text-xs text-gray-500 mb-1">Categoría</label>
+          <label className="block text-xs text-muted-foreground mb-1">Categoría</label>
           <select value={category} onChange={e => setCategory(e.target.value)} className={inp}>
             <option value="">Todas</option>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="min-w-[140px]">
-          <label className="block text-xs text-gray-500 mb-1">Estado</label>
+          <label className="block text-xs text-muted-foreground mb-1">Estado</label>
           <select value={status} onChange={e => setStatus(e.target.value)} className={inp}>
             <option value="">Todos</option>
             {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="block text-xs text-gray-500 mb-1">Buscar parámetro / referencia</label>
+          <label className="block text-xs text-muted-foreground mb-1">Buscar parámetro / referencia</label>
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar…" className={`${inp} pl-8`} />
           </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-background rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Parámetro</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categoría</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tolerancia</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nivel acción</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Referencia</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Parámetro</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Categoría</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Tolerancia</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Nivel acción</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Referencia</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Estado</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Cargando…</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Cargando…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No hay criterios para los filtros seleccionados</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No hay criterios para los filtros seleccionados</td></tr>
               ) : filtered.map(item => {
-                const st = STATUS_MAP[item.status] ?? { label: item.status, cls: "bg-gray-100 text-gray-600", icon: null };
+                const st = STATUS_MAP[item.status] ?? { label: item.status, cls: "bg-muted text-muted-foreground", icon: null };
                 return (
                   <>
-                    <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpanded(expanded === item.id ? null : item.id)}>
-                      <td className="px-4 py-3 font-medium text-gray-900">{item.parameter}</td>
-                      <td className="px-4 py-3 text-gray-600">{item.category}</td>
+                    <tr key={item.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setExpanded(expanded === item.id ? null : item.id)}>
+                      <td className="px-4 py-3 font-medium text-foreground">{item.parameter}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.category}</td>
                       <td className="px-4 py-3 font-mono text-indigo-700 font-semibold">{item.tolerance}</td>
                       <td className="px-4 py-3 font-mono text-orange-600">{item.action_level}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{item.document_reference}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{item.document_reference}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${st.cls}`}>
                           {st.icon}{st.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-400">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {expanded === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </td>
                     </tr>
                     {expanded === item.id && (
-                      <tr key={`exp-${item.id}`} className="bg-gray-50">
+                      <tr key={`exp-${item.id}`} className="bg-muted/50">
                         <td colSpan={7} className="px-6 py-3">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                            {item.source && <div><span className="text-xs text-gray-500">Fuente</span><p className="font-medium">{item.source}</p></div>}
-                            {item.notes && <div className="col-span-2"><span className="text-xs text-gray-500">Notas</span><p>{item.notes}</p></div>}
-                            <div><span className="text-xs text-gray-500">Registrado</span><p>{item.created_at ? new Date(item.created_at).toLocaleDateString("es-CL") : "—"}</p></div>
+                            {item.source && <div><span className="text-xs text-muted-foreground">Fuente</span><p className="font-medium">{item.source}</p></div>}
+                            {item.notes && <div className="col-span-2"><span className="text-xs text-muted-foreground">Notas</span><p>{item.notes}</p></div>}
+                            <div><span className="text-xs text-muted-foreground">Registrado</span><p>{item.created_at ? new Date(item.created_at).toLocaleDateString("es-CL") : "—"}</p></div>
                           </div>
                         </td>
                       </tr>

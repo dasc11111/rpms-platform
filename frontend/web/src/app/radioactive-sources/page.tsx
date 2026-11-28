@@ -85,7 +85,7 @@ function StatusBadge({ status }: { status: SourceStatus }) {
   const cfg: Record<SourceStatus, { cls: string; label: string }> = {
     active: { cls: "bg-green-100 text-green-800 border border-green-200", label: "Activa" },
     in_use: { cls: "bg-blue-100 text-blue-800 border border-blue-200", label: "En uso" },
-    storage: { cls: "bg-gray-100 text-gray-700 border border-gray-200", label: "Almacenada" },
+    storage: { cls: "bg-muted text-foreground/80 border border-border", label: "Almacenada" },
     maintenance: { cls: "bg-yellow-100 text-yellow-800 border border-yellow-200", label: "Mantención" },
     transfer: { cls: "bg-purple-100 text-purple-800 border border-purple-200", label: "En traslado" },
     decommissioned: { cls: "bg-orange-100 text-orange-800 border border-orange-200", label: "Descomisionada" },
@@ -108,7 +108,7 @@ function TypeBadge({ type }: { type: SourceType }) {
 
 function ExpiryChip({ days, label }: { days: number | null; label: string }) {
   if (days === null) return null;
-  const cls = days < 0 ? "bg-red-100 text-red-700" : days <= 30 ? "bg-orange-100 text-orange-700" : days <= 90 ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-600";
+  const cls = days < 0 ? "bg-red-100 text-red-700" : days <= 30 ? "bg-orange-100 text-orange-700" : days <= 90 ? "bg-yellow-100 text-yellow-700" : "bg-muted text-muted-foreground";
   return (
     <span className={`px-2 py-0.5 rounded text-xs ${cls}`}>
       {label}: {days < 0 ? `vencido ${-days}d` : `${days}d`}
@@ -160,16 +160,16 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
   };
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 ${borderColor(s)} shadow-sm mb-3 overflow-hidden`}>
+    <div className={`bg-background rounded-xl border-l-4 ${borderColor(s)} shadow-sm mb-3 overflow-hidden`}>
       <div className="px-4 py-3 flex items-start justify-between cursor-pointer" onClick={() => setOpen(v => !v)}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-xs text-gray-400">{s.source_code}</span>
-            <span className="font-semibold text-gray-900 text-sm">{s.name}</span>
+            <span className="font-mono text-xs text-muted-foreground">{s.source_code}</span>
+            <span className="font-semibold text-foreground text-sm">{s.name}</span>
             <StatusBadge status={s.status} />
             <TypeBadge type={s.source_type} />
           </div>
-          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
             <span className="font-semibold text-purple-700">{s.radionuclide}</span>
             {s.location && <><span className="text-gray-300">|</span><MapPin className="w-3 h-3" /><span>{s.location}</span></>}
             {s.custodian && <><span className="text-gray-300">|</span><span>{s.custodian}</span></>}
@@ -188,10 +188,10 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
         </div>
         <div className="flex items-center gap-2 ml-3">
           <div className="text-right">
-            <div className="text-xs text-gray-500">Actividad actual</div>
+            <div className="text-xs text-muted-foreground">Actividad actual</div>
             <div className="text-sm font-bold font-mono text-purple-700">{formatActivity(s.current_activity_bq)}</div>
           </div>
-          {open ? <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
         </div>
       </div>
 
@@ -204,46 +204,46 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
       />
 
       {open && (
-        <div className="px-4 pb-4 border-t border-gray-100">
+        <div className="px-4 pb-4 border-t border-border/50">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-xs">
             <div className="bg-purple-50 rounded p-2">
-              <div className="text-gray-500">Actividad ref.</div>
+              <div className="text-muted-foreground">Actividad ref.</div>
               <div className="font-mono font-semibold">{formatActivity(parseFloat(String(s.activity_bq)))}</div>
-              <div className="text-gray-400">{s.activity_date ? new Date(s.activity_date).toLocaleDateString("es-CL") : "—"}</div>
+              <div className="text-muted-foreground">{s.activity_date ? new Date(s.activity_date).toLocaleDateString("es-CL") : "—"}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Vida media</div>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Vida media</div>
               <div className="font-semibold">{s.half_life_days ? `${parseFloat(String(s.half_life_days)).toFixed(1)} días` : "—"}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Fabricante</div>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Fabricante</div>
               <div className="font-semibold">{s.manufacturer || "—"}</div>
-              <div className="text-gray-400">{s.serial_number || ""}</div>
+              <div className="text-muted-foreground">{s.serial_number || ""}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Reg. CCHEN</div>
-              <div className={`font-semibold ${s.days_to_cchen_expiry !== null && s.days_to_cchen_expiry <= 30 ? "text-red-600" : "text-gray-800"}`}>{s.cchen_registration || "—"}</div>
-              <div className="text-gray-400">{s.cchen_registration_expiry ? new Date(s.cchen_registration_expiry).toLocaleDateString("es-CL") : "—"}</div>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Reg. CCHEN</div>
+              <div className={`font-semibold ${s.days_to_cchen_expiry !== null && s.days_to_cchen_expiry <= 30 ? "text-red-600" : "text-foreground"}`}>{s.cchen_registration || "—"}</div>
+              <div className="text-muted-foreground">{s.cchen_registration_expiry ? new Date(s.cchen_registration_expiry).toLocaleDateString("es-CL") : "—"}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Almacenamiento</div>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Almacenamiento</div>
               <div className="font-semibold">{s.storage_location || "—"}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Uso autorizado</div>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Uso autorizado</div>
               <div className="font-semibold">{s.use_category || "—"}</div>
             </div>
-            <div className="bg-gray-50 rounded p-2">
-              <div className="text-gray-500">Último inventario</div>
-              <div className={`font-semibold ${s.days_to_next_inventory !== null && s.days_to_next_inventory < 0 ? "text-red-600" : "text-gray-800"}`}>
+            <div className="bg-muted/50 rounded p-2">
+              <div className="text-muted-foreground">Último inventario</div>
+              <div className={`font-semibold ${s.days_to_next_inventory !== null && s.days_to_next_inventory < 0 ? "text-red-600" : "text-foreground"}`}>
                 {s.last_inventory_date ? new Date(s.last_inventory_date).toLocaleDateString("es-CL") : "—"}
               </div>
             </div>
             {s.source_type === "sealed" && (
               <div className={`rounded p-2 ${s.leak_test_result === "No detectada" ? "bg-green-50" : "bg-red-50"}`}>
-                <div className="text-gray-500">Estanqueidad</div>
+                <div className="text-muted-foreground">Estanqueidad</div>
                 <div className="font-semibold">{s.leak_test_result || "—"}</div>
-                <div className="text-gray-400">{s.last_leak_test_date ? new Date(s.last_leak_test_date).toLocaleDateString("es-CL") : "No realizada"}</div>
+                <div className="text-muted-foreground">{s.last_leak_test_date ? new Date(s.last_leak_test_date).toLocaleDateString("es-CL") : "No realizada"}</div>
               </div>
             )}
           </div>
@@ -261,7 +261,7 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
               <Plus className="w-3 h-3" /> Registrar movimiento
             </button>
             <RowPdfActions module="radioactive-sources" ownerType="radioactive_source" ownerId={String(s.id)} size="xs" />
-            <button onClick={() => onEdit(s)} className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 font-medium">
+            <button onClick={() => onEdit(s)} className="text-xs bg-muted text-foreground/80 px-3 py-1.5 rounded hover:bg-muted font-medium">
               Editar fuente
             </button>
           </div>
@@ -271,7 +271,7 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
               <div className="text-xs font-semibold text-green-800 mb-2">Registrar movimiento / evento</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="col-span-2">
-                  <label className="text-gray-600">Tipo</label>
+                  <label className="text-muted-foreground">Tipo</label>
                   <select className="w-full border rounded p-1 mt-0.5" value={moveForm.movement_type} onChange={e => setMoveForm(f => ({ ...f, movement_type: e.target.value }))}>
                     <option value="inventory">Inventario físico</option>
                     <option value="leak_test">Prueba de estanqueidad</option>
@@ -284,29 +284,29 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-gray-600">Desde</label>
+                  <label className="text-muted-foreground">Desde</label>
                   <input className="w-full border rounded p-1 mt-0.5" value={moveForm.from_location} onChange={e => setMoveForm(f => ({ ...f, from_location: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-gray-600">Hacia</label>
+                  <label className="text-muted-foreground">Hacia</label>
                   <input className="w-full border rounded p-1 mt-0.5" value={moveForm.to_location} onChange={e => setMoveForm(f => ({ ...f, to_location: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-gray-600">Realizado por</label>
+                  <label className="text-muted-foreground">Realizado por</label>
                   <input className="w-full border rounded p-1 mt-0.5" value={moveForm.performed_by} onChange={e => setMoveForm(f => ({ ...f, performed_by: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-gray-600">Autorizado por</label>
+                  <label className="text-muted-foreground">Autorizado por</label>
                   <input className="w-full border rounded p-1 mt-0.5" value={moveForm.authorized_by} onChange={e => setMoveForm(f => ({ ...f, authorized_by: e.target.value }))} />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-gray-600">Propósito / resultado</label>
+                  <label className="text-muted-foreground">Propósito / resultado</label>
                   <input className="w-full border rounded p-1 mt-0.5" value={moveForm.notes} onChange={e => setMoveForm(f => ({ ...f, notes: e.target.value }))} />
                 </div>
               </div>
               <div className="flex gap-2 mt-2">
                 <button onClick={saveMovement} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700">Guardar</button>
-                <button onClick={() => setShowMoveForm(false)} className="text-xs bg-gray-200 text-gray-700 px-3 py-1.5 rounded">Cancelar</button>
+                <button onClick={() => setShowMoveForm(false)} className="text-xs bg-muted text-foreground/80 px-3 py-1.5 rounded">Cancelar</button>
               </div>
             </div>
           )}
@@ -314,16 +314,16 @@ function SourceCard({ s, onEdit }: { s: Source; onEdit: (s: Source) => void }) {
           {showMovements && (
             <div className="mt-3">
               {movements.length === 0 ? (
-                <div className="text-xs text-gray-400 italic">Sin movimientos registrados</div>
+                <div className="text-xs text-muted-foreground italic">Sin movimientos registrados</div>
               ) : (
                 <div className="space-y-1">
                   {movements.map(m => (
-                    <div key={m.id} className="flex items-start gap-2 text-xs py-1 border-b border-gray-100">
-                      <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded whitespace-nowrap">{mvTypeLabel[m.movement_type] || m.movement_type}</span>
-                      <span className="text-gray-500">{new Date(m.movement_date).toLocaleDateString("es-CL")}</span>
+                    <div key={m.id} className="flex items-start gap-2 text-xs py-1 border-b border-border/50">
+                      <span className="bg-muted text-muted-foreground px-1.5 py-0.5 rounded whitespace-nowrap">{mvTypeLabel[m.movement_type] || m.movement_type}</span>
+                      <span className="text-muted-foreground">{new Date(m.movement_date).toLocaleDateString("es-CL")}</span>
                       {m.to_location && <span className="text-blue-600">→ {m.to_location}</span>}
-                      {m.performed_by && <span className="text-gray-500">({m.performed_by})</span>}
-                      {m.notes && <span className="text-gray-600 italic">{m.notes}</span>}
+                      {m.performed_by && <span className="text-muted-foreground">({m.performed_by})</span>}
+                      {m.notes && <span className="text-muted-foreground italic">{m.notes}</span>}
                     </div>
                   ))}
                 </div>
@@ -354,23 +354,23 @@ function SourceModal({ onClose, onSave }: { onClose: () => void; onSave: () => v
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-bold text-gray-900">Registrar fuente radiactiva</h3>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-600" /></button>
+          <h3 className="font-bold text-foreground">Registrar fuente radiactiva</h3>
+          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground hover:text-muted-foreground" /></button>
         </div>
         <div className="p-4 space-y-3 text-sm">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <label className="block text-gray-600 font-medium mb-1">Nombre *</label>
+              <label className="block text-muted-foreground font-medium mb-1">Nombre *</label>
               <input className="w-full border rounded-lg p-2" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Radionúclido *</label>
+              <label className="block text-muted-foreground font-medium mb-1">Radionúclido *</label>
               <input className="w-full border rounded-lg p-2 font-mono" placeholder="Tc-99m / Am-241 / Co-57..." value={form.radionuclide} onChange={e => setForm(f => ({ ...f, radionuclide: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Tipo de fuente</label>
+              <label className="block text-muted-foreground font-medium mb-1">Tipo de fuente</label>
               <select className="w-full border rounded-lg p-2" value={form.source_type} onChange={e => setForm(f => ({ ...f, source_type: e.target.value }))}>
                 <option value="sealed">Sellada</option>
                 <option value="unsealed">No sellada</option>
@@ -379,7 +379,7 @@ function SourceModal({ onClose, onSave }: { onClose: () => void; onSave: () => v
               </select>
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Actividad</label>
+              <label className="block text-muted-foreground font-medium mb-1">Actividad</label>
               <div className="flex gap-1">
                 <input type="number" className="flex-1 border rounded-lg p-2 font-mono" placeholder="0.000" value={form.activity_bq} onChange={e => setForm(f => ({ ...f, activity_bq: e.target.value }))} />
                 <select className="border rounded-lg p-2 text-sm" value={form.activity_unit} onChange={e => setForm(f => ({ ...f, activity_unit: e.target.value }))}>
@@ -392,43 +392,43 @@ function SourceModal({ onClose, onSave }: { onClose: () => void; onSave: () => v
               </div>
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Fecha actividad ref.</label>
+              <label className="block text-muted-foreground font-medium mb-1">Fecha actividad ref.</label>
               <input type="date" className="w-full border rounded-lg p-2" value={form.activity_date} onChange={e => setForm(f => ({ ...f, activity_date: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Vida media (días)</label>
+              <label className="block text-muted-foreground font-medium mb-1">Vida media (días)</label>
               <input type="number" step="0.01" className="w-full border rounded-lg p-2 font-mono" value={form.half_life_days} onChange={e => setForm(f => ({ ...f, half_life_days: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Fabricante</label>
+              <label className="block text-muted-foreground font-medium mb-1">Fabricante</label>
               <input className="w-full border rounded-lg p-2" value={form.manufacturer} onChange={e => setForm(f => ({ ...f, manufacturer: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">N° Serie</label>
+              <label className="block text-muted-foreground font-medium mb-1">N° Serie</label>
               <input className="w-full border rounded-lg p-2 font-mono" value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Ubicación actual</label>
+              <label className="block text-muted-foreground font-medium mb-1">Ubicación actual</label>
               <input className="w-full border rounded-lg p-2" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Custodio</label>
+              <label className="block text-muted-foreground font-medium mb-1">Custodio</label>
               <input className="w-full border rounded-lg p-2" value={form.custodian} onChange={e => setForm(f => ({ ...f, custodian: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Reg. CCHEN</label>
+              <label className="block text-muted-foreground font-medium mb-1">Reg. CCHEN</label>
               <input className="w-full border rounded-lg p-2 font-mono" value={form.cchen_registration} onChange={e => setForm(f => ({ ...f, cchen_registration: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Vencimiento reg.</label>
+              <label className="block text-muted-foreground font-medium mb-1">Vencimiento reg.</label>
               <input type="date" className="w-full border rounded-lg p-2" value={form.cchen_registration_expiry} onChange={e => setForm(f => ({ ...f, cchen_registration_expiry: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">N° Licencia</label>
+              <label className="block text-muted-foreground font-medium mb-1">N° Licencia</label>
               <input className="w-full border rounded-lg p-2 font-mono" value={form.license_number} onChange={e => setForm(f => ({ ...f, license_number: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-gray-600 font-medium mb-1">Estado</label>
+              <label className="block text-muted-foreground font-medium mb-1">Estado</label>
               <select className="w-full border rounded-lg p-2" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
                 <option value="storage">Almacenada</option>
                 <option value="active">Activa</option>
@@ -438,13 +438,13 @@ function SourceModal({ onClose, onSave }: { onClose: () => void; onSave: () => v
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-gray-600 font-medium mb-1">Notas</label>
+              <label className="block text-muted-foreground font-medium mb-1">Notas</label>
               <textarea className="w-full border rounded-lg p-2" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
             </div>
           </div>
         </div>
         <div className="p-4 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm bg-muted text-foreground/80 rounded-lg hover:bg-muted">Cancelar</button>
           <button onClick={save} disabled={saving || !form.name || !form.radionuclide} className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
             {saving ? "Guardando..." : "Registrar fuente"}
           </button>
@@ -489,9 +489,9 @@ export default function RadioactiveSourcesPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Atom className="w-6 h-6 text-purple-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Fuentes Radiactivas</h1>
+            <h1 className="text-2xl font-bold text-foreground">Fuentes Radiactivas</h1>
           </div>
-          <p className="text-sm text-gray-500">Inventario y control de fuentes · NS-06.0 §5 · DS 3/1985 — IAEA Safety Standards</p>
+          <p className="text-sm text-muted-foreground">Inventario y control de fuentes · NS-06.0 §5 · DS 3/1985 — IAEA Safety Standards</p>
         </div>
         <button onClick={() => setShowModal(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2">
           <Plus className="w-4 h-4" /> Nueva fuente
@@ -530,31 +530,31 @@ export default function RadioactiveSourcesPage() {
       {/* KPI tiles */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <div className="flex items-center gap-2 mb-1"><Atom className="w-4 h-4 text-purple-500" /><span className="text-xs text-gray-500 font-medium uppercase">Total fuentes</span></div>
-            <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-            <div className="text-xs text-gray-400">{stats.sealed_count} selladas · {stats.unsealed_count} no selladas · {stats.generators} gen.</div>
+          <div className="bg-background rounded-xl border border-border p-3 shadow-sm">
+            <div className="flex items-center gap-2 mb-1"><Atom className="w-4 h-4 text-purple-500" /><span className="text-xs text-muted-foreground font-medium uppercase">Total fuentes</span></div>
+            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+            <div className="text-xs text-muted-foreground">{stats.sealed_count} selladas · {stats.unsealed_count} no selladas · {stats.generators} gen.</div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-            <div className="flex items-center gap-2 mb-1"><Activity className="w-4 h-4 text-blue-500" /><span className="text-xs text-gray-500 font-medium uppercase">En uso</span></div>
+          <div className="bg-background rounded-xl border border-border p-3 shadow-sm">
+            <div className="flex items-center gap-2 mb-1"><Activity className="w-4 h-4 text-blue-500" /><span className="text-xs text-muted-foreground font-medium uppercase">En uso</span></div>
             <div className="text-2xl font-bold text-blue-700">{stats.in_use}</div>
-            <div className="text-xs text-gray-400">{stats.in_storage} almacenadas</div>
+            <div className="text-xs text-muted-foreground">{stats.in_storage} almacenadas</div>
           </div>
-          <div className={`bg-white rounded-xl border p-3 shadow-sm ${Number(stats.expiring_soon) > 0 ? "border-red-300" : "border-gray-200"}`}>
-            <div className="flex items-center gap-2 mb-1"><Calendar className={`w-4 h-4 ${Number(stats.expiring_soon) > 0 ? "text-red-500" : "text-gray-400"}`} /><span className="text-xs text-gray-500 font-medium uppercase">Por vencer 90d</span></div>
-            <div className={`text-2xl font-bold ${Number(stats.expiring_soon) > 0 ? "text-red-600" : "text-gray-900"}`}>{stats.expiring_soon}</div>
-            <div className="text-xs text-gray-400">registros CCHEN</div>
+          <div className={`bg-background rounded-xl border p-3 shadow-sm ${Number(stats.expiring_soon) > 0 ? "border-red-300" : "border-border"}`}>
+            <div className="flex items-center gap-2 mb-1"><Calendar className={`w-4 h-4 ${Number(stats.expiring_soon) > 0 ? "text-red-500" : "text-muted-foreground"}`} /><span className="text-xs text-muted-foreground font-medium uppercase">Por vencer 90d</span></div>
+            <div className={`text-2xl font-bold ${Number(stats.expiring_soon) > 0 ? "text-red-600" : "text-foreground"}`}>{stats.expiring_soon}</div>
+            <div className="text-xs text-muted-foreground">registros CCHEN</div>
           </div>
-          <div className={`bg-white rounded-xl border p-3 shadow-sm ${Number(stats.overdue_inventory) > 0 ? "border-orange-300" : "border-gray-200"}`}>
-            <div className="flex items-center gap-2 mb-1"><Clock className={`w-4 h-4 ${Number(stats.overdue_inventory) > 0 ? "text-orange-500" : "text-gray-400"}`} /><span className="text-xs text-gray-500 font-medium uppercase">Inv. vencidos</span></div>
-            <div className={`text-2xl font-bold ${Number(stats.overdue_inventory) > 0 ? "text-orange-600" : "text-gray-900"}`}>{stats.overdue_inventory}</div>
-            <div className="text-xs text-gray-400">{stats.overdue_leak_test} prueba estanqueidad</div>
+          <div className={`bg-background rounded-xl border p-3 shadow-sm ${Number(stats.overdue_inventory) > 0 ? "border-orange-300" : "border-border"}`}>
+            <div className="flex items-center gap-2 mb-1"><Clock className={`w-4 h-4 ${Number(stats.overdue_inventory) > 0 ? "text-orange-500" : "text-muted-foreground"}`} /><span className="text-xs text-muted-foreground font-medium uppercase">Inv. vencidos</span></div>
+            <div className={`text-2xl font-bold ${Number(stats.overdue_inventory) > 0 ? "text-orange-600" : "text-foreground"}`}>{stats.overdue_inventory}</div>
+            <div className="text-xs text-muted-foreground">{stats.overdue_leak_test} prueba estanqueidad</div>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4 shadow-sm flex flex-wrap gap-2 items-center">
+      <div className="bg-background rounded-xl border border-border p-3 mb-4 shadow-sm flex flex-wrap gap-2 items-center">
         <input type="text" placeholder="Buscar fuente / radionúclido..." className="border rounded-lg px-3 py-1.5 text-sm flex-1 min-w-48" value={search} onChange={e => setSearch(e.target.value)} />
         <select className="border rounded-lg px-3 py-1.5 text-sm" value={filterType} onChange={e => setFilterType(e.target.value)}>
           <option value="">Todos los tipos</option>
@@ -575,9 +575,9 @@ export default function RadioactiveSourcesPage() {
 
       {/* Sources list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando inventario de fuentes...</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando inventario de fuentes...</div>
       ) : sources.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">No se encontraron fuentes radiactivas</div>
+        <div className="text-center py-16 text-muted-foreground">No se encontraron fuentes radiactivas</div>
       ) : (
         <div>
           {sources.map(s => <SourceCard key={s.id} s={s} onEdit={() => {}} />)}

@@ -55,48 +55,48 @@ function GroupCard({ group, pct }: { group: GroupRow; pct: number }) {
   const textColor = isOver ? "text-red-700" : isNear ? "text-amber-700" : "text-green-700";
 
   return (
-    <div className={`bg-white rounded-xl border shadow-sm border-l-4 ${isOver ? "border-red-400" : isNear ? "border-amber-400" : "border-green-400"}`}>
+    <div className={`bg-background rounded-xl border shadow-sm border-l-4 ${isOver ? "border-red-400" : isNear ? "border-amber-400" : "border-green-400"}`}>
       <div className="flex items-start gap-3 p-4 cursor-pointer" onClick={() => setOpen(o => !o)}>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium text-sm text-gray-900 truncate">{group.group_name}</span>
+            <span className="font-medium text-sm text-foreground truncate">{group.group_name}</span>
             {isOver && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-semibold">EXCEDE LÍMITE</span>}
           </div>
-          {group.location && <p className="text-xs text-gray-500 mb-2">{group.location}</p>}
+          {group.location && <p className="text-xs text-muted-foreground mb-2">{group.location}</p>}
           <div className="flex items-center gap-4">
             <span className={`text-sm font-bold ${textColor}`}>
               {dose.toFixed(4)} mSv / {LIMIT_MSV} mSv ({pct.toFixed(0)}%)
             </span>
-            <span className="text-xs text-gray-500">{group.quarters_reported} trimestre(s)</span>
+            <span className="text-xs text-muted-foreground">{group.quarters_reported} trimestre(s)</span>
           </div>
-          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
             <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
           </div>
         </div>
-        {open ? <ChevronUp className="h-4 w-4 text-gray-400 mt-1" /> : <ChevronDown className="h-4 w-4 text-gray-400 mt-1" />}
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground mt-1" /> : <ChevronDown className="h-4 w-4 text-muted-foreground mt-1" />}
       </div>
     </div>
   );
 }
 
 function RecordRow({ rec, onDelete }: { rec: Record_; onDelete: () => void }) {
-  const mcfg = METHOD_CFG[rec.calculation_method] ?? { label: rec.calculation_method, color: "text-gray-600" };
+  const mcfg = METHOD_CFG[rec.calculation_method] ?? { label: rec.calculation_method, color: "text-muted-foreground" };
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
+    <div className="flex items-start gap-3 py-3 border-b border-border/50 last:border-0">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          {rec.quarter && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">T{rec.quarter}</span>}
-          <span className="text-sm font-medium text-gray-900">{rec.group_name}</span>
+          {rec.quarter && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">T{rec.quarter}</span>}
+          <span className="text-sm font-medium text-foreground">{rec.group_name}</span>
           <span className={`text-xs ${mcfg.color}`}>{mcfg.label}</span>
         </div>
-        {rec.location && <p className="text-xs text-gray-500 mt-0.5">{rec.location}</p>}
-        {rec.dose_basis && <p className="text-xs text-gray-400 mt-0.5 italic">{rec.dose_basis}</p>}
+        {rec.location && <p className="text-xs text-muted-foreground mt-0.5">{rec.location}</p>}
+        {rec.dose_basis && <p className="text-xs text-muted-foreground mt-0.5 italic">{rec.dose_basis}</p>}
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-bold text-gray-900">{parseFloat(rec.dose_msv).toFixed(4)} mSv</p>
-        {rec.reviewed_by && <p className="text-xs text-gray-400">{rec.reviewed_by}</p>}
+        <p className="text-sm font-bold text-foreground">{parseFloat(rec.dose_msv).toFixed(4)} mSv</p>
+        {rec.reviewed_by && <p className="text-xs text-muted-foreground">{rec.reviewed_by}</p>}
       </div>
-      <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg ml-1">
+      <button onClick={onDelete} className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg ml-1">
         <Trash2 className="h-4 w-4" />
       </button>
     </div>
@@ -157,12 +157,12 @@ export default function PublicDosePage() {
             <Users className="h-6 w-6 text-cyan-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dosis a Miembros del Público</h1>
-            <p className="text-sm text-gray-500">Estimación anual de dosis efectiva a grupos críticos — DS 3/1985 Art. 10 (límite: 1 mSv/año)</p>
+            <h1 className="text-2xl font-bold text-foreground">Dosis a Miembros del Público</h1>
+            <p className="text-sm text-muted-foreground">Estimación anual de dosis efectiva a grupos críticos — DS 3/1985 Art. 10 (límite: 1 mSv/año)</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+          <button onClick={load} className="p-2 text-muted-foreground hover:text-foreground/80 hover:bg-muted rounded-lg">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button onClick={() => setShowForm(true)}
@@ -199,31 +199,31 @@ export default function PublicDosePage() {
           {[
             { label: "Grupos evaluados",    value: data.stats.groups },
             { label: "Dosis más alta (anual)", value: `${data.maxAnnual.toFixed(4)} mSv`, color: data.maxAnnual >= LIMIT_MSV ? "text-red-700" : data.maxAnnual >= LIMIT_MSV * 0.75 ? "text-amber-700" : "text-green-700" },
-            { label: "Límite normativo",    value: `${LIMIT_MSV} mSv/año`, color: "text-gray-600" },
+            { label: "Límite normativo",    value: `${LIMIT_MSV} mSv/año`, color: "text-muted-foreground" },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-xl border p-4 text-center shadow-sm">
-              <p className={`text-2xl font-bold ${k.color ?? "text-gray-900"}`}>{k.value}</p>
-              <p className="text-xs text-gray-500 mt-1">{k.label}</p>
+            <div key={k.label} className="bg-background rounded-xl border p-4 text-center shadow-sm">
+              <p className={`text-2xl font-bold ${k.color ?? "text-foreground"}`}>{k.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{k.label}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* Year selector + Group summary */}
-      <div className="bg-white rounded-xl border shadow-sm">
+      <div className="bg-background rounded-xl border shadow-sm">
         <div className="p-4 border-b flex items-center gap-3">
-          <label className="text-sm font-medium text-gray-700">Año:</label>
+          <label className="text-sm font-medium text-foreground/80">Año:</label>
           <select value={year} onChange={e => setYear(e.target.value)}
             className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
             {years.map(y => <option key={y} value={String(y)}>{y}</option>)}
           </select>
-          <span className="text-xs text-gray-500 ml-auto">Resumen por grupo crítico</span>
+          <span className="text-xs text-muted-foreground ml-auto">Resumen por grupo crítico</span>
         </div>
         <div className="p-4 space-y-3">
           {loading ? (
-            <p className="text-sm text-gray-500 text-center py-6">Cargando…</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Cargando…</p>
           ) : !data?.byGroup?.length ? (
-            <p className="text-sm text-gray-500 text-center py-6">Sin datos para el año {year}.</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Sin datos para el año {year}.</p>
           ) : (
             data.byGroup.map(g => {
               const pct = (parseFloat(g.total_dose_msv) / LIMIT_MSV) * 100;
@@ -235,8 +235,8 @@ export default function PublicDosePage() {
 
       {/* Detailed records */}
       {data?.records && data.records.length > 0 && (
-        <div className="bg-white rounded-xl border shadow-sm p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Registros Trimestrales — {year}</h2>
+        <div className="bg-background rounded-xl border shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-foreground/80 mb-3">Registros Trimestrales — {year}</h2>
           <div>
             {data.records.map(r => (
               <RecordRow key={r.id} rec={r} onDelete={() => handleDelete(r.id)} />
@@ -248,10 +248,10 @@ export default function PublicDosePage() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-background rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-5 border-b flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">Registrar Estimación de Dosis al Público</h2>
-              <button onClick={() => { setShowForm(false); setForm(BLANK); }} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+              <h2 className="font-semibold text-foreground">Registrar Estimación de Dosis al Público</h2>
+              <button onClick={() => { setShowForm(false); setForm(BLANK); }} className="text-muted-foreground hover:text-muted-foreground text-xl leading-none">×</button>
             </div>
             <div className="p-5 grid grid-cols-2 gap-4">
               {[
@@ -259,7 +259,7 @@ export default function PublicDosePage() {
                 ["Trimestre", "quarter", "number"],
               ].map(([label, key, type]) => (
                 <div key={key}>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+                  <label className="block text-xs font-medium text-foreground/80 mb-1">{label}</label>
                   <input type={type} value={form[key as keyof FormState] as string}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     min={type === "number" ? 1 : undefined}
@@ -268,45 +268,45 @@ export default function PublicDosePage() {
                 </div>
               ))}
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Grupo Crítico *</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Grupo Crítico *</label>
                 <input value={form.group_name} onChange={e => setForm(f => ({ ...f, group_name: e.target.value }))}
                   placeholder="Ej: Pacientes en sala de espera MN"
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Ubicación</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Ubicación</label>
                 <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Dosis (mSv) *</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Dosis (mSv) *</label>
                 <input type="number" step="0.0001" min="0" value={form.dose_msv}
                   onChange={e => setForm(f => ({ ...f, dose_msv: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                   placeholder="0.0000" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Método</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Método</label>
                 <select value={form.calculation_method} onChange={e => setForm(f => ({ ...f, calculation_method: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
                   {Object.entries(METHOD_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-700 mb-1">Base del cálculo / medición</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Base del cálculo / medición</label>
                 <textarea value={form.dose_basis} onChange={e => setForm(f => ({ ...f, dose_basis: e.target.value }))} rows={2}
                   placeholder="Describe cómo se obtuvo la estimación de dosis"
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Revisado por</label>
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Revisado por</label>
                 <input value={form.reviewed_by} onChange={e => setForm(f => ({ ...f, reviewed_by: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" />
               </div>
             </div>
             <div className="p-5 border-t flex gap-3 justify-end">
               <button onClick={() => { setShowForm(false); setForm(BLANK); }}
-                className="px-4 py-2 rounded-lg border text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+                className="px-4 py-2 rounded-lg border text-sm font-medium text-foreground/80 hover:bg-muted/50">Cancelar</button>
               <button onClick={handleSubmit} disabled={saving}
                 className="px-4 py-2 rounded-lg bg-cyan-600 text-white text-sm font-medium hover:bg-cyan-700 disabled:opacity-50">
                 {saving ? "Guardando…" : "Registrar"}

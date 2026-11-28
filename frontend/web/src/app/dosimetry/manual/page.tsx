@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PlusCircle, CheckCircle } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400";
 
 const QUARTERS = [1, 2, 3, 4];
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
@@ -11,7 +11,7 @@ const TIPOS = ["C.E.", "extremidades", "cristalino", "otro"];
 const RADIACIONES = ["Rayos X", "Rayos Gamma", "Beta", "Neutrones", "Mixta", "Otro"];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label className="text-xs font-medium text-gray-700 mb-1 block">{label}</label>{children}</div>;
+  return <div><label className="text-xs font-medium text-foreground/80 mb-1 block">{label}</label>{children}</div>;
 }
 
 export default function DosimetryManualPage() {
@@ -54,13 +54,13 @@ export default function DosimetryManualPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-blue-100"><PlusCircle className="h-6 w-6 text-blue-700" /></div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ingreso Manual de Dosis</h1>
-            <p className="text-sm text-gray-600">Registro trimestral individual de dosimetría personal</p>
+            <h1 className="text-2xl font-bold text-foreground">Ingreso Manual de Dosis</h1>
+            <p className="text-sm text-muted-foreground">Registro trimestral individual de dosimetría personal</p>
           </div>
         </div>
 
@@ -71,15 +71,15 @@ export default function DosimetryManualPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
-          <h2 className="font-semibold text-gray-800 border-b border-gray-100 pb-2">Identificación del trabajador</h2>
+        <div className="bg-background rounded-xl border border-border shadow-sm p-6 space-y-5">
+          <h2 className="font-semibold text-foreground border-b border-border/50 pb-2">Identificación del trabajador</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2"><Field label="RUT del trabajador *"><input className={inp} value={form.worker_rut} onChange={f("worker_rut")} placeholder="12.345.678-9" /></Field></div>
             <Field label="Institución"><input className={inp} value={form.institucion} onChange={f("institucion")} /></Field>
             <Field label="Departamento"><input className={inp} value={form.departamento} onChange={f("departamento")} /></Field>
           </div>
 
-          <h2 className="font-semibold text-gray-800 border-b border-gray-100 pb-2 pt-2">Período</h2>
+          <h2 className="font-semibold text-foreground border-b border-border/50 pb-2 pt-2">Período</h2>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Año *">
               <select className={inp} value={form.year} onChange={f("year")}>
@@ -104,14 +104,14 @@ export default function DosimetryManualPage() {
             </Field>
           </div>
 
-          <h2 className="font-semibold text-gray-800 border-b border-gray-100 pb-2 pt-2">Dosis del trimestre (mSv)</h2>
+          <h2 className="font-semibold text-foreground border-b border-border/50 pb-2 pt-2">Dosis del trimestre (mSv)</h2>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Hp(10) cuerpo"><input className={inp} type="number" step="0.01" min="0" value={form.dose_body} onChange={f("dose_body")} placeholder="0.00" /></Field>
             <Field label="Hp(3) cristalino"><input className={inp} type="number" step="0.01" min="0" value={form.dose_lens} onChange={f("dose_lens")} placeholder="0.00" /></Field>
             <Field label="Hp(0.07) piel"><input className={inp} type="number" step="0.01" min="0" value={form.dose_skin} onChange={f("dose_skin")} placeholder="0.00" /></Field>
           </div>
 
-          <h2 className="font-semibold text-gray-800 border-b border-gray-100 pb-2 pt-2">Dosis acumuladas (mSv)</h2>
+          <h2 className="font-semibold text-foreground border-b border-border/50 pb-2 pt-2">Dosis acumuladas (mSv)</h2>
           <div className="grid grid-cols-3 gap-4">
             <Field label="Acum. año cal. Hp(10)"><input className={inp} type="number" step="0.01" min="0" value={form.accum_year_body} onChange={f("accum_year_body")} placeholder="0.00" /></Field>
             <Field label="Acum. 12 meses Hp(10)"><input className={inp} type="number" step="0.01" min="0" value={form.accum_12m_body} onChange={f("accum_12m_body")} placeholder="0.00" /></Field>
@@ -127,8 +127,8 @@ export default function DosimetryManualPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo</p>
           <p>DS N°133/1984 y DS N°95/2005 MINSAL — Límites de dosis ocupacional: Hp(10) 20 mSv/año, Hp(3) 150 mSv/año. CCHEN ORD sobre registros individuales de dosis. Planilla oficial CCHEN "Resumen - 908.xlsm" — columnas de importación.</p>
         </div>
       </div>

@@ -169,7 +169,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
         <div>
           <label className="text-sm font-medium block mb-1">Equipo</label>
           <select
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             value={equipmentId}
             onChange={(e) => setEquipmentId(e.target.value ? Number(e.target.value) : "")}
           >
@@ -183,7 +183,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
         </div>
         <div>
           <label className="text-sm font-medium block mb-1">Prueba</label>
-          <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={testCode} onChange={(e) => setTestCode(e.target.value)}>
+          <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={testCode} onChange={(e) => setTestCode(e.target.value)}>
             <option value="">Seleccionar...</option>
             {catalog.map((c) => (
               <option key={c.test_code} value={c.test_code}>
@@ -197,7 +197,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
           <input
             type="text"
             placeholder="ej. actividad_MBq"
-            className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+            className="w-full border rounded px-2 py-1 text-sm text-foreground"
             value={parameterName}
             onChange={(e) => setParameterName(e.target.value)}
           />
@@ -251,7 +251,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
               <div>
                 <label className="text-sm font-medium block mb-1">Unidad</label>
                 <select
-                  className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+                  className="w-full border rounded px-2 py-1 text-sm text-foreground"
                   value={form.unit}
                   onChange={(e) => updateField("unit", e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}
                 >
@@ -275,7 +275,7 @@ export default function ActivimetroBaselineApp({ equipment, catalog }: { equipme
                 </label>
                 <input
                   type="text"
-                  className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+                  className="w-full border rounded px-2 py-1 text-sm text-foreground"
                   value={form.change_reason}
                   onChange={(e) => updateField("change_reason", e.target.value)}
                 />
@@ -319,7 +319,7 @@ function TxtField({ label, value, onChange }: { label: string; value: string; on
   return (
     <div>
       <label className="text-sm font-medium block mb-1">{label}</label>
-      <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
@@ -328,7 +328,7 @@ function NumField({ label, value, onChange }: { label: string; value: string; on
   return (
     <div>
       <label className="text-sm font-medium block mb-1">{label}</label>
-      <input type="number" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={value} onChange={(e) => onChange(e.target.value)} />
+      <input type="number" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

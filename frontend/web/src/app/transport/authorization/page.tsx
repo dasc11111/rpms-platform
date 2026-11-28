@@ -13,7 +13,7 @@ interface AuthDoc {
 }
 interface AuthData { ok: boolean; current: AuthDoc | null; history: AuthDoc[]; }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
 
 function daysUntil(d: string | null): number | null {
   if (!d) return null;
@@ -73,7 +73,7 @@ export default function TransportAuthorizationPage() {
   const alertLevel = days == null ? "none" : days < 0 ? "expired" : days <= 30 ? "critical" : days <= 90 ? "warning" : "ok";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Header */}
@@ -83,11 +83,11 @@ export default function TransportAuthorizationPage() {
               <FileCheck className="h-6 w-6 text-blue-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Autorización de Transporte Radiactivo</h1>
-              <p className="text-sm text-gray-500">Gestión del documento de autorización vigente — CCHEN / MINSAL</p>
+              <h1 className="text-2xl font-bold text-foreground">Autorización de Transporte Radiactivo</h1>
+              <p className="text-sm text-muted-foreground">Gestión del documento de autorización vigente — CCHEN / MINSAL</p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
@@ -97,7 +97,7 @@ export default function TransportAuthorizationPage() {
         )}
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Cargando autorización...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando autorización...</div>
         ) : (
           <>
             {/* Expiry alert */}
@@ -122,49 +122,49 @@ export default function TransportAuthorizationPage() {
 
             {/* Current auth */}
             {current ? (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  <h2 className="font-semibold text-gray-800">Autorización Vigente</h2>
+                  <h2 className="font-semibold text-foreground">Autorización Vigente</h2>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">N° Autorización</div>
-                    <div className="font-semibold text-gray-800">{current.number || "—"}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">N° Autorización</div>
+                    <div className="font-semibold text-foreground">{current.number || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Fecha de emisión</div>
-                    <div className="font-semibold text-gray-800">{fmtDate(current.issued_date)}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Fecha de emisión</div>
+                    <div className="font-semibold text-foreground">{fmtDate(current.issued_date)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Fecha de vencimiento</div>
-                    <div className={`font-semibold ${alertLevel === "expired" ? "text-red-600" : alertLevel === "critical" ? "text-orange-600" : "text-gray-800"}`}>
+                    <div className="text-xs text-muted-foreground mb-0.5">Fecha de vencimiento</div>
+                    <div className={`font-semibold ${alertLevel === "expired" ? "text-red-600" : alertLevel === "critical" ? "text-orange-600" : "text-foreground"}`}>
                       {fmtDate(current.expiry_date)}
-                      {days != null && <span className="text-xs font-normal ml-1 text-gray-400">({days > 0 ? `en ${days} días` : `vencida hace ${Math.abs(days)} días`})</span>}
+                      {days != null && <span className="text-xs font-normal ml-1 text-muted-foreground">({days > 0 ? `en ${days} días` : `vencida hace ${Math.abs(days)} días`})</span>}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Versión</div>
-                    <div className="font-semibold text-gray-800">v{current.version}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Versión</div>
+                    <div className="font-semibold text-foreground">v{current.version}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Archivo</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Archivo</div>
                     <div className="font-medium text-blue-600 flex items-center gap-1">
                       <FileText className="h-3.5 w-3.5" />
                       {current.file_name}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Tamaño</div>
-                    <div className="text-gray-700">{fmtSize(current.size_bytes)}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Tamaño</div>
+                    <div className="text-foreground/80">{fmtSize(current.size_bytes)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Subido por</div>
-                    <div className="text-gray-700">{current.uploaded_by || "—"}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Subido por</div>
+                    <div className="text-foreground/80">{current.uploaded_by || "—"}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400 mb-0.5">Fecha de carga</div>
-                    <div className="text-gray-700">{fmtDate(current.uploaded_at)}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Fecha de carga</div>
+                    <div className="text-foreground/80">{fmtDate(current.uploaded_at)}</div>
                   </div>
                 </div>
               </div>
@@ -177,31 +177,31 @@ export default function TransportAuthorizationPage() {
             )}
 
             {/* Upload form */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-              <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+              <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <Upload className="h-4 w-4 text-blue-500" /> {current ? "Actualizar Autorización" : "Cargar Autorización"}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">N° de autorización</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">N° de autorización</label>
                   <input className={inp} value={form.number} onChange={e => setForm(f => ({ ...f, number: e.target.value }))} placeholder="Ej: 2024-TR-001" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Subido por</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Subido por</label>
                   <input className={inp} value={form.uploadedBy} onChange={e => setForm(f => ({ ...f, uploadedBy: e.target.value }))} placeholder="Nombre del responsable" />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Fecha de emisión</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Fecha de emisión</label>
                   <input className={inp} type="date" value={form.issuedDate} onChange={e => setForm(f => ({ ...f, issuedDate: e.target.value }))} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Fecha de vencimiento</label>
+                  <label className="text-xs text-muted-foreground mb-1 block">Fecha de vencimiento</label>
                   <input className={inp} type="date" value={form.expiryDate} onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))} />
                 </div>
               </div>
               <div className="mb-4">
-                <label className="text-xs text-gray-500 mb-1 block">Archivo (PDF, imagen) *</label>
-                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                <label className="text-xs text-muted-foreground mb-1 block">Archivo (PDF, imagen) *</label>
+                <input ref={fileRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
               </div>
               <button
                 onClick={handleUpload}
@@ -215,17 +215,17 @@ export default function TransportAuthorizationPage() {
 
             {/* History */}
             {(data?.history?.length ?? 0) > 1 && (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-3">Historial de versiones</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-3">Historial de versiones</h2>
                 <div className="space-y-1">
                   {data!.history.slice(0, 20).map((h, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm border-b border-gray-50 pb-1 last:border-0">
+                    <div key={i} className="flex items-center justify-between text-sm border-b border-border/50 pb-1 last:border-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-gray-400">v{h.version}</span>
-                        <span className="text-gray-700">{h.file_name}</span>
-                        {h.number && <span className="text-xs text-gray-400">{h.number}</span>}
+                        <span className="text-xs font-mono text-muted-foreground">v{h.version}</span>
+                        <span className="text-foreground/80">{h.file_name}</span>
+                        {h.number && <span className="text-xs text-muted-foreground">{h.number}</span>}
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>{fmtDate(h.uploaded_at)}</span>
                         {h.is_current && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Vigente</span>}
                       </div>
@@ -236,8 +236,8 @@ export default function TransportAuthorizationPage() {
             )}
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°12/2010 MINSAL — Reglamento de protección radiológica; requisitos de autorización para transporte.
                 DS N°133/1984 Ministerio de Minería — Reglamento de Seguridad Radiológica, transporte de material radiactivo.

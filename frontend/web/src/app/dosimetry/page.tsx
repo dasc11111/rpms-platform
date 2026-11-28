@@ -56,7 +56,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: Compon
   read:         { label: "Leído",       color: "bg-green-100 text-green-800",  icon: CheckCircle2 },
   pending:      { label: "Pendiente",   color: "bg-amber-100 text-amber-800",  icon: AlertTriangle },
   lost:         { label: "Extraviado",  color: "bg-red-100 text-red-800",      icon: X },
-  not_worn:     { label: "No portado",  color: "bg-gray-100 text-gray-600",    icon: X },
+  not_worn:     { label: "No portado",  color: "bg-muted text-muted-foreground",    icon: X },
   damaged:      { label: "Dañado",      color: "bg-orange-100 text-orange-800",icon: AlertTriangle },
 };
 

@@ -38,7 +38,7 @@ const TYPE_COLOR: Record<string,string> = {
   regulatory:"bg-purple-100 text-purple-700", calibration:"bg-blue-100 text-blue-700",
   equipment:"bg-cyan-100 text-cyan-700", transport:"bg-orange-100 text-orange-700",
   waste:"bg-red-100 text-red-700", dosimetry:"bg-indigo-100 text-indigo-700",
-  service:"bg-gray-100 text-gray-700",
+  service:"bg-muted text-foreground/80",
 };
 function fmtDate(d: string | null) {
   if (!d) return "—";

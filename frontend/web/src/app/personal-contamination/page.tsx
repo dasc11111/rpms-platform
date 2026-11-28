@@ -66,7 +66,7 @@ function ResultBadge({ r }: { r: string }) {
     contaminated: { cls: "bg-red-100 text-red-700", label: "CONTAMINADO", icon: <Biohazard size={10}/> },
     decontaminated: { cls: "bg-teal-100 text-teal-700", label: "Descontaminado", icon: <Shield size={10}/> },
   };
-  const v = map[r] ?? { cls: "bg-slate-100 text-slate-600", label: r, icon: null };
+  const v = map[r] ?? { cls: "bg-muted text-muted-foreground", label: r, icon: null };
   return (
     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${v.cls}`}>
       {v.icon} {v.label}
@@ -78,9 +78,9 @@ function ReadingChip({ label, val, bg, unit }: { label: string; val: string | nu
   if (!val) return null;
   return (
     <div className={`rounded-lg p-2 text-center ${bg}`}>
-      <p className="text-xs text-slate-400 mb-0.5">{label}</p>
-      <p className="font-bold text-slate-800 text-sm">{parseFloat(val).toFixed(0)}</p>
-      <p className="text-xs text-slate-400">{unit}</p>
+      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      <p className="font-bold text-foreground text-sm">{parseFloat(val).toFixed(0)}</p>
+      <p className="text-xs text-muted-foreground">{unit}</p>
     </div>
   );
 }
@@ -105,46 +105,46 @@ function CheckCard({ check }: { check: Check }) {
   const ratio = bg > 0 ? (maxReading / bg).toFixed(1) : null;
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 ${borderColor(check.result)} shadow-sm border border-slate-100 overflow-hidden`}>
+    <div className={`bg-background rounded-xl border-l-4 ${borderColor(check.result)} shadow-sm border border-border overflow-hidden`}>
       <div className="p-4 cursor-pointer" onClick={()=>setOpen(o=>!o)}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <ResultBadge r={check.result}/>
-              <span className="text-xs text-slate-500">{fmt(check.check_date)}{check.check_time ? ` ${check.check_time.slice(0,5)}` : ""}</span>
+              <span className="text-xs text-muted-foreground">{fmt(check.check_date)}{check.check_time ? ` ${check.check_time.slice(0,5)}` : ""}</span>
             </div>
-            <p className="font-medium text-slate-800 text-sm">{check.worker_name}</p>
+            <p className="font-medium text-foreground text-sm">{check.worker_name}</p>
             <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-              {check.worker_role && <span className="text-xs text-slate-400">{check.worker_role}</span>}
-              {check.area_origin && <span className="inline-flex items-center gap-1 text-xs text-slate-400"><MapPin size={10}/>{check.area_origin}</span>}
+              {check.worker_role && <span className="text-xs text-muted-foreground">{check.worker_role}</span>}
+              {check.area_origin && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={10}/>{check.area_origin}</span>}
             </div>
             {/* Quick readings inline */}
             <div className="flex items-center gap-3 mt-2 flex-wrap text-xs">
-              {check.hands_result && <span className="text-slate-600">Manos: <strong>{parseFloat(check.hands_result).toFixed(0)}</strong> {check.unit}</span>}
-              {check.feet_result && <span className="text-slate-600">Pies: <strong>{parseFloat(check.feet_result).toFixed(0)}</strong> {check.unit}</span>}
-              {check.clothing_result && <span className="text-slate-600">Ropa: <strong>{parseFloat(check.clothing_result).toFixed(0)}</strong> {check.unit}</span>}
+              {check.hands_result && <span className="text-muted-foreground">Manos: <strong>{parseFloat(check.hands_result).toFixed(0)}</strong> {check.unit}</span>}
+              {check.feet_result && <span className="text-muted-foreground">Pies: <strong>{parseFloat(check.feet_result).toFixed(0)}</strong> {check.unit}</span>}
+              {check.clothing_result && <span className="text-muted-foreground">Ropa: <strong>{parseFloat(check.clothing_result).toFixed(0)}</strong> {check.unit}</span>}
               {ratio && <span className={`font-medium ${parseFloat(ratio) > 2 ? "text-red-600" : parseFloat(ratio) > 1.5 ? "text-yellow-600" : "text-green-600"}`}>×{ratio} fondo</span>}
             </div>
           </div>
-          <button className="text-slate-400 hover:text-slate-600 mt-1 flex-shrink-0">
+          <button className="text-muted-foreground hover:text-muted-foreground mt-1 flex-shrink-0">
             {open ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
         </div>
       </div>
 
       {open && (
-        <div className="border-t border-slate-100 p-4 space-y-4">
+        <div className="border-t border-border p-4 space-y-4">
           {/* Reading chips */}
           <div className="grid grid-cols-5 gap-2">
-            <ReadingChip label="Manos" val={check.hands_result} bg="bg-slate-50" unit={check.unit}/>
-            <ReadingChip label="Pies" val={check.feet_result} bg="bg-slate-50" unit={check.unit}/>
-            <ReadingChip label="Ropa" val={check.clothing_result} bg="bg-slate-50" unit={check.unit}/>
-            <ReadingChip label="Cuerpo" val={check.body_result} bg="bg-slate-50" unit={check.unit}/>
-            <ReadingChip label="Fondo" val={check.background_level} bg="bg-slate-100" unit={check.unit}/>
+            <ReadingChip label="Manos" val={check.hands_result} bg="bg-muted/50" unit={check.unit}/>
+            <ReadingChip label="Pies" val={check.feet_result} bg="bg-muted/50" unit={check.unit}/>
+            <ReadingChip label="Ropa" val={check.clothing_result} bg="bg-muted/50" unit={check.unit}/>
+            <ReadingChip label="Cuerpo" val={check.body_result} bg="bg-muted/50" unit={check.unit}/>
+            <ReadingChip label="Fondo" val={check.background_level} bg="bg-muted" unit={check.unit}/>
           </div>
 
           {check.instrument_used && (
-            <p className="text-xs text-slate-400 flex items-center gap-1"><TrendingUp size={11}/>Instrumento: {check.instrument_used}</p>
+            <p className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp size={11}/>Instrumento: {check.instrument_used}</p>
           )}
 
           {/* Action sections */}
@@ -174,7 +174,7 @@ function CheckCard({ check }: { check: Check }) {
           )}
 
           {check.inspector && (
-            <p className="text-xs text-slate-400">Inspector: {check.inspector}</p>
+            <p className="text-xs text-muted-foreground">Inspector: {check.inspector}</p>
           )}
         </div>
       )}
@@ -186,15 +186,15 @@ function CheckCard({ check }: { check: Check }) {
 function WorkerStatCard({ ws }: { ws: WorkerStat }) {
   const pct = ws.total > 0 ? Math.round((ws.clear / ws.total) * 100) : 0;
   return (
-    <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+    <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-sm font-medium text-slate-800">{ws.worker_name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">Último: {fmt(ws.last_check)}</p>
+          <p className="text-sm font-medium text-foreground">{ws.worker_name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Último: {fmt(ws.last_check)}</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-bold text-slate-700">{ws.total}</p>
-          <p className="text-xs text-slate-400">mediciones</p>
+          <p className="text-2xl font-bold text-foreground/80">{ws.total}</p>
+          <p className="text-xs text-muted-foreground">mediciones</p>
         </div>
       </div>
       <div className="mt-3">
@@ -203,10 +203,10 @@ function WorkerStatCard({ ws }: { ws: WorkerStat }) {
           {ws.elevated > 0 && <span className="text-yellow-600">{ws.elevated} elevados</span>}
           {ws.contaminated > 0 && <span className="text-red-600 font-bold">{ws.contaminated} contaminados</span>}
         </div>
-        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <div className="h-full bg-green-400 rounded-full" style={{ width: `${pct}%` }}/>
         </div>
-        <div className="flex items-center justify-between mt-1 text-xs text-slate-400">
+        <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
           <span>{pct}% normal</span>
           <span>Prom. max: {parseFloat(ws.avg_max_reading).toFixed(0)} cpm</span>
         </div>
@@ -243,71 +243,71 @@ function CheckModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
     setSaving(false); onSave(); onClose();
   }
 
-  const inp = "w-full border border-slate-200 rounded px-3 py-1.5 text-sm";
-  const sel = inp + " bg-white";
+  const inp = "w-full border border-border rounded px-3 py-1.5 text-sm";
+  const sel = inp + " bg-background";
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800 flex items-center gap-2"><Biohazard size={18}/> Nueva Medición de Contaminación Personal</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><XCircle size={20}/></button>
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="font-semibold text-foreground flex items-center gap-2"><Biohazard size={18}/> Nueva Medición de Contaminación Personal</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground"><XCircle size={20}/></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Fecha</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha</label>
               <input type="date" className={inp} value={form.check_date} onChange={e=>setForm(f=>({...f,check_date:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Hora</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Hora</label>
               <input type="time" className={inp} value={form.check_time} onChange={e=>setForm(f=>({...f,check_time:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Trabajador *</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Trabajador *</label>
               <input className={inp} value={form.worker_name} onChange={e=>setForm(f=>({...f,worker_name:e.target.value}))} placeholder="Nombre completo"/>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Cargo</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Cargo</label>
               <input className={inp} value={form.worker_role} onChange={e=>setForm(f=>({...f,worker_role:e.target.value}))} placeholder="TM, Dr., TENS..."/>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Área de procedencia</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Área de procedencia</label>
               <input className={inp} value={form.area_origin} onChange={e=>setForm(f=>({...f,area_origin:e.target.value}))} placeholder="Sala MN, Radiofarmacia, Sala I-131..."/>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-600 mb-1">Instrumento utilizado</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Instrumento utilizado</label>
               <input className={inp} value={form.instrument_used} onChange={e=>setForm(f=>({...f,instrument_used:e.target.value}))}/>
             </div>
           </div>
 
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Lecturas (cpm)</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Lecturas (cpm)</p>
           <div className="grid grid-cols-5 gap-3">
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Manos</label>
+              <label className="block text-xs text-muted-foreground mb-1">Manos</label>
               <input type="number" className={inp} value={form.hands_result} onChange={e=>setForm(f=>({...f,hands_result:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Pies</label>
+              <label className="block text-xs text-muted-foreground mb-1">Pies</label>
               <input type="number" className={inp} value={form.feet_result} onChange={e=>setForm(f=>({...f,feet_result:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Ropa</label>
+              <label className="block text-xs text-muted-foreground mb-1">Ropa</label>
               <input type="number" className={inp} value={form.clothing_result} onChange={e=>setForm(f=>({...f,clothing_result:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Cuerpo</label>
+              <label className="block text-xs text-muted-foreground mb-1">Cuerpo</label>
               <input type="number" className={inp} value={form.body_result} onChange={e=>setForm(f=>({...f,body_result:e.target.value}))}/>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Fondo</label>
+              <label className="block text-xs text-muted-foreground mb-1">Fondo</label>
               <input type="number" className={inp} value={form.background_level} onChange={e=>setForm(f=>({...f,background_level:e.target.value}))}/>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Resultado</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Resultado</label>
               <select className={sel} value={form.result} onChange={e=>setForm(f=>({...f,result:e.target.value}))}>
                 <option value="clear">Normal</option>
                 <option value="elevated">Elevado — requirió acción</option>
@@ -316,7 +316,7 @@ function CheckModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Inspector</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Inspector</label>
               <input className={inp} value={form.inspector} onChange={e=>setForm(f=>({...f,inspector:e.target.value}))}/>
             </div>
           </div>
@@ -324,27 +324,27 @@ function CheckModal({ onClose, onSave }: { onClose: () => void; onSave: () => vo
           {form.result !== "clear" && (
             <>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Acción tomada</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Acción tomada</label>
                 <textarea className={inp} rows={2} value={form.action_taken} onChange={e=>setForm(f=>({...f,action_taken:e.target.value}))} placeholder="Pasos inmediatos realizados..."/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Protocolo descontaminación</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Protocolo descontaminación</label>
                 <textarea className={inp} rows={2} value={form.decontamination} onChange={e=>setForm(f=>({...f,decontamination:e.target.value}))} placeholder="Procedimiento de descontaminación aplicado..."/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Seguimiento / Resultado post-descontaminación</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Seguimiento / Resultado post-descontaminación</label>
                 <textarea className={inp} rows={2} value={form.follow_up} onChange={e=>setForm(f=>({...f,follow_up:e.target.value}))} placeholder="Lecturas post-descontaminación, acciones adicionales..."/>
               </div>
             </>
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notas adicionales</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Notas adicionales</label>
             <textarea className={inp} rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted/50">Cancelar</button>
           <button onClick={handleSave} disabled={saving || !form.worker_name.trim()} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Plus size={14}/>} Registrar
           </button>
@@ -385,7 +385,7 @@ export default function PersonalContaminationPage() {
   const contaminated = data.filter(c=>c.result==="contaminated");
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -393,9 +393,9 @@ export default function PersonalContaminationPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Biohazard size={22} className="text-orange-600"/>
-              <h1 className="text-xl font-semibold text-slate-800">Contaminación Personal</h1>
+              <h1 className="text-xl font-semibold text-foreground">Contaminación Personal</h1>
             </div>
-            <p className="text-sm text-slate-500">Monitoreo de contaminación corporal POE — NS-06.0 §4.5 / DS 3/1985 Art. 12</p>
+            <p className="text-sm text-muted-foreground">Monitoreo de contaminación corporal POE — NS-06.0 §4.5 / DS 3/1985 Art. 12</p>
           </div>
           <button onClick={()=>setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 shadow-sm">
             <Plus size={16}/> Nueva medición
@@ -418,63 +418,63 @@ export default function PersonalContaminationPage() {
         {/* KPIs */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total</p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{stats.total}</p>
-              <p className="text-xs text-slate-400 mt-1">mediciones</p>
+            <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{stats.total}</p>
+              <p className="text-xs text-muted-foreground mt-1">mediciones</p>
             </div>
-            <div className="bg-white rounded-xl border border-green-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Normales</p>
+            <div className="bg-background rounded-xl border border-green-100 p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Normales</p>
               <p className="text-3xl font-bold text-green-600 mt-1">{stats.clear}</p>
-              <p className="text-xs text-slate-400 mt-1">{stats.total>0?Math.round(stats.clear/stats.total*100):0}%</p>
+              <p className="text-xs text-muted-foreground mt-1">{stats.total>0?Math.round(stats.clear/stats.total*100):0}%</p>
             </div>
-            <div className={`bg-white rounded-xl border p-4 shadow-sm ${stats.elevated>0?"border-yellow-100":"border-slate-100"}`}>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Elevados</p>
-              <p className={`text-3xl font-bold mt-1 ${stats.elevated>0?"text-yellow-600":"text-slate-800"}`}>{stats.elevated}</p>
-              <p className="text-xs text-slate-400 mt-1">c/ acción</p>
+            <div className={`bg-background rounded-xl border p-4 shadow-sm ${stats.elevated>0?"border-yellow-100":"border-border"}`}>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Elevados</p>
+              <p className={`text-3xl font-bold mt-1 ${stats.elevated>0?"text-yellow-600":"text-foreground"}`}>{stats.elevated}</p>
+              <p className="text-xs text-muted-foreground mt-1">c/ acción</p>
             </div>
-            <div className={`bg-white rounded-xl border p-4 shadow-sm ${stats.contaminated>0?"border-red-200":"border-slate-100"}`}>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Contaminados</p>
-              <p className={`text-3xl font-bold mt-1 ${stats.contaminated>0?"text-red-600":"text-slate-800"}`}>{stats.contaminated}</p>
-              <p className="text-xs text-slate-400 mt-1">protocolo</p>
+            <div className={`bg-background rounded-xl border p-4 shadow-sm ${stats.contaminated>0?"border-red-200":"border-border"}`}>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Contaminados</p>
+              <p className={`text-3xl font-bold mt-1 ${stats.contaminated>0?"text-red-600":"text-foreground"}`}>{stats.contaminated}</p>
+              <p className="text-xs text-muted-foreground mt-1">protocolo</p>
             </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Hoy</p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{stats.today}</p>
-              <p className="text-xs text-slate-400 mt-1">mediciones</p>
+            <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Hoy</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{stats.today}</p>
+              <p className="text-xs text-muted-foreground mt-1">mediciones</p>
             </div>
           </div>
         )}
 
         {/* View toggle + Filters */}
-        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-              <button onClick={()=>setView("list")} className={`px-3 py-1.5 text-sm ${view==="list"?"bg-blue-600 text-white":"text-slate-600 hover:bg-slate-50"}`}>Mediciones</button>
-              <button onClick={()=>setView("workers")} className={`px-3 py-1.5 text-sm ${view==="workers"?"bg-blue-600 text-white":"text-slate-600 hover:bg-slate-50"}`}>Por Trabajador</button>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button onClick={()=>setView("list")} className={`px-3 py-1.5 text-sm ${view==="list"?"bg-blue-600 text-white":"text-muted-foreground hover:bg-muted/50"}`}>Mediciones</button>
+              <button onClick={()=>setView("workers")} className={`px-3 py-1.5 text-sm ${view==="workers"?"bg-blue-600 text-white":"text-muted-foreground hover:bg-muted/50"}`}>Por Trabajador</button>
             </div>
-            <select className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" value={daysFilter} onChange={e=>setDaysFilter(e.target.value)}>
+            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-background" value={daysFilter} onChange={e=>setDaysFilter(e.target.value)}>
               <option value="30">Últimos 30 días</option>
               <option value="90">Últimos 90 días</option>
               <option value="180">Últimos 6 meses</option>
               <option value="365">Último año</option>
             </select>
-            <select className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" value={resultFilter} onChange={e=>setResultFilter(e.target.value)}>
+            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-background" value={resultFilter} onChange={e=>setResultFilter(e.target.value)}>
               <option value="">Todos los resultados</option>
               <option value="clear">Normales</option>
               <option value="elevated">Elevados</option>
               <option value="contaminated">Contaminados</option>
             </select>
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400"/>
-              <input className="pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-lg" placeholder="Nombre trabajador..." value={workerFilter} onChange={e=>setWorkerFilter(e.target.value)}/>
+              <Search size={14} className="absolute left-2.5 top-2.5 text-muted-foreground"/>
+              <input className="pl-8 pr-3 py-2 text-sm border border-border rounded-lg" placeholder="Nombre trabajador..." value={workerFilter} onChange={e=>setWorkerFilter(e.target.value)}/>
             </div>
           </div>
         </div>
 
         {/* Content */}
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-400">
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
             <RefreshCw size={24} className="animate-spin mr-3"/> Cargando mediciones...
           </div>
         ) : view === "workers" ? (
@@ -482,7 +482,7 @@ export default function PersonalContaminationPage() {
             {workerStats.map(ws=><WorkerStatCard key={ws.worker_name} ws={ws}/>)}
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-100 p-12 text-center text-slate-400 shadow-sm">
+          <div className="bg-background rounded-xl border border-border p-12 text-center text-muted-foreground shadow-sm">
             <Biohazard size={36} className="mx-auto mb-3 opacity-30"/>
             <p className="text-sm">Sin mediciones registradas en el período</p>
           </div>

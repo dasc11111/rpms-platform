@@ -62,7 +62,7 @@ interface Stats {
 
 // ── Config ─────────────────────────────────────────────────────────────
 const INES_CFG: Record<number, { label: string; color: string; bg: string; border: string }> = {
-  0: { label: "INES 0 — Por debajo de escala", color: "text-gray-600", bg: "bg-gray-50", border: "border-gray-200" },
+  0: { label: "INES 0 — Por debajo de escala", color: "text-muted-foreground", bg: "bg-muted/50", border: "border-border" },
   1: { label: "INES 1 — Anomalía", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200" },
   2: { label: "INES 2 — Incidente", color: "text-yellow-700", bg: "bg-yellow-50", border: "border-yellow-200" },
   3: { label: "INES 3 — Incidente grave", color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200" },
@@ -88,14 +88,14 @@ const INV_STATUS_CFG: Record<string, { label: string; color: string }> = {
   open:        { label: "Abierto", color: "bg-red-100 text-red-700" },
   in_progress: { label: "Investigando", color: "bg-amber-100 text-amber-700" },
   closed:      { label: "Cerrado", color: "bg-green-100 text-green-700" },
-  cancelled:   { label: "Cancelado", color: "bg-gray-100 text-gray-600" },
+  cancelled:   { label: "Cancelado", color: "bg-muted text-muted-foreground" },
 };
 
 const ACTION_STATUS: Record<string, { label: string; color: string }> = {
-  pending:     { label: "Pendiente", color: "text-gray-500" },
+  pending:     { label: "Pendiente", color: "text-muted-foreground" },
   in_progress: { label: "En curso", color: "text-blue-600" },
   completed:   { label: "Completada", color: "text-green-600" },
-  cancelled:   { label: "Cancelada", color: "text-gray-400" },
+  cancelled:   { label: "Cancelada", color: "text-muted-foreground" },
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -125,7 +125,7 @@ function ActionRow({ action, onUpdate }: { action: IncidentAction; onUpdate: () 
   };
 
   return (
-    <tr className={`border-b border-gray-50 ${overdue ? "bg-red-50" : ""}`}>
+    <tr className={`border-b border-border/50 ${overdue ? "bg-red-50" : ""}`}>
       <td className="px-2 py-2">
         <span className={`text-xs px-1.5 py-0.5 rounded ${action.action_type === "corrective" ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
           {action.action_type === "corrective" ? "Correctiva" : "Preventiva"}
@@ -189,19 +189,19 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
   const pendingActions = actions.filter(a => a.status !== "completed" && a.status !== "cancelled").length;
 
   return (
-    <div className={`bg-white border-2 ${ines.border} rounded-xl shadow-sm overflow-hidden`}>
+    <div className={`bg-background border-2 ${ines.border} rounded-xl shadow-sm overflow-hidden`}>
       <div className="p-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1.5">
-            <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{incident.incident_code}</span>
+            <span className="text-xs font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded">{incident.incident_code}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ines.bg} ${ines.color}`}>{ines.label}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${invStatus.color}`}>{invStatus.label}</span>
-            <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               {itype.icon} {itype.label}
             </span>
           </div>
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight">{incident.title}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h3 className="font-semibold text-foreground text-sm leading-tight">{incident.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {fmtDate(incident.incident_date)}
             {incident.incident_time && ` ${incident.incident_time.substring(0, 5)}`}
             {incident.location && ` · ${incident.location}`}
@@ -218,7 +218,7 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
               ⚠ CCHEN pendiente
             </span>
           )}
-          <button onClick={toggle} className="text-gray-400 hover:text-gray-600">
+          <button onClick={toggle} className="text-muted-foreground hover:text-muted-foreground">
             {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
@@ -235,29 +235,29 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
 
       {/* Expanded */}
       {open && (
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+        <div className="border-t border-border/50 px-4 pb-4 pt-3">
           {/* Description */}
           {incident.description && (
             <div className="mb-4">
-              <p className="text-xs text-gray-500 font-medium mb-1">Descripción del evento</p>
-              <p className="text-sm text-gray-800">{incident.description}</p>
+              <p className="text-xs text-muted-foreground font-medium mb-1">Descripción del evento</p>
+              <p className="text-sm text-foreground">{incident.description}</p>
             </div>
           )}
 
           {/* Facts grid */}
           <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Personas involucradas</p>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Personas involucradas</p>
               <p className="font-semibold text-lg">{incident.persons_involved ?? 0}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Dosis estimada</p>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Dosis estimada</p>
               <p className="font-semibold text-lg">
                 {incident.estimated_dose_msv ? `${incident.estimated_dose_msv} mSv` : "N/D"}
               </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3">
-              <p className="text-xs text-gray-500">Días desde evento</p>
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-xs text-muted-foreground">Días desde evento</p>
               <p className="font-semibold text-lg">{daysAgo(incident.incident_date)}</p>
             </div>
           </div>
@@ -279,7 +279,7 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
           )}
 
           {/* CCHEN notification */}
-          <div className={`rounded-lg p-3 mb-4 ${incident.cchen_notified ? "bg-green-50" : incident.ines_level >= 1 ? "bg-red-50" : "bg-gray-50"}`}>
+          <div className={`rounded-lg p-3 mb-4 ${incident.cchen_notified ? "bg-green-50" : incident.ines_level >= 1 ? "bg-red-50" : "bg-muted/50"}`}>
             <p className="text-xs font-semibold mb-1">
               Notificación CCHEN: {incident.cchen_notified ? "✓ Notificado" : incident.ines_level >= 1 ? "✗ Pendiente (obligatorio INES ≥1)" : "No requerida"}
             </p>
@@ -289,7 +289,7 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
           </div>
 
           {/* Responsibles */}
-          <div className="grid grid-cols-3 gap-3 text-xs mb-4 text-gray-600">
+          <div className="grid grid-cols-3 gap-3 text-xs mb-4 text-muted-foreground">
             {incident.reported_by && <div><span className="font-medium">Reportado por:</span> {incident.reported_by}</div>}
             {incident.investigated_by && <div><span className="font-medium">Investigado por:</span> {incident.investigated_by}</div>}
             {incident.approved_by && <div><span className="font-medium">Aprobado por:</span> {incident.approved_by}</div>}
@@ -298,7 +298,7 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
           {/* Actions */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-gray-700">Acciones correctivas / preventivas</p>
+              <p className="text-xs font-semibold text-foreground/80">Acciones correctivas / preventivas</p>
               {isOpen && (
                 <button onClick={() => setShowActionForm(!showActionForm)} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
                   <Plus size={12} /> Agregar acción
@@ -307,7 +307,7 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
             </div>
 
             {showActionForm && (
-              <div className="bg-gray-50 rounded-lg p-3 mb-3">
+              <div className="bg-muted/50 rounded-lg p-3 mb-3">
                 <div className="grid grid-cols-2 gap-2 text-xs mb-2">
                   <select className="border rounded px-2 py-1.5" value={newAction.action_type} onChange={e => setNewAction(p => ({ ...p, action_type: e.target.value }))}>
                     <option value="corrective">Correctiva</option>
@@ -321,22 +321,22 @@ function IncidentCard({ incident, onRefresh }: { incident: Incident; onRefresh: 
                   <button onClick={addAction} disabled={savingAction || !newAction.description} className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 disabled:opacity-50">
                     {savingAction ? "Guardando…" : "Agregar"}
                   </button>
-                  <button onClick={() => setShowActionForm(false)} className="border px-3 py-1 rounded text-xs hover:bg-gray-50">Cancelar</button>
+                  <button onClick={() => setShowActionForm(false)} className="border px-3 py-1 rounded text-xs hover:bg-muted/50">Cancelar</button>
                 </div>
               </div>
             )}
 
             {actions.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">Sin acciones registradas</p>
+              <p className="text-xs text-muted-foreground italic">Sin acciones registradas</p>
             ) : (
               <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Tipo</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Descripción</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Responsable</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Plazo</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Estado</th>
+                  <tr className="bg-muted/50">
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Tipo</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Descripción</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Responsable</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Plazo</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Estado</th>
                     <th className="px-2 py-1.5 border-b"></th>
                   </tr>
                 </thead>
@@ -394,52 +394,52 @@ function IncidentForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-10 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 mb-10">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl mx-4 mb-10">
         <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+          <h2 className="font-semibold text-foreground flex items-center gap-2">
             <AlertTriangle size={18} className="text-red-500" /> Registrar Incidente Radiológico
           </h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground"><X size={20} /></button>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4 text-sm max-h-[75vh] overflow-y-auto">
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Título del incidente *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Título del incidente *</label>
             <input className="w-full border rounded px-3 py-2" value={form.title} onChange={e => f("title", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Fecha *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha *</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.incident_date} onChange={e => f("incident_date", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Hora</label>
+            <label className="block text-xs text-muted-foreground mb-1">Hora</label>
             <input type="time" className="w-full border rounded px-3 py-2" value={form.incident_time} onChange={e => f("incident_time", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Tipo de incidente *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Tipo de incidente *</label>
             <select className="w-full border rounded px-3 py-2" value={form.incident_type} onChange={e => f("incident_type", e.target.value)}>
               {Object.entries(INCIDENT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Nivel INES</label>
+            <label className="block text-xs text-muted-foreground mb-1">Nivel INES</label>
             <select className="w-full border rounded px-3 py-2" value={form.ines_level} onChange={e => f("ines_level", e.target.value)}>
               {Object.entries(INES_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Ubicación</label>
+            <label className="block text-xs text-muted-foreground mb-1">Ubicación</label>
             <input className="w-full border rounded px-3 py-2" value={form.location} onChange={e => f("location", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Área específica</label>
+            <label className="block text-xs text-muted-foreground mb-1">Área específica</label>
             <input className="w-full border rounded px-3 py-2" value={form.area} onChange={e => f("area", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Personas involucradas</label>
+            <label className="block text-xs text-muted-foreground mb-1">Personas involucradas</label>
             <input type="number" min="0" className="w-full border rounded px-3 py-2" value={form.persons_involved} onChange={e => f("persons_involved", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Dosis estimada (mSv)</label>
+            <label className="block text-xs text-muted-foreground mb-1">Dosis estimada (mSv)</label>
             <input type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="opcional" value={form.estimated_dose_msv} onChange={e => f("estimated_dose_msv", e.target.value)} />
           </div>
           <div className="col-span-2 flex items-center gap-6">
@@ -457,15 +457,15 @@ function IncidentForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
             </label>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Descripción del evento *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Descripción del evento *</label>
             <textarea className="w-full border rounded px-3 py-2" rows={3} value={form.description} onChange={e => f("description", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Acciones inmediatas tomadas</label>
+            <label className="block text-xs text-muted-foreground mb-1">Acciones inmediatas tomadas</label>
             <textarea className="w-full border rounded px-3 py-2" rows={2} value={form.immediate_actions} onChange={e => f("immediate_actions", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Reportado por</label>
+            <label className="block text-xs text-muted-foreground mb-1">Reportado por</label>
             <input className="w-full border rounded px-3 py-2" value={form.reported_by} onChange={e => f("reported_by", e.target.value)} />
           </div>
         </div>
@@ -473,7 +473,7 @@ function IncidentForm({ onSave, onCancel }: { onSave: () => void; onCancel: () =
           <button onClick={save} disabled={saving || !form.title || !form.incident_date} className="bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Registrar incidente"}
           </button>
-          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-gray-50">Cancelar</button>
+          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-muted/50">Cancelar</button>
         </div>
       </div>
     </div>
@@ -513,11 +513,11 @@ export default function IncidentsPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <AlertTriangle size={24} className="text-red-500" />
             Incidentes Radiológicos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Clasificación INES · DS 3/1985 Arts. 46-50 · IAEA GSR Part 7</p>
+          <p className="text-sm text-muted-foreground mt-1">Clasificación INES · DS 3/1985 Arts. 46-50 · IAEA GSR Part 7</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -541,7 +541,7 @@ export default function IncidentsPage() {
       {/* KPI tiles */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
-          { label: "Este año", value: stats?.this_year, color: "text-gray-700", bg: "bg-gray-50", icon: <FileText size={18} /> },
+          { label: "Este año", value: stats?.this_year, color: "text-foreground/80", bg: "bg-muted/50", icon: <FileText size={18} /> },
           { label: "Abiertos", value: stats?.open_count, color: "text-red-700", bg: "bg-red-50", icon: <AlertTriangle size={18} /> },
           { label: "Investigando", value: stats?.in_progress_count, color: "text-amber-700", bg: "bg-amber-50", icon: <Clock size={18} /> },
           { label: "Cerrados", value: stats?.closed_count, color: "text-green-700", bg: "bg-green-50", icon: <CheckCircle size={18} /> },
@@ -549,7 +549,7 @@ export default function IncidentsPage() {
           <div key={i} className={`${kpi.bg} rounded-xl p-4 flex items-center gap-3`}>
             <span className={kpi.color}>{kpi.icon}</span>
             <div>
-              <p className="text-xs text-gray-500">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground">{kpi.label}</p>
               <p className={`text-2xl font-bold ${kpi.color}`}>{loading ? "…" : (kpi.value || "0")}</p>
             </div>
           </div>
@@ -570,9 +570,9 @@ export default function IncidentsPage() {
 
       {/* Incidents list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando incidentes…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando incidentes…</div>
       ) : incidents.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <CheckCircle size={40} className="mx-auto text-green-300 mb-3" />
           <p>No se registran incidentes</p>
         </div>
@@ -583,8 +583,8 @@ export default function IncidentsPage() {
       )}
 
       {/* INES scale legend */}
-      <div className="mt-8 bg-gray-50 rounded-xl p-5">
-        <p className="text-sm font-semibold text-gray-800 mb-3">Escala INES (Escala Internacional de Eventos Nucleares y Radiológicos)</p>
+      <div className="mt-8 bg-muted/50 rounded-xl p-5">
+        <p className="text-sm font-semibold text-foreground mb-3">Escala INES (Escala Internacional de Eventos Nucleares y Radiológicos)</p>
         <div className="grid grid-cols-4 gap-2">
           {Object.entries(INES_CFG).map(([level, cfg]) => (
             <div key={level} className={`${cfg.bg} border ${cfg.border} rounded-lg p-2`}>
@@ -595,8 +595,8 @@ export default function IncidentsPage() {
       </div>
 
       {/* Normativa footer */}
-      <div className="mt-4 p-4 bg-gray-50 rounded-xl text-xs text-gray-500">
-        <p className="font-medium text-gray-700 mb-1">Marco Regulatorio</p>
+      <div className="mt-4 p-4 bg-muted/50 rounded-xl text-xs text-muted-foreground">
+        <p className="font-medium text-foreground/80 mb-1">Marco Regulatorio</p>
         <p>DS 3/1985 Arts. 46-50 (notificación de accidentes) · IAEA GSR Part 7 (preparación y respuesta) · IAEA INES User Manual 2008 · Obligación CCHEN: notificación inmediata eventos INES ≥1</p>
       </div>
 

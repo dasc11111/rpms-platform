@@ -44,7 +44,7 @@ interface IsolationData { data: IsolationRecord[]; stats: Stats; }
 function statusCfg(s: IsolationStatus) {
   if (s === "en_aislamiento") return { label: "En aislamiento", bg: "bg-orange-100 text-orange-700", dot: "bg-orange-500" };
   if (s === "apto_alta")     return { label: "Apto para alta",  bg: "bg-green-100 text-green-700",  dot: "bg-green-500" };
-  return                           { label: "Vencido",         bg: "bg-gray-100 text-gray-500",   dot: "bg-gray-400" };
+  return                           { label: "Vencido",         bg: "bg-muted text-muted-foreground",   dot: "bg-gray-400" };
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -78,7 +78,7 @@ export default function I131IsolationPage() {
   const stats = data?.stats;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -88,19 +88,19 @@ export default function I131IsolationPage() {
               <Shield className="h-6 w-6 text-orange-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Aislamiento de Pacientes I-131</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-foreground">Aislamiento de Pacientes I-131</h1>
+              <p className="text-sm text-muted-foreground">
                 Seguimiento de criterios de alta radiológica — vida media I-131: 8.02 días
               </p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Calculando aislamiento...</div>
+          <div className="text-center py-16 text-muted-foreground">Calculando aislamiento...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar datos.</div>
         ) : (
@@ -127,12 +127,12 @@ export default function I131IsolationPage() {
                 { label: "Aptos para alta",  value: stats?.apto_alta ?? 0,       icon: CheckCircle2, color: "green"  },
                 { label: "Total seguimiento",value: stats?.total_tracked ?? 0,   icon: User,         color: "blue"   },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
+                <div key={label} className="bg-background rounded-xl border border-border px-5 py-4 shadow-sm">
                   <div className={`inline-flex p-2 rounded-lg bg-${color}-100 mb-2`}>
                     <Icon className={`h-4 w-4 text-${color}-600`} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{value}</div>
-                  <div className="text-xs text-gray-500">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">{value}</div>
+                  <div className="text-xs text-muted-foreground">{label}</div>
                 </div>
               ))}
             </div>
@@ -143,7 +143,7 @@ export default function I131IsolationPage() {
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterStatus === s ? "bg-gray-800 text-white" : "bg-white border border-gray-200 text-gray-600"}`}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterStatus === s ? "bg-gray-800 text-white" : "bg-background border border-border text-muted-foreground"}`}
                 >
                   {s === "all" ? `Todos (${records.length})` : statusCfg(s).label + ` (${records.filter(r => r.isolation_status === s).length})`}
                 </button>
@@ -152,66 +152,66 @@ export default function I131IsolationPage() {
 
             {/* Patient cards */}
             {filtered.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">Sin registros en este estado.</div>
+              <div className="text-center py-12 text-muted-foreground">Sin registros en este estado.</div>
             ) : (
               <div className="space-y-3">
                 {filtered.map(r => {
                   const cfg = statusCfg(r.isolation_status);
                   return (
-                    <div key={r.id} className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
+                    <div key={r.id} className="bg-background rounded-xl border border-border shadow-sm px-5 py-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <User className="h-4 w-4 text-gray-400 shrink-0" />
-                            <span className="font-semibold text-gray-900">{r.paciente_nombre}</span>
-                            {r.paciente_run && <span className="text-xs text-gray-400">{r.paciente_run}</span>}
-                            {r.ficha_clinica && <span className="text-xs text-gray-400">FC: {r.ficha_clinica}</span>}
+                            <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="font-semibold text-foreground">{r.paciente_nombre}</span>
+                            {r.paciente_run && <span className="text-xs text-muted-foreground">{r.paciente_run}</span>}
+                            {r.ficha_clinica && <span className="text-xs text-muted-foreground">FC: {r.ficha_clinica}</span>}
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${cfg.bg}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                               {cfg.label}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-gray-600 mt-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-muted-foreground mt-2">
                             <div>
-                              <div className="text-gray-400 mb-0.5">Fecha administración</div>
+                              <div className="text-muted-foreground mb-0.5">Fecha administración</div>
                               <div className="font-medium">{fmtDate(r.admin_date)}</div>
                             </div>
                             <div>
-                              <div className="text-gray-400 mb-0.5">Días desde adm.</div>
+                              <div className="text-muted-foreground mb-0.5">Días desde adm.</div>
                               <div className="font-medium">{r.days_since_admin} días</div>
                             </div>
                             <div>
-                              <div className="text-gray-400 mb-0.5">Dosis administrada</div>
+                              <div className="text-muted-foreground mb-0.5">Dosis administrada</div>
                               <div className="font-medium">{r.dosis_administrada ? r.dosis_administrada + " mCi" : "—"}</div>
                             </div>
                             <div>
-                              <div className="text-gray-400 mb-0.5">Actividad remanente</div>
+                              <div className="text-muted-foreground mb-0.5">Actividad remanente</div>
                               <div className={`font-medium ${r.can_release_by_activity ? "text-green-600" : "text-orange-600"}`}>
                                 {r.remaining_activity_mci != null ? r.remaining_activity_mci.toFixed(1) + " mCi" : "—"}
                               </div>
                             </div>
                             {r.sala && (
                               <div>
-                                <div className="text-gray-400 mb-0.5">Sala</div>
+                                <div className="text-muted-foreground mb-0.5">Sala</div>
                                 <div className="font-medium">{r.sala}</div>
                               </div>
                             )}
                             {r.tasa_dosis && (
                               <div>
-                                <div className="text-gray-400 mb-0.5">Tasa de dosis</div>
+                                <div className="text-muted-foreground mb-0.5">Tasa de dosis</div>
                                 <div className="font-medium">{r.tasa_dosis}</div>
                               </div>
                             )}
                             {r.medico_solicitante && (
                               <div>
-                                <div className="text-gray-400 mb-0.5">Médico</div>
+                                <div className="text-muted-foreground mb-0.5">Médico</div>
                                 <div className="font-medium">{r.medico_solicitante}</div>
                               </div>
                             )}
                             {r.diagnostico && (
                               <div>
-                                <div className="text-gray-400 mb-0.5">Diagnóstico</div>
+                                <div className="text-muted-foreground mb-0.5">Diagnóstico</div>
                                 <div className="font-medium">{r.diagnostico}</div>
                               </div>
                             )}
@@ -223,15 +223,15 @@ export default function I131IsolationPage() {
                           {r.isolation_status === "en_aislamiento" ? (
                             <div className="flex flex-col items-end gap-1">
                               <Clock className="h-4 w-4 text-orange-400" />
-                              <div className="text-xs text-gray-500">Alta estimada</div>
+                              <div className="text-xs text-muted-foreground">Alta estimada</div>
                               <div className="font-semibold text-sm text-orange-700">{fmtDate(r.estimated_release_date)}</div>
-                              <div className="text-xs text-gray-400">{r.days_to_release != null ? r.days_to_release + " días" : ""}</div>
+                              <div className="text-xs text-muted-foreground">{r.days_to_release != null ? r.days_to_release + " días" : ""}</div>
                             </div>
                           ) : r.isolation_status === "apto_alta" ? (
                             <div className="flex flex-col items-end gap-1">
                               <CheckCircle2 className="h-5 w-5 text-green-500" />
                               <div className="text-xs font-semibold text-green-700">Criterio cumplido</div>
-                              <div className="text-xs text-gray-400">Verificar tasa de dosis</div>
+                              <div className="text-xs text-muted-foreground">Verificar tasa de dosis</div>
                             </div>
                           ) : null}
                         </div>
@@ -243,8 +243,8 @@ export default function I131IsolationPage() {
             )}
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°3/1985 MINSAL Art. 32-38 — Criterios de aislamiento y alta para pacientes tratados con I-131.
                 ICRP Publication 94 — Release of Patients After Therapy with Unsealed Radionuclides.

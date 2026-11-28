@@ -100,24 +100,24 @@ function ExpiryRow({ item }: { item: ExpiryItem }) {
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cfg.badge}`}>
             {cfg.label}
           </span>
-          <span className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-500 border border-gray-100">
+          <span className="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground border border-border/50">
             {item.module}
           </span>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
             {item.category}
           </span>
         </div>
-        <p className="mt-1 text-sm font-medium text-gray-900 leading-snug">{item.title}</p>
-        <p className="text-xs text-gray-500">{item.detail}</p>
+        <p className="mt-1 text-sm font-medium text-foreground leading-snug">{item.title}</p>
+        <p className="text-xs text-muted-foreground">{item.detail}</p>
         {item.regulation && (
-          <p className="text-xs text-gray-400 italic mt-0.5">{item.regulation}</p>
+          <p className="text-xs text-muted-foreground italic mt-0.5">{item.regulation}</p>
         )}
       </div>
       <div className="shrink-0 text-right">
-        <div className={`text-xs font-semibold ${item.urgency === "overdue" ? "text-red-600" : "text-gray-700"}`}>
+        <div className={`text-xs font-semibold ${item.urgency === "overdue" ? "text-red-600" : "text-foreground/80"}`}>
           {cfg.days(item.days_remaining)}
         </div>
-        <div className="text-xs text-gray-400">{dateStr}</div>
+        <div className="text-xs text-muted-foreground">{dateStr}</div>
         <Link
           href={item.action_url}
           className="mt-1 flex items-center justify-end gap-1 text-xs text-blue-600 hover:underline"
@@ -173,8 +173,8 @@ export default function ExpiriesPage() {
         <div className="flex items-center gap-3">
           <CalendarClock className="h-7 w-7 text-blue-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tablero de Vencimientos</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-foreground">Tablero de Vencimientos</h1>
+            <p className="text-sm text-muted-foreground">
               Control unificado de plazos críticos · Próximos 90 días · Todos los módulos
             </p>
           </div>
@@ -182,7 +182,7 @@ export default function ExpiriesPage() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-50 transition"
+          className="flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-muted/50 disabled:opacity-50 transition"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Actualizar
@@ -245,11 +245,11 @@ export default function ExpiriesPage() {
       {/* Filters */}
       {data && data.stats.total > 0 && (
         <div className="flex flex-wrap items-center gap-3">
-          <Filter className="h-4 w-4 text-gray-400" />
+          <Filter className="h-4 w-4 text-muted-foreground" />
           <select
             value={filterModule}
             onChange={(e) => setFilterModule(e.target.value)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Todos los módulos</option>
             {modules.map((m) => (
@@ -264,7 +264,7 @@ export default function ExpiriesPage() {
               Limpiar filtros
             </button>
           )}
-          <span className="ml-auto text-xs text-gray-400">
+          <span className="ml-auto text-xs text-muted-foreground">
             {filtered.length} de {data.stats.total} vencimientos
           </span>
         </div>
@@ -272,7 +272,7 @@ export default function ExpiriesPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-2" />
           Cargando vencimientos…
         </div>
@@ -299,8 +299,8 @@ export default function ExpiriesPage() {
 
       {/* Module legend */}
       {data && data.stats.total > 0 && (
-        <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <section className="rounded-xl border border-border bg-background shadow-sm p-5">
+          <h2 className="text-sm font-semibold text-foreground/80 mb-3 flex items-center gap-2">
             <Calendar className="h-4 w-4 text-blue-500" />
             Módulos incluidos
           </h2>
@@ -320,11 +320,11 @@ export default function ExpiriesPage() {
                       ? "border-red-200 bg-red-50 text-red-700"
                       : hasCritical
                       ? "border-orange-200 bg-orange-50 text-orange-700"
-                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                      : "border-border bg-muted/50 text-muted-foreground hover:border-border"
                   }`}
                 >
                   {m}
-                  <span className="rounded-full bg-white px-1.5 text-gray-700 font-bold text-xs border border-gray-100">
+                  <span className="rounded-full bg-background px-1.5 text-foreground/80 font-bold text-xs border border-border/50">
                     {count}
                   </span>
                 </button>
@@ -334,8 +334,8 @@ export default function ExpiriesPage() {
         </section>
       )}
 
-      <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-xs text-gray-500">
-        <span className="font-medium text-gray-600">Fuentes:</span>{" "}
+      <div className="rounded-lg bg-muted/50 border border-border px-4 py-3 text-xs text-muted-foreground">
+        <span className="font-medium text-muted-foreground">Fuentes:</span>{" "}
         Autorizaciones DS 3/1985 · Calibraciones NS-06.0 §9 · Inventarios de fuentes NS-06.0 §6 ·
         Simulacros DS 3/1985 Art. 25 · Cumplimiento NS-06.0 · Monitoreo Art. 15 · Capacitación NS-04.
         Horizonte de visibilidad: 90 días. Los vencimientos vienen de bases de datos activas.

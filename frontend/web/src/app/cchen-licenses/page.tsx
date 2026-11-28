@@ -55,7 +55,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
   active:              { label: "Vigente",               color: "text-green-700",  bg: "bg-green-100",  icon: <CheckCircle className="w-4 h-4" /> },
   expired:             { label: "Vencida",               color: "text-red-700",    bg: "bg-red-100",    icon: <AlertTriangle className="w-4 h-4" /> },
   suspended:           { label: "Suspendida",            color: "text-orange-700", bg: "bg-orange-100", icon: <AlertTriangle className="w-4 h-4" /> },
-  cancelled:           { label: "Cancelada",             color: "text-gray-700",   bg: "bg-gray-100",   icon: <X className="w-4 h-4" /> },
+  cancelled:           { label: "Cancelada",             color: "text-foreground/80",   bg: "bg-muted",   icon: <X className="w-4 h-4" /> },
   renewal_in_progress: { label: "Renovación en curso",  color: "text-blue-700",   bg: "bg-blue-100",   icon: <RefreshCw className="w-4 h-4" /> },
 };
 
@@ -63,7 +63,7 @@ const ALERT_CONFIG: Record<string, { border: string; bg: string }> = {
   critical: { border: "border-red-400",    bg: "bg-red-50" },
   warning:  { border: "border-orange-400", bg: "bg-orange-50" },
   info:     { border: "border-blue-300",   bg: "bg-blue-50" },
-  ok:       { border: "border-gray-200",   bg: "bg-white" },
+  ok:       { border: "border-border",   bg: "bg-background" },
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -88,7 +88,7 @@ function DaysCounter({ days, status }: { days: number; status: string }) {
   if (days < 0) return <span className="text-red-700 font-bold text-sm">VENCIDA hace {Math.abs(days)} días</span>;
   if (days <= 30) return <span className="text-red-600 font-bold text-sm">⚠ Vence en {days} días</span>;
   if (days <= 90) return <span className="text-orange-600 font-bold text-sm">Vence en {days} días</span>;
-  return <span className="text-gray-600 text-sm">Vence en {days} días</span>;
+  return <span className="text-muted-foreground text-sm">Vence en {days} días</span>;
 }
 
 function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () => void }) {
@@ -98,7 +98,7 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
   const [submittingRenewal, setSubmittingRenewal] = useState(false);
 
   const st = STATUS_CONFIG[license.status] ?? STATUS_CONFIG.active;
-  const lt = LICENSE_TYPE_CONFIG[license.license_type] ?? { label: license.license_type, color: "bg-gray-100 text-gray-800" };
+  const lt = LICENSE_TYPE_CONFIG[license.license_type] ?? { label: license.license_type, color: "bg-muted text-foreground" };
   const al = ALERT_CONFIG[license.alert_level] ?? ALERT_CONFIG.ok;
 
   async function loadLog() {
@@ -147,21 +147,21 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-xs font-mono text-gray-500">{license.license_number}</span>
+              <span className="text-xs font-mono text-muted-foreground">{license.license_number}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${lt.color}`}>{lt.label}</span>
               <span className={`text-xs flex items-center gap-1 font-medium ${st.color} ${st.bg} px-2 py-0.5 rounded-full`}>
                 {st.icon}{st.label}
               </span>
             </div>
-            <h3 className="font-semibold text-gray-900 text-sm">{license.holder_name}</h3>
+            <h3 className="font-semibold text-foreground text-sm">{license.holder_name}</h3>
             {license.facility_name && (
-              <p className="text-xs text-gray-500">{license.facility_name}</p>
+              <p className="text-xs text-muted-foreground">{license.facility_name}</p>
             )}
             {license.scope && (
-              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{license.scope}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{license.scope}</p>
             )}
           </div>
-          <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <button onClick={toggleExpand} className="text-muted-foreground hover:text-muted-foreground flex-shrink-0">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -177,18 +177,18 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
         {/* Key stats */}
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div>
-            <span className="text-gray-400 block">Vencimiento</span>
-            <span className={`font-medium ${license.alert_level === "critical" ? "text-red-700" : license.alert_level === "warning" ? "text-orange-700" : "text-gray-800"}`}>
+            <span className="text-muted-foreground block">Vencimiento</span>
+            <span className={`font-medium ${license.alert_level === "critical" ? "text-red-700" : license.alert_level === "warning" ? "text-orange-700" : "text-foreground"}`}>
               {formatDate(license.expiry_date)}
             </span>
           </div>
           <div>
-            <span className="text-gray-400 block">Estado tiempo</span>
+            <span className="text-muted-foreground block">Estado tiempo</span>
             <DaysCounter days={license.days_until_expiry} status={license.status} />
           </div>
           <div>
-            <span className="text-gray-400 block">Próxima inspección</span>
-            <span className="text-gray-700 font-medium">{formatDate(license.next_inspection)}</span>
+            <span className="text-muted-foreground block">Próxima inspección</span>
+            <span className="text-foreground/80 font-medium">{formatDate(license.next_inspection)}</span>
           </div>
         </div>
 
@@ -216,7 +216,7 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t border-gray-200 p-4 space-y-4">
+        <div className="border-t border-border p-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             {[
               ["RUT titular", license.holder_rut],
@@ -227,34 +227,34 @@ function LicenseCard({ license, onRefresh }: { license: License; onRefresh: () =
               ["Código renovación", license.renewal_code ?? "—"],
             ].map(([label, value]) => (
               <div key={String(label)}>
-                <span className="text-gray-400 block">{label}</span>
-                <span className="text-gray-800 font-medium">{value ?? "—"}</span>
+                <span className="text-muted-foreground block">{label}</span>
+                <span className="text-foreground font-medium">{value ?? "—"}</span>
               </div>
             ))}
           </div>
 
           {license.conditions && (
             <div>
-              <span className="text-xs font-semibold text-gray-700 block mb-1">Condiciones de la licencia</span>
-              <p className="text-xs text-gray-600 bg-gray-50 rounded p-2">{license.conditions}</p>
+              <span className="text-xs font-semibold text-foreground/80 block mb-1">Condiciones de la licencia</span>
+              <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">{license.conditions}</p>
             </div>
           )}
 
           {/* Renewal log */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-700 mb-2">Historial de renovaciones</h4>
+            <h4 className="text-xs font-semibold text-foreground/80 mb-2">Historial de renovaciones</h4>
             {loadingLog ? (
-              <p className="text-xs text-gray-400">Cargando...</p>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             ) : log.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin historial de renovaciones</p>
+              <p className="text-xs text-muted-foreground">Sin historial de renovaciones</p>
             ) : (
               <div className="space-y-1.5">
                 {log.map(entry => (
-                  <div key={entry.id} className="flex items-start gap-3 text-xs bg-white rounded px-3 py-2 border border-gray-100">
-                    <span className="text-gray-400 w-20 flex-shrink-0">{formatDate(entry.action_date)}</span>
-                    <span className="font-medium text-gray-700">{ACTION_LABELS[entry.action] ?? entry.action}</span>
-                    <span className="text-gray-500 flex-1">{entry.notes}</span>
-                    <span className="text-gray-400">{entry.performed_by}</span>
+                  <div key={entry.id} className="flex items-start gap-3 text-xs bg-background rounded px-3 py-2 border border-border/50">
+                    <span className="text-muted-foreground w-20 flex-shrink-0">{formatDate(entry.action_date)}</span>
+                    <span className="font-medium text-foreground/80">{ACTION_LABELS[entry.action] ?? entry.action}</span>
+                    <span className="text-muted-foreground flex-1">{entry.notes}</span>
+                    <span className="text-muted-foreground">{entry.performed_by}</span>
                   </div>
                 ))}
               </div>
@@ -302,11 +302,11 @@ export default function CchenLicensesPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <FileCheck className="w-7 h-7 text-blue-600" />
           Licencias y Autorizaciones CCHEN
         </h1>
-        <p className="text-sm text-gray-500 mt-1">DS 3/1985 Arts. 7–14 · CCHEN NS-05.0 §3</p>
+        <p className="text-sm text-muted-foreground mt-1">DS 3/1985 Arts. 7–14 · CCHEN NS-05.0 §3</p>
       </div>
 
       {/* Critical banner */}
@@ -335,7 +335,7 @@ export default function CchenLicensesPage() {
           <div key={t.label} className={`${t.bg} rounded-xl p-3`}>
             <div className={`${t.color} mb-1`}>{t.icon}</div>
             <div className={`text-2xl font-bold ${t.color}`}>{t.value}</div>
-            <div className="text-xs text-gray-600">{t.label}</div>
+            <div className="text-xs text-muted-foreground">{t.label}</div>
           </div>
         ))}
       </div>
@@ -343,7 +343,7 @@ export default function CchenLicensesPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
         >
@@ -353,7 +353,7 @@ export default function CchenLicensesPage() {
           ))}
         </select>
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterAlert}
           onChange={e => setFilterAlert(e.target.value)}
         >
@@ -363,12 +363,12 @@ export default function CchenLicensesPage() {
           <option value="info">Información</option>
           <option value="ok">Sin alerta</option>
         </select>
-        <span className="text-sm text-gray-500 self-center">{filtered.length} licencia(s)</span>
+        <span className="text-sm text-muted-foreground self-center">{filtered.length} licencia(s)</span>
       </div>
 
       {/* License cards */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Cargando licencias...</div>
+        <div className="text-center py-12 text-muted-foreground">Cargando licencias...</div>
       ) : (
         <div className="space-y-4">
           {filtered.map(l => (
@@ -378,8 +378,8 @@ export default function CchenLicensesPage() {
       )}
 
       {/* Regulatory framework */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-600 space-y-1">
-        <p className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <div className="bg-muted/50 border border-border rounded-xl p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground mb-2 flex items-center gap-2">
           <FileCheck className="w-4 h-4" /> Marco regulatorio aplicable
         </p>
         <p>• <strong>DS 3/1985 Arts. 7–14:</strong> Requisitos de licenciamiento de instalaciones radiactivas y fuentes</p>

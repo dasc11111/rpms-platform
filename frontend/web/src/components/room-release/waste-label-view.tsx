@@ -363,7 +363,7 @@ async function handleStatusChange(newStatus: WasteLabelStatus) {
 }
 
 if (loading) {
-  return <div className="p-8 text-sm text-gray-500">Cargando rótulo…</div>;
+  return <div className="p-8 text-sm text-muted-foreground">Cargando rótulo…</div>;
 }
   if (error || !data) {
     return <div className="p-8 text-sm text-red-600">{error ?? "Rótulo no encontrado"}</div>;
@@ -373,7 +373,7 @@ if (loading) {
   
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/50">
     <style>{`
     @media print {
     .no-print { display: none !important; }
@@ -390,8 +390,8 @@ if (loading) {
     
     <div className="no-print border-b bg-white px-6 py-4 flex items-center justify-between">
     <div>
-    <h1 className="text-lg font-semibold text-gray-900">Rótulo {row.label_number}</h1>
-    <p className="text-sm text-gray-500">Gestión de Residuos Radiactivos</p>
+    <h1 className="text-lg font-semibold text-foreground">Rótulo {row.label_number}</h1>
+    <p className="text-sm text-muted-foreground">Gestión de Residuos Radiactivos</p>
     </div>
     <div className="flex gap-2">
     <button
@@ -419,7 +419,7 @@ if (loading) {
         className={`border-b-2 px-2 py-3 text-sm font-medium ${
           tab === t.key
           ? "border-blue-600 text-blue-600"
-          : "border-transparent text-gray-500 hover:text-gray-700"
+          : "border-transparent text-muted-foreground hover:text-foreground/80"
         }`}
         >
         {t.label}
@@ -431,20 +431,20 @@ if (loading) {
     <div className="mx-auto max-w-3xl p-6">
       {tab === "rotulo" && (
       <>
-      <div className="print-label mx-auto flex flex-col gap-3 rounded-lg border-2 border-gray-800 bg-white p-5 shadow-lg">
-      <div className="flex items-start justify-between border-b border-gray-300 pb-2">
+      <div className="print-label mx-auto flex flex-col gap-3 rounded-lg border-2 border-border bg-white p-5 shadow-lg">
+      <div className="flex items-start justify-between border-b border-border pb-2">
       <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">RPMS · Medicina Nuclear</p>
-      <h2 className="text-base font-bold text-gray-900">Rótulo de Residuo Radiactivo</h2>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">RPMS · Medicina Nuclear</p>
+      <h2 className="text-base font-bold text-foreground">Rótulo de Residuo Radiactivo</h2>
       </div>
       <RadiationSymbol />
       </div>
       
       <div className="flex items-center justify-between">
       <div>
-      <p className="text-[11px] uppercase text-gray-500">N° de rótulo</p>
-      <p className="text-xl font-bold tracking-wider text-gray-900">{row.label_number}</p>
-        {row.lot_number && <p className="text-[11px] text-gray-500">Lote: {row.lot_number}</p>}
+      <p className="text-[11px] uppercase text-muted-foreground">N° de rótulo</p>
+      <p className="text-xl font-bold tracking-wider text-foreground">{row.label_number}</p>
+        {row.lot_number && <p className="text-[11px] text-muted-foreground">Lote: {row.lot_number}</p>}
       </div>
         {qrDataUrl && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -468,26 +468,26 @@ if (loading) {
       </dl>
       
         {row.observations && (
-        <div className="border-t border-gray-300 pt-2 text-xs">
-        <p className="font-semibold text-gray-500">Observaciones</p>
-        <p className="text-gray-800">{row.observations}</p>
+        <div className="border-t border-border pt-2 text-xs">
+        <p className="font-semibold text-muted-foreground">Observaciones</p>
+        <p className="text-foreground">{row.observations}</p>
         </div>
       )}
       
-      <p className="mt-auto text-center text-[10px] text-gray-400">
+      <p className="mt-auto text-center text-[10px] text-muted-foreground">
       Impresiones: {row.print_count} · Escanee el QR para ver el registro completo
       </p>
       </div>
       
       <div className="no-print mx-auto mt-4 max-w-md rounded-lg border bg-white p-4 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Editar rótulo</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Editar rótulo</h3>
       <div className="space-y-3">
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Tipo de residuo</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Tipo de residuo</label>
       <select
         value={editWasteType}
         onChange={(e) => setEditWasteType(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         >
       <option value="">Sin especificar</option>
         {WASTE_TYPE_DISPENSA_OPTIONS.map((o) => (
@@ -499,21 +499,21 @@ if (loading) {
       </div>
         {editWasteType === "otro" && (
         <div>
-        <label className="mb-1 block text-xs font-medium text-gray-600">Especificar otro tipo de residuo</label>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">Especificar otro tipo de residuo</label>
         <input
           value={editWasteTypeOther}
           onChange={(e) => setEditWasteTypeOther(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+          className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
           placeholder="Ej: Almohada"
           />
         </div>
       )}
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Ubicación de almacenamiento</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Ubicación de almacenamiento</label>
       <select
         value={editStorageLocationId}
         onChange={(e) => setEditStorageLocationId(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         >
       <option value="">Sin asignar</option>
         {locations.map((loc) => (
@@ -539,9 +539,9 @@ if (loading) {
     
       {tab === "acta" && (
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Acta de Liberación de Sala</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Acta de Liberación de Sala</h3>
         {!roomRelease ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
         Este residuo no proviene de un Acta de Liberación de Sala: fue generado de forma independiente.
         </p>
         ) : (
@@ -570,10 +570,10 @@ if (loading) {
       {tab === "resultados" && (
       <div className="space-y-4">
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">
       Criterio universal de dispensa
       </h3>
-      <p className="mb-3 text-xs text-gray-500">
+      <p className="mb-3 text-xs text-muted-foreground">
       Aplica a todos los tipos de residuo de este módulo: actividad superficial ≤ {CRITERIO_UNIVERSAL_BQ_CM2} Bq/cm²
       Y tasa de dosis &lt; {CRITERIO_UNIVERSAL_TASA_DOSIS_USVH} µSv/h, evaluados de forma independiente sobre la
       última medición registrada (nunca sobre la actividad inicial de generación).
@@ -586,19 +586,19 @@ if (loading) {
           ? "bg-red-100 text-red-700"
           : row.dispensa_estado === "pendiente_verificacion_final"
           ? "bg-amber-100 text-amber-700"
-          : "bg-gray-100 text-gray-700"
+          : "bg-muted text-foreground/80"
         }`}
         >
         {dispensa_estado_label}
       </div>
         {proyeccion.aplica && proyeccion.fechaEstimadaLiberacion && (
-        <p className="mt-2 text-center text-xs text-gray-500">
+        <p className="mt-2 text-center text-xs text-muted-foreground">
         Fecha estimada de cumplimiento del criterio de contaminación: {proyeccion.fechaEstimadaLiberacion} (
           {proyeccion.diasRestantesEstimados} día(s) restantes, según la última medición registrada)
         </p>
       )}
         {!proyeccion.aplica && (
-        <p className="mt-2 text-center text-xs text-gray-500">{proyeccion.mensaje}</p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">{proyeccion.mensaje}</p>
       )}
       </div>
       
@@ -614,7 +614,7 @@ if (loading) {
           value={dispensaUsuario}
           onChange={(e) => setDispensaUsuario(e.target.value)}
           placeholder="Nombre del OPR"
-          className="flex-1 rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+          className="flex-1 rounded-md border border-border px-2.5 py-1.5 text-sm"
           />
         <button
           onClick={handleConfirmDispensa}
@@ -629,13 +629,13 @@ if (loading) {
       )}
       
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Historial de mediciones</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Historial de mediciones</h3>
         {measurements.length === 0 ? (
-        <p className="text-sm text-gray-500">Aún no se han registrado mediciones para este residuo.</p>
+        <p className="text-sm text-muted-foreground">Aún no se han registrado mediciones para este residuo.</p>
         ) : (
         <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-        <thead className="bg-gray-50 uppercase text-gray-500">
+        <thead className="bg-muted/50 uppercase text-muted-foreground">
         <tr>
         <th className="px-2 py-1.5">Fecha</th>
         <th className="px-2 py-1.5">Tipo</th>
@@ -649,7 +649,7 @@ if (loading) {
         </thead>
         <tbody>
           {measurements.map((m) => (
-          <tr key={m.id} className="border-t border-gray-100">
+          <tr key={m.id} className="border-t border-border/50">
           <td className="px-2 py-1.5">{m.fecha}</td>
           <td className="px-2 py-1.5">{WASTE_MEASUREMENT_TIPO_LABELS[m.tipo]}</td>
           <td className="px-2 py-1.5">{m.cps ?? "—"}</td>
@@ -667,79 +667,79 @@ if (loading) {
       </div>
       
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Registrar nueva medición</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Registrar nueva medición</h3>
       <div className="grid grid-cols-2 gap-3">
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Tipo de medición</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Tipo de medición</label>
       <select
         value={medTipo}
         onChange={(e) => setMedTipo(e.target.value as WasteMeasurementTipo)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         >
       <option value="seguimiento">{WASTE_MEASUREMENT_TIPO_LABELS.seguimiento}</option>
       <option value="verificacion_final">{WASTE_MEASUREMENT_TIPO_LABELS.verificacion_final}</option>
       </select>
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Fecha</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Fecha</label>
       <input
         type="date"
         value={medFecha}
         onChange={(e) => setMedFecha(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">CPS medida</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">CPS medida</label>
       <input
         type="number"
         value={medCps}
         onChange={(e) => setMedCps(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">CPS de fondo</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">CPS de fondo</label>
       <input
         type="number"
         value={medCpsFondo}
         onChange={(e) => setMedCpsFondo(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">
       Tasa de dosis µSv/h {medTipo === "verificacion_final" ? "(obligatoria)" : "(opcional)"}
       </label>
       <input
         type="number"
         value={medTasaDosis}
         onChange={(e) => setMedTasaDosis(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Instrumento (opcional)</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Instrumento (opcional)</label>
       <input
         value={medInstrumento}
         onChange={(e) => setMedInstrumento(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">Usuario / OPR (opcional)</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Usuario / OPR (opcional)</label>
       <input
         value={medUsuario}
         onChange={(e) => setMedUsuario(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       <div className="col-span-2">
-      <label className="mb-1 block text-xs font-medium text-gray-600">Observaciones (opcional)</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Observaciones (opcional)</label>
       <input
         value={medObservaciones}
         onChange={(e) => setMedObservaciones(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
+        className="w-full rounded-md border border-border px-2.5 py-1.5 text-sm"
         />
       </div>
       </div>
@@ -759,8 +759,8 @@ if (loading) {
     
       {tab === "fotografias" && (
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Fotografías</h3>
-      <p className="text-sm text-gray-500">
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Fotografías</h3>
+      <p className="text-sm text-muted-foreground">
       No hay fotografías asociadas a este residuo. Esta sección queda preparada para integrarse con el
       módulo de Documentos cuando se habilite la carga de evidencia fotográfica.
       </p>
@@ -769,16 +769,16 @@ if (loading) {
     
       {tab === "historial" && (
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Historial del rótulo</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Historial del rótulo</h3>
         {history.length === 0 ? (
-        <p className="text-sm text-gray-500">Sin movimientos registrados.</p>
+        <p className="text-sm text-muted-foreground">Sin movimientos registrados.</p>
         ) : (
         <ul className="divide-y divide-gray-100 text-sm">
           {history.map((h) => (
           <li key={h.id} className="flex items-center justify-between py-2">
-          <span className="font-medium text-gray-800">{h.action}</span>
-          <span className="text-gray-500">{h.changed_by ?? "sistema"}</span>
-          <span className="text-gray-400">{new Date(h.changed_at).toLocaleString("es-CL")}</span>
+          <span className="font-medium text-foreground">{h.action}</span>
+          <span className="text-muted-foreground">{h.changed_by ?? "sistema"}</span>
+          <span className="text-muted-foreground">{new Date(h.changed_at).toLocaleString("es-CL")}</span>
           </li>
           ))}
         </ul>
@@ -788,14 +788,14 @@ if (loading) {
     
       {tab === "estado" && (
       <div className="rounded-lg border bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-gray-900">Estado del residuo</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Estado del residuo</h3>
       <div className="flex items-center gap-3">
-      <label className="text-sm text-gray-600">Cambiar estado:</label>
+      <label className="text-sm text-muted-foreground">Cambiar estado:</label>
       <select
         value={row.status}
         disabled={savingStatus}
         onChange={(e) => handleStatusChange(e.target.value as WasteLabelStatus)}
-        className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+        className="rounded-md border border-border px-3 py-1.5 text-sm"
         >
         {WASTE_LABEL_STATUS.map((s) => (
           <option key={s} value={s}>
@@ -804,7 +804,7 @@ if (loading) {
           ))}
       </select>
       </div>
-      <p className="mt-3 text-xs text-gray-400">
+      <p className="mt-3 text-xs text-muted-foreground">
       Estado de dispensa: {dispensa_estado_label} · Impresiones: {row.print_count}
         {row.last_printed_at ? ` · Última impresión: ${new Date(row.last_printed_at).toLocaleString("es-CL")}` : ""}
       </p>
@@ -818,8 +818,8 @@ if (loading) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-    <dt className="text-[11px] uppercase text-gray-500">{label}</dt>
-    <dd className="font-medium text-gray-900">{value}</dd>
+    <dt className="text-[11px] uppercase text-muted-foreground">{label}</dt>
+    <dd className="font-medium text-foreground">{value}</dd>
     </div>
     );
 }

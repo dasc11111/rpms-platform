@@ -65,7 +65,7 @@ const URGENCY_STYLES: Record<DecisionUrgency, string> = {
   inmediata: "bg-red-600 text-white",
   prioritaria: "bg-orange-500 text-white",
   programada: "bg-blue-500 text-white",
-  informativa: "bg-slate-400 text-white",
+  informativa: "bg-muted-foreground/20 text-white",
 };
 
 const URGENCY_LABELS: Record<DecisionUrgency, string> = {
@@ -204,7 +204,7 @@ export default function PetCtAlertsApp({ equipment }: { equipment: Equipment[] }
             <a href={a.href} className="block space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <SeverityBadge severity={a.severity} />
-                <span className="text-xs px-1.5 py-0.5 rounded bg-slate-800 text-white">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-foreground/10 text-white">
                   {TYPE_LABELS[a.type] ?? a.type}
                 </span>
                 {a.test_code && <span className="font-mono text-xs text-muted-foreground">{a.test_code}</span>}

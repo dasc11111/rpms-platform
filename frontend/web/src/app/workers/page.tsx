@@ -42,7 +42,7 @@ interface Worker {
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: ComponentType<LucideProps> }> = {
   active:     { label: "Activo",     color: "bg-green-100 text-green-800",  icon: CheckCircle2 },
   suspended:  { label: "Suspendido", color: "bg-amber-100 text-amber-800",  icon: Clock },
-  inactive:   { label: "Inactivo",   color: "bg-gray-100 text-gray-600",    icon: X },
+  inactive:   { label: "Inactivo",   color: "bg-muted text-muted-foreground",    icon: X },
 };
 
 const CATEGORY_OPTIONS = ["A", "B"];

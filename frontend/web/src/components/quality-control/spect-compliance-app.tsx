@@ -50,7 +50,7 @@ const STATUS_COLORS: Record<ComplianceStatus, { badge: string; dot: string }> = 
   overdue: { badge: "bg-red-100 text-red-800 border-red-200", dot: "bg-red-500" },
   upcoming: { badge: "bg-yellow-100 text-yellow-800 border-yellow-200", dot: "bg-yellow-400" },
   ok: { badge: "bg-green-100 text-green-800 border-green-200", dot: "bg-green-500" },
-  sin_registro: { badge: "bg-slate-100 text-slate-600 border-slate-200", dot: "bg-slate-400" },
+  sin_registro: { badge: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground/20" },
 };
 
 const STATUS_LABELS: Record<ComplianceStatus, string> = {
@@ -154,7 +154,7 @@ export function SpectComplianceApp({ instruments }: Props) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <SummaryTile label="Vencidas" count={summary.overdue} color="text-red-700" bg="bg-red-50" />
             <SummaryTile label="Próximas" count={summary.upcoming} color="text-yellow-700" bg="bg-yellow-50" />
-            <SummaryTile label="Sin registro" count={summary.sin_registro} color="text-slate-600" bg="bg-slate-50" />
+            <SummaryTile label="Sin registro" count={summary.sin_registro} color="text-muted-foreground" bg="bg-muted/50" />
             <SummaryTile label="Vigentes" count={summary.ok} color="text-green-700" bg="bg-green-50" />
           </div>
 

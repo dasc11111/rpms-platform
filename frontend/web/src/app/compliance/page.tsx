@@ -36,7 +36,7 @@ const STATUS_CFG: Record<string, { label:string; color:string; icon: React.Compo
   compliant:       { label:"Cumple",          color:"bg-emerald-100 text-emerald-700 border-emerald-200", icon: CheckCircle2 },
   partial:         { label:"Cumpl. parcial",  color:"bg-amber-100  text-amber-700  border-amber-200",    icon: AlertCircle  },
   non_compliant:   { label:"No cumple",       color:"bg-red-100    text-red-700    border-red-200",      icon: XCircle      },
-  not_applicable:  { label:"No aplica",       color:"bg-gray-100   text-gray-500   border-gray-200",     icon: Shield       },
+  not_applicable:  { label:"No aplica",       color:"bg-muted   text-muted-foreground   border-border",     icon: Shield       },
   pending_review:  { label:"Pend. revisión",  color:"bg-blue-100   text-blue-700   border-blue-200",     icon: Clock        },
 };
 const SEVERITY_CFG: Record<string, { label:string; color:string }> = {
@@ -57,7 +57,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 const REGULATION_COLOR: Record<string, string> = {
   "NS-06.0":"bg-blue-100 text-blue-700", "DS 3/1985":"bg-purple-100 text-purple-700",
-  "IAEA":"bg-teal-100 text-teal-700", "DS 594/1999":"bg-gray-100 text-gray-700",
+  "IAEA":"bg-teal-100 text-teal-700", "DS 594/1999":"bg-muted text-foreground/80",
 };
 
 function fmtDate(d: string | null) {

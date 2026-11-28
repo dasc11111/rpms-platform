@@ -71,7 +71,7 @@ interface DeadlineInfo {
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-  draft:     { label: "Borrador",    cls: "bg-gray-100 text-gray-700 border-gray-300",   icon: Edit3 },
+  draft:     { label: "Borrador",    cls: "bg-muted text-foreground/80 border-border",   icon: Edit3 },
   ready:     { label: "Listo",       cls: "bg-blue-100 text-blue-700 border-blue-300",   icon: CheckCircle2 },
   submitted: { label: "Enviado CCHEN",cls: "bg-green-100 text-green-700 border-green-300", icon: Send },
   overdue:   { label: "Vencido",     cls: "bg-red-100 text-red-700 border-red-300",      icon: AlertCircle },

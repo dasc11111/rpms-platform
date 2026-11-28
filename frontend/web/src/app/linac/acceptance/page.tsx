@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, Plus } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 const STATUS_MAP: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
   aprobado:    { label: "Aprobado",    cls: "bg-green-100 text-green-700",  icon: <CheckCircle size={12} /> },
@@ -105,8 +105,8 @@ export default function LinacAcceptancePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pruebas de Aceptación LINAC</h1>
-          <p className="text-sm text-gray-500 mt-1">Resultados de pruebas de aceptación por protocolo — IAEA TRS-430 · AAPM TG-142</p>
+          <h1 className="text-2xl font-bold text-foreground">Pruebas de Aceptación LINAC</h1>
+          <p className="text-sm text-muted-foreground mt-1">Resultados de pruebas de aceptación por protocolo — IAEA TRS-430 · AAPM TG-142</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
@@ -116,52 +116,52 @@ export default function LinacAcceptancePage() {
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Total pruebas</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Total pruebas</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Aprobadas</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Aprobadas</p>
           <p className="text-2xl font-bold text-green-600">{stats.aprobados}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Pendientes</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Pendientes</p>
           <p className="text-2xl font-bold text-yellow-600">{stats.pendientes}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500">Rechazadas</p>
+        <div className="bg-background rounded-xl border border-border p-4">
+          <p className="text-xs text-muted-foreground">Rechazadas</p>
           <p className="text-2xl font-bold text-red-600">{stats.rechazados}</p>
         </div>
       </div>
 
       {/* Progress bar */}
       {stats.total > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-background rounded-xl border border-border p-4">
           <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-gray-700">Progreso de Aceptación</span>
-            <span className="font-bold text-gray-900">{pct}%</span>
+            <span className="font-medium text-foreground/80">Progreso de Aceptación</span>
+            <span className="font-bold text-foreground">{pct}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className="w-full bg-muted rounded-full h-3">
             <div className={`${pctColor} h-3 rounded-full transition-all`} style={{ width: `${pct}%` }} />
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-background rounded-xl border border-border p-4 flex flex-wrap gap-3 items-end">
         <div className="min-w-[100px]">
-          <label className="block text-xs text-gray-500 mb-1">LINAC ID</label>
+          <label className="block text-xs text-muted-foreground mb-1">LINAC ID</label>
           <input value={linacId} onChange={e => setLinacId(e.target.value)} className={inp} />
         </div>
         <div className="min-w-[180px]">
-          <label className="block text-xs text-gray-500 mb-1">Categoría</label>
+          <label className="block text-xs text-muted-foreground mb-1">Categoría</label>
           <select value={category} onChange={e => setCategory(e.target.value)} className={inp}>
             <option value="">Todas</option>
             {LINAC_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div className="min-w-[140px]">
-          <label className="block text-xs text-gray-500 mb-1">Estado</label>
+          <label className="block text-xs text-muted-foreground mb-1">Estado</label>
           <select value={status} onChange={e => setStatus(e.target.value)} className={inp}>
             <option value="">Todos</option>
             {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
@@ -187,20 +187,20 @@ export default function LinacAcceptancePage() {
               { key: "notes", label: "Notas", ph: "" },
             ].map(f => (
               <div key={f.key}>
-                <label className="block text-xs text-gray-600 mb-1">{f.label}</label>
+                <label className="block text-xs text-muted-foreground mb-1">{f.label}</label>
                 <input type={f.type ?? "text"} value={(form as Record<string, string>)[f.key]}
                   onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.ph} className={inp} />
               </div>
             ))}
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Categoría *</label>
+              <label className="block text-xs text-muted-foreground mb-1">Categoría *</label>
               <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className={inp}>
                 {LINAC_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Estado</label>
+              <label className="block text-xs text-muted-foreground mb-1">Estado</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} className={inp}>
                 {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
@@ -210,45 +210,45 @@ export default function LinacAcceptancePage() {
           <div className="flex gap-3">
             <button onClick={handleCreate} disabled={saving}
               className="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
-            <button onClick={() => setShowForm(false)} className="bg-white border border-gray-200 px-5 py-2 rounded-lg text-sm text-gray-600">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="bg-background border border-border px-5 py-2 rounded-lg text-sm text-muted-foreground">Cancelar</button>
           </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-background rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Prueba</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categoría</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Esperado</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Medido</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tolerancia</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Resultado</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Prueba</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Categoría</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Esperado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Medido</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Tolerancia</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Resultado</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase">Estado</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Cargando…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Cargando…</td></tr>
               ) : items.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Sin pruebas de aceptación registradas</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">Sin pruebas de aceptación registradas</td></tr>
               ) : items.map(item => {
-                const st = STATUS_MAP[item.status] ?? { label: item.status, cls: "bg-gray-100 text-gray-600", icon: null };
+                const st = STATUS_MAP[item.status] ?? { label: item.status, cls: "bg-muted text-muted-foreground", icon: null };
                 return (
                   <>
-                    <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setExpanded(expanded === item.id ? null : item.id)}>
-                      <td className="px-4 py-3 font-medium text-gray-900">{item.test_name}</td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{item.category}</td>
+                    <tr key={item.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setExpanded(expanded === item.id ? null : item.id)}>
+                      <td className="px-4 py-3 font-medium text-foreground">{item.test_name}</td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{item.category}</td>
                       <td className="px-4 py-3 font-mono text-sm">{item.expected_value || "—"}</td>
                       <td className="px-4 py-3 font-mono text-sm">{item.measured_value || "—"}</td>
                       <td className="px-4 py-3 text-xs text-orange-700 font-medium">{item.tolerance || "—"}</td>
                       <td className="px-4 py-3">
                         {item.result ? (
-                          <span className={`text-xs font-bold ${item.result.toUpperCase() === "PASS" ? "text-green-600" : item.result.toUpperCase() === "FAIL" ? "text-red-600" : "text-gray-600"}`}>
+                          <span className={`text-xs font-bold ${item.result.toUpperCase() === "PASS" ? "text-green-600" : item.result.toUpperCase() === "FAIL" ? "text-red-600" : "text-muted-foreground"}`}>
                             {item.result.toUpperCase()}
                           </span>
                         ) : "—"}
@@ -258,18 +258,18 @@ export default function LinacAcceptancePage() {
                           {st.icon}{st.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-400">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {expanded === item.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </td>
                     </tr>
                     {expanded === item.id && (
-                      <tr key={`exp-${item.id}`} className="bg-gray-50">
+                      <tr key={`exp-${item.id}`} className="bg-muted/50">
                         <td colSpan={8} className="px-6 py-3">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            {item.protocol_reference && <div><span className="text-xs text-gray-500">Protocolo</span><p className="font-medium text-xs">{item.protocol_reference}</p></div>}
-                            {item.responsible && <div><span className="text-xs text-gray-500">Responsable</span><p>{item.responsible}</p></div>}
-                            {item.test_date && <div><span className="text-xs text-gray-500">Fecha</span><p>{new Date(item.test_date).toLocaleDateString("es-CL")}</p></div>}
-                            {item.notes && <div className="col-span-2"><span className="text-xs text-gray-500">Notas</span><p>{item.notes}</p></div>}
+                            {item.protocol_reference && <div><span className="text-xs text-muted-foreground">Protocolo</span><p className="font-medium text-xs">{item.protocol_reference}</p></div>}
+                            {item.responsible && <div><span className="text-xs text-muted-foreground">Responsable</span><p>{item.responsible}</p></div>}
+                            {item.test_date && <div><span className="text-xs text-muted-foreground">Fecha</span><p>{new Date(item.test_date).toLocaleDateString("es-CL")}</p></div>}
+                            {item.notes && <div className="col-span-2"><span className="text-xs text-muted-foreground">Notas</span><p>{item.notes}</p></div>}
                           </div>
                         </td>
                       </tr>

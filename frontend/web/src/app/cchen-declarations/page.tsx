@@ -60,7 +60,7 @@ function formatDate(d?: string) {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.ElementType }> = {
-  draft:        { label: "Borrador",       cls: "bg-gray-100 text-gray-700",    icon: Clock },
+  draft:        { label: "Borrador",       cls: "bg-muted text-foreground/80",    icon: Clock },
   ready:        { label: "Lista p/ envío", cls: "bg-blue-100 text-blue-700",    icon: FileText },
   submitted:    { label: "Enviada",        cls: "bg-purple-100 text-purple-700", icon: CheckCircle2 },
   acknowledged: { label: "Acusada CCHEN",  cls: "bg-green-100 text-green-700",  icon: CheckCircle2 },
@@ -68,7 +68,7 @@ const STATUS_CONFIG: Record<string, { label: string; cls: string; icon: React.El
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const { label, cls, icon: Icon } = STATUS_CONFIG[status] ?? { label: status, cls: "bg-gray-100 text-gray-600", icon: Clock };
+  const { label, cls, icon: Icon } = STATUS_CONFIG[status] ?? { label: status, cls: "bg-muted text-muted-foreground", icon: Clock };
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}`}>
       <Icon size={11} /> {label}
@@ -80,12 +80,12 @@ function DoseStat({ label, value, unit = "mSv", highlight = false }: {
   label: string; value?: number | null; unit?: string; highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-lg p-3 text-center ${highlight && value && value > 0 ? "bg-orange-50 border border-orange-200" : "bg-gray-50"}`}>
-      <div className={`text-xl font-bold ${highlight && value && value > 0 ? "text-orange-700" : "text-gray-800"}`}>
+    <div className={`rounded-lg p-3 text-center ${highlight && value && value > 0 ? "bg-orange-50 border border-orange-200" : "bg-muted/50"}`}>
+      <div className={`text-xl font-bold ${highlight && value && value > 0 ? "text-orange-700" : "text-foreground"}`}>
         {value != null ? value.toFixed(value >= 10 ? 1 : 2) : "—"}
       </div>
-      <div className="text-xs text-gray-500 leading-tight mt-0.5">{label}</div>
-      <div className="text-xs text-gray-400">{unit}</div>
+      <div className="text-xs text-muted-foreground leading-tight mt-0.5">{label}</div>
+      <div className="text-xs text-muted-foreground">{unit}</div>
     </div>
   );
 }
@@ -93,13 +93,13 @@ function DoseStat({ label, value, unit = "mSv", highlight = false }: {
 function PrintableDeclaration({ decl }: { decl: Declaration }) {
   return (
     <div className="hidden print:block p-8 font-sans text-sm">
-      <div className="text-center mb-6 border-b-2 border-gray-800 pb-4">
-        <div className="text-xs text-gray-500 uppercase tracking-widest">República de Chile</div>
+      <div className="text-center mb-6 border-b-2 border-border pb-4">
+        <div className="text-xs text-muted-foreground uppercase tracking-widest">República de Chile</div>
         <div className="font-bold text-lg">COMISIÓN CHILENA DE ENERGÍA NUCLEAR</div>
         <div className="font-semibold text-base mt-1">
           DECLARACIÓN ANUAL DE DOSIS — AÑO {decl.year}
         </div>
-        <div className="text-xs text-gray-500 mt-1">DS 3/1985 Art. 10 — NS-06.0 §4.4</div>
+        <div className="text-xs text-muted-foreground mt-1">DS 3/1985 Art. 10 — NS-06.0 §4.4</div>
       </div>
 
 
@@ -112,35 +112,35 @@ function PrintableDeclaration({ decl }: { decl: Declaration }) {
 
       <table className="w-full border-collapse text-sm mb-4">
         <tbody>
-          <tr className="border-b border-gray-200">
-            <td className="py-1 pr-4 font-semibold text-gray-600 w-48">Establecimiento:</td>
+          <tr className="border-b border-border">
+            <td className="py-1 pr-4 font-semibold text-muted-foreground w-48">Establecimiento:</td>
             <td className="py-1">{decl.establishment_name}</td>
           </tr>
-          <tr className="border-b border-gray-200">
-            <td className="py-1 pr-4 font-semibold text-gray-600">RUT:</td>
+          <tr className="border-b border-border">
+            <td className="py-1 pr-4 font-semibold text-muted-foreground">RUT:</td>
             <td className="py-1">{decl.establishment_rut ?? "—"}</td>
           </tr>
-          <tr className="border-b border-gray-200">
-            <td className="py-1 pr-4 font-semibold text-gray-600">Licencia CCHEN:</td>
+          <tr className="border-b border-border">
+            <td className="py-1 pr-4 font-semibold text-muted-foreground">Licencia CCHEN:</td>
             <td className="py-1">{decl.cchen_license ?? "—"}</td>
           </tr>
-          <tr className="border-b border-gray-200">
-            <td className="py-1 pr-4 font-semibold text-gray-600">Encargado PR:</td>
+          <tr className="border-b border-border">
+            <td className="py-1 pr-4 font-semibold text-muted-foreground">Encargado PR:</td>
             <td className="py-1">{decl.responsible_pr} — {decl.responsible_title}</td>
           </tr>
-          <tr className="border-b border-gray-200">
-            <td className="py-1 pr-4 font-semibold text-gray-600">RUT Encargado:</td>
+          <tr className="border-b border-border">
+            <td className="py-1 pr-4 font-semibold text-muted-foreground">RUT Encargado:</td>
             <td className="py-1">{decl.responsible_rut ?? "—"}</td>
           </tr>
         </tbody>
       </table>
 
-      <div className="font-semibold text-gray-700 mb-2 mt-4">I. DOTACIÓN POE</div>
-      <table className="w-full border-collapse border border-gray-300 text-sm mb-4">
+      <div className="font-semibold text-foreground/80 mb-2 mt-4">I. DOTACIÓN POE</div>
+      <table className="w-full border-collapse border border-border text-sm mb-4">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 p-2 text-left">Parámetro</th>
-            <th className="border border-gray-300 p-2 text-right">Valor</th>
+          <tr className="bg-muted">
+            <th className="border border-border p-2 text-left">Parámetro</th>
+            <th className="border border-border p-2 text-right">Valor</th>
           </tr>
         </thead>
         <tbody>
@@ -153,21 +153,21 @@ function PrintableDeclaration({ decl }: { decl: Declaration }) {
             ["POE aprendices", decl.poe_apprentice, "personas"],
             ["Áreas de trabajo con radiación", decl.work_areas_count, "áreas"],
           ].map(([lbl, val, unit]) => (
-            <tr key={String(lbl)} className="border-b border-gray-200">
-              <td className="border border-gray-300 p-2">{lbl}</td>
-              <td className="border border-gray-300 p-2 text-right font-medium">{val ?? "—"} {unit}</td>
+            <tr key={String(lbl)} className="border-b border-border">
+              <td className="border border-border p-2">{lbl}</td>
+              <td className="border border-border p-2 text-right font-medium">{val ?? "—"} {unit}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="font-semibold text-gray-700 mb-2">II. DOSIS RECIBIDAS</div>
-      <table className="w-full border-collapse border border-gray-300 text-sm mb-4">
+      <div className="font-semibold text-foreground/80 mb-2">II. DOSIS RECIBIDAS</div>
+      <table className="w-full border-collapse border border-border text-sm mb-4">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 p-2 text-left">Parámetro</th>
-            <th className="border border-gray-300 p-2 text-right">Valor</th>
-            <th className="border border-gray-300 p-2 text-right">Límite reglamentario</th>
+          <tr className="bg-muted">
+            <th className="border border-border p-2 text-left">Parámetro</th>
+            <th className="border border-border p-2 text-right">Valor</th>
+            <th className="border border-border p-2 text-right">Límite reglamentario</th>
           </tr>
         </thead>
         <tbody>
@@ -180,48 +180,48 @@ function PrintableDeclaration({ decl }: { decl: Declaration }) {
             ["POE con dosis > 15 mSv (NI)", decl.poe_over_15mSv, "personas", "0 (nivel de intervención)"],
             ["POE con dosis > 20 mSv (Límite)", decl.poe_over_20mSv, "personas", "0 (DS 3/1985 Art. 8)"],
           ].map(([lbl, val, unit, limit]) => (
-            <tr key={String(lbl)} className="border-b border-gray-200">
-              <td className="border border-gray-300 p-2">{lbl}</td>
-              <td className="border border-gray-300 p-2 text-right font-medium">{val ?? "—"} {unit}</td>
-              <td className="border border-gray-300 p-2 text-right text-gray-500 text-xs">{limit}</td>
+            <tr key={String(lbl)} className="border-b border-border">
+              <td className="border border-border p-2">{lbl}</td>
+              <td className="border border-border p-2 text-right font-medium">{val ?? "—"} {unit}</td>
+              <td className="border border-border p-2 text-right text-muted-foreground text-xs">{limit}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="font-semibold text-gray-700 mb-2">III. INCIDENTES RADIOLÓGICOS</div>
-      <table className="w-full border-collapse border border-gray-300 text-sm mb-4">
+      <div className="font-semibold text-foreground/80 mb-2">III. INCIDENTES RADIOLÓGICOS</div>
+      <table className="w-full border-collapse border border-border text-sm mb-4">
         <tbody>
           <tr>
-            <td className="border border-gray-300 p-2">N° de incidentes radiológicos en el período</td>
-            <td className="border border-gray-300 p-2 text-right font-bold">{decl.incidents_count ?? 0}</td>
+            <td className="border border-border p-2">N° de incidentes radiológicos en el período</td>
+            <td className="border border-border p-2 text-right font-bold">{decl.incidents_count ?? 0}</td>
           </tr>
         </tbody>
       </table>
 
-      <div className="font-semibold text-gray-700 mb-2">IV. FUENTES DE RADIACIÓN UTILIZADAS</div>
-      <div className="border border-gray-300 p-3 text-sm mb-4">{decl.radiation_sources ?? "No especificadas"}</div>
+      <div className="font-semibold text-foreground/80 mb-2">IV. FUENTES DE RADIACIÓN UTILIZADAS</div>
+      <div className="border border-border p-3 text-sm mb-4">{decl.radiation_sources ?? "No especificadas"}</div>
 
       {decl.observations && (
         <>
-          <div className="font-semibold text-gray-700 mb-2">V. OBSERVACIONES</div>
-          <div className="border border-gray-300 p-3 text-sm mb-6">{decl.observations}</div>
+          <div className="font-semibold text-foreground/80 mb-2">V. OBSERVACIONES</div>
+          <div className="border border-border p-3 text-sm mb-6">{decl.observations}</div>
         </>
       )}
 
       <div className="mt-8 grid grid-cols-2 gap-8">
-        <div className="text-center border-t border-gray-800 pt-2">
-          <div className="text-xs text-gray-500">Encargado de Protección Radiológica</div>
+        <div className="text-center border-t border-border pt-2">
+          <div className="text-xs text-muted-foreground">Encargado de Protección Radiológica</div>
           <div className="text-xs font-semibold mt-1">{decl.responsible_pr}</div>
-          <div className="text-xs text-gray-500">{decl.responsible_rut}</div>
+          <div className="text-xs text-muted-foreground">{decl.responsible_rut}</div>
         </div>
-        <div className="text-center border-t border-gray-800 pt-2">
-          <div className="text-xs text-gray-500">Director del Establecimiento</div>
-          <div className="text-xs text-gray-400 mt-6">Firma y timbre</div>
+        <div className="text-center border-t border-border pt-2">
+          <div className="text-xs text-muted-foreground">Director del Establecimiento</div>
+          <div className="text-xs text-muted-foreground mt-6">Firma y timbre</div>
         </div>
       </div>
 
-      <div className="text-center text-xs text-gray-400 mt-8">
+      <div className="text-center text-xs text-muted-foreground mt-8">
         {decl.establishment_name} — Declaración Anual Dosis {decl.year} — {decl.declaration_code}
       </div>
     </div>
@@ -244,17 +244,17 @@ function DeclarationCard({
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border-l-4 ${
+    <div className={`bg-background rounded-xl shadow-sm border-l-4 ${
       decl.status === "acknowledged" ? "border-green-500" :
       decl.status === "submitted" ? "border-purple-500" :
-      decl.status === "ready" ? "border-blue-500" : "border-gray-300"
+      decl.status === "ready" ? "border-blue-500" : "border-border"
     }`}>
       <PrintableDeclaration decl={decl} />
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-xs font-mono text-gray-400">{decl.declaration_code}</span>
+              <span className="text-xs font-mono text-muted-foreground">{decl.declaration_code}</span>
               <StatusBadge status={decl.status} />
               {decl.cchen_receipt_number && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
@@ -262,11 +262,11 @@ function DeclarationCard({
                 </span>
               )}
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">
+            <h3 className="font-bold text-foreground text-lg">
               Declaración Anual Dosis — Año {decl.year}
             </h3>
-            <p className="text-sm text-gray-600">{decl.establishment_name}</p>
-            <div className="flex flex-wrap gap-3 text-xs text-gray-500 mt-1">
+            <p className="text-sm text-muted-foreground">{decl.establishment_name}</p>
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
               {decl.responsible_pr && (
                 <span className="flex items-center gap-1">
                   <User size={11} /> {decl.responsible_pr}
@@ -286,13 +286,13 @@ function DeclarationCard({
           </div>
           <div className="flex items-center gap-1 ml-2 flex-shrink-0">
             <RowPdfActions module="cchen-declarations" ownerType="cchen_declaration" ownerId={String(decl.id)} size="xs" />
-            <button onClick={handlePrint} className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Imprimir declaración">
+            <button onClick={handlePrint} className="p-1.5 text-muted-foreground hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Imprimir declaración">
               <Printer size={15} />
             </button>
-            <button onClick={() => onEdit(decl)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+            <button onClick={() => onEdit(decl)} className="p-1.5 text-muted-foreground hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
               <Edit2 size={15} />
             </button>
-            <button onClick={() => setExpanded(!expanded)} className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+            <button onClick={() => setExpanded(!expanded)} className="p-1.5 text-muted-foreground hover:text-foreground/80 rounded-lg hover:bg-muted transition-colors">
               {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           </div>
@@ -321,10 +321,10 @@ function DeclarationCard({
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-100 p-4 space-y-5">
+        <div className="border-t border-border/50 p-4 space-y-5">
           {/* Dose summary grid */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
               <Radiation size={12} /> Resumen de Dosis {decl.year}
             </h4>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -339,7 +339,7 @@ function DeclarationCard({
 
           {/* POE breakdown */}
           <div>
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
               <Users size={12} /> Composición POE
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
@@ -353,9 +353,9 @@ function DeclarationCard({
                 ["Incidentes", decl.incidents_count, ""],
                 ["Áreas c/ radiación", decl.work_areas_count, ""],
               ].map(([lbl, val]) => (
-                <div key={String(lbl)} className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-xs text-gray-500">{lbl}</div>
-                  <div className="font-bold text-gray-900">{val ?? "—"}</div>
+                <div key={String(lbl)} className="bg-muted/50 rounded-lg p-2">
+                  <div className="text-xs text-muted-foreground">{lbl}</div>
+                  <div className="font-bold text-foreground">{val ?? "—"}</div>
                 </div>
               ))}
             </div>
@@ -364,16 +364,16 @@ function DeclarationCard({
           {/* Radiation sources */}
           {decl.radiation_sources && (
             <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1">
                 <Shield size={12} /> Fuentes de Radiación Utilizadas
               </h4>
-              <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{decl.radiation_sources}</p>
+              <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">{decl.radiation_sources}</p>
             </div>
           )}
 
           {/* License info */}
           {decl.cchen_license && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Shield size={14} className="text-blue-500" />
               Licencia CCHEN: <span className="font-medium">{decl.cchen_license}</span>
             </div>
@@ -451,47 +451,47 @@ function DeclarationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-bold text-gray-900">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background border-b border-border/50 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-bold text-foreground">
             {decl?.id ? "Editar Declaración" : "Nueva Declaración CCHEN"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground/80 text-2xl leading-none">×</button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Año de declaración</label>
-              <input type="number" required className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Año de declaración</label>
+              <input type="number" required className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.year as number} onChange={e => set("year", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Estado</label>
-              <select className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Estado</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.status as string} onChange={e => set("status", e.target.value)}>
                 {Object.entries(STATUS_CONFIG).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Licencia CCHEN</label>
-            <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Licencia CCHEN</label>
+            <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               placeholder="CCHEN-LIC-YYYY-MN-XXXX" value={form.cchen_license as string} onChange={e => set("cchen_license", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Encargado PR</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Encargado PR</label>
+              <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.responsible_pr as string} onChange={e => set("responsible_pr", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">RUT Encargado</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">RUT Encargado</label>
+              <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.responsible_rut as string} onChange={e => set("responsible_rut", e.target.value)} />
             </div>
           </div>
-          <div className="border-t border-gray-100 pt-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dotación POE</p>
+          <div className="border-t border-border/50 pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Dotación POE</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 ["total_poe","Total POE"],["total_poe_dosimetry","Con dosimetría"],
@@ -499,15 +499,15 @@ function DeclarationModal({
                 ["poe_pregnant","Embarazadas"],["poe_apprentice","Aprendices"],
               ].map(([k, lbl]) => (
                 <div key={k}>
-                  <label className="block text-xs text-gray-600 mb-1">{lbl}</label>
-                  <input type="number" min="0" className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  <label className="block text-xs text-muted-foreground mb-1">{lbl}</label>
+                  <input type="number" min="0" className="w-full border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={form[k] as string} onChange={e => set(k, e.target.value)} />
                 </div>
               ))}
             </div>
           </div>
-          <div className="border-t border-gray-100 pt-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Dosis</p>
+          <div className="border-t border-border/50 pt-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Dosis</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 ["avg_dose_mSv","Prom. (mSv)"],["max_dose_mSv","Máx. (mSv)"],
@@ -516,8 +516,8 @@ function DeclarationModal({
                 ["poe_over_15mSv","POE > 15 mSv (NI)"],
               ].map(([k, lbl]) => (
                 <div key={k}>
-                  <label className="block text-xs text-gray-600 mb-1">{lbl}</label>
-                  <input type="number" step="any" min="0" className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  <label className="block text-xs text-muted-foreground mb-1">{lbl}</label>
+                  <input type="number" step="any" min="0" className="w-full border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                     value={form[k] as string} onChange={e => set(k, e.target.value)} />
                 </div>
               ))}
@@ -525,43 +525,43 @@ function DeclarationModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">N° Incidentes</label>
-              <input type="number" min="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">N° Incidentes</label>
+              <input type="number" min="0" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.incidents_count as string} onChange={e => set("incidents_count", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Áreas c/ radiación</label>
-              <input type="number" min="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Áreas c/ radiación</label>
+              <input type="number" min="0" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.work_areas_count as string} onChange={e => set("work_areas_count", e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Fuentes de radiación</label>
-            <textarea rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Fuentes de radiación</label>
+            <textarea rows={2} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={form.radiation_sources as string} onChange={e => set("radiation_sources", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha de envío a CCHEN</label>
-              <input type="date" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">Fecha de envío a CCHEN</label>
+              <input type="date" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={form.submission_date as string} onChange={e => set("submission_date", e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">N° Recibo CCHEN</label>
-              <input className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              <label className="block text-xs font-semibold text-muted-foreground mb-1">N° Recibo CCHEN</label>
+              <input className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 placeholder="REC-CCHEN-YYYY-XXXX" value={form.cchen_receipt_number as string} onChange={e => set("cchen_receipt_number", e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Observaciones</label>
-            <textarea rows={3} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            <label className="block text-xs font-semibold text-muted-foreground mb-1">Observaciones</label>
+            <textarea rows={3} className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={form.observations as string} onChange={e => set("observations", e.target.value)} />
           </div>
           <div className="flex gap-3 pt-2">
             <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-xl font-semibold hover:bg-blue-700 transition-colors">
               {decl?.id ? "Guardar Cambios" : "Crear Declaración"}
             </button>
-            <button type="button" onClick={onClose} className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl font-semibold hover:bg-gray-200 transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 bg-muted text-foreground/80 py-2 rounded-xl font-semibold hover:bg-muted transition-colors">
               Cancelar
             </button>
           </div>
@@ -604,14 +604,14 @@ export default function CCHENDeclarationsPage() {
       <div className="print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <FileText className="text-blue-600" size={26} />
               Declaración Anual de Dosis — CCHEN
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">DS 3/1985 Art. 10 — NS-06.0 §4.4 — Plazo reglamentario: 31 de marzo</p>
+            <p className="text-sm text-muted-foreground mt-0.5">DS 3/1985 Art. 10 — NS-06.0 §4.4 — Plazo reglamentario: 31 de marzo</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={load} className="p-2 text-gray-500 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Actualizar">
+            <button onClick={load} className="p-2 text-muted-foreground hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors" title="Actualizar">
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             </button>
             <button
@@ -642,31 +642,31 @@ export default function CCHENDeclarationsPage() {
         {/* KPI tiles */}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide">Total Declaraciones</div>
-              <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-xs text-gray-400 mt-1">Historial completo</div>
+            <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+              <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide">Total Declaraciones</div>
+              <div className="text-3xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-xs text-muted-foreground mt-1">Historial completo</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+            <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+              <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
                 <CheckCircle2 size={12} className="text-green-600" /> Acusadas CCHEN
               </div>
               <div className="text-3xl font-bold text-green-600">{stats.acknowledged}</div>
-              <div className="text-xs text-gray-400 mt-1">Con recibo oficial</div>
+              <div className="text-xs text-muted-foreground mt-1">Con recibo oficial</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+            <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+              <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
                 <BarChart2 size={12} className="text-purple-600" /> Enviadas CCHEN
               </div>
               <div className="text-3xl font-bold text-purple-600">{stats.submitted}</div>
-              <div className="text-xs text-gray-400 mt-1">Pendientes acuse</div>
+              <div className="text-xs text-muted-foreground mt-1">Pendientes acuse</div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <div className="text-xs text-gray-500 mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
+            <div className="bg-background rounded-xl border border-border/50 shadow-sm p-4">
+              <div className="text-xs text-muted-foreground mb-1 font-medium uppercase tracking-wide flex items-center gap-1">
                 <Clock size={12} className="text-yellow-600" /> En Preparación
               </div>
-              <div className={`text-3xl font-bold ${stats.pending > 0 ? "text-yellow-600" : "text-gray-900"}`}>{stats.pending}</div>
-              <div className="text-xs text-gray-400 mt-1">Borrador / lista p/ envío</div>
+              <div className={`text-3xl font-bold ${stats.pending > 0 ? "text-yellow-600" : "text-foreground"}`}>{stats.pending}</div>
+              <div className="text-xs text-muted-foreground mt-1">Borrador / lista p/ envío</div>
             </div>
           </div>
         )}
@@ -674,11 +674,11 @@ export default function CCHENDeclarationsPage() {
 
       {/* Declarations list */}
       {loading ? (
-        <div className="flex justify-center py-16 text-gray-400 print:hidden">
+        <div className="flex justify-center py-16 text-muted-foreground print:hidden">
           <RefreshCw size={28} className="animate-spin" />
         </div>
       ) : declarations.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 print:hidden">
+        <div className="text-center py-16 text-muted-foreground print:hidden">
           <FileText size={48} className="mx-auto mb-3 opacity-30" />
           <p className="font-medium">No hay declaraciones registradas</p>
         </div>
@@ -695,7 +695,7 @@ export default function CCHENDeclarationsPage() {
         </div>
       )}
 
-      <div className="text-center text-xs text-gray-400 pt-4 border-t border-gray-100 print:hidden">
+      <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border/50 print:hidden">
         DS 3/1985 Art. 10 — NS-06.0 §4.4 — Declaración Anual de Dosis ante CCHEN · Plazo: 31 marzo de cada año
       </div>
 

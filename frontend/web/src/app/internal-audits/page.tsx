@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   planned:     { label: "Planificada",   color: "text-blue-700",   bg: "bg-blue-100" },
   in_progress: { label: "En curso",      color: "text-yellow-700", bg: "bg-yellow-100" },
   completed:   { label: "Completada",    color: "text-green-700",  bg: "bg-green-100" },
-  cancelled:   { label: "Cancelada",     color: "text-gray-700",   bg: "bg-gray-100" },
+  cancelled:   { label: "Cancelada",     color: "text-foreground/80",   bg: "bg-muted" },
 };
 
 const RESULT_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -97,7 +97,7 @@ function daysUntil(d: string): number {
 
 function FindingRow({ finding, onUpdate }: { finding: Finding; onUpdate: () => void }) {
   const sev = SEVERITY_CONFIG[finding.severity] ?? SEVERITY_CONFIG.observation;
-  const st = FINDING_STATUS[finding.status] ?? { label: finding.status, color: "text-gray-600" };
+  const st = FINDING_STATUS[finding.status] ?? { label: finding.status, color: "text-muted-foreground" };
   const isOverdue = finding.due_date && finding.status === "open" && new Date(finding.due_date) < new Date();
 
   async function closeFind() {
@@ -110,16 +110,16 @@ function FindingRow({ finding, onUpdate }: { finding: Finding; onUpdate: () => v
   }
 
   return (
-    <div className={`bg-white rounded-lg border p-3 ${isOverdue ? "border-red-300" : "border-gray-200"}`}>
+    <div className={`bg-background rounded-lg border p-3 ${isOverdue ? "border-red-300" : "border-border"}`}>
       <div className="flex items-start gap-3">
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${sev.bg} ${sev.color}`}>
           {sev.label}
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="text-xs font-mono text-gray-500">{finding.finding_code}</span>
+            <span className="text-xs font-mono text-muted-foreground">{finding.finding_code}</span>
             {finding.category && (
-              <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                 {CATEGORY_LABELS[finding.category] ?? finding.category}
               </span>
             )}
@@ -127,16 +127,16 @@ function FindingRow({ finding, onUpdate }: { finding: Finding; onUpdate: () => v
               {isOverdue ? "⚠ Vencido" : st.label}
             </span>
           </div>
-          <p className="text-sm text-gray-800">{finding.description}</p>
+          <p className="text-sm text-foreground">{finding.description}</p>
           {finding.reference_norm && (
-            <p className="text-xs text-gray-500 mt-1">Ref: {finding.reference_norm}</p>
+            <p className="text-xs text-muted-foreground mt-1">Ref: {finding.reference_norm}</p>
           )}
           {finding.corrective_action && (
             <p className="text-xs text-blue-700 mt-1 bg-blue-50 rounded px-2 py-1">
               <strong>AC:</strong> {finding.corrective_action}
             </p>
           )}
-          <div className="flex items-center gap-4 mt-1.5 text-xs text-gray-500">
+          <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
             {finding.responsible && <span>👤 {finding.responsible}</span>}
             {finding.due_date && <span>📅 Plazo: {formatDate(finding.due_date)}</span>}
             {finding.completion_date && <span>✅ Cierre: {formatDate(finding.completion_date)}</span>}
@@ -190,7 +190,7 @@ function AuditCard({ audit, onRefresh }: { audit: AuditPlan; onRefresh: () => vo
   }
 
   return (
-    <div className={`bg-white rounded-xl border-2 shadow-sm ${isCritical ? "border-orange-300" : "border-gray-200"}`}>
+    <div className={`bg-background rounded-xl border-2 shadow-sm ${isCritical ? "border-orange-300" : "border-border"}`}>
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-blue-50 flex-shrink-0">
@@ -198,7 +198,7 @@ function AuditCard({ audit, onRefresh }: { audit: AuditPlan; onRefresh: () => vo
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-xs font-mono text-gray-400">{audit.audit_code}</span>
+              <span className="text-xs font-mono text-muted-foreground">{audit.audit_code}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.bg} ${st.color}`}>{st.label}</span>
               {result && (
                 <span className={`text-xs flex items-center gap-1 font-medium ${result.color}`}>
@@ -206,12 +206,12 @@ function AuditCard({ audit, onRefresh }: { audit: AuditPlan; onRefresh: () => vo
                 </span>
               )}
             </div>
-            <h3 className="font-semibold text-gray-900 text-sm">{audit.title}</h3>
+            <h3 className="font-semibold text-foreground text-sm">{audit.title}</h3>
             {audit.area_audited && (
-              <p className="text-xs text-gray-500 mt-0.5">{audit.area_audited}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{audit.area_audited}</p>
             )}
           </div>
-          <button onClick={toggleExpand} className="text-gray-400 hover:text-gray-600">
+          <button onClick={toggleExpand} className="text-muted-foreground hover:text-muted-foreground">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -219,18 +219,18 @@ function AuditCard({ audit, onRefresh }: { audit: AuditPlan; onRefresh: () => vo
         {/* Key row */}
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div>
-            <span className="text-gray-400 block">Auditor líder</span>
-            <span className="text-gray-700 font-medium">{audit.lead_auditor ?? "—"}</span>
+            <span className="text-muted-foreground block">Auditor líder</span>
+            <span className="text-foreground/80 font-medium">{audit.lead_auditor ?? "—"}</span>
           </div>
           <div>
-            <span className="text-gray-400 block">Fecha planificada</span>
-            <span className={`font-medium ${daysToPlanned !== null && daysToPlanned < 7 && audit.status === "planned" ? "text-orange-600" : "text-gray-700"}`}>
+            <span className="text-muted-foreground block">Fecha planificada</span>
+            <span className={`font-medium ${daysToPlanned !== null && daysToPlanned < 7 && audit.status === "planned" ? "text-orange-600" : "text-foreground/80"}`}>
               {formatDate(audit.planned_date)}
             </span>
           </div>
           <div>
-            <span className="text-gray-400 block">Hallazgos</span>
-            <span className={`font-medium ${Number(audit.open_findings) > 0 ? "text-orange-600" : "text-gray-700"}`}>
+            <span className="text-muted-foreground block">Hallazgos</span>
+            <span className={`font-medium ${Number(audit.open_findings) > 0 ? "text-orange-600" : "text-foreground/80"}`}>
               {Number(audit.open_findings)} abiertos / {Number(audit.total_findings)} total
             </span>
           </div>
@@ -247,25 +247,25 @@ function AuditCard({ audit, onRefresh }: { audit: AuditPlan; onRefresh: () => vo
 
       {/* Expanded */}
       {expanded && (
-        <div className="border-t border-gray-100 p-4 space-y-3">
+        <div className="border-t border-border/50 p-4 space-y-3">
           {audit.scope && (
             <div>
-              <span className="text-xs font-semibold text-gray-700 block mb-1">Alcance</span>
-              <p className="text-xs text-gray-600 bg-gray-50 rounded p-2">{audit.scope}</p>
+              <span className="text-xs font-semibold text-foreground/80 block mb-1">Alcance</span>
+              <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">{audit.scope}</p>
             </div>
           )}
           {audit.summary && (
             <div>
-              <span className="text-xs font-semibold text-gray-700 block mb-1">Resumen</span>
-              <p className="text-xs text-gray-600 bg-gray-50 rounded p-2">{audit.summary}</p>
+              <span className="text-xs font-semibold text-foreground/80 block mb-1">Resumen</span>
+              <p className="text-xs text-muted-foreground bg-muted/50 rounded p-2">{audit.summary}</p>
             </div>
           )}
           <div>
-            <span className="text-xs font-semibold text-gray-700 block mb-2">Hallazgos</span>
+            <span className="text-xs font-semibold text-foreground/80 block mb-2">Hallazgos</span>
             {loadingFindings ? (
-              <p className="text-xs text-gray-400">Cargando...</p>
+              <p className="text-xs text-muted-foreground">Cargando...</p>
             ) : findings.length === 0 ? (
-              <p className="text-xs text-gray-400">Sin hallazgos registrados</p>
+              <p className="text-xs text-muted-foreground">Sin hallazgos registrados</p>
             ) : (
               <div className="space-y-2">
                 {findings.map(f => (
@@ -343,11 +343,11 @@ export default function InternalAuditsPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <ClipboardCheck className="w-7 h-7 text-blue-600" />
             Auditorías Internas de PR
           </h1>
-          <p className="text-sm text-gray-500 mt-1">DS 3/1985 Arts. 55–57 · CCHEN NS-05.0 §11 · IAEA GSR Part 3 Req. 31</p>
+          <p className="text-sm text-muted-foreground mt-1">DS 3/1985 Arts. 55–57 · CCHEN NS-05.0 §11 · IAEA GSR Part 3 Req. 31</p>
         </div>
         <button
           onClick={() => setShowNewModal(true)}
@@ -369,7 +369,7 @@ export default function InternalAuditsPage() {
           <div key={t.label} className={`${t.bg} rounded-xl p-3`}>
             <div className={`${t.color} mb-1`}>{t.icon}</div>
             <div className={`text-2xl font-bold ${t.color}`}>{t.value}</div>
-            <div className="text-xs text-gray-600">{t.label}</div>
+            <div className="text-xs text-muted-foreground">{t.label}</div>
           </div>
         ))}
       </div>
@@ -377,7 +377,7 @@ export default function InternalAuditsPage() {
       {/* Filter */}
       <div className="flex gap-3">
         <select
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
         >
@@ -386,12 +386,12 @@ export default function InternalAuditsPage() {
             <option key={v} value={v}>{c.label}</option>
           ))}
         </select>
-        <span className="text-sm text-gray-500 self-center">{filtered.length} auditoría(s)</span>
+        <span className="text-sm text-muted-foreground self-center">{filtered.length} auditoría(s)</span>
       </div>
 
       {/* Audit cards */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Cargando auditorías...</div>
+        <div className="text-center py-12 text-muted-foreground">Cargando auditorías...</div>
       ) : (
         <div className="space-y-4">
           {filtered.map(a => (
@@ -401,8 +401,8 @@ export default function InternalAuditsPage() {
       )}
 
       {/* Regulatory framework */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-600 space-y-1">
-        <p className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      <div className="bg-muted/50 border border-border rounded-xl p-4 text-xs text-muted-foreground space-y-1">
+        <p className="font-semibold text-foreground mb-2 flex items-center gap-2">
           <FileText className="w-4 h-4" /> Marco regulatorio aplicable
         </p>
         <p>• <strong>DS 3/1985 Arts. 55–57:</strong> Obligación de auditorías periódicas del programa de PR</p>
@@ -415,16 +415,16 @@ export default function InternalAuditsPage() {
       {/* New audit modal */}
       {showNewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-lg">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="font-bold text-gray-900">Nueva auditoría interna</h3>
-              <button onClick={() => setShowNewModal(false)}><X className="w-5 h-5 text-gray-400" /></button>
+              <h3 className="font-bold text-foreground">Nueva auditoría interna</h3>
+              <button onClick={() => setShowNewModal(false)}><X className="w-5 h-5 text-muted-foreground" /></button>
             </div>
             <form onSubmit={createAudit} className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Tipo</label>
-                  <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-xs font-medium text-foreground/80 mb-1">Tipo</label>
+                  <select className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newForm.audit_type} onChange={e => setNewForm(f => ({ ...f, audit_type: e.target.value }))}>
                     <option value="annual_full">Anual completa</option>
                     <option value="targeted">Focalizada</option>
@@ -433,38 +433,38 @@ export default function InternalAuditsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Fecha planificada</label>
-                  <input type="date" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-xs font-medium text-foreground/80 mb-1">Fecha planificada</label>
+                  <input type="date" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newForm.planned_date} onChange={e => setNewForm(f => ({ ...f, planned_date: e.target.value }))} />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Título *</label>
-                <input type="text" required className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Título *</label>
+                <input type="text" required className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="ej. Auditoría Anual Protección Radiológica 2026"
                   value={newForm.title} onChange={e => setNewForm(f => ({ ...f, title: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Área auditada</label>
-                <input type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Área auditada</label>
+                <input type="text" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="ej. Medicina Nuclear, Radioterapia, PET-CT"
                   value={newForm.area_audited} onChange={e => setNewForm(f => ({ ...f, area_audited: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Alcance</label>
-                <textarea className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows={2}
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Alcance</label>
+                <textarea className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows={2}
                   placeholder="Descripción del alcance de la auditoría..."
                   value={newForm.scope} onChange={e => setNewForm(f => ({ ...f, scope: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Auditor líder</label>
-                <input type="text" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-medium text-foreground/80 mb-1">Auditor líder</label>
+                <input type="text" className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Nombre del auditor líder"
                   value={newForm.lead_auditor} onChange={e => setNewForm(f => ({ ...f, lead_auditor: e.target.value }))} />
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setShowNewModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                  className="flex-1 px-4 py-2 border border-border rounded-lg text-sm text-foreground/80 hover:bg-muted/50">
                   Cancelar
                 </button>
                 <button type="submit" disabled={saving}

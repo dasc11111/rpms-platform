@@ -29,7 +29,7 @@ const ANNUAL_LIMIT: Record<string, number> = {
   "EXTREMIDAD": 500, // Extremidades
 };
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ function doseColor(total: number, tipo: string | null): string {
   if (pct >= 100) return "text-red-700 font-bold";
   if (pct >= 75) return "text-orange-600 font-semibold";
   if (pct >= 50) return "text-yellow-600 font-semibold";
-  return "text-gray-800";
+  return "text-foreground";
 }
 
 function doseBarColor(pct: number): string {
@@ -141,7 +141,7 @@ export default function DosimetryAnnualSummaryPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* Header */}
@@ -151,8 +151,8 @@ export default function DosimetryAnnualSummaryPage() {
               <Activity className="h-6 w-6 text-blue-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Resumen Anual Dosimetría</h1>
-              <p className="text-sm text-gray-500">
+              <h1 className="text-2xl font-bold text-foreground">Resumen Anual Dosimetría</h1>
+              <p className="text-sm text-muted-foreground">
                 Dosis acumulada por trabajador, tipo y trimestre — reporte oficial
               </p>
             </div>
@@ -168,47 +168,47 @@ export default function DosimetryAnnualSummaryPage() {
 
         {/* KPI tiles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trabajadores POE</p>
-            <p className="mt-1 text-2xl font-bold text-gray-800 flex items-center gap-1.5">
+          <div className="bg-background rounded-xl border border-border p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Trabajadores POE</p>
+            <p className="mt-1 text-2xl font-bold text-foreground flex items-center gap-1.5">
               <Users className="h-5 w-5 text-blue-500" />{workers}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">año {yearFilter}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">año {yearFilter}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dosis media C.E.</p>
-            <p className="mt-1 text-2xl font-bold text-gray-800 flex items-center gap-1.5">
+          <div className="bg-background rounded-xl border border-border p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dosis media C.E.</p>
+            <p className="mt-1 text-2xl font-bold text-foreground flex items-center gap-1.5">
               <TrendingUp className="h-5 w-5 text-indigo-500" />{avgDoseCE.toFixed(2)} mSv
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">límite 20 mSv/año</p>
+            <p className="text-xs text-muted-foreground mt-0.5">límite 20 mSv/año</p>
           </div>
-          <div className={`rounded-xl border p-4 ${nearLimit > 0 ? "bg-orange-50 border-orange-200" : "bg-white border-gray-200"}`}>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Cerca del límite ≥75%</p>
-            <p className={`mt-1 text-2xl font-bold flex items-center gap-1.5 ${nearLimit > 0 ? "text-orange-700" : "text-gray-800"}`}>
+          <div className={`rounded-xl border p-4 ${nearLimit > 0 ? "bg-orange-50 border-orange-200" : "bg-background border-border"}`}>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cerca del límite ≥75%</p>
+            <p className={`mt-1 text-2xl font-bold flex items-center gap-1.5 ${nearLimit > 0 ? "text-orange-700" : "text-foreground"}`}>
               <AlertTriangle className={`h-5 w-5 ${nearLimit > 0 ? "text-orange-500" : "text-gray-300"}`} />
               {nearLimit}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">trabajadores</p>
+            <p className="text-xs text-muted-foreground mt-0.5">trabajadores</p>
           </div>
-          <div className={`rounded-xl border p-4 ${exceeded > 0 ? "bg-red-50 border-red-200" : "bg-white border-gray-200"}`}>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Superaron límite</p>
-            <p className={`mt-1 text-2xl font-bold flex items-center gap-1.5 ${exceeded > 0 ? "text-red-700" : "text-gray-800"}`}>
+          <div className={`rounded-xl border p-4 ${exceeded > 0 ? "bg-red-50 border-red-200" : "bg-background border-border"}`}>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Superaron límite</p>
+            <p className={`mt-1 text-2xl font-bold flex items-center gap-1.5 ${exceeded > 0 ? "text-red-700" : "text-foreground"}`}>
               <AlertTriangle className={`h-5 w-5 ${exceeded > 0 ? "text-red-500" : "text-gray-300"}`} />
               {exceeded}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">trabajadores</p>
+            <p className="text-xs text-muted-foreground mt-0.5">trabajadores</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4">
+        <div className="bg-background rounded-xl border border-border shadow-sm px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-600">Filtros</span>
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Filtros</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 className={`${inp} pl-9`}
                 placeholder="Nombre, RUN, depto..."
@@ -237,53 +237,53 @@ export default function DosimetryAnnualSummaryPage() {
                 type="checkbox"
                 checked={alertOnly}
                 onChange={e => setAlertOnly(e.target.checked)}
-                className="rounded border-gray-300 text-orange-500 focus:ring-orange-300"
+                className="rounded border-border text-orange-500 focus:ring-orange-300"
               />
-              <span className="text-sm text-gray-600">Solo alertas ≥50%</span>
+              <span className="text-sm text-muted-foreground">Solo alertas ≥50%</span>
             </label>
           </div>
         </div>
 
         {/* Table */}
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Cargando resumen anual...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando resumen anual...</div>
         ) : error ? (
           <div className="text-center py-16 text-red-500">{error}</div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-600">{filtered.length} registros</span>
-              <span className="text-xs text-gray-400">Límite C.E.: 20 mSv/año · Extremidades: 500 mSv/año (ICRP-103)</span>
+          <div className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">{filtered.length} registros</span>
+              <span className="text-xs text-muted-foreground">Límite C.E.: 20 mSv/año · Extremidades: 500 mSv/año (ICRP-103)</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+                <thead className="bg-muted/50 border-b border-border/50">
                   <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Nombre</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">RUN</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Departamento</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Tipo</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">T1</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">T2</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">T3</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">T4</th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Total mSv</th>
-                    <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide min-w-[120px]">% Límite</th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Estado</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Nombre</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">RUN</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Departamento</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Tipo</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">T1</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">T2</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">T3</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">T4</th>
+                    <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Total mSv</th>
+                    <th className="px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide min-w-[120px]">% Límite</th>
+                    <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="text-center py-12 text-gray-400">No hay datos con los filtros aplicados.</td>
+                      <td colSpan={11} className="text-center py-12 text-muted-foreground">No hay datos con los filtros aplicados.</td>
                     </tr>
                   ) : filtered.map((r, idx) => {
                     const pct = limitPct(r.total, r.tipod);
                     return (
-                      <tr key={idx} className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 ${pct >= 100 ? "bg-red-50" : pct >= 75 ? "bg-orange-50" : ""}`}>
-                        <td className="px-4 py-2.5 font-medium text-gray-900">{r.nombre}</td>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{r.run ?? "—"}</td>
-                        <td className="px-4 py-2.5 text-gray-600 max-w-[160px] truncate">{r.departamento ?? "—"}</td>
+                      <tr key={idx} className={`border-b border-border/50 last:border-0 hover:bg-muted/50 ${pct >= 100 ? "bg-red-50" : pct >= 75 ? "bg-orange-50" : ""}`}>
+                        <td className="px-4 py-2.5 font-medium text-foreground">{r.nombre}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{r.run ?? "—"}</td>
+                        <td className="px-4 py-2.5 text-muted-foreground max-w-[160px] truncate">{r.departamento ?? "—"}</td>
                         <td className="px-4 py-2.5">
                           <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-1.5 py-0.5 rounded">{r.tipod ?? "—"}</span>
                         </td>
@@ -294,19 +294,19 @@ export default function DosimetryAnnualSummaryPage() {
                         <td className={`px-4 py-2.5 text-right tabular-nums font-semibold ${doseColor(r.total, r.tipod)}`}>{r.total.toFixed(2)}</td>
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-1.5 min-w-[60px]">
+                            <div className="flex-1 bg-muted rounded-full h-1.5 min-w-[60px]">
                               <div
                                 className={`h-1.5 rounded-full ${doseBarColor(pct)}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
-                            <span className={`text-xs tabular-nums w-10 text-right ${pct >= 100 ? "text-red-700 font-bold" : pct >= 75 ? "text-orange-600 font-semibold" : "text-gray-500"}`}>
+                            <span className={`text-xs tabular-nums w-10 text-right ${pct >= 100 ? "text-red-700 font-bold" : pct >= 75 ? "text-orange-600 font-semibold" : "text-muted-foreground"}`}>
                               {pct.toFixed(0)}%
                             </span>
                           </div>
                         </td>
                         <td className="px-4 py-2.5">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${r.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${r.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                             {r.estado}
                           </span>
                         </td>
@@ -320,8 +320,8 @@ export default function DosimetryAnnualSummaryPage() {
         )}
 
         {/* Regulatory footer */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
           <p>
             Decreto Supremo N°3/1985 MINSAL Art. 60-62 — Límites de dosis para trabajadores ocupacionalmente expuestos (20 mSv/año C.E., 500 mSv extremidades).
             ICRP Publication 103 (2007) — Sistema de protección radiológica.

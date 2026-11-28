@@ -47,7 +47,7 @@ const EVENT_CONFIG: Record<string, { label: string; icon: ComponentType<LucidePr
   calibracion:  { label: "Calibración",   icon: CheckCircle2,  color: "bg-green-100 text-green-800" },
   ejercicio:    { label: "Ejercicio/Simulacro", icon: FileText, color: "bg-teal-100 text-teal-800" },
   inspeccion:   { label: "Inspección",    icon: Eye,           color: "bg-indigo-100 text-indigo-800" },
-  otro:         { label: "Otro",           icon: MessageSquare, color: "bg-gray-100 text-gray-700" },
+  otro:         { label: "Otro",           icon: MessageSquare, color: "bg-muted text-foreground/80" },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -259,7 +259,7 @@ export default function LogbookPage() {
           </div>
         ) : filtered.map(entry => {
           const evCfg = EVENT_CONFIG[entry.event_type] ?? EVENT_CONFIG.otro;
-          const stCfg = STATUS_CONFIG[entry.status] ?? { label: entry.status, color: "bg-gray-100 text-gray-700" };
+          const stCfg = STATUS_CONFIG[entry.status] ?? { label: entry.status, color: "bg-muted text-foreground/80" };
           const isExp = expanded === entry.id;
           const followUpOverdue = entry.follow_up_required && entry.follow_up_date &&
             new Date(entry.follow_up_date) < new Date() && entry.status !== "closed";

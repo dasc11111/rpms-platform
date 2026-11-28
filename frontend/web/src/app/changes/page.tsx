@@ -42,7 +42,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;icon:React.ComponentT
   under_review: { label:"En revisión",  color:"bg-amber-100  text-amber-700",  icon:AlertCircle },
   approved:     { label:"Aprobado",     color:"bg-emerald-100 text-emerald-700",icon:CheckCircle2 },
   implementing: { label:"Implementando",color:"bg-blue-100   text-blue-700",   icon:Clock },
-  closed:       { label:"Cerrado",      color:"bg-gray-100   text-gray-500",   icon:CheckCircle2 },
+  closed:       { label:"Cerrado",      color:"bg-muted   text-muted-foreground",   icon:CheckCircle2 },
   rejected:     { label:"Rechazado",    color:"bg-red-100    text-red-700",    icon:XCircle },
 };
 function fmtDate(d: string | null) {
@@ -287,7 +287,7 @@ export default function ChangesPage() {
             { label:"Enviados",     value:st.pending_review, color: st.pending_review>0?"text-blue-600":"" },
             { label:"Aprobados",    value:st.approved,  color:"text-emerald-600" },
             { label:"Implementando",value:st.implementing },
-            { label:"Cerrados",     value:st.closed,    color:"text-gray-500" },
+            { label:"Cerrados",     value:st.closed,    color:"text-muted-foreground" },
             { label:"Rechazados",   value:st.rejected,  color: st.rejected>0?"text-red-600":"" },
             { label:"Notif. CCHEN pendientes", value:st.pending_cchen_notif, color: st.pending_cchen_notif>0?"text-orange-600":"" },
           ].map(k=>(

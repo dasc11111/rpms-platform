@@ -15,14 +15,14 @@
 export default function PetCtPdfViewer({ fileUrl, title }: { fileUrl: string; title?: string }) {
   return (
     <div className="border rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between gap-2 bg-slate-50 px-3 py-2 border-b">
+      <div className="flex items-center justify-between gap-2 bg-muted/50 px-3 py-2 border-b">
         <span className="text-xs font-medium text-foreground truncate">{title ?? "Documento PDF"}</span>
         <a href={fileUrl} target="_blank" rel="noreferrer" className="text-xs text-accent underline whitespace-nowrap">
           Abrir en pestana nueva
         </a>
       </div>
       <iframe src={fileUrl} title={title ?? "Documento PDF"} className="w-full h-[600px] bg-surface" />
-      <p className="text-[11px] text-muted-foreground px-3 py-1 border-t bg-slate-50">
+      <p className="text-[11px] text-muted-foreground px-3 py-1 border-t bg-muted/50">
         Si el documento no se muestra correctamente, use "Abrir en pestana nueva" para verlo con el
         visor de PDF del navegador o descargarlo.
       </p>

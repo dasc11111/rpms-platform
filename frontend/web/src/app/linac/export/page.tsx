@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Download, FileText, Table2, FileJson } from "lucide-react";
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 const DATASETS = [
   {
@@ -100,33 +100,33 @@ export default function LinacExportPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Exportar Datos LINAC</h1>
-        <p className="text-sm text-gray-500 mt-1">Exportación de registros de control de calidad, comisionamiento y datos de haz</p>
+        <h1 className="text-2xl font-bold text-foreground">Exportar Datos LINAC</h1>
+        <p className="text-sm text-muted-foreground mt-1">Exportación de registros de control de calidad, comisionamiento y datos de haz</p>
       </div>
 
       {/* Dataset selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 text-sm">1. Seleccionar conjunto de datos</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground text-sm">1. Seleccionar conjunto de datos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {DATASETS.map(ds => (
             <button key={ds.id} onClick={() => setDataset(ds.id)}
               className={`flex items-start gap-3 p-3 rounded-lg border text-left transition ${
-                dataset === ds.id ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:border-gray-300"
+                dataset === ds.id ? "border-indigo-400 bg-indigo-50" : "border-border hover:border-border"
               }`}>
               <div className="mt-0.5">{ds.icon}</div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold ${dataset === ds.id ? "text-indigo-800" : "text-gray-800"}`}>{ds.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{ds.desc}</p>
+                <p className={`text-sm font-semibold ${dataset === ds.id ? "text-indigo-800" : "text-foreground"}`}>{ds.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{ds.desc}</p>
               </div>
             </button>
           ))}
         </div>
         {selectedDs && (
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 font-semibold mb-1">Campos incluidos:</p>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground font-semibold mb-1">Campos incluidos:</p>
             <div className="flex flex-wrap gap-1">
               {selectedDs.fields.map(f => (
-                <span key={f} className="bg-white border border-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded font-mono">{f}</span>
+                <span key={f} className="bg-background border border-border text-muted-foreground text-xs px-2 py-0.5 rounded font-mono">{f}</span>
               ))}
             </div>
           </div>
@@ -134,18 +134,18 @@ export default function LinacExportPage() {
       </div>
 
       {/* Format selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 text-sm">2. Seleccionar formato</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground text-sm">2. Seleccionar formato</h2>
         <div className="flex gap-3">
           {FORMATS.map(f => (
             <button key={f.id} onClick={() => setFormat(f.id)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg border flex-1 transition ${
-                format === f.id ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:border-gray-300"
+                format === f.id ? "border-indigo-400 bg-indigo-50" : "border-border hover:border-border"
               }`}>
-              <span className={format === f.id ? "text-indigo-600" : "text-gray-500"}>{f.icon}</span>
+              <span className={format === f.id ? "text-indigo-600" : "text-muted-foreground"}>{f.icon}</span>
               <div>
-                <p className={`text-sm font-semibold ${format === f.id ? "text-indigo-800" : "text-gray-800"}`}>{f.label}</p>
-                <p className="text-xs text-gray-500">{f.desc}</p>
+                <p className={`text-sm font-semibold ${format === f.id ? "text-indigo-800" : "text-foreground"}`}>{f.label}</p>
+                <p className="text-xs text-muted-foreground">{f.desc}</p>
               </div>
             </button>
           ))}
@@ -153,23 +153,23 @@ export default function LinacExportPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <h2 className="font-semibold text-gray-800 text-sm">3. Filtros opcionales</h2>
+      <div className="bg-background rounded-xl border border-border p-5 space-y-4">
+        <h2 className="font-semibold text-foreground text-sm">3. Filtros opcionales</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">LINAC ID</label>
+            <label className="block text-xs text-muted-foreground mb-1">LINAC ID</label>
             <input value={linacId} onChange={e => setLinacId(e.target.value)} placeholder="Todos" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Categoría</label>
+            <label className="block text-xs text-muted-foreground mb-1">Categoría</label>
             <input value={category} onChange={e => setCategory(e.target.value)} placeholder="Todas" className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Desde</label>
+            <label className="block text-xs text-muted-foreground mb-1">Desde</label>
             <input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} className={inp} />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+            <label className="block text-xs text-muted-foreground mb-1">Hasta</label>
             <input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} className={inp} />
           </div>
         </div>

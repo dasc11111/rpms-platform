@@ -335,7 +335,7 @@ function SurveillanceCard({ rec, onStatusChange }: {
               <button
                 onClick={handleClose}
                 disabled={closing}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-foreground/80 border border-border hover:bg-muted disabled:opacity-50"
               >
                 <CheckCircle2 className="w-3 h-3" /> Cerrar vigilancia
               </button>

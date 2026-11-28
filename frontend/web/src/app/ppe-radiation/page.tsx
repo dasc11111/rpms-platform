@@ -93,18 +93,18 @@ function ConditionBadge({ c }: { c: string }) {
     needs_inspection: "bg-orange-100 text-orange-700",
     damaged: "bg-red-100 text-red-700",
   };
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[c] ?? "bg-slate-100 text-slate-600"}`}>{CONDITION_LABEL[c] ?? c}</span>;
+  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[c] ?? "bg-muted text-muted-foreground"}`}>{CONDITION_LABEL[c] ?? c}</span>;
 }
 
 function StatusBadge({ s }: { s: string }) {
   const map: Record<string, string> = {
     active: "bg-green-100 text-green-700",
     in_repair: "bg-orange-100 text-orange-700",
-    decommissioned: "bg-slate-100 text-slate-500",
+    decommissioned: "bg-muted text-muted-foreground",
     lost: "bg-red-100 text-red-600",
   };
   const lbl: Record<string, string> = { active: "Activo", in_repair: "En Reparación", decommissioned: "Dado de Baja", lost: "Extraviado" };
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[s] ?? "bg-slate-100"}`}>{lbl[s] ?? s}</span>;
+  return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${map[s] ?? "bg-muted"}`}>{lbl[s] ?? s}</span>;
 }
 
 function InspBadge({ result }: { result: string | null }) {
@@ -165,13 +165,13 @@ function InspectionPanel({ itemId }: { itemId: number }) {
     setData(d.inspections ?? []);
   }
 
-  const inp = "w-full border border-slate-200 rounded px-2 py-1.5 text-sm";
-  const sel = inp + " bg-white";
+  const inp = "w-full border border-border rounded px-2 py-1.5 text-sm";
+  const sel = inp + " bg-background";
 
   return (
-    <div className="border-t border-slate-100 p-4 bg-slate-50">
+    <div className="border-t border-border p-4 bg-muted/50">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Historial de Inspecciones</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Historial de Inspecciones</p>
         <button onClick={()=>setShowForm(v=>!v)} className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100">
           <Plus size={11}/> Registrar inspección
         </button>
@@ -181,11 +181,11 @@ function InspectionPanel({ itemId }: { itemId: number }) {
         <div className="mb-4 border border-blue-200 rounded-lg p-3 bg-blue-50 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-slate-600 block mb-1">Fecha</label>
+              <label className="text-xs text-muted-foreground block mb-1">Fecha</label>
               <input type="date" className={inp} value={form.inspection_date} onChange={e=>setForm(f=>({...f,inspection_date:e.target.value}))}/>
             </div>
             <div>
-              <label className="text-xs text-slate-600 block mb-1">Método</label>
+              <label className="text-xs text-muted-foreground block mb-1">Método</label>
               <select className={sel} value={form.method} onChange={e=>setForm(f=>({...f,method:e.target.value}))}>
                 <option value="visual">Visual</option>
                 <option value="fluoroscopy">Fluoroscopía</option>
@@ -193,7 +193,7 @@ function InspectionPanel({ itemId }: { itemId: number }) {
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-600 block mb-1">Resultado</label>
+              <label className="text-xs text-muted-foreground block mb-1">Resultado</label>
               <select className={sel} value={form.result} onChange={e=>setForm(f=>({...f,result:e.target.value}))}>
                 <option value="pass">Aprobado</option>
                 <option value="conditional">Condicional</option>
@@ -201,19 +201,19 @@ function InspectionPanel({ itemId }: { itemId: number }) {
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-600 block mb-1">Inspector</label>
+              <label className="text-xs text-muted-foreground block mb-1">Inspector</label>
               <input className={inp} value={form.inspector} onChange={e=>setForm(f=>({...f,inspector:e.target.value}))}/>
             </div>
             <div className="col-span-2">
-              <label className="text-xs text-slate-600 block mb-1">Hallazgos</label>
+              <label className="text-xs text-muted-foreground block mb-1">Hallazgos</label>
               <textarea className={inp} rows={2} value={form.findings} onChange={e=>setForm(f=>({...f,findings:e.target.value}))} placeholder="Descripción de hallazgos (Si no hay: 'Sin hallazgos')"/>
             </div>
             <div className="col-span-2">
-              <label className="text-xs text-slate-600 block mb-1">Acción tomada</label>
+              <label className="text-xs text-muted-foreground block mb-1">Acción tomada</label>
               <input className={inp} value={form.action_taken} onChange={e=>setForm(f=>({...f,action_taken:e.target.value}))} placeholder="Acción correctiva o preventiva"/>
             </div>
             <div>
-              <label className="text-xs text-slate-600 block mb-1">Próxima inspección</label>
+              <label className="text-xs text-muted-foreground block mb-1">Próxima inspección</label>
               <input type="date" className={inp} value={form.next_due} onChange={e=>setForm(f=>({...f,next_due:e.target.value}))}/>
             </div>
           </div>
@@ -221,30 +221,30 @@ function InspectionPanel({ itemId }: { itemId: number }) {
             <button onClick={saveInspection} disabled={saving} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
               {saving ? <RefreshCw size={12} className="animate-spin"/> : <CheckCircle size={12}/>} Guardar
             </button>
-            <button onClick={()=>setShowForm(false)} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg hover:bg-white">Cancelar</button>
+            <button onClick={()=>setShowForm(false)} className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-background">Cancelar</button>
           </div>
         </div>
       )}
 
       {data === null ? (
-        <p className="text-xs text-slate-400 flex items-center gap-1"><RefreshCw size={10} className="animate-spin"/> Cargando...</p>
+        <p className="text-xs text-muted-foreground flex items-center gap-1"><RefreshCw size={10} className="animate-spin"/> Cargando...</p>
       ) : data.length === 0 ? (
-        <p className="text-xs text-slate-400">Sin inspecciones registradas</p>
+        <p className="text-xs text-muted-foreground">Sin inspecciones registradas</p>
       ) : (
         <div className="space-y-2">
           {data.map(insp => (
-            <div key={insp.id} className="bg-white rounded-lg border border-slate-100 p-3">
+            <div key={insp.id} className="bg-background rounded-lg border border-border p-3">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-xs font-medium text-slate-700">{fmt(insp.inspection_date)}</span>
+                <span className="text-xs font-medium text-foreground/80">{fmt(insp.inspection_date)}</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-slate-400">{insp.method === "visual" ? "Visual" : insp.method === "fluoroscopy" ? "Fluoroscopía" : "Visual + Fluoroscopía"}</span>
+                  <span className="text-xs text-muted-foreground">{insp.method === "visual" ? "Visual" : insp.method === "fluoroscopy" ? "Fluoroscopía" : "Visual + Fluoroscopía"}</span>
                   <InspBadge result={insp.result}/>
                 </div>
               </div>
-              <p className="text-xs text-slate-600">{insp.inspector}</p>
-              {insp.findings && <p className="text-xs text-slate-700 mt-1 italic">"{insp.findings}"</p>}
+              <p className="text-xs text-muted-foreground">{insp.inspector}</p>
+              {insp.findings && <p className="text-xs text-foreground/80 mt-1 italic">"{insp.findings}"</p>}
               {insp.action_taken && <p className="text-xs text-blue-600 mt-0.5">↳ {insp.action_taken}</p>}
-              {insp.next_due && <p className="text-xs text-slate-400 mt-0.5">Próxima: {fmt(insp.next_due)}</p>}
+              {insp.next_due && <p className="text-xs text-muted-foreground mt-0.5">Próxima: {fmt(insp.next_due)}</p>}
             </div>
           ))}
         </div>
@@ -264,23 +264,23 @@ function PPECard({ item, onRefresh }: { item: PPEItem; onRefresh: () => void }) 
   }
 
   return (
-    <div className={`bg-white rounded-xl border-l-4 ${borderColor(item)} shadow-sm border border-slate-100 overflow-hidden`}>
+    <div className={`bg-background rounded-xl border-l-4 ${borderColor(item)} shadow-sm border border-border overflow-hidden`}>
       {/* Header */}
       <div className="p-4 cursor-pointer" onClick={()=>setOpen(o=>!o)}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="inline-flex items-center gap-1 text-xs text-slate-500">{TYPE_ICON[item.ppe_type]}{TYPE_LABEL[item.ppe_type] ?? item.ppe_type}</span>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">{TYPE_ICON[item.ppe_type]}{TYPE_LABEL[item.ppe_type] ?? item.ppe_type}</span>
               <StatusBadge s={item.status}/>
               <ConditionBadge c={item.condition}/>
               {item.fluoroscopy_tested && <span className="text-xs text-purple-600 font-medium">📡 Fluo.</span>}
             </div>
-            <p className="font-medium text-slate-800 text-sm leading-snug">{item.description}</p>
+            <p className="font-medium text-foreground text-sm leading-snug">{item.description}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
-              <span className="text-xs font-mono text-slate-400">{item.ppe_code}</span>
-              {item.lead_equivalent && <span className="text-xs text-slate-500">{item.lead_equivalent} mm Pb</span>}
-              {item.assigned_to_name && <span className="inline-flex items-center gap-1 text-xs text-slate-500"><User size={10}/>{item.assigned_to_name}</span>}
-              {item.location && <span className="inline-flex items-center gap-1 text-xs text-slate-400"><MapPin size={10}/>{item.location}</span>}
+              <span className="text-xs font-mono text-muted-foreground">{item.ppe_code}</span>
+              {item.lead_equivalent && <span className="text-xs text-muted-foreground">{item.lead_equivalent} mm Pb</span>}
+              {item.assigned_to_name && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><User size={10}/>{item.assigned_to_name}</span>}
+              {item.location && <span className="inline-flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={10}/>{item.location}</span>}
             </div>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <InspDueChip days={item.days_to_inspection}/>
@@ -288,7 +288,7 @@ function PPECard({ item, onRefresh }: { item: PPEItem; onRefresh: () => void }) 
               <InspBadge result={item.inspection_result}/>
             </div>
           </div>
-          <button className="text-slate-400 hover:text-slate-600 mt-1 flex-shrink-0">
+          <button className="text-muted-foreground hover:text-muted-foreground mt-1 flex-shrink-0">
             {open ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
           </button>
         </div>
@@ -312,53 +312,53 @@ function PPECard({ item, onRefresh }: { item: PPEItem; onRefresh: () => void }) 
 
       {/* Expanded detail */}
       {open && (
-        <div className="border-t border-slate-100">
+        <div className="border-t border-border">
           <div className="p-4 space-y-4">
             {/* Info grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
               {item.brand && (
-                <div className="bg-slate-50 rounded-lg p-2">
-                  <p className="text-slate-400 mb-0.5">Marca / Modelo</p>
-                  <p className="font-medium text-slate-700">{item.brand}{item.model ? ` / ${item.model}` : ""}</p>
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-muted-foreground mb-0.5">Marca / Modelo</p>
+                  <p className="font-medium text-foreground/80">{item.brand}{item.model ? ` / ${item.model}` : ""}</p>
                 </div>
               )}
               {item.serial_number && (
-                <div className="bg-slate-50 rounded-lg p-2">
-                  <p className="text-slate-400 mb-0.5">N° Serie</p>
-                  <p className="font-mono font-medium text-slate-700">{item.serial_number}</p>
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-muted-foreground mb-0.5">N° Serie</p>
+                  <p className="font-mono font-medium text-foreground/80">{item.serial_number}</p>
                 </div>
               )}
               {item.size_category && (
-                <div className="bg-slate-50 rounded-lg p-2">
-                  <p className="text-slate-400 mb-0.5">Talla</p>
-                  <p className="font-medium text-slate-700">{item.size_category}</p>
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-muted-foreground mb-0.5">Talla</p>
+                  <p className="font-medium text-foreground/80">{item.size_category}</p>
                 </div>
               )}
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-slate-400 mb-0.5">Fecha compra</p>
-                <p className="font-medium text-slate-700">{fmt(item.purchase_date)}</p>
+              <div className="bg-muted/50 rounded-lg p-2">
+                <p className="text-muted-foreground mb-0.5">Fecha compra</p>
+                <p className="font-medium text-foreground/80">{fmt(item.purchase_date)}</p>
               </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-slate-400 mb-0.5">Vida útil esperada</p>
-                <p className="font-medium text-slate-700">{item.expected_life_years ?? "—"} años</p>
+              <div className="bg-muted/50 rounded-lg p-2">
+                <p className="text-muted-foreground mb-0.5">Vida útil esperada</p>
+                <p className="font-medium text-foreground/80">{item.expected_life_years ?? "—"} años</p>
               </div>
-              <div className="bg-slate-50 rounded-lg p-2">
-                <p className="text-slate-400 mb-0.5">Asignado a</p>
-                <p className="font-medium text-slate-700">{item.assigned_to_name ?? "Sin asignar"}</p>
-                {item.assigned_date && <p className="text-slate-400 mt-0.5">desde {fmt(item.assigned_date)}</p>}
+              <div className="bg-muted/50 rounded-lg p-2">
+                <p className="text-muted-foreground mb-0.5">Asignado a</p>
+                <p className="font-medium text-foreground/80">{item.assigned_to_name ?? "Sin asignar"}</p>
+                {item.assigned_date && <p className="text-muted-foreground mt-0.5">desde {fmt(item.assigned_date)}</p>}
               </div>
             </div>
 
             {/* Inspection summary */}
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className={`rounded-lg p-2 ${(item.days_to_inspection ?? 999) < 0 ? "bg-red-50" : "bg-slate-50"}`}>
-                <p className="text-slate-400 mb-0.5">Última inspección</p>
-                <p className="font-medium text-slate-700">{fmt(item.last_inspection_date)}</p>
+              <div className={`rounded-lg p-2 ${(item.days_to_inspection ?? 999) < 0 ? "bg-red-50" : "bg-muted/50"}`}>
+                <p className="text-muted-foreground mb-0.5">Última inspección</p>
+                <p className="font-medium text-foreground/80">{fmt(item.last_inspection_date)}</p>
                 <InspBadge result={item.inspection_result}/>
               </div>
-              <div className={`rounded-lg p-2 ${(item.days_to_inspection ?? 999) < 0 ? "bg-red-50" : (item.days_to_inspection ?? 999) <= 90 ? "bg-orange-50" : "bg-slate-50"}`}>
-                <p className="text-slate-400 mb-0.5">Próxima inspección</p>
-                <p className="font-medium text-slate-700">{fmt(item.next_inspection_date)}</p>
+              <div className={`rounded-lg p-2 ${(item.days_to_inspection ?? 999) < 0 ? "bg-red-50" : (item.days_to_inspection ?? 999) <= 90 ? "bg-orange-50" : "bg-muted/50"}`}>
+                <p className="text-muted-foreground mb-0.5">Próxima inspección</p>
+                <p className="font-medium text-foreground/80">{fmt(item.next_inspection_date)}</p>
                 <InspDueChip days={item.days_to_inspection}/>
               </div>
             </div>
@@ -394,7 +394,7 @@ function PPECard({ item, onRefresh }: { item: PPEItem; onRefresh: () => void }) 
                   <CheckCircle size={12}/> Retorno de reparación
                 </button>
               )}
-              <button onClick={()=>quickStatus("decommissioned")} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-slate-50 text-slate-600 hover:bg-slate-100 ml-auto">
+              <button onClick={()=>quickStatus("decommissioned")} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-muted/50 text-muted-foreground hover:bg-muted ml-auto">
                 <Archive size={12}/> Dar de baja
               </button>
             </div>
@@ -427,51 +427,51 @@ function PPEModal({ onClose, onSave }: { onClose: () => void; onSave: () => void
     setSaving(false); onSave(); onClose();
   }
 
-  const inp = "w-full border border-slate-200 rounded px-3 py-1.5 text-sm";
-  const sel = inp + " bg-white";
+  const inp = "w-full border border-border rounded px-3 py-1.5 text-sm";
+  const sel = inp + " bg-background";
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-800">Registrar EPP Radiológico</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><XCircle size={20}/></button>
+      <div className="bg-background rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="font-semibold text-foreground">Registrar EPP Radiológico</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground"><XCircle size={20}/></button>
         </div>
         <div className="p-6 grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Tipo EPP</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo EPP</label>
             <select className={sel} value={form.ppe_type} onChange={e=>setForm(f=>({...f,ppe_type:e.target.value}))}>
               {Object.entries(TYPE_LABEL).map(([v,l])=>(<option key={v} value={v}>{l}</option>))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Condición inicial</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Condición inicial</label>
             <select className={sel} value={form.condition} onChange={e=>setForm(f=>({...f,condition:e.target.value}))}>
               {Object.entries(CONDITION_LABEL).map(([v,l])=>(<option key={v} value={v}>{l}</option>))}
             </select>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Descripción *</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Descripción *</label>
             <input className={inp} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Ej: Delantal plomado frontal 0.5 mm Pb — Medicina Nuclear"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Marca</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Marca</label>
             <input className={inp} value={form.brand} onChange={e=>setForm(f=>({...f,brand:e.target.value}))} placeholder="Infab, MAVIG, Barrier..."/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Modelo</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Modelo</label>
             <input className={inp} value={form.model} onChange={e=>setForm(f=>({...f,model:e.target.value}))}/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">N° Serie</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">N° Serie</label>
             <input className={inp} value={form.serial_number} onChange={e=>setForm(f=>({...f,serial_number:e.target.value}))}/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Equivalente Pb (mm)</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Equivalente Pb (mm)</label>
             <input type="number" step="0.05" className={inp} value={form.lead_equivalent} onChange={e=>setForm(f=>({...f,lead_equivalent:e.target.value}))} placeholder="0.50"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Talla</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Talla</label>
             <select className={sel} value={form.size_category} onChange={e=>setForm(f=>({...f,size_category:e.target.value}))}>
               <option value="">Sin talla</option>
               <option value="XS">XS</option><option value="S">S</option>
@@ -479,28 +479,28 @@ function PPEModal({ onClose, onSave }: { onClose: () => void; onSave: () => void
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Ubicación</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Ubicación</label>
             <input className={inp} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="Sala RX 1, Medicina Nuclear..."/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Asignado a</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Asignado a</label>
             <input className={inp} value={form.assigned_to_name} onChange={e=>setForm(f=>({...f,assigned_to_name:e.target.value}))} placeholder="Nombre trabajador"/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Fecha compra</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Fecha compra</label>
             <input type="date" className={inp} value={form.purchase_date} onChange={e=>setForm(f=>({...f,purchase_date:e.target.value}))}/>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Vida útil (años)</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Vida útil (años)</label>
             <input type="number" className={inp} value={form.expected_life_years} onChange={e=>setForm(f=>({...f,expected_life_years:e.target.value}))}/>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs font-medium text-slate-600 mb-1">Notas</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Notas</label>
             <textarea className={inp} rows={2} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/>
           </div>
         </div>
         <div className="flex justify-end gap-2 px-6 pb-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-slate-200 rounded-lg hover:bg-slate-50">Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm border border-border rounded-lg hover:bg-muted/50">Cancelar</button>
           <button onClick={handleSave} disabled={saving || !form.description.trim()} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
             {saving ? <RefreshCw size={14} className="animate-spin"/> : <Plus size={14}/>} Registrar
           </button>
@@ -539,7 +539,7 @@ export default function PPERadiationPage() {
   const overdueInsp = data.filter(i=>(i.days_to_inspection??1)<0 && i.status==="active");
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* Header */}
@@ -547,9 +547,9 @@ export default function PPERadiationPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <ShieldAlert size={22} className="text-blue-600"/>
-              <h1 className="text-xl font-semibold text-slate-800">EPP Radiológico</h1>
+              <h1 className="text-xl font-semibold text-foreground">EPP Radiológico</h1>
             </div>
-            <p className="text-sm text-slate-500">Equipos de Protección Personal — NS-06.0 §4.6 / DS 3/1985 Art. 12</p>
+            <p className="text-sm text-muted-foreground">Equipos de Protección Personal — NS-06.0 §4.6 / DS 3/1985 Art. 12</p>
           </div>
           <button onClick={()=>setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 shadow-sm">
             <Plus size={16}/> Nuevo EPP
@@ -579,45 +579,45 @@ export default function PPERadiationPage() {
         {/* KPIs */}
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total EPP</p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{stats.total}</p>
-              <p className="text-xs text-slate-400 mt-1">{stats.aprons} delantales · {stats.thyroid_collars} tiroideos</p>
+            <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total EPP</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{stats.total}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stats.aprons} delantales · {stats.thyroid_collars} tiroideos</p>
             </div>
-            <div className={`bg-white rounded-xl border p-4 shadow-sm ${stats.in_repair>0?"border-orange-200":"border-slate-100"}`}>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">En reparación</p>
-              <p className={`text-3xl font-bold mt-1 ${stats.in_repair>0?"text-orange-600":"text-slate-800"}`}>{stats.in_repair}</p>
-              <p className="text-xs text-slate-400 mt-1">{stats.active} activos</p>
+            <div className={`bg-background rounded-xl border p-4 shadow-sm ${stats.in_repair>0?"border-orange-200":"border-border"}`}>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">En reparación</p>
+              <p className={`text-3xl font-bold mt-1 ${stats.in_repair>0?"text-orange-600":"text-foreground"}`}>{stats.in_repair}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stats.active} activos</p>
             </div>
-            <div className={`bg-white rounded-xl border p-4 shadow-sm ${stats.inspection_overdue>0?"border-red-200":stats.inspection_due_90d>0?"border-orange-200":"border-slate-100"}`}>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Inspección</p>
-              <p className={`text-3xl font-bold mt-1 ${stats.inspection_overdue>0?"text-red-600":stats.inspection_due_90d>0?"text-orange-600":"text-slate-800"}`}>
+            <div className={`bg-background rounded-xl border p-4 shadow-sm ${stats.inspection_overdue>0?"border-red-200":stats.inspection_due_90d>0?"border-orange-200":"border-border"}`}>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Inspección</p>
+              <p className={`text-3xl font-bold mt-1 ${stats.inspection_overdue>0?"text-red-600":stats.inspection_due_90d>0?"text-orange-600":"text-foreground"}`}>
                 {stats.inspection_overdue > 0 ? stats.inspection_overdue : stats.inspection_due_90d}
               </p>
-              <p className="text-xs text-slate-400 mt-1">{stats.inspection_overdue>0?"vencidas":"vencen en 90d"}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stats.inspection_overdue>0?"vencidas":"vencen en 90d"}</p>
             </div>
-            <div className={`bg-white rounded-xl border p-4 shadow-sm ${stats.needs_attention>0?"border-yellow-200":"border-slate-100"}`}>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Requieren atención</p>
-              <p className={`text-3xl font-bold mt-1 ${stats.needs_attention>0?"text-yellow-600":"text-slate-800"}`}>{stats.needs_attention}</p>
-              <p className="text-xs text-slate-400 mt-1">Dañados o cond. especial</p>
+            <div className={`bg-background rounded-xl border p-4 shadow-sm ${stats.needs_attention>0?"border-yellow-200":"border-border"}`}>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Requieren atención</p>
+              <p className={`text-3xl font-bold mt-1 ${stats.needs_attention>0?"text-yellow-600":"text-foreground"}`}>{stats.needs_attention}</p>
+              <p className="text-xs text-muted-foreground mt-1">Dañados o cond. especial</p>
             </div>
           </div>
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-4 shadow-sm">
           <div className="grid grid-cols-3 gap-3">
-            <select className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>
+            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-background" value={typeFilter} onChange={e=>setTypeFilter(e.target.value)}>
               <option value="">Todos los tipos</option>
               {Object.entries(TYPE_LABEL).map(([v,l])=>(<option key={v} value={v}>{l}</option>))}
             </select>
-            <select className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-background" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
               <option value="">Todos los estados</option>
               <option value="active">Activo</option>
               <option value="in_repair">En Reparación</option>
               <option value="decommissioned">Dado de Baja</option>
             </select>
-            <select className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white" value={condFilter} onChange={e=>setCondFilter(e.target.value)}>
+            <select className="px-3 py-2 text-sm border border-border rounded-lg bg-background" value={condFilter} onChange={e=>setCondFilter(e.target.value)}>
               <option value="">Todas las condiciones</option>
               {Object.entries(CONDITION_LABEL).map(([v,l])=>(<option key={v} value={v}>{l}</option>))}
             </select>
@@ -626,11 +626,11 @@ export default function PPERadiationPage() {
 
         {/* List */}
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-slate-400">
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
             <RefreshCw size={24} className="animate-spin mr-3"/> Cargando EPP...
           </div>
         ) : data.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-100 p-12 text-center text-slate-400 shadow-sm">
+          <div className="bg-background rounded-xl border border-border p-12 text-center text-muted-foreground shadow-sm">
             <ShieldAlert size={36} className="mx-auto mb-3 opacity-30"/>
             <p className="text-sm">Sin equipos de protección registrados</p>
           </div>

@@ -22,7 +22,7 @@ function TrendArrow({ dir }: { dir: string }) {
   return <Minus className="h-4 w-4 text-green-500" />;
 }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300";
 
 export default function LinacTrendsPage() {
   const [data, setData] = useState<TrendData | null>(null);
@@ -45,31 +45,31 @@ export default function LinacTrendsPage() {
   const valRange = maxVal - minVal || 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-indigo-100"><TrendingUp className="h-6 w-6 text-indigo-700" /></div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Tendencias CC LINAC</h1>
-              <p className="text-sm text-gray-500">Análisis estadístico y detección de violaciones de control</p>
+              <h1 className="text-2xl font-bold text-foreground">Tendencias CC LINAC</h1>
+              <p className="text-sm text-muted-foreground">Análisis estadístico y detección de violaciones de control</p>
             </div>
           </div>
-          <button onClick={() => fetchData()} disabled={loading}><RefreshCw className={`h-5 w-5 text-gray-400 ${loading ? "animate-spin" : ""}`} /></button>
+          <button onClick={() => fetchData()} disabled={loading}><RefreshCw className={`h-5 w-5 text-muted-foreground ${loading ? "animate-spin" : ""}`} /></button>
         </div>
 
         {msg && <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 text-sm text-yellow-700">{msg}</div>}
 
         {/* Selector */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="bg-background rounded-xl border border-border shadow-sm p-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">ID del LINAC</label>
+              <label className="text-xs text-muted-foreground mb-1 block">ID del LINAC</label>
               <input className={inp} type="number" min="1" value={linacId} onChange={e => setLinacId(e.target.value)} placeholder="1" />
             </div>
             <div className="sm:col-span-2">
-              <label className="text-xs text-gray-500 mb-1 block">Tipo de medición</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Tipo de medición</label>
               <input className={inp} value={measurementType} onChange={e => setMeasurementType(e.target.value)} placeholder="Ej: output_6mv_diario, flatness_6mv, symmetry_6mv" />
             </div>
           </div>
@@ -99,25 +99,25 @@ export default function LinacTrendsPage() {
                 { label: "Rango", value: `${data.stats.range.toFixed(3)}` },
                 { label: "R²", value: data.trend.r2.toFixed(3) },
               ].map(t => (
-                <div key={t.label} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 text-center">
-                  <div className="text-lg font-bold text-gray-700">{t.value}</div>
-                  <div className="text-xs text-gray-400 mt-1">{t.label}</div>
+                <div key={t.label} className="bg-background rounded-xl border border-border shadow-sm p-4 text-center">
+                  <div className="text-lg font-bold text-foreground/80">{t.value}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Trend direction */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div className="bg-background rounded-xl border border-border shadow-sm p-5">
               <div className="flex items-center gap-3 mb-4">
                 <TrendArrow dir={data.trend.direction} />
-                <span className="font-semibold text-gray-800">
+                <span className="font-semibold text-foreground">
                   Tendencia {data.trend.direction === "ascending" ? "ascendente" : data.trend.direction === "descending" ? "descendente" : "estable"}
                 </span>
-                <span className="text-sm text-gray-400">pendiente: {data.trend.slope.toExponential(2)}</span>
+                <span className="text-sm text-muted-foreground">pendiente: {data.trend.slope.toExponential(2)}</span>
               </div>
 
               {/* Sparkline chart */}
-              <div className="relative h-40 bg-gray-50 rounded-lg overflow-hidden">
+              <div className="relative h-40 bg-muted/50 rounded-lg overflow-hidden">
                 <svg viewBox={`0 0 ${data.series.length} 100`} preserveAspectRatio="none" className="w-full h-full">
                   {/* Mean line */}
                   <line x1="0" y1={100 - ((data.stats.mean - minVal) / valRange) * 100} x2={data.series.length} y2={100 - ((data.stats.mean - minVal) / valRange) * 100} stroke="#94a3b8" strokeWidth="0.5" strokeDasharray="1,1" />
@@ -141,21 +141,21 @@ export default function LinacTrendsPage() {
                     points={data.series.map((p, i) => `${i + 0.5},${100 - ((p.value - minVal) / valRange) * 100}`).join(" ")}
                   />
                 </svg>
-                <div className="absolute top-1 left-2 text-xs text-gray-400">{maxVal.toFixed(3)}</div>
-                <div className="absolute bottom-1 left-2 text-xs text-gray-400">{minVal.toFixed(3)}</div>
+                <div className="absolute top-1 left-2 text-xs text-muted-foreground">{maxVal.toFixed(3)}</div>
+                <div className="absolute bottom-1 left-2 text-xs text-muted-foreground">{minVal.toFixed(3)}</div>
               </div>
             </div>
 
             {/* Recent data table */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-              <h2 className="font-semibold text-gray-800 mb-3">Últimos {Math.min(20, data.series.length)} registros</h2>
+            <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+              <h2 className="font-semibold text-foreground mb-3">Últimos {Math.min(20, data.series.length)} registros</h2>
               <table className="w-full text-sm">
-                <thead><tr className="text-xs text-gray-400 border-b"><th className="text-left pb-2">Fecha</th><th className="text-right pb-2">Valor</th><th className="text-right pb-2">Estado</th></tr></thead>
+                <thead><tr className="text-xs text-muted-foreground border-b"><th className="text-left pb-2">Fecha</th><th className="text-right pb-2">Valor</th><th className="text-right pb-2">Estado</th></tr></thead>
                 <tbody>
                   {data.series.slice(-20).reverse().map((p, i) => (
-                    <tr key={i} className="border-b border-gray-50 last:border-0">
-                      <td className="py-1.5 text-gray-600">{fmtDate(p.date)}</td>
-                      <td className="py-1.5 text-right font-mono text-gray-700">{p.value.toFixed(3)} {data.unit ?? ""}</td>
+                    <tr key={i} className="border-b border-border/50 last:border-0">
+                      <td className="py-1.5 text-muted-foreground">{fmtDate(p.date)}</td>
+                      <td className="py-1.5 text-right font-mono text-foreground/80">{p.value.toFixed(3)} {data.unit ?? ""}</td>
                       <td className="py-1.5 text-right">
                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${p.semaphore === "rojo" ? "bg-red-100 text-red-700" : p.semaphore === "amarillo" ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
                           {p.semaphore ?? "—"}
@@ -170,8 +170,8 @@ export default function LinacTrendsPage() {
         )}
 
         {/* Regulatory footer */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
           <p>AAPM TG-40 / TG-142 — Reglas de control estadístico (Shewhart, CUSUM) para CC de aceleradores. IAEA TECDOC-1151 — Análisis de tendencias en dosimetría de haz externo. DS N°12/2010 MINSAL — Requisitos de registro y análisis de CC. CCHEN ORD sobre control estadístico de procesos en instalaciones de radioterapia.</p>
         </div>
       </div>

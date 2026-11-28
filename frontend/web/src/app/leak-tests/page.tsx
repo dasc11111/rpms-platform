@@ -67,7 +67,7 @@ const METHOD_LABELS: Record<string, string> = {
 
 function ResultBadge({ result }: { result: string }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${RESULT_COLORS[result] || "bg-gray-100 text-gray-700"}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${RESULT_COLORS[result] || "bg-muted text-foreground/80"}`}>
       {result === "pass" && <CheckCircle2 className="w-3 h-3" />}
       {result === "fail" && <XCircle className="w-3 h-3" />}
       {result === "inconclusive" && <AlertCircle className="w-3 h-3" />}
@@ -107,10 +107,10 @@ function KPITile({ label, value, sub, color }: {
   label: string; value: number | string; sub?: string; color?: string;
 }) {
   return (
-    <div className="bg-white rounded-xl border p-4 flex flex-col gap-1">
-      <div className={`text-2xl font-bold ${color || "text-gray-800"}`}>{value}</div>
-      <div className="text-xs font-medium text-gray-600">{label}</div>
-      {sub && <div className="text-xs text-gray-400">{sub}</div>}
+    <div className="bg-background rounded-xl border p-4 flex flex-col gap-1">
+      <div className={`text-2xl font-bold ${color || "text-foreground"}`}>{value}</div>
+      <div className="text-xs font-medium text-muted-foreground">{label}</div>
+      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
     </div>
   );
 }
@@ -183,63 +183,63 @@ function NewTestModal({ onClose, onSave }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Beaker className="w-5 h-5 text-blue-600" /> Nueva Prueba de Estanqueidad
           </h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-lg">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-6 grid grid-cols-2 gap-4">
           {/* Identificación de la fuente */}
-          <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">
+          <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">
             Identificación de la Fuente
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Código Fuente *</label>
+            <label className="text-xs font-medium text-muted-foreground">Código Fuente *</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.source_code}
               onChange={e => set("source_code", e.target.value)} placeholder="SN-001" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Radionúclido *</label>
+            <label className="text-xs font-medium text-muted-foreground">Radionúclido *</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.radionuclide}
               onChange={e => set("radionuclide", e.target.value)} placeholder="Co-57, Cs-137, Am-241…" />
           </div>
           <div className="col-span-2">
-            <label className="text-xs font-medium text-gray-600">Descripción de la Fuente</label>
+            <label className="text-xs font-medium text-muted-foreground">Descripción de la Fuente</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.source_description}
               onChange={e => set("source_description", e.target.value)} placeholder="Fuente sellada para calibración…" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Equipo / Dispositivo</label>
+            <label className="text-xs font-medium text-muted-foreground">Equipo / Dispositivo</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.equipment_name}
               onChange={e => set("equipment_name", e.target.value)} placeholder="Gamma Camera, Dose Calibrator…" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Servicio / Área</label>
+            <label className="text-xs font-medium text-muted-foreground">Servicio / Área</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.service_area}
               onChange={e => set("service_area", e.target.value)} placeholder="Medicina Nuclear, Radioterapia…" />
           </div>
 
           {/* Datos de la prueba */}
-          <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">
+          <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">
             Datos de la Prueba
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Fecha Prueba *</label>
+            <label className="text-xs font-medium text-muted-foreground">Fecha Prueba *</label>
             <input type="date" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.test_date} onChange={e => set("test_date", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Próxima Prueba</label>
+            <label className="text-xs font-medium text-muted-foreground">Próxima Prueba</label>
             <input type="date" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.next_test_date} onChange={e => set("next_test_date", e.target.value)} />
-            <p className="text-xs text-gray-400 mt-0.5">Auto: 6 meses si se deja en blanco</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Auto: 6 meses si se deja en blanco</p>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Método</label>
+            <label className="text-xs font-medium text-muted-foreground">Método</label>
             <select className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.test_method} onChange={e => set("test_method", e.target.value)}>
               {Object.entries(METHOD_LABELS).map(([k, v]) => (
@@ -248,35 +248,35 @@ function NewTestModal({ onClose, onSave }: {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Ubicación del Paño</label>
+            <label className="text-xs font-medium text-muted-foreground">Ubicación del Paño</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.wipe_location}
               onChange={e => set("wipe_location", e.target.value)} placeholder="Superficie del colimador…" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Actividad Medida (Bq)</label>
+            <label className="text-xs font-medium text-muted-foreground">Actividad Medida (Bq)</label>
             <input type="number" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.activity_bq} onChange={e => set("activity_bq", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Límite de Acción (Bq)</label>
+            <label className="text-xs font-medium text-muted-foreground">Límite de Acción (Bq)</label>
             <input type="number" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.activity_limit_bq} onChange={e => set("activity_limit_bq", e.target.value)} />
-            <p className="text-xs text-gray-400 mt-0.5">Default 185 Bq (IAEA RS-G-1.5)</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Default 185 Bq (IAEA RS-G-1.5)</p>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Fondo / Background (cps)</label>
+            <label className="text-xs font-medium text-muted-foreground">Fondo / Background (cps)</label>
             <input type="number" step="0.1" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.background_cps} onChange={e => set("background_cps", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Lectura Paño (cps)</label>
+            <label className="text-xs font-medium text-muted-foreground">Lectura Paño (cps)</label>
             <input type="number" step="0.1" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
               value={form.wipe_cps} onChange={e => set("wipe_cps", e.target.value)} />
           </div>
 
           {/* Resultado */}
           <div className="col-span-2">
-            <label className="text-xs font-medium text-gray-600">Resultado *</label>
+            <label className="text-xs font-medium text-muted-foreground">Resultado *</label>
             <div className="mt-1 flex gap-3">
               {Object.entries(RESULT_LABELS).map(([k, v]) => (
                 <label key={k} className="flex items-center gap-1.5 cursor-pointer">
@@ -289,40 +289,40 @@ function NewTestModal({ onClose, onSave }: {
           </div>
 
           {/* Personal y laboratorio */}
-          <div className="col-span-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mt-2">
+          <div className="col-span-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide mt-2">
             Personal y Laboratorio
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Realizado por</label>
+            <label className="text-xs font-medium text-muted-foreground">Realizado por</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.performed_by}
               onChange={e => set("performed_by", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Detector utilizado</label>
+            <label className="text-xs font-medium text-muted-foreground">Detector utilizado</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.detector_used}
               onChange={e => set("detector_used", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Laboratorio externo</label>
+            <label className="text-xs font-medium text-muted-foreground">Laboratorio externo</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.lab_name}
               onChange={e => set("lab_name", e.target.value)} placeholder="Lab. CCHEN, LNMRI…" />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">N° Certificado Lab.</label>
+            <label className="text-xs font-medium text-muted-foreground">N° Certificado Lab.</label>
             <input className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" value={form.lab_certificate_no}
               onChange={e => set("lab_certificate_no", e.target.value)} />
           </div>
 
           {/* Observaciones y acciones */}
           <div className="col-span-2">
-            <label className="text-xs font-medium text-gray-600">Observaciones</label>
+            <label className="text-xs font-medium text-muted-foreground">Observaciones</label>
             <textarea className="mt-1 w-full border rounded-lg px-3 py-2 text-sm" rows={2}
               value={form.notes} onChange={e => set("notes", e.target.value)} />
           </div>
           {form.result === "fail" && (
             <>
               <div className="col-span-2">
-                <label className="text-xs font-medium text-gray-600">Acción Correctiva</label>
+                <label className="text-xs font-medium text-muted-foreground">Acción Correctiva</label>
                 <textarea className="mt-1 w-full border rounded-lg px-3 py-2 text-sm border-red-300" rows={2}
                   value={form.corrective_action} onChange={e => set("corrective_action", e.target.value)}
                   placeholder="Retirar fuente de uso, descontaminación, notificación a CCHEN…" />
@@ -339,7 +339,7 @@ function NewTestModal({ onClose, onSave }: {
               </div>
               {form.cchen_notified && (
                 <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-600">Fecha Notificación CCHEN</label>
+                  <label className="text-xs font-medium text-muted-foreground">Fecha Notificación CCHEN</label>
                   <input type="date" className="mt-1 w-full border rounded-lg px-3 py-2 text-sm"
                     value={form.cchen_notification_date}
                     onChange={e => set("cchen_notification_date", e.target.value)} />
@@ -355,7 +355,7 @@ function NewTestModal({ onClose, onSave }: {
           )}
 
           <div className="col-span-2 flex gap-3 justify-end pt-2 border-t">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50">
+            <button onClick={onClose} className="px-4 py-2 rounded-lg border text-sm hover:bg-muted/50">
               Cancelar
             </button>
             <button onClick={handleSave} disabled={saving}
@@ -388,18 +388,18 @@ function TestCard({ record, onUpdate }: { record: LeakTestRecord; onUpdate: () =
   const fmtDate = (d: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("es-CL") : "—";
 
   return (
-    <div className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
+    <div className={`bg-background rounded-xl border shadow-sm overflow-hidden ${
       record.result === "fail" ? "border-red-300" :
       record.schedule_status === "overdue" ? "border-orange-300" : ""
     }`}>
       {/* Header */}
-      <button className="w-full px-5 py-4 flex items-center gap-3 hover:bg-gray-50 text-left"
+      <button className="w-full px-5 py-4 flex items-center gap-3 hover:bg-muted/50 text-left"
         onClick={() => setExpanded(p => !p)}>
         <Radiation className="w-5 h-5 text-blue-600 shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-gray-800">{record.source_code}</span>
-            <span className="text-sm text-gray-500">{record.radionuclide}</span>
+            <span className="font-semibold text-foreground">{record.source_code}</span>
+            <span className="text-sm text-muted-foreground">{record.radionuclide}</span>
             <ResultBadge result={record.result} />
             <ScheduleBadge
               status={record.schedule_status}
@@ -407,40 +407,40 @@ function TestCard({ record, onUpdate }: { record: LeakTestRecord; onUpdate: () =
               daysToNext={record.days_to_next}
             />
           </div>
-          <div className="text-xs text-gray-500 mt-0.5 truncate">
+          <div className="text-xs text-muted-foreground mt-0.5 truncate">
             {record.equipment_name || record.source_description || "Sin descripción"}
             {record.service_area ? ` · ${record.service_area}` : ""}
           </div>
         </div>
-        <div className="text-xs text-gray-400 shrink-0 text-right">
+        <div className="text-xs text-muted-foreground shrink-0 text-right">
           <div>Prueba: {fmtDate(record.test_date)}</div>
           <div>Próxima: {fmtDate(record.next_test_date)}</div>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
-          : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />}
+        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+          : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
       </button>
 
       {/* Expanded detail */}
       {expanded && (
-        <div className="border-t px-5 py-4 bg-gray-50">
+        <div className="border-t px-5 py-4 bg-muted/50">
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
-            <div><span className="text-gray-500">Método:</span> {METHOD_LABELS[record.test_method] || record.test_method}</div>
-            <div><span className="text-gray-500">Ubicación paño:</span> {record.wipe_location || "—"}</div>
-            <div><span className="text-gray-500">Actividad medida:</span> {record.activity_bq != null ? `${record.activity_bq.toLocaleString("es-CL")} Bq` : "—"}</div>
-            <div><span className="text-gray-500">Límite de acción:</span> {record.activity_limit_bq} Bq</div>
+            <div><span className="text-muted-foreground">Método:</span> {METHOD_LABELS[record.test_method] || record.test_method}</div>
+            <div><span className="text-muted-foreground">Ubicación paño:</span> {record.wipe_location || "—"}</div>
+            <div><span className="text-muted-foreground">Actividad medida:</span> {record.activity_bq != null ? `${record.activity_bq.toLocaleString("es-CL")} Bq` : "—"}</div>
+            <div><span className="text-muted-foreground">Límite de acción:</span> {record.activity_limit_bq} Bq</div>
             {record.background_cps != null && (
-              <div><span className="text-gray-500">Fondo:</span> {record.background_cps} cps</div>
+              <div><span className="text-muted-foreground">Fondo:</span> {record.background_cps} cps</div>
             )}
             {record.wipe_cps != null && (
-              <div><span className="text-gray-500">Lectura paño:</span> {record.wipe_cps} cps</div>
+              <div><span className="text-muted-foreground">Lectura paño:</span> {record.wipe_cps} cps</div>
             )}
-            <div><span className="text-gray-500">Realizado por:</span> {record.performed_by || "—"}</div>
-            <div><span className="text-gray-500">Detector:</span> {record.detector_used || "—"}</div>
+            <div><span className="text-muted-foreground">Realizado por:</span> {record.performed_by || "—"}</div>
+            <div><span className="text-muted-foreground">Detector:</span> {record.detector_used || "—"}</div>
             {record.lab_name && (
-              <div><span className="text-gray-500">Laboratorio:</span> {record.lab_name}</div>
+              <div><span className="text-muted-foreground">Laboratorio:</span> {record.lab_name}</div>
             )}
             {record.lab_certificate_no && (
-              <div><span className="text-gray-500">Certificado:</span> {record.lab_certificate_no}</div>
+              <div><span className="text-muted-foreground">Certificado:</span> {record.lab_certificate_no}</div>
             )}
           </div>
 
@@ -513,11 +513,11 @@ export default function LeakTestsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Beaker className="w-6 h-6 text-blue-600" />
             Pruebas de Estanqueidad
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Leak test de fuentes radiactivas selladas · DS 3/1985 Art. 36 · IAEA RS-G-1.5
           </p>
         </div>
@@ -568,13 +568,13 @@ export default function LeakTestsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <KPITile label="Total fuentes" value={stats.total} />
         <KPITile label="No Conformes" value={stats.failed}
-          color={stats.failed > 0 ? "text-red-600" : "text-gray-800"} sub="Resultado FAIL" />
+          color={stats.failed > 0 ? "text-red-600" : "text-foreground"} sub="Resultado FAIL" />
         <KPITile label="Pruebas vencidas" value={stats.overdue}
-          color={stats.overdue > 0 ? "text-red-600" : "text-gray-800"} />
+          color={stats.overdue > 0 ? "text-red-600" : "text-foreground"} />
         <KPITile label="Próximas 30d" value={stats.due_soon}
-          color={stats.due_soon > 0 ? "text-orange-600" : "text-gray-800"} />
+          color={stats.due_soon > 0 ? "text-orange-600" : "text-foreground"} />
         <KPITile label="Conformes vigentes" value={stats.compliant}
-          color={stats.compliant > 0 ? "text-green-600" : "text-gray-800"} />
+          color={stats.compliant > 0 ? "text-green-600" : "text-foreground"} />
       </div>
 
       {/* Filtros */}
@@ -584,15 +584,15 @@ export default function LeakTestsPage() {
           placeholder="Buscar por código, radionúclido, equipo…"
           value={q} onChange={e => setQ(e.target.value)}
         />
-        <select className="border rounded-lg px-3 py-2 text-sm bg-white"
+        <select className="border rounded-lg px-3 py-2 text-sm bg-background"
           value={filterResult} onChange={e => setFilterResult(e.target.value)}>
           <option value="">Todos los resultados</option>
           <option value="pass">Conformes</option>
           <option value="fail">No Conformes</option>
           <option value="inconclusive">Inconclusos</option>
         </select>
-        <button onClick={load} className="p-2 border rounded-lg hover:bg-gray-50">
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-500" : "text-gray-500"}`} />
+        <button onClick={load} className="p-2 border rounded-lg hover:bg-muted/50">
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-500" : "text-muted-foreground"}`} />
         </button>
       </div>
 
@@ -607,11 +607,11 @@ export default function LeakTestsPage() {
 
       {/* Lista de registros */}
       {loading ? (
-        <div className="flex items-center justify-center h-32 text-gray-400">
+        <div className="flex items-center justify-center h-32 text-muted-foreground">
           <RefreshCw className="w-6 h-6 animate-spin" />
         </div>
       ) : records.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-lg font-medium">Sin registros de pruebas de estanqueidad</p>
           <p className="text-sm mt-1">Agregue la primera prueba con el botón superior</p>
@@ -625,7 +625,7 @@ export default function LeakTestsPage() {
       )}
 
       {/* Footer regulatorio */}
-      <div className="pt-4 border-t text-xs text-gray-400 flex flex-wrap gap-2">
+      <div className="pt-4 border-t text-xs text-muted-foreground flex flex-wrap gap-2">
         <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> DS 3/1985 Art. 36</span>
         <span>·</span>
         <span>NS-06.0 §5.3.3</span>

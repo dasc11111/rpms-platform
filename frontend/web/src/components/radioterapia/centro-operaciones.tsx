@@ -18,7 +18,7 @@ const KPI_COLOR_MAP: Record<string, { border: string; text: string; bg: string }
   sky:    { border: "border-sky-100",    text: "text-sky-600",    bg: "bg-sky-50" },
   rose:   { border: "border-rose-100",   text: "text-rose-600",   bg: "bg-rose-50" },
   indigo: { border: "border-indigo-100", text: "text-indigo-600", bg: "bg-indigo-50" },
-  gray:   { border: "border-gray-100",   text: "text-gray-600",   bg: "bg-gray-50" },
+  gray:   { border: "border-border/50",   text: "text-muted-foreground",   bg: "bg-muted/50" },
 };
 const PIE_COLORS_DASH = ["#3b82f6","#22c55e","#f59e0b","#ef4444","#a855f7","#06b6d4"];
 
@@ -27,7 +27,7 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
   if (!dashboard) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
         <p>Cargando datos del dashboard…</p>
       </div>
     );
@@ -72,14 +72,14 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Centro de Operaciones</h2>
-          {facilityName && <p className="text-sm text-gray-500">{facilityName}</p>}
+          <h2 className="text-xl font-semibold text-foreground">Centro de Operaciones</h2>
+          {facilityName && <p className="text-sm text-muted-foreground">{facilityName}</p>}
         </div>
-        <span className="text-xs text-gray-400">Actualizado: {new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</span>
+        <span className="text-xs text-muted-foreground">Actualizado: {new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}</span>
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex gap-1 border-b border-border">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -87,7 +87,7 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
             className={`px-4 py-2 text-sm font-medium transition-colors ${
               dashTab === t.id
                 ? "border-b-2 border-blue-500 text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
+                : "text-muted-foreground hover:text-foreground/80"
             }`}
           >
             {t.label}
@@ -104,7 +104,7 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
               const c = KPI_COLOR_MAP[k.color] || KPI_COLOR_MAP.gray;
               return (
                 <div key={k.label} className={`rounded-lg border p-3 ${c.border} ${c.bg}`}>
-                  <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+                  <p className="text-xs text-muted-foreground mb-1">{k.label}</p>
                   <p className={`text-2xl font-bold ${c.text}`}>{k.value}</p>
                 </div>
               );
@@ -126,9 +126,9 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
           {/* Recent alerts */}
           {recentAlerts.length > 0 && (
-            <div className="rounded-lg border border-gray-100 bg-white">
-              <div className="border-b border-gray-100 px-4 py-2">
-                <h3 className="text-sm font-semibold text-gray-700">Alertas recientes</h3>
+            <div className="rounded-lg border border-border/50 bg-white">
+              <div className="border-b border-border/50 px-4 py-2">
+                <h3 className="text-sm font-semibold text-foreground/80">Alertas recientes</h3>
               </div>
               <ul className="divide-y divide-gray-50">
                 {recentAlerts.slice(0, 6).map((al: any, i: number) => (
@@ -138,8 +138,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                       al.severity === "warning"  ? "bg-yellow-500" : "bg-blue-400"
                     }`} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-gray-700">{al.message || al.description}</p>
-                      <p className="text-xs text-gray-400">{al.created_at ? new Date(al.created_at).toLocaleString("es-MX") : ""}</p>
+                      <p className="truncate text-sm text-foreground/80">{al.message || al.description}</p>
+                      <p className="text-xs text-muted-foreground">{al.created_at ? new Date(al.created_at).toLocaleString("es-MX") : ""}</p>
                     </div>
                     <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                       al.severity === "critical" ? "bg-red-100 text-red-700" :
@@ -169,9 +169,9 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
           <div className="space-y-4">
             {/* CQ compliance bars */}
             {qcStats.length > 0 && (
-              <div className="rounded-lg border border-gray-100 bg-white">
-                <div className="border-b border-gray-100 px-4 py-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Cumplimiento de Control de Calidad</h3>
+              <div className="rounded-lg border border-border/50 bg-white">
+                <div className="border-b border-border/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-foreground/80">Cumplimiento de Control de Calidad</h3>
                 </div>
                 <div className="space-y-3 p-4">
                   {qcStats.map((q: any, i: number) => {
@@ -179,11 +179,11 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                     const barColor = pct >= 90 ? "bg-green-500" : pct >= 70 ? "bg-yellow-500" : "bg-red-500";
                     return (
                       <div key={i}>
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
                           <span className="font-medium">{q.periodicity || q.period}</span>
                           <span>{q.ok_count}/{q.total} · {pct}%</span>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-gray-100">
+                        <div className="h-2 w-full rounded-full bg-muted">
                           <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -195,14 +195,14 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
             {/* Authorizations table */}
             {authorizations.length > 0 && (
-              <div className="rounded-lg border border-gray-100 bg-white">
-                <div className="border-b border-gray-100 px-4 py-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Autorizaciones</h3>
+              <div className="rounded-lg border border-border/50 bg-white">
+                <div className="border-b border-border/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-foreground/80">Autorizaciones</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-50 bg-gray-50 text-xs text-gray-500">
+                      <tr className="border-b border-border/50 bg-muted/50 text-xs text-muted-foreground">
                         <th className="px-4 py-2 text-left">Documento</th>
                         <th className="px-4 py-2 text-left">Vencimiento</th>
                         <th className="px-4 py-2 text-left">Estado</th>
@@ -210,10 +210,10 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {authorizations.map((a: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 font-medium text-gray-700">{a.doc_type}</td>
-                          <td className="px-4 py-2 text-gray-500">{a.expiry_date ? new Date(a.expiry_date).toLocaleDateString("es-MX") : "—"}</td>
-                          <td className={`px-4 py-2 font-medium ${vigColor[a.vigencyLevel] || "text-gray-500"}`}>
+                        <tr key={i} className="hover:bg-muted/50">
+                          <td className="px-4 py-2 font-medium text-foreground/80">{a.doc_type}</td>
+                          <td className="px-4 py-2 text-muted-foreground">{a.expiry_date ? new Date(a.expiry_date).toLocaleDateString("es-MX") : "—"}</td>
+                          <td className={`px-4 py-2 font-medium ${vigColor[a.vigencyLevel] || "text-muted-foreground"}`}>
                             {a.vigencyLevel || "—"}
                           </td>
                         </tr>
@@ -226,9 +226,9 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
             {/* Top risks */}
             {topRisks.length > 0 && (
-              <div className="rounded-lg border border-gray-100 bg-white">
-                <div className="border-b border-gray-100 px-4 py-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Riesgos principales</h3>
+              <div className="rounded-lg border border-border/50 bg-white">
+                <div className="border-b border-border/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-foreground/80">Riesgos principales</h3>
                 </div>
                 <ul className="divide-y divide-gray-50">
                   {topRisks.map((r: any, i: number) => (
@@ -238,8 +238,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                         r.risk_level === "medio"  ? "bg-yellow-500" : "bg-green-500"
                       }`} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-gray-700">{r.risk}</p>
-                        {r.responsible && <p className="text-xs text-gray-400">Resp: {r.responsible}</p>}
+                        <p className="text-sm text-foreground/80">{r.risk}</p>
+                        {r.responsible && <p className="text-xs text-muted-foreground">Resp: {r.responsible}</p>}
                       </div>
                       <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                         r.risk_level === "alto"  ? "bg-red-100 text-red-700" :
@@ -276,7 +276,7 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                 const c = KPI_COLOR_MAP[k.color] || KPI_COLOR_MAP.gray;
                 return (
                   <div key={k.label} className={`rounded-lg border p-3 ${c.border} ${c.bg}`}>
-                    <p className="text-xs text-gray-500 mb-1">{k.label}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{k.label}</p>
                     <p className={`text-xl font-bold ${c.text}`}>{k.value}</p>
                   </div>
                 );
@@ -285,9 +285,9 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
             {/* Monthly hours bars */}
             {monthlyOps.length > 0 && (
-              <div className="rounded-lg border border-gray-100 bg-white">
-                <div className="border-b border-gray-100 px-4 py-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Horas por mes</h3>
+              <div className="rounded-lg border border-border/50 bg-white">
+                <div className="border-b border-border/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-foreground/80">Horas por mes</h3>
                 </div>
                 <div className="space-y-3 p-4">
                   {monthlyOps.map((m: any, i: number) => {
@@ -296,18 +296,18 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                     const downPct = total > 0 ? Math.round((m.downtime_hours  / total) * 100) : 0;
                     return (
                       <div key={i}>
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1">
                           <span className="font-medium">{m.month}</span>
-                          <span className="text-gray-400">{m.operating_hours}h op · {m.downtime_hours}h paro</span>
+                          <span className="text-muted-foreground">{m.operating_hours}h op · {m.downtime_hours}h paro</span>
                         </div>
-                        <div className="flex h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div className="flex h-2 w-full overflow-hidden rounded-full bg-muted">
                           <div className="h-2 bg-blue-400" style={{ width: `${opPct}%` }} />
                           <div className="h-2 bg-red-300"  style={{ width: `${downPct}%` }} />
                         </div>
                       </div>
                     );
                   })}
-                  <div className="flex gap-4 pt-1 text-xs text-gray-500">
+                  <div className="flex gap-4 pt-1 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded-sm bg-blue-400" /> Operación</span>
                     <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded-sm bg-red-300"  /> Paro</span>
                   </div>
@@ -317,14 +317,14 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
             {/* Maintenance stats table */}
             {maintenanceStats.length > 0 && (
-              <div className="rounded-lg border border-gray-100 bg-white">
-                <div className="border-b border-gray-100 px-4 py-2">
-                  <h3 className="text-sm font-semibold text-gray-700">Estadísticas de mantenimiento</h3>
+              <div className="rounded-lg border border-border/50 bg-white">
+                <div className="border-b border-border/50 px-4 py-2">
+                  <h3 className="text-sm font-semibold text-foreground/80">Estadísticas de mantenimiento</h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-50 bg-gray-50 text-xs text-gray-500">
+                      <tr className="border-b border-border/50 bg-muted/50 text-xs text-muted-foreground">
                         <th className="px-4 py-2 text-left">Tipo</th>
                         <th className="px-4 py-2 text-right">Órdenes</th>
                         <th className="px-4 py-2 text-right">Horas paro</th>
@@ -332,10 +332,10 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {maintenanceStats.map((m: any, i: number) => (
-                        <tr key={i} className="hover:bg-gray-50">
-                          <td className="px-4 py-2 font-medium text-gray-700">{m.maintenance_type}</td>
-                          <td className="px-4 py-2 text-right text-gray-600">{m.count}</td>
-                          <td className="px-4 py-2 text-right text-gray-600">{m.total_downtime_hours ?? "—"}h</td>
+                        <tr key={i} className="hover:bg-muted/50">
+                          <td className="px-4 py-2 font-medium text-foreground/80">{m.maintenance_type}</td>
+                          <td className="px-4 py-2 text-right text-muted-foreground">{m.count}</td>
+                          <td className="px-4 py-2 text-right text-muted-foreground">{m.total_downtime_hours ?? "—"}h</td>
                         </tr>
                       ))}
                     </tbody>
@@ -352,8 +352,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
         <div className="space-y-4">
           {/* Patients by month bar chart */}
           {monthlyOps.length > 0 && (
-            <div className="rounded-lg border border-gray-100 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">Pacientes por mes</h3>
+            <div className="rounded-lg border border-border/50 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-foreground/80">Pacientes por mes</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={monthlyOps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -368,8 +368,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
           {/* Operating vs downtime line chart */}
           {monthlyOps.length > 0 && (
-            <div className="rounded-lg border border-gray-100 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">Horas operación vs paro</h3>
+            <div className="rounded-lg border border-border/50 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-foreground/80">Horas operación vs paro</h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={monthlyOps} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -385,8 +385,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
           {/* Treatment type pie chart */}
           {treatmentTypes.length > 0 && (
-            <div className="rounded-lg border border-gray-100 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">Tipos de tratamiento</h3>
+            <div className="rounded-lg border border-border/50 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-foreground/80">Tipos de tratamiento</h3>
               <div className="flex items-center gap-4">
                 <ResponsiveContainer width="50%" height={160}>
                   <PieChart>
@@ -402,8 +402,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
                   {treatmentTypes.map((t: any, idx: number) => (
                     <li key={idx} className="flex items-center gap-2">
                       <span className="inline-block h-2 w-2 flex-shrink-0 rounded-full" style={{ background: PIE_COLORS_DASH[idx % PIE_COLORS_DASH.length] }} />
-                      <span className="truncate text-gray-600">{t.treatment_type}</span>
-                      <span className="ml-auto font-medium text-gray-700">{t.count}</span>
+                      <span className="truncate text-muted-foreground">{t.treatment_type}</span>
+                      <span className="ml-auto font-medium text-foreground/80">{t.count}</span>
                     </li>
                   ))}
                 </ul>
@@ -413,8 +413,8 @@ export function CentroOperaciones({ dashboard, facilityName }: { dashboard: any;
 
           {/* Maintenance by type horizontal bar chart */}
           {maintenanceStats.length > 0 && (
-            <div className="rounded-lg border border-gray-100 bg-white p-4">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700">Órdenes de mantenimiento por tipo</h3>
+            <div className="rounded-lg border border-border/50 bg-white p-4">
+              <h3 className="mb-3 text-sm font-semibold text-foreground/80">Órdenes de mantenimiento por tipo</h3>
               <ResponsiveContainer width="100%" height={maintenanceStats.length * 36 + 20}>
                 <BarChart layout="vertical" data={maintenanceStats} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />

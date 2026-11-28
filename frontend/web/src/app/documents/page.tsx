@@ -28,14 +28,14 @@ const TYPE_LABEL: Record<string,string> = {
 const TYPE_COLOR: Record<string,string> = {
   procedure:"bg-blue-100 text-blue-700", instructive:"bg-indigo-100 text-indigo-700",
   protocol:"bg-purple-100 text-purple-700", form:"bg-teal-100 text-teal-700",
-  manual:"bg-amber-100 text-amber-700", record:"bg-gray-100 text-gray-700",
+  manual:"bg-amber-100 text-amber-700", record:"bg-muted text-foreground/80",
 };
 const STATUS_LABEL: Record<string,string> = {
   draft:"Borrador", under_review:"En revisión", approved:"Vigente",
   obsolete:"Obsoleto", superseded:"Reemplazado",
 };
 const STATUS_COLOR: Record<string,string> = {
-  draft:"bg-gray-100 text-gray-600", under_review:"bg-amber-100 text-amber-700",
+  draft:"bg-muted text-muted-foreground", under_review:"bg-amber-100 text-amber-700",
   approved:"bg-emerald-100 text-emerald-700", obsolete:"bg-red-100 text-red-600",
   superseded:"bg-orange-100 text-orange-700",
 };
@@ -289,7 +289,7 @@ export default function DocumentsPage() {
             { label:"Total documentos",     value:st.total },
             { label:"Vigentes (aprobados)", value:st.approved,      color:"text-emerald-600" },
             { label:"En revisión",          value:st.under_review,  color:"text-amber-600" },
-            { label:"Borradores",           value:st.draft,         color:"text-gray-500" },
+            { label:"Borradores",           value:st.draft,         color:"text-muted-foreground" },
             { label:"Revisión vencida",     value:st.overdue_review,color: st.overdue_review>0?"text-orange-600":"" },
             { label:"Obsoletos",            value:st.obsolete,      color:"text-red-500" },
             { label:"Req. CCHEN",           value:st.cchen_required,color:"text-blue-600" },
@@ -313,12 +313,12 @@ export default function DocumentsPage() {
           <div className="h-2 rounded-full bg-muted overflow-hidden flex">
             <div className="bg-emerald-500 h-full transition-all" style={{width:`${(st.approved/st.total*100).toFixed(1)}%`}}/>
             <div className="bg-amber-400 h-full transition-all" style={{width:`${(st.under_review/st.total*100).toFixed(1)}%`}}/>
-            <div className="bg-gray-300 h-full transition-all" style={{width:`${(st.draft/st.total*100).toFixed(1)}%`}}/>
+            <div className="bg-muted h-full transition-all" style={{width:`${(st.draft/st.total*100).toFixed(1)}%`}}/>
           </div>
           <div className="flex gap-4 text-[10px] text-muted-foreground">
             <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1"/>Vigentes</span>
             <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"/>En revisión</span>
-            <span><span className="inline-block w-2 h-2 rounded-full bg-gray-300 mr-1"/>Borradores</span>
+            <span><span className="inline-block w-2 h-2 rounded-full bg-muted mr-1"/>Borradores</span>
           </div>
         </div>
       )}

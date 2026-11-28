@@ -72,7 +72,7 @@ const CAT_CFG: Record<string, { label: string; color: string }> = {
   "2": { label: "Cat. 2 (Alta)", color: "bg-orange-100 text-orange-800" },
   "3": { label: "Cat. 3 (Media)", color: "bg-yellow-100 text-yellow-800" },
   "4": { label: "Cat. 4 (Baja)", color: "bg-green-100 text-green-800" },
-  "5": { label: "Cat. 5 (Mínima)", color: "bg-gray-100 text-gray-700" },
+  "5": { label: "Cat. 5 (Mínima)", color: "bg-muted text-foreground/80" },
 };
 
 const STATUS_CFG: Record<string, { label: string; color: string }> = {
@@ -80,7 +80,7 @@ const STATUS_CFG: Record<string, { label: string; color: string }> = {
   stored: { label: "Almacenada", color: "bg-blue-100 text-blue-800" },
   maintenance: { label: "Mantención", color: "bg-yellow-100 text-yellow-800" },
   transferred: { label: "Transferida", color: "bg-purple-100 text-purple-700" },
-  disposed: { label: "Dispuesta", color: "bg-gray-100 text-gray-600" },
+  disposed: { label: "Dispuesta", color: "bg-muted text-muted-foreground" },
 };
 
 const SOURCE_TYPES: Record<string, string> = {
@@ -174,25 +174,25 @@ function EventForm({ sourceId, onSave, onCancel }: {
       <p className="text-sm font-semibold text-blue-900 mb-3">Registrar Evento</p>
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Tipo de evento</label>
+          <label className="block text-xs text-muted-foreground mb-1">Tipo de evento</label>
           <select className="w-full border rounded px-2 py-1.5 text-sm" value={form.event_type} onChange={e => f("event_type", e.target.value)}>
             {EVENT_TYPES.map(et => <option key={et.value} value={et.value}>{et.label}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Fecha</label>
+          <label className="block text-xs text-muted-foreground mb-1">Fecha</label>
           <input type="date" className="w-full border rounded px-2 py-1.5 text-sm" value={form.event_date} onChange={e => f("event_date", e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Realizado por</label>
+          <label className="block text-xs text-muted-foreground mb-1">Realizado por</label>
           <input className="w-full border rounded px-2 py-1.5 text-sm" placeholder="Nombre" value={form.performed_by} onChange={e => f("performed_by", e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Entidad/Organismo</label>
+          <label className="block text-xs text-muted-foreground mb-1">Entidad/Organismo</label>
           <input className="w-full border rounded px-2 py-1.5 text-sm" placeholder="CCHEN / Laboratorio..." value={form.entity} onChange={e => f("entity", e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Resultado</label>
+          <label className="block text-xs text-muted-foreground mb-1">Resultado</label>
           <select className="w-full border rounded px-2 py-1.5 text-sm" value={form.result} onChange={e => f("result", e.target.value)}>
             <option value="pass">Aprobado / Conforme</option>
             <option value="fail">No conforme</option>
@@ -201,15 +201,15 @@ function EventForm({ sourceId, onSave, onCancel }: {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Actividad medida (GBq)</label>
+          <label className="block text-xs text-muted-foreground mb-1">Actividad medida (GBq)</label>
           <input type="number" step="any" className="w-full border rounded px-2 py-1.5 text-sm" placeholder="opcional" value={form.activity_measured_gbq} onChange={e => f("activity_measured_gbq", e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Ref. documento</label>
+          <label className="block text-xs text-muted-foreground mb-1">Ref. documento</label>
           <input className="w-full border rounded px-2 py-1.5 text-sm" placeholder="N° certificado / informe" value={form.document_ref} onChange={e => f("document_ref", e.target.value)} />
         </div>
         <div>
-          <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
+          <label className="block text-xs text-muted-foreground mb-1">Observaciones</label>
           <input className="w-full border rounded px-2 py-1.5 text-sm" placeholder="..." value={form.notes} onChange={e => f("notes", e.target.value)} />
         </div>
       </div>
@@ -217,7 +217,7 @@ function EventForm({ sourceId, onSave, onCancel }: {
         <button onClick={save} disabled={saving} className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50">
           {saving ? "Guardando…" : "Guardar"}
         </button>
-        <button onClick={onCancel} className="border px-4 py-1.5 rounded text-sm hover:bg-gray-50">Cancelar</button>
+        <button onClick={onCancel} className="border px-4 py-1.5 rounded text-sm hover:bg-muted/50">Cancelar</button>
       </div>
     </div>
   );
@@ -252,19 +252,19 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
   const decayPct = Math.min(100, (src.half_lives_elapsed / 10) * 100);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden">
       {/* Header */}
       <div className="p-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{src.cchen_registration}</span>
+            <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">{src.cchen_registration}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cat.color}`}>{cat.label}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>{status.label}</span>
           </div>
-          <h3 className="mt-1.5 font-semibold text-gray-900 text-sm leading-tight">{src.source_name}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{src.location || "Sin ubicación"}</p>
+          <h3 className="mt-1.5 font-semibold text-foreground text-sm leading-tight">{src.source_name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{src.location || "Sin ubicación"}</p>
         </div>
-        <button onClick={toggle} className="text-gray-400 hover:text-gray-600 mt-1 flex-shrink-0">
+        <button onClick={toggle} className="text-muted-foreground hover:text-muted-foreground mt-1 flex-shrink-0">
           {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
       </div>
@@ -278,32 +278,32 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
       />
 
       {/* Activity row */}
-      <div className="px-4 pb-3 grid grid-cols-3 gap-3 border-t border-gray-50">
+      <div className="px-4 pb-3 grid grid-cols-3 gap-3 border-t border-border/50">
         <div className="pt-3">
-          <p className="text-xs text-gray-500">Radionucleido</p>
+          <p className="text-xs text-muted-foreground">Radionucleido</p>
           <p className="text-sm font-bold text-purple-700">{src.radionuclide}</p>
-          <p className="text-xs text-gray-400">T½ = {src.half_life_days < 1 ? `${(src.half_life_days * 24).toFixed(1)}h` : `${src.half_life_days.toFixed(1)}d`}</p>
+          <p className="text-xs text-muted-foreground">T½ = {src.half_life_days < 1 ? `${(src.half_life_days * 24).toFixed(1)}h` : `${src.half_life_days.toFixed(1)}d`}</p>
         </div>
         <div className="pt-3">
-          <p className="text-xs text-gray-500">Act. inicial (ref.)</p>
-          <p className="text-sm font-semibold text-gray-800">{fmtGbq(src.initial_activity_gbq)}</p>
-          <p className="text-xs text-gray-400">{fmtDate(src.reference_date)}</p>
+          <p className="text-xs text-muted-foreground">Act. inicial (ref.)</p>
+          <p className="text-sm font-semibold text-foreground">{fmtGbq(src.initial_activity_gbq)}</p>
+          <p className="text-xs text-muted-foreground">{fmtDate(src.reference_date)}</p>
         </div>
         <div className="pt-3">
-          <p className="text-xs text-gray-500">Act. actual (calc.)</p>
+          <p className="text-xs text-muted-foreground">Act. actual (calc.)</p>
           <p className="text-sm font-bold text-blue-700">{fmtGbq(src.current_activity_gbq)}</p>
-          <p className="text-xs text-gray-400">{src.half_lives_elapsed.toFixed(1)} T½ transcurridas</p>
+          <p className="text-xs text-muted-foreground">{src.half_lives_elapsed.toFixed(1)} T½ transcurridas</p>
         </div>
       </div>
 
       {/* Decay bar */}
       {isActive && (
         <div className="px-4 pb-3">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
             <span>Decaimiento acumulado</span>
             <span>{Math.min(100, (1 - src.current_activity_gbq / src.initial_activity_gbq) * 100).toFixed(1)}%</span>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${decayPct > 80 ? "bg-green-500" : decayPct > 50 ? "bg-blue-500" : "bg-purple-500"}`}
               style={{ width: `${Math.min(100, (1 - src.current_activity_gbq / src.initial_activity_gbq) * 100)}%` }}
@@ -333,27 +333,27 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
 
       {/* Expanded */}
       {open && (
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+        <div className="border-t border-border/50 px-4 pb-4 pt-3">
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
             <div>
-              <span className="text-xs text-gray-500">Tipo fuente</span>
+              <span className="text-xs text-muted-foreground">Tipo fuente</span>
               <p>{SOURCE_TYPES[src.source_type] || src.source_type}</p>
             </div>
             <div>
-              <span className="text-xs text-gray-500">Fabricante / Modelo</span>
+              <span className="text-xs text-muted-foreground">Fabricante / Modelo</span>
               <p>{[src.manufacturer, src.model].filter(Boolean).join(" — ") || "—"}</p>
             </div>
             <div>
-              <span className="text-xs text-gray-500">N° serie</span>
+              <span className="text-xs text-muted-foreground">N° serie</span>
               <p>{src.serial_number || "—"}</p>
             </div>
             <div>
-              <span className="text-xs text-gray-500">Adquisición</span>
+              <span className="text-xs text-muted-foreground">Adquisición</span>
               <p>{fmtDate(src.acquisition_date)}</p>
             </div>
             <div className="col-span-2">
-              <span className="text-xs text-gray-500">Uso autorizado</span>
+              <span className="text-xs text-muted-foreground">Uso autorizado</span>
               <p>{src.use_description || src.authorized_use || "—"}</p>
             </div>
           </div>
@@ -418,7 +418,7 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
           {/* Events */}
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+              <p className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
                 <FileText size={13} /> Historial de eventos
               </p>
               {isActive && (
@@ -436,26 +436,26 @@ function SourceCard({ src, onRefresh }: { src: Source; onRefresh: () => void }) 
               }} />
             )}
             {events.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">Sin eventos registrados</p>
+              <p className="text-xs text-muted-foreground italic">Sin eventos registrados</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr className="bg-gray-50">
-                      <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Tipo</th>
-                      <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Fecha</th>
-                      <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Realizado por</th>
-                      <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Resultado</th>
-                      <th className="text-left px-2 py-1.5 font-medium text-gray-600 border-b">Observaciones</th>
+                    <tr className="bg-muted/50">
+                      <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Tipo</th>
+                      <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Fecha</th>
+                      <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Realizado por</th>
+                      <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Resultado</th>
+                      <th className="text-left px-2 py-1.5 font-medium text-muted-foreground border-b">Observaciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {events.slice(0, 8).map(ev => (
-                      <tr key={ev.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <tr key={ev.id} className="border-b border-border/50 hover:bg-muted/50">
                         <td className="px-2 py-1.5">{EVENT_TYPES.find(e => e.value === ev.event_type)?.label || ev.event_type}</td>
                         <td className="px-2 py-1.5 whitespace-nowrap">{fmtDate(ev.event_date)}</td>
                         <td className="px-2 py-1.5">{ev.performed_by || "—"}</td>
-                        <td className={`px-2 py-1.5 font-medium ${ev.result === "fail" ? "text-red-600" : ev.result === "pass" || ev.result === "accepted" ? "text-green-700" : "text-gray-600"}`}>
+                        <td className={`px-2 py-1.5 font-medium ${ev.result === "fail" ? "text-red-600" : ev.result === "pass" || ev.result === "accepted" ? "text-green-700" : "text-muted-foreground"}`}>
                           {ev.result || "—"}
                         </td>
                         <td className="px-2 py-1.5 max-w-[200px] truncate">{ev.notes || "—"}</td>
@@ -510,22 +510,22 @@ function SourceForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => 
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-10 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 mb-10">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl mx-4 mb-10">
         <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900">Nueva Fuente Radiactiva</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <h2 className="font-semibold text-foreground">Nueva Fuente Radiactiva</h2>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground"><X size={20} /></button>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4 text-sm max-h-[75vh] overflow-y-auto">
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">N° Registro CCHEN *</label>
+            <label className="block text-xs text-muted-foreground mb-1">N° Registro CCHEN *</label>
             <input className="w-full border rounded px-3 py-2" placeholder="CCHEN-MN-YYYY-NNNN" value={form.cchen_registration} onChange={e => f("cchen_registration", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Nombre de la fuente *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Nombre de la fuente *</label>
             <input className="w-full border rounded px-3 py-2" placeholder="Descripción identificatoria" value={form.source_name} onChange={e => f("source_name", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Radionucleido *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Radionucleido *</label>
             <select className="w-full border rounded px-3 py-2" value={form.radionuclide} onChange={e => f("radionuclide", e.target.value)}>
               <option value="">Seleccionar…</option>
               {Object.keys(KNOWN_HL).map(rl => <option key={rl} value={rl}>{rl}</option>)}
@@ -536,65 +536,65 @@ function SourceForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => 
             )}
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Semivida (días) *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Semivida (días) *</label>
             <input type="number" step="any" className="w-full border rounded px-3 py-2" value={form.half_life_days} onChange={e => f("half_life_days", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Categoría IAEA</label>
+            <label className="block text-xs text-muted-foreground mb-1">Categoría IAEA</label>
             <select className="w-full border rounded px-3 py-2" value={form.category} onChange={e => f("category", e.target.value)}>
               {Object.entries(CAT_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Tipo de fuente</label>
+            <label className="block text-xs text-muted-foreground mb-1">Tipo de fuente</label>
             <select className="w-full border rounded px-3 py-2" value={form.source_type} onChange={e => f("source_type", e.target.value)}>
               {Object.entries(SOURCE_TYPES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Actividad inicial (GBq) *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Actividad inicial (GBq) *</label>
             <input type="number" step="any" className="w-full border rounded px-3 py-2" placeholder="En GBq" value={form.initial_activity_gbq} onChange={e => f("initial_activity_gbq", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Fecha de referencia *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fecha de referencia *</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.reference_date} onChange={e => f("reference_date", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Fabricante</label>
+            <label className="block text-xs text-muted-foreground mb-1">Fabricante</label>
             <input className="w-full border rounded px-3 py-2" value={form.manufacturer} onChange={e => f("manufacturer", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">N° serie</label>
+            <label className="block text-xs text-muted-foreground mb-1">N° serie</label>
             <input className="w-full border rounded px-3 py-2" value={form.serial_number} onChange={e => f("serial_number", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Ubicación</label>
+            <label className="block text-xs text-muted-foreground mb-1">Ubicación</label>
             <input className="w-full border rounded px-3 py-2" value={form.location} onChange={e => f("location", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Descripción de uso autorizado</label>
+            <label className="block text-xs text-muted-foreground mb-1">Descripción de uso autorizado</label>
             <textarea className="w-full border rounded px-3 py-2" rows={2} value={form.use_description} onChange={e => f("use_description", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">N° Autorización CCHEN</label>
+            <label className="block text-xs text-muted-foreground mb-1">N° Autorización CCHEN</label>
             <input className="w-full border rounded px-3 py-2" value={form.cchen_auth_number} onChange={e => f("cchen_auth_number", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Vencimiento autorización</label>
+            <label className="block text-xs text-muted-foreground mb-1">Vencimiento autorización</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.cchen_auth_expiry} onChange={e => f("cchen_auth_expiry", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Próxima declaración CCHEN</label>
+            <label className="block text-xs text-muted-foreground mb-1">Próxima declaración CCHEN</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.next_cchen_report} onChange={e => f("next_cchen_report", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Estado</label>
+            <label className="block text-xs text-muted-foreground mb-1">Estado</label>
             <select className="w-full border rounded px-3 py-2" value={form.status} onChange={e => f("status", e.target.value)}>
               {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
+            <label className="block text-xs text-muted-foreground mb-1">Observaciones</label>
             <textarea className="w-full border rounded px-3 py-2" rows={2} value={form.notes} onChange={e => f("notes", e.target.value)} />
           </div>
         </div>
@@ -602,7 +602,7 @@ function SourceForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => 
           <button onClick={save} disabled={saving || !form.cchen_registration || !form.source_name || !form.radionuclide} className="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50">
             {saving ? "Guardando…" : "Guardar fuente"}
           </button>
-          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-gray-50">Cancelar</button>
+          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-muted/50">Cancelar</button>
         </div>
       </div>
     </div>
@@ -645,11 +645,11 @@ export default function SourcesPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Atom size={24} className="text-purple-600" />
             Gestión de Fuentes Radiactivas
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Inventario CCHEN · DS 3/1985 Arts. 3-15 · IAEA RS-G-1.9</p>
+          <p className="text-sm text-muted-foreground mt-1">Inventario CCHEN · DS 3/1985 Arts. 3-15 · IAEA RS-G-1.9</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -692,7 +692,7 @@ export default function SourcesPage() {
           <div key={i} className={`${kpi.bg} rounded-xl p-4 flex items-center gap-3`}>
             <span className={kpi.color}>{kpi.icon}</span>
             <div>
-              <p className="text-xs text-gray-500">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground">{kpi.label}</p>
               <p className={`text-2xl font-bold ${kpi.color}`}>{loading ? "…" : (kpi.value || "0")}</p>
             </div>
           </div>
@@ -721,9 +721,9 @@ export default function SourcesPage() {
 
       {/* Sources list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando inventario…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando inventario…</div>
       ) : sources.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">No hay fuentes registradas</div>
+        <div className="text-center py-16 text-muted-foreground">No hay fuentes registradas</div>
       ) : (
         <div className="space-y-4">
           {sources.map(src => <SourceCard key={src.id} src={src} onRefresh={load} />)}
@@ -731,8 +731,8 @@ export default function SourcesPage() {
       )}
 
       {/* Normativa footer */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-xl text-xs text-gray-500">
-        <p className="font-medium text-gray-700 mb-1">Marco Regulatorio</p>
+      <div className="mt-8 p-4 bg-muted/50 rounded-xl text-xs text-muted-foreground">
+        <p className="font-medium text-foreground/80 mb-1">Marco Regulatorio</p>
         <p>DS 3/1985 Arts. 3-15 (registro y control de fuentes) · IAEA RS-G-1.9 (categorización de fuentes) · IAEA SSG-15 (seguridad fuentes selladas) · CCHEN: declaración anual inventario fuentes radiactivas</p>
       </div>
 

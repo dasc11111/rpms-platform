@@ -308,7 +308,7 @@ export default function ActivimetroConstancyApp() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-sm font-medium block mb-1">Equipo</label>
-            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={instrumentId} onChange={(e) => handleInstrumentChange(e.target.value)}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={instrumentId} onChange={(e) => handleInstrumentChange(e.target.value)}>
               <option value="">Sin equipo asociado</option>
               {instruments.map((inst) => (
                 <option key={inst.id} value={inst.id}>
@@ -319,7 +319,7 @@ export default function ActivimetroConstancyApp() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Radionuclido (opcional)</label>
-            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={radionuclideSymbol} onChange={(e) => setRadionuclideSymbol(e.target.value)}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={radionuclideSymbol} onChange={(e) => setRadionuclideSymbol(e.target.value)}>
               <option value="">Sin radionuclido (fuente de verificacion no catalogada)</option>
               {radionuclides.map((rn) => (
                 <option key={rn.symbol} value={rn.symbol}>
@@ -330,23 +330,23 @@ export default function ActivimetroConstancyApp() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Fecha</label>
-            <input type="date" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={testDate} onChange={(e) => setTestDate(e.target.value)} />
+            <input type="date" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={testDate} onChange={(e) => setTestDate(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Hora</label>
-            <input type="time" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={testTime} onChange={(e) => setTestTime(e.target.value)} />
+            <input type="time" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={testTime} onChange={(e) => setTestTime(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Realizado por (operador)</label>
-            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={performedBy} onChange={(e) => setPerformedBy(e.target.value)} />
+            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={performedBy} onChange={(e) => setPerformedBy(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Revisado por (fisico medico)</label>
-            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
+            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={oprReviewedBy} onChange={(e) => setOprReviewedBy(e.target.value)} />
           </div>
           <div>
             <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
-            <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
+            <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
               <option value="MBq">MBq</option>
               <option value="mCi">mCi</option>
               <option value="uCi">µCi</option>
@@ -360,15 +360,15 @@ export default function ActivimetroConstancyApp() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium block mb-1">Actividad certificada ({activityUnit})</label>
-                <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
+                <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={referenceActivity} onChange={(e) => setReferenceActivity(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm font-medium block mb-1">Fecha/hora de referencia</label>
-                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={referenceDatetime} onChange={(e) => setReferenceDatetime(e.target.value)} />
+                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={referenceDatetime} onChange={(e) => setReferenceDatetime(e.target.value)} />
               </div>
               <div>
                 <label className="text-sm font-medium block mb-1">Fecha/hora de medicion</label>
-                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={measurementDatetime} onChange={(e) => setMeasurementDatetime(e.target.value)} />
+                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={measurementDatetime} onChange={(e) => setMeasurementDatetime(e.target.value)} />
               </div>
             </div>
           </div>
@@ -388,7 +388,7 @@ export default function ActivimetroConstancyApp() {
                   type="number"
                   step="any"
                   placeholder={"Lectura " + (idx + 1)}
-                  className="w-full border rounded px-2 py-1 text-sm text-slate-800"
+                  className="w-full border rounded px-2 py-1 text-sm text-foreground"
                   value={r}
                   onChange={(e) => updateReading(idx, e.target.value)}
                 />
@@ -430,11 +430,11 @@ export default function ActivimetroConstancyApp() {
 
         <div>
           <label className="text-sm font-medium block mb-1">Observaciones generales</label>
-          <textarea className="w-full border rounded px-2 py-1 text-sm text-slate-800" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+          <textarea className="w-full border rounded px-2 py-1 text-sm text-foreground" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
         </div>
 
         {preview && (
-          <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm text-slate-800">
+          <div className="border rounded-md p-3 bg-muted/50 space-y-1 text-sm text-foreground">
             <h3 className="text-sm font-semibold mb-1">Resultado (calculado, vista previa)</h3>
             {activityUnit === "mCi" && (
               <div className="text-xs text-amber-700">Lecturas ingresadas en mCi, convertidas automaticamente a MBq (1 mCi = 37 MBq).</div>

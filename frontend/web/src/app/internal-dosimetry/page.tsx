@@ -74,19 +74,19 @@ function RecordCard({ rec, onEdit }: { rec: InternalRecord; onEdit: (r: Internal
   const high = (rec.fraction_alimit ?? 0) > 0.1;
 
   return (
-    <div className={`rounded-xl border ${high ? "border-orange-300" : "border-gray-200"} bg-white shadow-sm mb-2`}>
+    <div className={`rounded-xl border ${high ? "border-orange-300" : "border-border"} bg-background shadow-sm mb-2`}>
       <button className="w-full text-left p-4 flex items-start gap-3" onClick={() => setOpen(o => !o)}>
         <Atom className={`w-5 h-5 mt-0.5 flex-shrink-0 ${high ? "text-orange-500" : "text-blue-400"}`} />
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-sm font-bold text-gray-800">{rec.radionuclide}</span>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            <span className="font-mono text-sm font-bold text-foreground">{rec.radionuclide}</span>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
               {PATHWAY_LABELS[rec.pathway] ?? rec.pathway}
             </span>
-            <span className="text-xs text-gray-400">{METHOD_LABELS[rec.method] ?? rec.method}</span>
+            <span className="text-xs text-muted-foreground">{METHOD_LABELS[rec.method] ?? rec.method}</span>
           </div>
-          <div className="text-sm font-medium text-gray-700">{rec.worker_name ?? "—"}</div>
-          <div className="text-xs text-gray-500">{rec.service ?? ""} · {fDate(rec.measurement_date)}</div>
+          <div className="text-sm font-medium text-foreground/80">{rec.worker_name ?? "—"}</div>
+          <div className="text-xs text-muted-foreground">{rec.service ?? ""} · {fDate(rec.measurement_date)}</div>
           {rec.committed_dose_msv != null && (
             <div className="mt-2">
               <div className="flex justify-between text-xs mb-1">
@@ -96,7 +96,7 @@ function RecordCard({ rec, onEdit }: { rec: InternalRecord; onEdit: (r: Internal
                   {pctVal != null ? ` (${pctVal}% del límite)` : ""}
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all ${barColor(rec.fraction_alimit)}`}
                   style={{ width: `${Math.min(100, (rec.fraction_alimit ?? 0) * 100)}%` }}
@@ -105,30 +105,30 @@ function RecordCard({ rec, onEdit }: { rec: InternalRecord; onEdit: (r: Internal
             </div>
           )}
         </div>
-        <div className="ml-2 flex-shrink-0 text-gray-400">
+        <div className="ml-2 flex-shrink-0 text-muted-foreground">
           {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
       {open && (
-        <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-2">
+        <div className="px-4 pb-4 border-t border-border/50 pt-3 space-y-2">
           <div className="grid grid-cols-2 gap-2 text-xs">
             {rec.measured_value != null && (
-              <div><span className="text-gray-500">Medición:</span> <span className="font-medium">{rec.measured_value} {rec.measured_unit ?? "Bq"}</span></div>
+              <div><span className="text-muted-foreground">Medición:</span> <span className="font-medium">{rec.measured_value} {rec.measured_unit ?? "Bq"}</span></div>
             )}
             {rec.intake_bq != null && (
-              <div><span className="text-gray-500">Incorporación:</span> <span className="font-medium">{Number(rec.intake_bq).toFixed(1)} Bq</span></div>
+              <div><span className="text-muted-foreground">Incorporación:</span> <span className="font-medium">{Number(rec.intake_bq).toFixed(1)} Bq</span></div>
             )}
             {rec.dcf_sv_bq != null && (
-              <div><span className="text-gray-500">DCF:</span> <span className="font-mono">{Number(rec.dcf_sv_bq).toExponential(2)} Sv/Bq</span></div>
+              <div><span className="text-muted-foreground">DCF:</span> <span className="font-mono">{Number(rec.dcf_sv_bq).toExponential(2)} Sv/Bq</span></div>
             )}
             {rec.annual_limit_bq != null && (
-              <div><span className="text-gray-500">ALI:</span> <span className="font-medium">{Number(rec.annual_limit_bq).toLocaleString("es-CL")} Bq</span></div>
+              <div><span className="text-muted-foreground">ALI:</span> <span className="font-medium">{Number(rec.annual_limit_bq).toLocaleString("es-CL")} Bq</span></div>
             )}
             {rec.performed_by && (
-              <div><span className="text-gray-500">Realizado por:</span> <span>{rec.performed_by}</span></div>
+              <div><span className="text-muted-foreground">Realizado por:</span> <span>{rec.performed_by}</span></div>
             )}
           </div>
-          {rec.notes && <div className="text-xs italic text-gray-500">{rec.notes}</div>}
+          {rec.notes && <div className="text-xs italic text-muted-foreground">{rec.notes}</div>}
           <button onClick={() => onEdit(rec)} className="text-xs text-blue-600 hover:text-blue-800 underline">Editar</button>
         </div>
       )}
@@ -141,20 +141,20 @@ function WorkerCard({ w }: { w: WorkerSummary }) {
   const p = Math.min(100, Math.round(fraction * 100));
   const high = fraction > 0.1;
   return (
-    <div className={`rounded-xl border ${high ? "border-orange-200 bg-orange-50" : "border-gray-100 bg-white"} p-4 shadow-sm`}>
+    <div className={`rounded-xl border ${high ? "border-orange-200 bg-orange-50" : "border-border/50 bg-background"} p-4 shadow-sm`}>
       <div className="flex justify-between items-start mb-1">
         <div>
-          <div className="font-semibold text-sm text-gray-800">{w.worker_name ?? w.worker_rut ?? "—"}</div>
-          <div className="text-xs text-gray-500">{w.service ?? ""}</div>
+          <div className="font-semibold text-sm text-foreground">{w.worker_name ?? w.worker_rut ?? "—"}</div>
+          <div className="text-xs text-muted-foreground">{w.service ?? ""}</div>
         </div>
         <div className={`text-sm font-bold ${high ? "text-orange-700" : "text-green-700"}`}>
           {Number(w.annual_committed_msv).toFixed(4)} mSv
         </div>
       </div>
-      <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+      <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full ${barColor(fraction)}`} style={{ width: `${p}%` }} />
       </div>
-      <div className="flex justify-between text-xs text-gray-400 mt-1">
+      <div className="flex justify-between text-xs text-muted-foreground mt-1">
         <span>{w.measurements} medición{Number(w.measurements) > 1 ? "es" : ""}</span>
         <span>{p}% de {LIMIT_MSV} mSv</span>
       </div>
@@ -224,17 +224,17 @@ function RecordForm({
     onSaved();
   }
 
-  const inp = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
-  const lbl = "block text-xs font-medium text-gray-700 mb-1";
+  const inp = "w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
+  const lbl = "block text-xs font-medium text-foreground/80 mb-1";
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between rounded-t-2xl">
-          <h2 className="text-lg font-bold text-gray-800">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background px-6 py-4 border-b flex items-center justify-between rounded-t-2xl">
+          <h2 className="text-lg font-bold text-foreground">
             {initial ? "Editar medición" : "Registrar medición dosimetría interna"}
           </h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400 hover:text-gray-700" /></button>
+          <button onClick={onClose}><X className="w-5 h-5 text-muted-foreground hover:text-foreground/80" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -337,8 +337,8 @@ function RecordForm({
             </select>
           </div>
         </div>
-        <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex gap-3 justify-end rounded-b-2xl">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+        <div className="sticky bottom-0 bg-background px-6 py-4 border-t flex gap-3 justify-end rounded-b-2xl">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm text-foreground/80 hover:bg-muted/50">Cancelar</button>
           <button
             onClick={save}
             disabled={saving || !form.measurement_date || !form.radionuclide}
@@ -388,8 +388,8 @@ export default function InternalDosimetryPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dosimetría Interna</h1>
-          <p className="text-sm text-gray-500 mt-1">Monitoreo de incorporación radiactiva · ICRP 103 · DS 3/1985</p>
+          <h1 className="text-2xl font-bold text-foreground">Dosimetría Interna</h1>
+          <p className="text-sm text-muted-foreground mt-1">Monitoreo de incorporación radiactiva · ICRP 103 · DS 3/1985</p>
         </div>
         <button
           onClick={() => { setEditing(undefined); setShowForm(true); }}
@@ -418,22 +418,22 @@ export default function InternalDosimetryPage() {
             { label: "Dosis comprometida total", val: `${Number(stats.total_committed_msv).toFixed(3)} mSv`, sub: `Máx: ${Number(stats.max_single_msv).toFixed(4)} mSv` },
             { label: ">10% límite anual", val: stats.above_10pct, sub: `Máx: ${Math.round(Number(stats.max_fraction) * 100)}%` },
           ].map(k => (
-            <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">{k.label}</div>
-              <div className="text-xl font-bold text-gray-900">{k.val}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{k.sub}</div>
+            <div key={k.label} className="bg-background rounded-xl border border-border p-4 shadow-sm">
+              <div className="text-xs text-muted-foreground mb-1">{k.label}</div>
+              <div className="text-xl font-bold text-foreground">{k.val}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{k.sub}</div>
             </div>
           ))}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 bg-gray-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-4 bg-muted p-1 rounded-xl w-fit">
         {(["summary", "records"] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t ? "bg-white text-gray-900 shadow" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${tab === t ? "bg-background text-foreground shadow" : "text-muted-foreground hover:text-foreground/80"}`}
           >
             {t === "summary" ? "Resumen por trabajador" : "Registros individuales"}
           </button>
@@ -443,29 +443,29 @@ export default function InternalDosimetryPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
         <select value={year} onChange={e => setYear(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
           <option value="">Todos los años</option>
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <select value={nuclide} onChange={e => setNuclide(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          className="border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
           <option value="">Todos los radionúclidos</option>
           {nuclides.map(n => <option key={n} value={n}>{n}</option>)}
         </select>
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando…</div>
       ) : tab === "summary" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {byWorker.length === 0
-            ? <div className="col-span-2 text-center py-10 text-gray-400">Sin datos para el año seleccionado</div>
+            ? <div className="col-span-2 text-center py-10 text-muted-foreground">Sin datos para el año seleccionado</div>
             : byWorker.map((w, i) => <WorkerCard key={i} w={w} />)}
         </div>
       ) : (
         <div>
           {records.length === 0
-            ? <div className="text-center py-10 text-gray-400">
+            ? <div className="text-center py-10 text-muted-foreground">
                 <Atom className="w-10 h-10 mx-auto mb-3 opacity-30" />
                 Sin registros
               </div>

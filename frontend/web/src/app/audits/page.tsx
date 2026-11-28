@@ -35,7 +35,7 @@ const STATUS_LABEL: Record<string,string> = {
 };
 const STATUS_COLOR: Record<string,string> = {
   planned:"bg-blue-100 text-blue-700", in_progress:"bg-amber-100 text-amber-700",
-  closed:"bg-emerald-100 text-emerald-700", cancelled:"bg-gray-100 text-gray-500",
+  closed:"bg-emerald-100 text-emerald-700", cancelled:"bg-muted text-muted-foreground",
 };
 const RESULT_LABEL: Record<string,string> = {
   satisfactory:"Satisfactorio", minor_nc:"NC Menor", major_nc:"NC Mayor", critical:"Crítico",
@@ -48,7 +48,7 @@ const FINDING_LABEL: Record<string,string> = {
 };
 const SEV_COLOR: Record<string,string> = {
   critical:"bg-red-100 text-red-700", major:"bg-orange-100 text-orange-700",
-  minor:"bg-amber-100 text-amber-700", low:"bg-gray-100 text-gray-600",
+  minor:"bg-amber-100 text-amber-700", low:"bg-muted text-muted-foreground",
 };
 function fmtDate(d:string|null) {
   if (!d) return "—";

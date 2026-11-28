@@ -84,7 +84,7 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Informe PDF - Activimetro</h1>
+        <h1 className="text-2xl font-bold text-foreground">Informe PDF - Activimetro</h1>
         <p className="text-sm text-muted-foreground">
           Genera un documento PDF que consolida la ficha del equipo, los avisos de vencimiento y
           retraso, las pruebas de control de calidad ya registradas (ACTIV-01 a ACTIV-07), los
@@ -115,7 +115,7 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
             type="button"
             onClick={handleGenerate}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-md bg-foreground/10 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-muted-foreground/30 disabled:opacity-50"
           >
             {loading ? "Generando..." : "PDF (cliente)"}
           </button>
@@ -136,7 +136,7 @@ export default function ActivimetroReportApp({ equipment }: { equipment: Equipme
           </p>
         )}
 
-        {message && <p className="text-sm text-slate-600">{message}</p>}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
     </div>
   );

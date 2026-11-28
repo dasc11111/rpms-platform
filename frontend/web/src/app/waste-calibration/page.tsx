@@ -258,25 +258,25 @@ export default function WasteCalibrationPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-6">
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <FlaskConical className="h-4 w-4 text-indigo-500" />
             <span>Gestión de Residuos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Matriz de Calibración de Detectores
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Eficiencias y factores de calibración por detector × radionúclido × geometría. DS 3/1985 · NS-06.0 · IAEA GSG-1.
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={load}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50"
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
@@ -299,9 +299,9 @@ export default function WasteCalibrationPage() {
           { label: "Vencidas", value: vencidas, icon: <XCircle className="h-5 w-5 text-red-500" />, cls: "text-red-700" },
           { label: "Por vencer (≤30d)", value: proxVencer, icon: <Clock className="h-5 w-5 text-yellow-500" />, cls: "text-yellow-700" },
         ].map((k) => (
-          <div key={k.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div key={k.label} className="rounded-xl border border-border bg-background p-4 shadow-sm">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-500">{k.label}</span>
+              <span className="text-xs text-muted-foreground">{k.label}</span>
               {k.icon}
             </div>
             <span className={`text-2xl font-bold ${k.cls}`}>{k.value}</span>
@@ -314,7 +314,7 @@ export default function WasteCalibrationPage() {
         <select
           value={filterRn}
           onChange={(e) => setFilterRn(e.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80"
         >
           <option value="">Todos los radionúclidos</option>
           {radionuclides.map((r) => (
@@ -325,14 +325,14 @@ export default function WasteCalibrationPage() {
         <select
           value={filterVigente}
           onChange={(e) => setFilterVigente(e.target.value as typeof filterVigente)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80"
         >
           <option value="all">Todos los estados</option>
           <option value="vigente">Solo vigentes</option>
           <option value="vencida">Solo vencidas</option>
         </select>
 
-        <span className="ml-auto self-center text-xs text-gray-400">
+        <span className="ml-auto self-center text-xs text-muted-foreground">
           {filtered.length} de {total} entrada{total !== 1 ? "s" : ""}
           {uniqueInst > 0 && ` · ${uniqueInst} instrumento${uniqueInst !== 1 ? "s" : ""}`}
         </span>
@@ -340,7 +340,7 @@ export default function WasteCalibrationPage() {
 
       {/* ── Content ── */}
       {loading && (
-        <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-400">
+        <div className="rounded-xl border border-border bg-background p-12 text-center text-muted-foreground">
           Cargando…
         </div>
       )}
@@ -352,9 +352,9 @@ export default function WasteCalibrationPage() {
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <FlaskConical className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             {total === 0
               ? "No hay entradas de calibración registradas."
               : "No hay entradas que coincidan con los filtros seleccionados."}
@@ -378,17 +378,17 @@ export default function WasteCalibrationPage() {
             return (
               <div
                 key={c.id}
-                className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                className="rounded-xl border border-border bg-background shadow-sm overflow-hidden"
               >
                 {/* Card header */}
                 <button
                   onClick={() => toggle(c.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
                 >
                   <FlaskConical className="h-5 w-5 text-indigo-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900 text-sm">{c.instrumento}</span>
+                      <span className="font-semibold text-foreground text-sm">{c.instrumento}</span>
                       <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700">
                         {c.radionuclide_code}
                       </span>
@@ -396,7 +396,7 @@ export default function WasteCalibrationPage() {
                         {badge.icon}{badge.label}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       {c.metodo === "eficiencia"
                         ? <span className="flex items-center gap-1"><Calculator className="h-3 w-3" />Eficiencia: {fmtNum(c.eficiencia, " %")}</span>
                         : <span className="flex items-center gap-1"><Calculator className="h-3 w-3" />Factor cal.: {fmtNum(c.factor_calibracion)}</span>
@@ -409,25 +409,25 @@ export default function WasteCalibrationPage() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); openEdit(c); }}
-                      className="rounded p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
+                      className="rounded p-1 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50"
                       title="Editar"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
-                      className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                       title="Eliminar"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    {isOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
 
                 {/* Expanded detail */}
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+                  <div className="border-t border-border/50 px-4 py-4 bg-muted/50">
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
                       <Field label="Instrumento" value={c.instrumento} />
                       <Field label="Radionúclido" value={c.radionuclide_code} mono />
@@ -454,11 +454,11 @@ export default function WasteCalibrationPage() {
       )}
 
       {/* ── Regulatory footer ── */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="mt-8 rounded-xl border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600">Marco normativo aplicable</p>
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-medium text-muted-foreground">Marco normativo aplicable</p>
             <p>DS 3/1985 (MINSAL) — Art. 86–89: requisitos de calibración de instrumentos de medición radiológica</p>
             <p>NS-06.0 §6.4 — Control de calidad de instrumentos de detección utilizados en dosimetría y mediciones de residuos</p>
             <p>IAEA GSG-1 §4.3 — Efficiency calibration requirements for waste characterization measurements</p>
@@ -470,13 +470,13 @@ export default function WasteCalibrationPage() {
       {/* ── Form modal ── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="w-full max-w-2xl rounded-2xl bg-background shadow-2xl max-h-[90vh] flex flex-col">
             {/* Modal header */}
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
                 {editId !== null ? "Editar calibración" : "Nueva calibración"}
               </h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-muted-foreground">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -496,7 +496,7 @@ export default function WasteCalibrationPage() {
                     value={formData.instrumento}
                     onChange={(e) => setFormData((p) => ({ ...p, instrumento: e.target.value }))}
                     placeholder="Ej: Contador Geiger-Müller LB6010"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -504,7 +504,7 @@ export default function WasteCalibrationPage() {
                   <select
                     value={formData.radionuclide_code}
                     onChange={(e) => setFormData((p) => ({ ...p, radionuclide_code: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   >
                     <option value="">— Seleccionar —</option>
                     {radionuclides.map((r) => (
@@ -517,7 +517,7 @@ export default function WasteCalibrationPage() {
                   <select
                     value={formData.metodo}
                     onChange={(e) => setFormData((p) => ({ ...p, metodo: e.target.value as "eficiencia" | "factor_calibracion" }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   >
                     <option value="eficiencia">Eficiencia (%)</option>
                     <option value="factor_calibracion">Factor de calibración</option>
@@ -534,7 +534,7 @@ export default function WasteCalibrationPage() {
                       value={formData.eficiencia ?? ""}
                       onChange={(e) => setFormData((p) => ({ ...p, eficiencia: e.target.value === "" ? null : parseFloat(e.target.value) }))}
                       placeholder="Ej: 0.045"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     />
                   </FormField>
                 ) : (
@@ -545,7 +545,7 @@ export default function WasteCalibrationPage() {
                       value={formData.factor_calibracion ?? ""}
                       onChange={(e) => setFormData((p) => ({ ...p, factor_calibracion: e.target.value === "" ? null : parseFloat(e.target.value) }))}
                       placeholder="Ej: 1.234"
-                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                      className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                     />
                   </FormField>
                 )}
@@ -556,7 +556,7 @@ export default function WasteCalibrationPage() {
                     value={formData.geometria ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, geometria: e.target.value }))}
                     placeholder="Ej: Marinelli 1L, Pozo 50 mL"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -568,7 +568,7 @@ export default function WasteCalibrationPage() {
                     value={formData.distancia_cm ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, distancia_cm: e.target.value === "" ? null : parseFloat(e.target.value) }))}
                     placeholder="Ej: 10"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -580,7 +580,7 @@ export default function WasteCalibrationPage() {
                     value={formData.area_efectiva_cm2 ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, area_efectiva_cm2: e.target.value === "" ? null : parseFloat(e.target.value) }))}
                     placeholder="Ej: 20.0"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -589,7 +589,7 @@ export default function WasteCalibrationPage() {
                     type="date"
                     value={formData.fecha_calibracion ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, fecha_calibracion: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -598,7 +598,7 @@ export default function WasteCalibrationPage() {
                     type="date"
                     value={formData.fecha_vigencia_hasta ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, fecha_vigencia_hasta: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -608,7 +608,7 @@ export default function WasteCalibrationPage() {
                     value={formData.documento_fuente ?? ""}
                     onChange={(e) => setFormData((p) => ({ ...p, documento_fuente: e.target.value }))}
                     placeholder="Ej: Informe cal. CCHEN 2024-003"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />
                 </FormField>
 
@@ -630,19 +630,19 @@ export default function WasteCalibrationPage() {
                       type="checkbox"
                       checked={formData.vigente}
                       onChange={(e) => setFormData((p) => ({ ...p, vigente: e.target.checked }))}
-                      className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                      className="h-4 w-4 rounded border-border text-indigo-600"
                     />
-                    <span className="text-sm text-gray-700">Calibración vigente</span>
+                    <span className="text-sm text-foreground/80">Calibración vigente</span>
                   </label>
                 </div>
               </div>
             </div>
 
             {/* Modal footer */}
-            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+            <div className="flex justify-end gap-3 border-t border-border/50 px-6 py-4">
               <button
                 onClick={() => setShowForm(false)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50"
               >
                 Cancelar
               </button>
@@ -662,14 +662,14 @@ export default function WasteCalibrationPage() {
       {/* ── Delete confirm modal ── */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-background shadow-2xl p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="rounded-full bg-red-100 p-2">
                 <Trash2 className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Eliminar entrada</h3>
-                <p className="mt-1 text-sm text-gray-500">
+                <h3 className="font-semibold text-foreground">Eliminar entrada</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   ¿Confirmas que deseas eliminar esta entrada de calibración? Esta acción no se puede deshacer.
                 </p>
               </div>
@@ -677,7 +677,7 @@ export default function WasteCalibrationPage() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setDeleteId(null)}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50"
               >
                 Cancelar
               </button>
@@ -710,8 +710,8 @@ function Field({
 }) {
   return (
     <div className={className}>
-      <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-      <dd className={`text-sm text-gray-800 font-medium ${mono ? "font-mono" : ""}`}>{value}</dd>
+      <dt className="text-xs text-muted-foreground mb-0.5">{label}</dt>
+      <dd className={`text-sm text-foreground font-medium ${mono ? "font-mono" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -727,7 +727,7 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-muted-foreground mb-1">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}

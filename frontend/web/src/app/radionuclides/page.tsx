@@ -291,8 +291,8 @@ function RnCard({ rn, onEdit }: { rn: Radionuclide; onEdit: (rn: Radionuclide) =
         onClick={() => setOpen(v => !v)}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${rn.active ? "bg-blue-100" : "bg-gray-100"}`}>
-            <Atom className={`w-5 h-5 ${rn.active ? "text-blue-600" : "text-gray-400"}`} />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${rn.active ? "bg-blue-100" : "bg-muted"}`}>
+            <Atom className={`w-5 h-5 ${rn.active ? "text-blue-600" : "text-muted-foreground"}`} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -303,7 +303,7 @@ function RnCard({ rn, onEdit }: { rn: Radionuclide; onEdit: (rn: Radionuclide) =
                   <CheckCircle2 className="w-3 h-3" /> Activo
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium bg-gray-100 text-gray-600 border-gray-300">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border text-xs font-medium bg-muted text-muted-foreground border-border">
                   <XCircle className="w-3 h-3" /> Inactivo
                 </span>
               )}
@@ -500,7 +500,7 @@ export default function RadionuclidesPage() {
             <p className="text-xl font-bold">{activeCount}</p>
           </div>
         </div>
-        <div className="rounded-xl border p-4 flex items-start gap-3 bg-gray-50 text-gray-700 border-gray-200">
+        <div className="rounded-xl border p-4 flex items-start gap-3 bg-muted/50 text-foreground/80 border-border">
           <XCircle className="w-5 h-5 mt-0.5 opacity-70" />
           <div>
             <p className="text-xs font-medium opacity-70">Inactivos</p>

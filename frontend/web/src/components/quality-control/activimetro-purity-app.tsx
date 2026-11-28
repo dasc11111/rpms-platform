@@ -296,7 +296,7 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Equipo</label>
-              <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.instrumentId} onChange={(e) => updateField("instrumentId", e.target.value)}>
+              <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.instrumentId} onChange={(e) => updateField("instrumentId", e.target.value)}>
                 <option value="">Sin equipo asociado</option>
                 {instruments.map((inst) => (
                   <option key={inst.id} value={inst.id}>
@@ -307,23 +307,23 @@ export default function ActivimetroPurityApp() {
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Fecha</label>
-              <input type="date" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.testDate} onChange={(e) => updateField("testDate", e.target.value)} />
+              <input type="date" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.testDate} onChange={(e) => updateField("testDate", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Hora</label>
-              <input type="time" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.testTime} onChange={(e) => updateField("testTime", e.target.value)} />
+              <input type="time" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.testTime} onChange={(e) => updateField("testTime", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Realizado por (operador)</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.performedBy} onChange={(e) => updateField("performedBy", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.performedBy} onChange={(e) => updateField("performedBy", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Fisico medico responsable</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.physicistReviewedBy} onChange={(e) => updateField("physicistReviewedBy", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.physicistReviewedBy} onChange={(e) => updateField("physicistReviewedBy", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Unidad de actividad</label>
-              <select className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
+              <select className="w-full border rounded px-2 py-1 text-sm text-foreground" value={activityUnit} onChange={(e) => setActivityUnit(e.target.value === "mCi" ? "mCi" : e.target.value === "uCi" ? "uCi" : "MBq")}>
                 <option value="MBq">MBq</option>
                 <option value="mCi">mCi</option>
                 <option value="uCi">uCi</option>
@@ -337,19 +337,19 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Lote / generador</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.generatorBatch} onChange={(e) => updateField("generatorBatch", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.generatorBatch} onChange={(e) => updateField("generatorBatch", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Fecha/hora de elucion</label>
-              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.elutionDatetime} onChange={(e) => updateField("elutionDatetime", e.target.value)} />
+              <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.elutionDatetime} onChange={(e) => updateField("elutionDatetime", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Volumen del eluido (mL)</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateVolumeMl} onChange={(e) => updateField("eluateVolumeMl", e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.eluateVolumeMl} onChange={(e) => updateField("eluateVolumeMl", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Actividad del eluido ({activityUnit})</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateActivityMbq} onChange={(e) => updateField("eluateActivityMbq", e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.eluateActivityMbq} onChange={(e) => updateField("eluateActivityMbq", e.target.value)} />
             </div>
           </div>
         </div>
@@ -358,7 +358,7 @@ export default function ActivimetroPurityApp() {
           <h3 className="text-sm font-semibold">Paso 3 - Procedimiento</h3>
           <div>
             <label className="text-sm font-medium block mb-1">Referencia del procedimiento institucional utilizado</label>
-            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.procedureReference} onChange={(e) => updateField("procedureReference", e.target.value)} placeholder="Codigo/version del procedimiento (ver Procedimientos institucionales)" />
+            <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.procedureReference} onChange={(e) => updateField("procedureReference", e.target.value)} placeholder="Codigo/version del procedimiento (ver Procedimientos institucionales)" />
           </div>
         </div>
 
@@ -367,11 +367,11 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Metodo de preparacion utilizado</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.preparationMethod} onChange={(e) => updateField("preparationMethod", e.target.value)} placeholder="Descripcion del metodo real aplicado" />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.preparationMethod} onChange={(e) => updateField("preparationMethod", e.target.value)} placeholder="Descripcion del metodo real aplicado" />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Materiales utilizados</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.materialsUsed} onChange={(e) => updateField("materialsUsed", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.materialsUsed} onChange={(e) => updateField("materialsUsed", e.target.value)} />
             </div>
           </div>
         </div>
@@ -381,11 +381,11 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Geometria</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.geometry} onChange={(e) => updateField("geometry", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.geometry} onChange={(e) => updateField("geometry", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Ventana de energia / configuracion</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.energyWindow} onChange={(e) => updateField("energyWindow", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.energyWindow} onChange={(e) => updateField("energyWindow", e.target.value)} />
             </div>
           </div>
         </div>
@@ -395,7 +395,7 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Lectura de fondo ({activityUnit})</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.backgroundReading} onChange={(e) => updateField("backgroundReading", e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.backgroundReading} onChange={(e) => updateField("backgroundReading", e.target.value)} />
             </div>
           </div>
         </div>
@@ -405,26 +405,26 @@ export default function ActivimetroPurityApp() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium block mb-1">Lectura del eluido de 99mTc ({activityUnit}) *</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.eluateReading} onChange={(e) => updateField("eluateReading", e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.eluateReading} onChange={(e) => updateField("eluateReading", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Tipo de impureza</label>
-              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.impurityType} onChange={(e) => updateField("impurityType", e.target.value)} />
+              <input type="text" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.impurityType} onChange={(e) => updateField("impurityType", e.target.value)} />
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Lectura de la impureza ({activityUnit})</label>
-              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-slate-800" value={form.impurityReading} onChange={(e) => updateField("impurityReading", e.target.value)} />
+              <input type="number" step="any" className="w-full border rounded px-2 py-1 text-sm text-foreground" value={form.impurityReading} onChange={(e) => updateField("impurityReading", e.target.value)} />
             </div>
           </div>
         </div>
 
         <div>
           <label className="text-sm font-medium block mb-1">Observaciones generales</label>
-          <textarea className="w-full border rounded px-2 py-1 text-sm text-slate-800" rows={3} value={form.observaciones} onChange={(e) => updateField("observaciones", e.target.value)} />
+          <textarea className="w-full border rounded px-2 py-1 text-sm text-foreground" rows={3} value={form.observaciones} onChange={(e) => updateField("observaciones", e.target.value)} />
         </div>
 
         {preview && (
-          <div className="border rounded-md p-3 bg-slate-50 space-y-1 text-sm text-slate-800">
+          <div className="border rounded-md p-3 bg-muted/50 space-y-1 text-sm text-foreground">
             <h3 className="text-sm font-semibold mb-1">Pasos 8 a 10 - Impurezas, calculo y evaluacion (vista previa)</h3>
             <div>
               Formula: % impureza = (Actividad de impureza / Actividad del eluido) x 100 (aritmetica
@@ -483,7 +483,7 @@ export default function ActivimetroPurityApp() {
               {t.observaciones && <div className="text-xs text-muted-foreground mt-1">Observaciones: {t.observaciones}</div>}
 
               {reviewOpenId === t.id ? (
-                <div className="mt-2 border rounded-md p-3 space-y-2 bg-slate-50 text-slate-800">
+                <div className="mt-2 border rounded-md p-3 space-y-2 bg-muted/50 text-foreground">
                   <h4 className="text-xs font-semibold">Pasos 11 y 12 - Revision y validacion</h4>
                   <textarea className="w-full border rounded px-2 py-1 text-sm" rows={2} placeholder="Notas de revision" value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

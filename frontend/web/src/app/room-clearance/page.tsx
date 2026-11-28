@@ -83,7 +83,7 @@ function estadoLabel(e: string): { label: string; cls: string; icon: React.React
     requiere_descontaminacion:{ label: "Descontaminación", cls: "bg-orange-100 text-orange-800 border-orange-300",icon: <AlertTriangle className="w-3.5 h-3.5" /> },
     no_liberado:             { label: "No Liberada",        cls: "bg-red-100 text-red-800 border-red-300",        icon: <XCircle className="w-3.5 h-3.5" /> },
   };
-  return map[e] ?? { label: e ?? "—", cls: "bg-gray-100 text-gray-700 border-gray-300", icon: <Info className="w-3.5 h-3.5" /> };
+  return map[e] ?? { label: e ?? "—", cls: "bg-muted text-foreground/80 border-border", icon: <Info className="w-3.5 h-3.5" /> };
 }
 
 function semaforoColor(s: string) {
@@ -91,7 +91,7 @@ function semaforoColor(s: string) {
   if (s === "amarillo")  return "bg-yellow-400";
   if (s === "naranja")   return "bg-orange-500";
   if (s === "rojo")      return "bg-red-600";
-  return "bg-gray-300";
+  return "bg-muted";
 }
 
 // ─────────────── Point Detail Row ────────────────────────────────────────────

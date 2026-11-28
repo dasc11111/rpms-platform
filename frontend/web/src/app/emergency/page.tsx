@@ -44,7 +44,7 @@ interface EmergencyData {
 
 // ── config ─────────────────────────────────────────────────────────────────
 const SEVERITY_CFG: Record<string, { label:string; color:string; border:string }> = {
-  low:     { label:"Baja",    color:"bg-gray-100  text-gray-700",   border:"border-gray-300"  },
+  low:     { label:"Baja",    color:"bg-muted  text-foreground/80",   border:"border-border"  },
   medium:  { label:"Media",   color:"bg-amber-100 text-amber-700",  border:"border-amber-300" },
   high:    { label:"Alta",    color:"bg-orange-100 text-orange-700",border:"border-orange-400"},
   extreme: { label:"Extrema", color:"bg-red-100   text-red-700",    border:"border-red-500"   },

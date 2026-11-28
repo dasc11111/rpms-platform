@@ -43,7 +43,7 @@ const ZONE_TYPE_CONFIG: Record<string, { label: string; color: string; bg: strin
 };
 
 function ZoneBadge({ type }: { type: string }) {
-  const cfg = ZONE_TYPE_CONFIG[type] ?? { label: type, color: "text-gray-700", bg: "bg-gray-100", icon: Activity };
+  const cfg = ZONE_TYPE_CONFIG[type] ?? { label: type, color: "text-foreground/80", bg: "bg-muted", icon: Activity };
   const Icon = cfg.icon;
   return (
     <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", cfg.bg, cfg.color)}>
@@ -57,7 +57,7 @@ function StatusDot({ inside }: { inside: boolean }) {
   return (
     <span className={cn(
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-      inside ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+      inside ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
     )}>
       <span className={cn("w-1.5 h-1.5 rounded-full", inside ? "bg-green-500" : "bg-gray-400")} />
       {inside ? "Dentro" : "Egresó"}
@@ -195,7 +195,7 @@ export default function ZoneAccessPage() {
     { label: "Personas únicas hoy", value: stats?.today_unique_persons ?? 0, color: "text-purple-600", icon: Activity },
     { label: "Dosis total hoy (µSv)", value: `${(stats?.today_dose_total_usv ?? 0).toFixed(1)} µSv`, color: "text-amber-600", icon: AlertTriangle },
     { label: "Zonas accedidas (30d)", value: stats?.zones_accessed ?? 0, color: "text-cyan-600", icon: ShieldAlert },
-    { label: "Registros totales (30d)", value: stats?.total_entries ?? 0, color: "text-gray-600", icon: Clock },
+    { label: "Registros totales (30d)", value: stats?.total_entries ?? 0, color: "text-muted-foreground", icon: Clock },
   ];
 
   return (
@@ -203,16 +203,16 @@ export default function ZoneAccessPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <ShieldAlert className="w-7 h-7 text-red-600" />
             Control de Acceso a Zonas Radiológicas
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Registro de ingreso/egreso a zonas clasificadas · DS 3/1985 Art. 15 / NS-06.0 — CCHEN
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchData} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-lg hover:bg-gray-50">
+          <button onClick={fetchData} className="flex items-center gap-1 px-3 py-2 text-sm border rounded-lg hover:bg-muted/50">
             <RefreshCw className="w-4 h-4" />
           </button>
           <button onClick={() => setShowModal(true)}
@@ -235,9 +235,9 @@ export default function ZoneAccessPage() {
         {kpis.map(k => {
           const Icon = k.icon;
           return (
-            <div key={k.label} className="bg-white border rounded-xl p-4 shadow-sm">
+            <div key={k.label} className="bg-background border rounded-xl p-4 shadow-sm">
               <Icon className={cn("w-5 h-5 mb-2", k.color)} />
-              <p className="text-xs text-gray-500">{k.label}</p>
+              <p className="text-xs text-muted-foreground">{k.label}</p>
               <p className={cn("text-2xl font-bold", k.color)}>{k.value}</p>
             </div>
           );
@@ -253,10 +253,10 @@ export default function ZoneAccessPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             {inside.map(e => (
-              <div key={e.id} className="bg-white border border-green-200 rounded-lg px-3 py-2 flex items-center justify-between">
+              <div key={e.id} className="bg-background border border-green-200 rounded-lg px-3 py-2 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm text-gray-900">{e.person_name}</p>
-                  <p className="text-xs text-gray-500">{e.zone_name} · desde {fmt(e.entry_datetime)}</p>
+                  <p className="font-medium text-sm text-foreground">{e.person_name}</p>
+                  <p className="text-xs text-muted-foreground">{e.zone_name} · desde {fmt(e.entry_datetime)}</p>
                 </div>
                 <button onClick={() => { setExitModal(e); setExitData({ exit_dose_reading_usv: "", notes: "" }); }}
                   className="flex items-center gap-1 px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700">
@@ -270,7 +270,7 @@ export default function ZoneAccessPage() {
 
       {/* Filter */}
       <div className="flex items-center gap-3">
-        <label className="text-sm text-gray-600">Fecha:</label>
+        <label className="text-sm text-muted-foreground">Fecha:</label>
         <input type="date" value={filterDate}
           onChange={e => setFilterDate(e.target.value)}
           className="border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -280,18 +280,18 @@ export default function ZoneAccessPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-background border rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b flex items-center gap-2">
-          <LogIn className="w-4 h-4 text-gray-500" />
-          <h2 className="font-semibold text-gray-800">
+          <LogIn className="w-4 h-4 text-muted-foreground" />
+          <h2 className="font-semibold text-foreground">
             Registros de acceso {filterDate ? `— ${new Date(filterDate + "T12:00:00").toLocaleDateString("es-CL")}` : "(últimos 200)"}
           </h2>
-          {entries.length > 0 && <span className="ml-auto text-xs text-gray-400">{entries.length} registros</span>}
+          {entries.length > 0 && <span className="ml-auto text-xs text-muted-foreground">{entries.length} registros</span>}
         </div>
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Cargando…</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando…</div>
         ) : entries.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-16 text-muted-foreground">
             <ShieldAlert className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>Sin registros de acceso{filterDate ? " para esta fecha" : ""}.</p>
             <button onClick={() => setShowModal(true)} className="mt-3 text-blue-600 hover:underline text-sm">
@@ -301,7 +301,7 @@ export default function ZoneAccessPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+              <thead className="bg-muted/50 text-xs text-muted-foreground uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-5 py-3">Estado</th>
                   <th className="text-left px-4 py-3">Zona</th>
@@ -317,19 +317,19 @@ export default function ZoneAccessPage() {
               </thead>
               <tbody className="divide-y">
                 {entries.map(e => (
-                  <tr key={e.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={e.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-5 py-3"><StatusDot inside={!e.exit_datetime} /></td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 text-xs">{e.zone_name}</p>
+                      <p className="font-medium text-foreground text-xs">{e.zone_name}</p>
                       <ZoneBadge type={e.zone_type} />
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{e.person_name}</p>
-                      <p className="text-xs text-gray-500">{[e.person_rut, e.person_role].filter(Boolean).join(" · ")}</p>
+                      <p className="font-medium text-foreground">{e.person_name}</p>
+                      <p className="text-xs text-muted-foreground">{[e.person_rut, e.person_role].filter(Boolean).join(" · ")}</p>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{e.purpose ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{fmt(e.entry_datetime)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{e.purpose ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{fmt(e.entry_datetime)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {e.exit_datetime ? fmt(e.exit_datetime) : (
                         <button onClick={() => { setExitModal(e); setExitData({ exit_dose_reading_usv: "", notes: "" }); }}
                           className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs hover:bg-orange-200">
@@ -337,17 +337,17 @@ export default function ZoneAccessPage() {
                         </button>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-600">{e.dosimeter_code ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs tabular-nums text-gray-700">
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{e.dosimeter_code ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs tabular-nums text-foreground/80">
                       {e.dose_received_usv != null ? `${Number(e.dose_received_usv).toFixed(2)} µSv` : "—"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{e.supervisor ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{e.supervisor ?? "—"}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(e)} className="text-gray-400 hover:text-blue-600 p-1 rounded" title="Editar">
+                        <button onClick={() => openEdit(e)} className="text-muted-foreground hover:text-blue-600 p-1 rounded" title="Editar">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(e.id)} className="text-gray-400 hover:text-red-600 p-1 rounded" title="Eliminar">
+                        <button onClick={() => handleDelete(e.id)} className="text-muted-foreground hover:text-red-600 p-1 rounded" title="Eliminar">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -371,25 +371,25 @@ export default function ZoneAccessPage() {
       {/* Entry Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-background rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <LogIn className="w-5 h-5 text-blue-600" />
                 {editing ? "Editar Registro de Acceso" : "Registrar Ingreso a Zona"}
               </h2>
-              <button onClick={closeEntryModal} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={closeEntryModal} className="text-muted-foreground hover:text-muted-foreground text-xl">×</button>
             </div>
             <form onSubmit={handleEntry} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zona *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Zona *</label>
                   <input required value={form.zone_name}
                     onChange={e => setForm(f => ({ ...f, zone_name: e.target.value }))}
                     placeholder="Sala caliente / Bodega Radiofarmacia…"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de zona</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Tipo de zona</label>
                   <select value={form.zone_type}
                     onChange={e => setForm(f => ({ ...f, zone_type: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -399,58 +399,58 @@ export default function ZoneAccessPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha/hora ingreso *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Fecha/hora ingreso *</label>
                   <input required type="datetime-local" value={form.entry_datetime}
                     onChange={e => setForm(f => ({ ...f, entry_datetime: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre persona *</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Nombre persona *</label>
                   <input required value={form.person_name}
                     onChange={e => setForm(f => ({ ...f, person_name: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">RUT</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">RUT</label>
                   <input value={form.person_rut}
                     onChange={e => setForm(f => ({ ...f, person_rut: e.target.value }))}
                     placeholder="12.345.678-9"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cargo / Rol</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Cargo / Rol</label>
                   <input value={form.person_role}
                     onChange={e => setForm(f => ({ ...f, person_role: e.target.value }))}
                     placeholder="TM, Físico médico, Técnico…"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Propósito del ingreso</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Propósito del ingreso</label>
                   <input value={form.purpose}
                     onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
                     placeholder="Preparación radiofármaco / Mantenimiento…"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Código dosímetro</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Código dosímetro</label>
                   <input value={form.dosimeter_code}
                     onChange={e => setForm(f => ({ ...f, dosimeter_code: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Lectura ingreso (µSv)</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Lectura ingreso (µSv)</label>
                   <input type="number" step="0.001" value={form.entry_dose_reading_usv}
                     onChange={e => setForm(f => ({ ...f, entry_dose_reading_usv: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Supervisor</label>
                   <input value={form.supervisor}
                     onChange={e => setForm(f => ({ ...f, supervisor: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">Notas</label>
                   <textarea value={form.notes} rows={2}
                     onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" />
@@ -458,7 +458,7 @@ export default function ZoneAccessPage() {
               </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={closeEntryModal}
-                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
+                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-muted/50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                   {saving ? "Guardando…" : editing ? "Actualizar Registro" : "Registrar Ingreso"}
@@ -472,22 +472,22 @@ export default function ZoneAccessPage() {
       {/* Exit Modal */}
       {exitModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm">
+          <div className="bg-background rounded-xl shadow-2xl w-full max-w-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <LogOut className="w-5 h-5 text-orange-600" />
                 Registrar Egreso
               </h2>
-              <button onClick={() => setExitModal(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
+              <button onClick={() => setExitModal(null)} className="text-muted-foreground hover:text-muted-foreground text-xl">×</button>
             </div>
             <form onSubmit={handleExit} className="p-6 space-y-4">
-              <div className="bg-gray-50 rounded-lg p-3 text-sm">
+              <div className="bg-muted/50 rounded-lg p-3 text-sm">
                 <p className="font-medium">{exitModal.person_name}</p>
-                <p className="text-gray-500">{exitModal.zone_name} · ingresó {fmt(exitModal.entry_datetime)}</p>
-                {exitModal.dosimeter_code && <p className="text-gray-500">Dosímetro: {exitModal.dosimeter_code}</p>}
+                <p className="text-muted-foreground">{exitModal.zone_name} · ingresó {fmt(exitModal.entry_datetime)}</p>
+                {exitModal.dosimeter_code && <p className="text-muted-foreground">Dosímetro: {exitModal.dosimeter_code}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Lectura dosímetro al egreso (µSv)</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Lectura dosímetro al egreso (µSv)</label>
                 <input type="number" step="0.001" value={exitData.exit_dose_reading_usv}
                   onChange={e => setExitData(d => ({ ...d, exit_dose_reading_usv: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" />
@@ -498,14 +498,14 @@ export default function ZoneAccessPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-1">Notas</label>
                 <textarea value={exitData.notes} rows={2}
                   onChange={e => setExitData(d => ({ ...d, notes: e.target.value }))}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" />
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setExitModal(null)}
-                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
+                  className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-muted/50">Cancelar</button>
                 <button type="submit" disabled={saving}
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50">
                   {saving ? "Guardando…" : "Confirmar Egreso"}

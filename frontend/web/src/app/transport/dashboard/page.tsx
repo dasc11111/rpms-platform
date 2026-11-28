@@ -77,11 +77,11 @@ function ComplianceBar({ pct, label }: { pct: number; label: string }) {
   const color = pct >= 95 ? "bg-green-500" : pct >= 80 ? "bg-yellow-500" : "bg-red-500";
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-gray-600 w-32 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+      <span className="text-xs text-muted-foreground w-32 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div className={`h-2 rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
-      <span className="text-xs font-semibold text-gray-700 w-10 text-right">{pct}%</span>
+      <span className="text-xs font-semibold text-foreground/80 w-10 text-right">{pct}%</span>
     </div>
   );
 }
@@ -118,7 +118,7 @@ export default function TransportDashboardPage() {
   const maxYear  = data ? Math.max(...data.yearlyTrend.map(y => y.total), 1) : 1;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
@@ -128,17 +128,17 @@ export default function TransportDashboardPage() {
               <Truck className="h-6 w-6 text-blue-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard de Transporte Radiactivo</h1>
-              <p className="text-sm text-gray-500">Estadísticas y cumplimiento normativo de envíos de material radiactivo</p>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard de Transporte Radiactivo</h1>
+              <p className="text-sm text-muted-foreground">Estadísticas y cumplimiento normativo de envíos de material radiactivo</p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Cargando estadísticas...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando estadísticas...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar datos.</div>
         ) : (
@@ -158,8 +158,8 @@ export default function TransportDashboardPage() {
                     auth.alertLevel === "warning" ? "text-yellow-600" : "text-green-600"
                   }`} />
                   <div>
-                    <span className="font-semibold text-sm text-gray-800">Autorización de Transporte</span>
-                    {auth.number && <span className="ml-2 text-xs text-gray-600">N° {auth.number}</span>}
+                    <span className="font-semibold text-sm text-foreground">Autorización de Transporte</span>
+                    {auth.number && <span className="ml-2 text-xs text-muted-foreground">N° {auth.number}</span>}
                   </div>
                   {authBadgeInfo && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${authBadgeInfo.cls}`}>
@@ -167,11 +167,11 @@ export default function TransportDashboardPage() {
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-gray-600">
-                  <span className="text-xs text-gray-500 mr-2">Vence:</span>
+                <div className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground mr-2">Vence:</span>
                   <span className="font-medium">{fmtDate(auth.expiryDate)}</span>
                   {auth.daysRemaining !== null && (
-                    <span className="ml-2 text-xs text-gray-400">
+                    <span className="ml-2 text-xs text-muted-foreground">
                       ({auth.daysRemaining > 0 ? `${auth.daysRemaining}d restantes` : "VENCIDA"})
                     </span>
                   )}
@@ -187,12 +187,12 @@ export default function TransportDashboardPage() {
                 { label: "Este mes",           value: data.transportsThisMonth,   icon: TrendingUp,     color: "purple" },
                 { label: "Este año",           value: data.transportsThisYear,    icon: BarChart3,      color: "indigo" },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
+                <div key={label} className="bg-background rounded-xl border border-border px-5 py-4 shadow-sm">
                   <div className={`inline-flex p-2 rounded-lg bg-${color}-100 mb-2`}>
                     <Icon className={`h-4 w-4 text-${color}-600`} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{value.toLocaleString("es-CL")}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">{value.toLocaleString("es-CL")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
                 </div>
               ))}
             </div>
@@ -200,11 +200,11 @@ export default function TransportDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Compliance */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" /> Cumplimiento de Registros
                 </h2>
-                <p className="text-xs text-gray-400 mb-4">Basado en {data.compliance.total.toLocaleString("es-CL")} envíos totales</p>
+                <p className="text-xs text-muted-foreground mb-4">Basado en {data.compliance.total.toLocaleString("es-CL")} envíos totales</p>
                 <div className="space-y-3">
                   <ComplianceBar pct={data.compliance.dosimeterPct}  label="Dosímetro" />
                   <ComplianceBar pct={data.compliance.radiactivo7Pct} label="Señal Radiactivo-7" />
@@ -215,8 +215,8 @@ export default function TransportDashboardPage() {
               </div>
 
               {/* Radiation dose averages */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Radiation className="h-4 w-4 text-orange-500" /> Dosis Promedio Registradas
                 </h2>
                 {data.exceededLimits > 0 && (
@@ -232,9 +232,9 @@ export default function TransportDashboardPage() {
                     { label: "Dosis a 1 m", value: data.averages.dose1m.toFixed(1), unit: "µSv/h" },
                     { label: "Dosis en vehículo", value: data.averages.doseVehicle.toFixed(1), unit: "µSv/h" },
                   ].map(({ label, value, unit }) => (
-                    <div key={label} className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-xs text-gray-500 mb-1">{label}</div>
-                      <div className="text-lg font-bold text-gray-800">{value} <span className="text-xs font-normal text-gray-500">{unit}</span></div>
+                    <div key={label} className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                      <div className="text-lg font-bold text-foreground">{value} <span className="text-xs font-normal text-muted-foreground">{unit}</span></div>
                     </div>
                   ))}
                 </div>
@@ -246,40 +246,40 @@ export default function TransportDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* Material counts */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Material por tipo</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Material por tipo</h2>
                 <div className="space-y-2">
                   {Object.entries(data.materialCounts).sort((a, b) => b[1] - a[1]).map(([code, count]) => (
                     <div key={code} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{MATERIAL_LABELS[code] ?? code}</span>
-                      <span className="font-semibold text-gray-800">{count}</span>
+                      <span className="text-muted-foreground">{MATERIAL_LABELS[code] ?? code}</span>
+                      <span className="font-semibold text-foreground">{count}</span>
                     </div>
                   ))}
                   {Object.keys(data.materialCounts).length === 0 && (
-                    <p className="text-xs text-gray-400">Sin datos.</p>
+                    <p className="text-xs text-muted-foreground">Sin datos.</p>
                   )}
                 </div>
               </div>
 
               {/* Generator stats */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Generador Mo-99/Tc-99m</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Generador Mo-99/Tc-99m</h2>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-500">Total envíos</span><span className="font-semibold">{data.generatorStats.total}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Actividad total</span><span className="font-semibold">{fmtMci(data.generatorStats.totalActivityMci)} mCi</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Actividad prom.</span><span className="font-semibold">{fmtMci(data.generatorStats.avgActivityMci)} mCi</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Máximo</span><span className="font-semibold">{fmtMci(data.generatorStats.maxActivityMci)} mCi</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Total envíos</span><span className="font-semibold">{data.generatorStats.total}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Actividad total</span><span className="font-semibold">{fmtMci(data.generatorStats.totalActivityMci)} mCi</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Actividad prom.</span><span className="font-semibold">{fmtMci(data.generatorStats.avgActivityMci)} mCi</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Máximo</span><span className="font-semibold">{fmtMci(data.generatorStats.maxActivityMci)} mCi</span></div>
                 </div>
               </div>
 
               {/* I-131 stats */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Yodo-131 (Cápsulas)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Yodo-131 (Cápsulas)</h2>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-500">Total envíos</span><span className="font-semibold">{data.i131Stats.totalShipments}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Total cápsulas</span><span className="font-semibold">{data.i131Stats.totalCapsules}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Actividad total</span><span className="font-semibold">{fmtMci(data.i131Stats.totalActivityMci)} mCi</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Actividad prom.</span><span className="font-semibold">{fmtMci(data.i131Stats.avgActivityMci)} mCi/cáp.</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Total envíos</span><span className="font-semibold">{data.i131Stats.totalShipments}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Total cápsulas</span><span className="font-semibold">{data.i131Stats.totalCapsules}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Actividad total</span><span className="font-semibold">{fmtMci(data.i131Stats.totalActivityMci)} mCi</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Actividad prom.</span><span className="font-semibold">{fmtMci(data.i131Stats.avgActivityMci)} mCi/cáp.</span></div>
                 </div>
               </div>
 
@@ -289,20 +289,20 @@ export default function TransportDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Monthly trend */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Tendencia mensual (últimos 12 meses)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Tendencia mensual (últimos 12 meses)</h2>
                 {data.monthlyTrend.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin datos.</p>
+                  <p className="text-xs text-muted-foreground">Sin datos.</p>
                 ) : (
                   <div className="flex items-end gap-1 h-32">
                     {data.monthlyTrend.map(m => (
                       <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-xs text-gray-500">{m.total}</span>
+                        <span className="text-xs text-muted-foreground">{m.total}</span>
                         <div
                           className="w-full bg-blue-500 rounded-t"
                           style={{ height: `${Math.round((m.total / maxMonth) * 96)}px`, minHeight: "2px" }}
                         />
-                        <span className="text-[10px] text-gray-400 rotate-45 origin-left w-6 overflow-hidden whitespace-nowrap">{m.month.slice(5)}</span>
+                        <span className="text-[10px] text-muted-foreground rotate-45 origin-left w-6 overflow-hidden whitespace-nowrap">{m.month.slice(5)}</span>
                       </div>
                     ))}
                   </div>
@@ -310,20 +310,20 @@ export default function TransportDashboardPage() {
               </div>
 
               {/* Yearly trend */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Tendencia anual</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Tendencia anual</h2>
                 {data.yearlyTrend.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin datos.</p>
+                  <p className="text-xs text-muted-foreground">Sin datos.</p>
                 ) : (
                   <div className="flex items-end gap-2 h-32">
                     {data.yearlyTrend.map(y => (
                       <div key={y.year} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-xs text-gray-500">{y.total}</span>
+                        <span className="text-xs text-muted-foreground">{y.total}</span>
                         <div
                           className="w-full bg-indigo-500 rounded-t"
                           style={{ height: `${Math.round((y.total / maxYear) * 96)}px`, minHeight: "2px" }}
                         />
-                        <span className="text-xs text-gray-500">{y.year}</span>
+                        <span className="text-xs text-muted-foreground">{y.year}</span>
                       </div>
                     ))}
                   </div>
@@ -333,8 +333,8 @@ export default function TransportDashboardPage() {
             </div>
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°12/2010 MINENERGIA — Reglamento de Seguridad Radiológica (Art. 50-62, transporte).
                 OIEA SSR-6 (Rev. 1) 2018 — Reglamento para el transporte seguro de material radiactivo.

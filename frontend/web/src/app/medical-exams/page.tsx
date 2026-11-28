@@ -31,14 +31,14 @@ const RESULT_CFG: Record<string,{label:string;color:string;icon:React.ComponentT
   apto:         { label:"Apto",          color:"bg-emerald-100 text-emerald-700 border-emerald-200", icon:CheckCircle2 },
   apto_con_obs: { label:"Apto c/ obs.",  color:"bg-amber-100  text-amber-700  border-amber-200",    icon:AlertTriangle },
   no_apto:      { label:"No apto",       color:"bg-red-100    text-red-700    border-red-200",      icon:XCircle },
-  pending:      { label:"Pendiente",     color:"bg-gray-100   text-gray-500   border-gray-200",     icon:Clock },
+  pending:      { label:"Pendiente",     color:"bg-muted   text-muted-foreground   border-border",     icon:Clock },
 };
 const STATUS_CFG: Record<string,{label:string;color:string}> = {
   completed:{ label:"Completado", color:"bg-emerald-100 text-emerald-700" },
   scheduled:{ label:"Programado", color:"bg-blue-100   text-blue-700"    },
   overdue:  { label:"Atrasado",   color:"bg-red-100    text-red-700"     },
   upcoming: { label:"Próximo",    color:"bg-amber-100  text-amber-700"   },
-  cancelled:{ label:"Cancelado",  color:"bg-gray-100   text-gray-500"    },
+  cancelled:{ label:"Cancelado",  color:"bg-muted   text-muted-foreground"    },
 };
 function fmtDate(d: string | null) {
   if (!d) return "—";

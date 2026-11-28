@@ -22,9 +22,9 @@ const CATEGORIES: Categoria[] = ["LABORATORIO", "SALA_PACIENTES", "OTRO"];
 const CAT_COLOR: Record<Categoria, string> = {
   LABORATORIO:    "bg-teal-100 text-teal-700",
   SALA_PACIENTES: "bg-blue-100 text-blue-700",
-  OTRO:           "bg-gray-100 text-gray-700",
+  OTRO:           "bg-muted text-foreground/80",
 };
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -110,7 +110,7 @@ export default function MeasurementPointsPage() {
   }, { LABORATORIO: [], SALA_PACIENTES: [], OTRO: [] });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Header */}
@@ -120,12 +120,12 @@ export default function MeasurementPointsPage() {
               <MapPin className="h-6 w-6 text-teal-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Puntos de Medición de Contaminación</h1>
-              <p className="text-sm text-gray-500">Lista editable de puntos de monitoreo — laboratorio y sala de pacientes MN</p>
+              <h1 className="text-2xl font-bold text-foreground">Puntos de Medición de Contaminación</h1>
+              <p className="text-sm text-muted-foreground">Lista editable de puntos de monitoreo — laboratorio y sala de pacientes MN</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+            <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
               <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
@@ -143,26 +143,26 @@ export default function MeasurementPointsPage() {
 
         {/* New form */}
         {newOpen && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-3">
-            <h2 className="font-semibold text-gray-800">Nuevo Punto de Medición</h2>
+          <div className="bg-background rounded-xl border border-border shadow-sm p-5 space-y-3">
+            <h2 className="font-semibold text-foreground">Nuevo Punto de Medición</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Categoría</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Categoría</label>
                 <select className={inp} value={newForm.categoria} onChange={e => setNewForm(f => ({ ...f, categoria: e.target.value as Categoria }))}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Nombre del punto *</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Nombre del punto *</label>
                 <input className={inp} value={newForm.nombre} onChange={e => setNewForm(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Mesa central lab" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Orden (opcional)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">Orden (opcional)</label>
                 <input className={inp} type="number" value={newForm.orden} onChange={e => setNewForm(f => ({ ...f, orden: e.target.value }))} placeholder="1, 2, 3…" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Notas</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Notas</label>
               <input className={inp} value={newForm.notas} onChange={e => setNewForm(f => ({ ...f, notas: e.target.value }))} placeholder="Descripción opcional" />
             </div>
             <div className="flex gap-2">
@@ -173,7 +173,7 @@ export default function MeasurementPointsPage() {
               >
                 {saving ? "Guardando…" : "Guardar"}
               </button>
-              <button onClick={() => setNewOpen(false)} className="text-gray-500 hover:text-gray-700 text-sm px-3 py-1.5">
+              <button onClick={() => setNewOpen(false)} className="text-muted-foreground hover:text-foreground/80 text-sm px-3 py-1.5">
                 Cancelar
               </button>
             </div>
@@ -184,7 +184,7 @@ export default function MeasurementPointsPage() {
         <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={() => setFilterCat("")}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!filterCat ? "bg-gray-800 text-white" : "bg-white border border-gray-200 text-gray-600"}`}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!filterCat ? "bg-gray-800 text-white" : "bg-background border border-border text-muted-foreground"}`}
           >
             Todas ({displayed.length})
           </button>
@@ -192,14 +192,14 @@ export default function MeasurementPointsPage() {
             <button
               key={c}
               onClick={() => setFilterCat(fc => fc === c ? "" : c)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCat === c ? "bg-gray-800 text-white" : "bg-white border border-gray-200 text-gray-600"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterCat === c ? "bg-gray-800 text-white" : "bg-background border border-border text-muted-foreground"}`}
             >
               {CAT_LABELS[c]}
             </button>
           ))}
-          <div className="ml-auto flex items-center gap-2 text-sm text-gray-500">
+          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
             <button onClick={() => setShowInactive(v => !v)} className="flex items-center gap-1.5">
-              {showInactive ? <ToggleRight className="h-4 w-4 text-teal-600" /> : <ToggleLeft className="h-4 w-4 text-gray-400" />}
+              {showInactive ? <ToggleRight className="h-4 w-4 text-teal-600" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
               Mostrar inactivos
             </button>
           </div>
@@ -207,24 +207,24 @@ export default function MeasurementPointsPage() {
 
         {/* Table by category */}
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Cargando...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando...</div>
         ) : (
           <>
             {(filterCat ? [filterCat] : CATEGORIES).map(cat => {
               const pts = grouped[cat];
               if (pts.length === 0 && !filterCat) return null;
               return (
-                <div key={cat} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <div key={cat} className="bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+                  <div className="px-5 py-3 border-b border-border/50 flex items-center gap-2">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CAT_COLOR[cat]}`}>{CAT_LABELS[cat]}</span>
-                    <span className="text-xs text-gray-400">{pts.length} puntos</span>
+                    <span className="text-xs text-muted-foreground">{pts.length} puntos</span>
                   </div>
                   {pts.length === 0 ? (
-                    <div className="px-5 py-6 text-xs text-gray-400 text-center">Sin puntos registrados en esta categoría.</div>
+                    <div className="px-5 py-6 text-xs text-muted-foreground text-center">Sin puntos registrados en esta categoría.</div>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-100 text-xs text-gray-400 uppercase tracking-wide">
+                        <tr className="border-b border-border/50 text-xs text-muted-foreground uppercase tracking-wide">
                           <th className="py-2 px-5 text-left w-12">Ord.</th>
                           <th className="py-2 px-5 text-left">Nombre</th>
                           <th className="py-2 px-5 text-left hidden sm:table-cell">Notas</th>
@@ -234,7 +234,7 @@ export default function MeasurementPointsPage() {
                       </thead>
                       <tbody>
                         {pts.map(p => (
-                          <tr key={p.id} className={`border-b border-gray-50 hover:bg-gray-50 ${!p.activo ? "opacity-50" : ""}`}>
+                          <tr key={p.id} className={`border-b border-border/50 hover:bg-muted/50 ${!p.activo ? "opacity-50" : ""}`}>
                             {editId === p.id ? (
                               <>
                                 <td className="py-2 px-5">
@@ -252,7 +252,7 @@ export default function MeasurementPointsPage() {
                                     <button onClick={handleEditSave} disabled={saving} className="text-teal-600 hover:text-teal-800">
                                       <Check className="h-4 w-4" />
                                     </button>
-                                    <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600">
+                                    <button onClick={() => setEditId(null)} className="text-muted-foreground hover:text-muted-foreground">
                                       <X className="h-4 w-4" />
                                     </button>
                                   </div>
@@ -260,11 +260,11 @@ export default function MeasurementPointsPage() {
                               </>
                             ) : (
                               <>
-                                <td className="py-2 px-5 text-gray-400">{p.orden}</td>
-                                <td className="py-2 px-5 font-medium text-gray-800">{p.nombre}</td>
-                                <td className="py-2 px-5 text-gray-400 hidden sm:table-cell">{p.notas || "—"}</td>
+                                <td className="py-2 px-5 text-muted-foreground">{p.orden}</td>
+                                <td className="py-2 px-5 font-medium text-foreground">{p.nombre}</td>
+                                <td className="py-2 px-5 text-muted-foreground hidden sm:table-cell">{p.notas || "—"}</td>
                                 <td className="py-2 px-5">
-                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.activo ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.activo ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                                     {p.activo ? "Activo" : "Inactivo"}
                                   </span>
                                 </td>
@@ -272,11 +272,11 @@ export default function MeasurementPointsPage() {
                                   <div className="flex justify-end gap-3">
                                     <button
                                       onClick={() => { setEditId(p.id); setEditForm({ nombre: p.nombre, orden: p.orden, notas: p.notas ?? "" }); }}
-                                      className="text-gray-400 hover:text-teal-600"
+                                      className="text-muted-foreground hover:text-teal-600"
                                     >
                                       <Edit2 className="h-4 w-4" />
                                     </button>
-                                    <button onClick={() => handleToggleActive(p)} className="text-gray-400 hover:text-gray-600">
+                                    <button onClick={() => handleToggleActive(p)} className="text-muted-foreground hover:text-muted-foreground">
                                       {p.activo ? <ToggleRight className="h-4 w-4 text-teal-500" /> : <ToggleLeft className="h-4 w-4" />}
                                     </button>
                                   </div>
@@ -295,8 +295,8 @@ export default function MeasurementPointsPage() {
         )}
 
         {/* Regulatory footer */}
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-          <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+        <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
           <p>
             Decreto Supremo N°3/1985 MINSAL Art. 60-64 — Monitoreo de contaminación superficial en instalaciones radiactivas.
             DS N°594/1999 MINSAL — Límites de contaminación superficial en lugares de trabajo.

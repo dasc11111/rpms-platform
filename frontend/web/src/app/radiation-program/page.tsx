@@ -26,7 +26,7 @@ const STATUS_CFG: Record<string,{label:string;color:string;icon:React.ComponentT
   approved:     { label:"Vigente",      color:"bg-emerald-100 text-emerald-700",  icon:CheckCircle2 },
   under_review: { label:"En revisión",  color:"bg-amber-100  text-amber-700",    icon:Clock },
   draft:        { label:"Borrador",     color:"bg-blue-100   text-blue-700",     icon:FileText },
-  obsolete:     { label:"Obsoleto",     color:"bg-gray-100   text-gray-400",     icon:X },
+  obsolete:     { label:"Obsoleto",     color:"bg-muted   text-muted-foreground",     icon:X },
 };
 function fmtDate(d: string | null) {
   if (!d) return "—";
@@ -86,7 +86,7 @@ function SectionCard({ s, onStatusChange, onEdit }: { s:Section; onStatusChange:
             <button onClick={()=>onEdit(s)} className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded hover:opacity-90">Editar</button>
             {s.status==="draft" && <button onClick={()=>onStatusChange(s.id,"under_review")} className="text-xs px-2 py-1 rounded border bg-amber-100 text-amber-700 hover:opacity-80">→ En revisión</button>}
             {s.status==="under_review" && <button onClick={()=>onStatusChange(s.id,"approved")} className="text-xs px-2 py-1 rounded border bg-emerald-100 text-emerald-700 hover:opacity-80">→ Aprobar</button>}
-            {s.status==="approved" && <button onClick={()=>onStatusChange(s.id,"obsolete")} className="text-xs px-2 py-1 rounded border bg-gray-100 text-gray-500 hover:opacity-80">Marcar obsoleto</button>}
+            {s.status==="approved" && <button onClick={()=>onStatusChange(s.id,"obsolete")} className="text-xs px-2 py-1 rounded border bg-muted text-muted-foreground hover:opacity-80">Marcar obsoleto</button>}
             {!s.cchen_approved && s.status==="approved" && <button onClick={()=>onStatusChange(s.id,"approved")} className="text-xs px-2 py-1 rounded border bg-blue-100 text-blue-700 hover:opacity-80">✓ Registrar aprobación CCHEN</button>}
           </div>
         </div>

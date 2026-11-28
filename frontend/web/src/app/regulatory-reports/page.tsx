@@ -47,11 +47,11 @@ const REPORT_TYPES: Record<string, { label: string; color: string; icon: JSX.Ele
   notificacion_incidente: { label: "Notificación Incidente", color: "bg-red-100 text-red-800", icon: <AlertTriangle size={14} /> },
   informe_trimestral:   { label: "Informe Trimestral", color: "bg-green-100 text-green-800", icon: <BarChart3 size={14} /> },
   solicitud_autorizacion: { label: "Solicitud Autorización", color: "bg-amber-100 text-amber-800", icon: <Shield size={14} /> },
-  otro:                 { label: "Otro", color: "bg-gray-100 text-gray-700", icon: <FileText size={14} /> },
+  otro:                 { label: "Otro", color: "bg-muted text-foreground/80", icon: <FileText size={14} /> },
 };
 
 const STATUS_CFG: Record<string, { label: string; color: string; icon: JSX.Element }> = {
-  draft:        { label: "Borrador", color: "bg-gray-100 text-gray-600", icon: <Clock size={12} /> },
+  draft:        { label: "Borrador", color: "bg-muted text-muted-foreground", icon: <Clock size={12} /> },
   in_progress:  { label: "En elaboración", color: "bg-blue-100 text-blue-700", icon: <RefreshCw size={12} /> },
   review:       { label: "En revisión", color: "bg-amber-100 text-amber-700", icon: <Eye size={12} /> },
   submitted:    { label: "Enviado CCHEN", color: "bg-green-100 text-green-700", icon: <Send size={12} /> },
@@ -109,13 +109,13 @@ function SectionProgress({ sections, reportId, onUpdate }: {
       {ANNUAL_SECTIONS.map(sec => (
         <div
           key={sec.key}
-          className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${sections[sec.key]?.completo ? "bg-green-50 hover:bg-green-100" : "bg-gray-50 hover:bg-gray-100"}`}
+          className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${sections[sec.key]?.completo ? "bg-green-50 hover:bg-green-100" : "bg-muted/50 hover:bg-muted"}`}
           onClick={() => toggle(sec.key)}
         >
-          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${sections[sec.key]?.completo ? "bg-green-500" : "border-2 border-gray-300"}`}>
+          <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${sections[sec.key]?.completo ? "bg-green-500" : "border-2 border-border"}`}>
             {sections[sec.key]?.completo && <CheckCircle size={12} className="text-white" />}
           </div>
-          <span className={`text-sm ${sections[sec.key]?.completo ? "text-green-800 line-through decoration-green-400" : "text-gray-700"}`}>
+          <span className={`text-sm ${sections[sec.key]?.completo ? "text-green-800 line-through decoration-green-400" : "text-foreground/80"}`}>
             {sec.label}
           </span>
         </div>
@@ -161,7 +161,7 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1.5">
@@ -171,10 +171,10 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
             <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${status.color}`}>
               {status.icon} {status.label}
             </span>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Año {report.year}</span>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Año {report.year}</span>
           </div>
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight">{report.title}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h3 className="font-semibold text-foreground text-sm leading-tight">{report.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {report.preparer && `Preparado por: ${report.preparer}`}
             {report.submitted_date && ` · Enviado: ${fmtDate(report.submitted_date)}`}
             {report.cchen_reception_number && ` · Rec. CCHEN: ${report.cchen_reception_number}`}
@@ -190,7 +190,7 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
               {updatingStatus ? "…" : nextStatusLabel[report.status]}
             </button>
           )}
-          <button onClick={() => setOpen(!open)} className="text-gray-400 hover:text-gray-600">
+          <button onClick={() => setOpen(!open)} className="text-muted-foreground hover:text-muted-foreground">
             {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
@@ -199,11 +199,11 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
       {/* Progress bar for annual reports */}
       {isAnnual && pct !== null && (
         <div className="px-4 pb-3">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
             <span>Progreso de completitud</span>
             <span className={pct === 100 ? "text-green-600 font-medium" : ""}>{pct}%</span>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${pct === 100 ? "bg-green-500" : pct > 60 ? "bg-blue-500" : pct > 30 ? "bg-amber-500" : "bg-gray-400"}`}
               style={{ width: `${pct}%` }}
@@ -214,36 +214,36 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
 
       {/* Expanded */}
       {open && (
-        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+        <div className="border-t border-border/50 px-4 pb-4 pt-3">
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
             {report.period_start && (
               <div>
-                <span className="text-xs text-gray-500">Período</span>
+                <span className="text-xs text-muted-foreground">Período</span>
                 <p>{fmtDate(report.period_start)} — {fmtDate(report.period_end)}</p>
               </div>
             )}
             {report.reviewer && (
               <div>
-                <span className="text-xs text-gray-500">Revisado por</span>
+                <span className="text-xs text-muted-foreground">Revisado por</span>
                 <p>{report.reviewer}</p>
               </div>
             )}
             {report.approver && (
               <div>
-                <span className="text-xs text-gray-500">Aprobado por</span>
+                <span className="text-xs text-muted-foreground">Aprobado por</span>
                 <p>{report.approver}</p>
               </div>
             )}
             {report.submission_method && (
               <div>
-                <span className="text-xs text-gray-500">Método de envío</span>
+                <span className="text-xs text-muted-foreground">Método de envío</span>
                 <p>{SUBMISSION_METHODS.find(m => m.value === report.submission_method)?.label || report.submission_method}</p>
               </div>
             )}
             {report.cchen_resolution && (
               <div>
-                <span className="text-xs text-gray-500">Resolución CCHEN</span>
+                <span className="text-xs text-muted-foreground">Resolución CCHEN</span>
                 <p className="font-medium text-green-700">{report.cchen_resolution}</p>
               </div>
             )}
@@ -259,15 +259,15 @@ function ReportCard({ report, onRefresh }: { report: Report; onRefresh: () => vo
           {/* Sections checklist for annual reports */}
           {isAnnual && (
             <div>
-              <p className="text-xs font-semibold text-gray-700 mb-1">Secciones del informe</p>
-              <p className="text-xs text-gray-500 mb-2">Haga clic para marcar una sección como completada</p>
+              <p className="text-xs font-semibold text-foreground/80 mb-1">Secciones del informe</p>
+              <p className="text-xs text-muted-foreground mb-2">Haga clic para marcar una sección como completada</p>
               <SectionProgress sections={report.sections} reportId={report.id} onUpdate={onRefresh} />
             </div>
           )}
 
           {/* Summary of other section types */}
           {!isAnnual && Object.keys(report.sections).length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-700">
+            <div className="bg-muted/50 rounded-lg p-3 text-xs text-foreground/80">
               <p className="font-medium mb-1">Contenido</p>
               {Object.entries(report.sections).map(([k, v]) => (
                 <p key={k}>{k}: {typeof v === "object" ? JSON.stringify(v) : String(v)}</p>
@@ -320,44 +320,44 @@ function ReportForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => 
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-start justify-center z-50 pt-16 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-xl mx-4 mb-10">
+      <div className="bg-background rounded-xl shadow-xl w-full max-w-xl mx-4 mb-10">
         <div className="flex items-center justify-between p-5 border-b">
-          <h2 className="font-semibold text-gray-900">Nuevo Reporte Regulatorio</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+          <h2 className="font-semibold text-foreground">Nuevo Reporte Regulatorio</h2>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground"><X size={20} /></button>
         </div>
         <div className="p-5 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Tipo de reporte *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Tipo de reporte *</label>
             <select className="w-full border rounded px-3 py-2" value={form.report_type} onChange={e => f("report_type", e.target.value)}>
               {Object.entries(REPORT_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Año *</label>
+            <label className="block text-xs text-muted-foreground mb-1">Año *</label>
             <input type="number" className="w-full border rounded px-3 py-2" value={form.year} onChange={e => f("year", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Título (opcional — se genera automático)</label>
+            <label className="block text-xs text-muted-foreground mb-1">Título (opcional — se genera automático)</label>
             <input className="w-full border rounded px-3 py-2" placeholder={autoTitle()} value={form.title} onChange={e => f("title", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Período inicio</label>
+            <label className="block text-xs text-muted-foreground mb-1">Período inicio</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.period_start} onChange={e => f("period_start", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Período fin</label>
+            <label className="block text-xs text-muted-foreground mb-1">Período fin</label>
             <input type="date" className="w-full border rounded px-3 py-2" value={form.period_end} onChange={e => f("period_end", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Preparado por</label>
+            <label className="block text-xs text-muted-foreground mb-1">Preparado por</label>
             <input className="w-full border rounded px-3 py-2" value={form.preparer} onChange={e => f("preparer", e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Revisado por</label>
+            <label className="block text-xs text-muted-foreground mb-1">Revisado por</label>
             <input className="w-full border rounded px-3 py-2" value={form.reviewer} onChange={e => f("reviewer", e.target.value)} />
           </div>
           <div className="col-span-2">
-            <label className="block text-xs text-gray-600 mb-1">Observaciones</label>
+            <label className="block text-xs text-muted-foreground mb-1">Observaciones</label>
             <textarea className="w-full border rounded px-3 py-2" rows={2} value={form.notes} onChange={e => f("notes", e.target.value)} />
           </div>
         </div>
@@ -365,7 +365,7 @@ function ReportForm({ onSave, onCancel }: { onSave: () => void; onCancel: () => 
           <button onClick={save} disabled={saving} className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
             {saving ? "Creando…" : "Crear reporte"}
           </button>
-          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-gray-50">Cancelar</button>
+          <button onClick={onCancel} className="border px-5 py-2 rounded-lg hover:bg-muted/50">Cancelar</button>
         </div>
       </div>
     </div>
@@ -443,11 +443,11 @@ export default function RegulatoryReportsPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <FileText size={24} className="text-blue-600" />
             Reportes Regulatorios CCHEN
           </h1>
-          <p className="text-sm text-gray-500 mt-1">Informe Anual PR · Declaraciones · DS 3/1985 Art. 25 · IAEA GSR Part 3</p>
+          <p className="text-sm text-muted-foreground mt-1">Informe Anual PR · Declaraciones · DS 3/1985 Art. 25 · IAEA GSR Part 3</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -471,7 +471,7 @@ export default function RegulatoryReportsPage() {
           <div key={i} className={`${kpi.bg} rounded-xl p-4 flex items-center gap-3`}>
             <span className={kpi.color}>{kpi.icon}</span>
             <div>
-              <p className="text-xs text-gray-500">{kpi.label}</p>
+              <p className="text-xs text-muted-foreground">{kpi.label}</p>
               <p className={`text-2xl font-bold ${kpi.color}`}>{loading ? "…" : (kpi.value || "0")}</p>
             </div>
           </div>
@@ -492,9 +492,9 @@ export default function RegulatoryReportsPage() {
 
       {/* Reports list */}
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Cargando reportes…</div>
+        <div className="text-center py-16 text-muted-foreground">Cargando reportes…</div>
       ) : reports.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">No hay reportes registrados</div>
+        <div className="text-center py-16 text-muted-foreground">No hay reportes registrados</div>
       ) : (
         <div className="space-y-4">
           {reports.map(r => <ReportCard key={r.id} report={r} onRefresh={load} />)}
@@ -516,8 +516,8 @@ export default function RegulatoryReportsPage() {
       </div>
 
       {/* Normativa footer */}
-      <div className="mt-4 p-4 bg-gray-50 rounded-xl text-xs text-gray-500">
-        <p className="font-medium text-gray-700 mb-1">Marco Regulatorio</p>
+      <div className="mt-4 p-4 bg-muted/50 rounded-xl text-xs text-muted-foreground">
+        <p className="font-medium text-foreground/80 mb-1">Marco Regulatorio</p>
         <p>DS 3/1985 Arts. 25-30 (obligaciones de reporte) · CCHEN: Reglamento de Licencias e Informe Anual · IAEA GSR Part 3 Req. 11 (registro y notificación) · Ley 20.936 (Sistema de Calidad en Salud)</p>
       </div>
 

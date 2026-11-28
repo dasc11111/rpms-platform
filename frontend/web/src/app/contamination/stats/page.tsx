@@ -38,7 +38,7 @@ interface StatsData {
   areasTop: { punto_medicion: string; count: number }[];
 }
 
-const inp = "rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
+const inp = "rounded-lg border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300";
 
 function fmtBq(v: number) {
   if (!v) return "—";
@@ -90,7 +90,7 @@ export default function ContaminationStatsPage() {
   const pct = (v: number) => totalClasif > 0 ? Math.round((v / totalClasif) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted/50 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
@@ -100,33 +100,33 @@ export default function ContaminationStatsPage() {
               <Biohazard className="h-6 w-6 text-orange-700" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Estadísticas de Monitoreo de Contaminación</h1>
-              <p className="text-sm text-gray-500">Análisis de registros de contaminación superficial radiactiva</p>
+              <h1 className="text-2xl font-bold text-foreground">Estadísticas de Monitoreo de Contaminación</h1>
+              <p className="text-sm text-muted-foreground">Análisis de registros de contaminación superficial radiactiva</p>
             </div>
           </div>
-          <button onClick={fetchData} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button onClick={fetchData} disabled={loading} className="text-muted-foreground hover:text-muted-foreground">
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-3 flex flex-wrap items-end gap-3">
+        <div className="bg-background rounded-xl border border-border shadow-sm px-5 py-3 flex flex-wrap items-end gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Año</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Año</label>
             <select className={inp} value={filterYear} onChange={e => setFilterYear(e.target.value)}>
               <option value="">Todos</option>
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Clasificación</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Clasificación</label>
             <select className={inp} value={filterClasif} onChange={e => setFilterClasif(e.target.value)}>
               <option value="">Todas</option>
               {Object.entries(CLASIF_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Área</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Área</label>
             <input className={inp} placeholder="Filtrar por área…" value={filterArea}
               onChange={e => setFilterArea(e.target.value)} onKeyDown={e => e.key === "Enter" && fetchData()} />
           </div>
@@ -136,7 +136,7 @@ export default function ContaminationStatsPage() {
         </div>
 
         {loading && !data ? (
-          <div className="text-center py-16 text-gray-400">Cargando estadísticas...</div>
+          <div className="text-center py-16 text-muted-foreground">Cargando estadísticas...</div>
         ) : !data ? (
           <div className="text-center py-16 text-red-500">Error al cargar datos.</div>
         ) : (
@@ -157,12 +157,12 @@ export default function ContaminationStatsPage() {
                 { label: "Este mes",            value: data.totals.month,  icon: BarChart3,     color: "purple" },
                 { label: "Este año",            value: data.totals.year,   icon: TrendingUp,    color: "indigo" },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-200 px-5 py-4 shadow-sm">
+                <div key={label} className="bg-background rounded-xl border border-border px-5 py-4 shadow-sm">
                   <div className={`inline-flex p-2 rounded-lg bg-${color}-100 mb-2`}>
                     <Icon className={`h-4 w-4 text-${color}-600`} />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{value.toLocaleString("es-CL")}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+                  <div className="text-2xl font-bold text-foreground">{value.toLocaleString("es-CL")}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
                 </div>
               ))}
             </div>
@@ -171,8 +171,8 @@ export default function ContaminationStatsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
               {/* Classification breakdown */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-500" /> Clasificación de Mediciones
                 </h2>
                 <div className="space-y-3">
@@ -182,19 +182,19 @@ export default function ContaminationStatsPage() {
                     { key: "sobreLimite", label: "Sobre el límite",                    value: data.totals.sobreLimite, color: "bg-red-500" },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="flex items-center gap-3 text-sm">
-                      <span className="text-gray-600 w-44 shrink-0">{label}</span>
-                      <div className="flex-1 h-2 bg-gray-100 rounded-full">
+                      <span className="text-muted-foreground w-44 shrink-0">{label}</span>
+                      <div className="flex-1 h-2 bg-muted rounded-full">
                         <div className={`h-2 rounded-full ${color}`} style={{ width: `${pct(value)}%` }} />
                       </div>
-                      <span className="text-xs font-semibold text-gray-700 w-14 text-right">{value} ({pct(value)}%)</span>
+                      <span className="text-xs font-semibold text-foreground/80 w-14 text-right">{value} ({pct(value)}%)</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Dose metrics */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Actividad Superficial (Bq/m²)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Actividad Superficial (Bq/m²)</h2>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: "Actividad máxima",   value: fmtBq(data.totals.maxActividad) },
@@ -202,9 +202,9 @@ export default function ContaminationStatsPage() {
                     { label: "Prom. diario (medic.)", value: data.totals.promedioDiario.toFixed(1) },
                     { label: "Prom. mensual",       value: data.totals.promedioMensual.toFixed(1) },
                   ].map(({ label, value }) => (
-                    <div key={label} className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-xs text-gray-500 mb-1">{label}</div>
-                      <div className="text-sm font-bold text-gray-800">{value}</div>
+                    <div key={label} className="bg-muted/50 rounded-lg p-3">
+                      <div className="text-xs text-muted-foreground mb-1">{label}</div>
+                      <div className="text-sm font-bold text-foreground">{value}</div>
                     </div>
                   ))}
                 </div>
@@ -215,8 +215,8 @@ export default function ContaminationStatsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
               {/* Por radionúclido */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Radionúclido (top 10)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Radionúclido (top 10)</h2>
                 <div className="space-y-2">
                   {data.porRadionuclido.slice(0, 10).map((r, i) => {
                     const name = String(r.radionuclido ?? "Sin dato");
@@ -225,10 +225,10 @@ export default function ContaminationStatsPage() {
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <div className="flex-1">
                           <div className="flex justify-between mb-0.5">
-                            <span className="text-gray-700">{name}</span>
-                            <span className="text-gray-500 ml-2">{r.count}</span>
+                            <span className="text-foreground/80">{name}</span>
+                            <span className="text-muted-foreground ml-2">{r.count}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full">
+                          <div className="h-1.5 bg-muted rounded-full">
                             <div className="h-1.5 bg-orange-400 rounded-full" style={{ width: `${pctVal}%` }} />
                           </div>
                         </div>
@@ -239,8 +239,8 @@ export default function ContaminationStatsPage() {
               </div>
 
               {/* Por sala */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Sala (top 10)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Sala (top 10)</h2>
                 <div className="space-y-2">
                   {data.porSala.slice(0, 10).map((r, i) => {
                     const name = String(r.sala ?? "Sin dato");
@@ -249,10 +249,10 @@ export default function ContaminationStatsPage() {
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <div className="flex-1">
                           <div className="flex justify-between mb-0.5">
-                            <span className="text-gray-700 truncate max-w-[200px]">{name}</span>
-                            <span className="text-gray-500 ml-2">{r.count}</span>
+                            <span className="text-foreground/80 truncate max-w-[200px]">{name}</span>
+                            <span className="text-muted-foreground ml-2">{r.count}</span>
                           </div>
-                          <div className="h-1.5 bg-gray-100 rounded-full">
+                          <div className="h-1.5 bg-muted rounded-full">
                             <div className="h-1.5 bg-blue-500 rounded-full" style={{ width: `${pctVal}%` }} />
                           </div>
                         </div>
@@ -263,26 +263,26 @@ export default function ContaminationStatsPage() {
               </div>
 
               {/* Por punto de medición */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Punto de Medición (top 10)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Punto de Medición (top 10)</h2>
                 <div className="space-y-1.5">
                   {data.areasTop.map((r, i) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="text-gray-700 truncate max-w-[220px]">{r.punto_medicion}</span>
-                      <span className="font-medium text-gray-800 ml-2">{r.count}</span>
+                      <span className="text-foreground/80 truncate max-w-[220px]">{r.punto_medicion}</span>
+                      <span className="font-medium text-foreground ml-2">{r.count}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Por responsable */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Por Responsable (top 10)</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Por Responsable (top 10)</h2>
                 <div className="space-y-1.5">
                   {data.porResponsable.slice(0, 10).map((r, i) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="text-gray-700 truncate max-w-[220px]">{String(r.responsable ?? "Sin dato")}</span>
-                      <span className="font-medium text-gray-800 ml-2">{r.count}</span>
+                      <span className="text-foreground/80 truncate max-w-[220px]">{String(r.responsable ?? "Sin dato")}</span>
+                      <span className="font-medium text-foreground ml-2">{r.count}</span>
                     </div>
                   ))}
                 </div>
@@ -293,36 +293,36 @@ export default function ContaminationStatsPage() {
             {/* Trends */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Tendencia Mensual</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Tendencia Mensual</h2>
                 {data.tendenciaMensual.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin datos.</p>
+                  <p className="text-xs text-muted-foreground">Sin datos.</p>
                 ) : (
                   <div className="flex items-end gap-0.5 h-32 overflow-x-auto">
                     {data.tendenciaMensual.map((m, i) => (
                       <div key={i} className="flex-1 min-w-[18px] flex flex-col items-center gap-0.5">
-                        <span className="text-[9px] text-gray-500">{m.count}</span>
+                        <span className="text-[9px] text-muted-foreground">{m.count}</span>
                         <div className="w-full bg-orange-400 rounded-t"
                           style={{ height: `${Math.round((m.count / maxMonth) * 96)}px`, minHeight: "2px" }} />
-                        <span className="text-[9px] text-gray-400">{MONTH_ES(m.month)}</span>
+                        <span className="text-[9px] text-muted-foreground">{MONTH_ES(m.month)}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="font-semibold text-gray-800 mb-4">Evolución Anual</h2>
+              <div className="bg-background rounded-xl border border-border shadow-sm p-5">
+                <h2 className="font-semibold text-foreground mb-4">Evolución Anual</h2>
                 {data.evolucionAnual.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin datos.</p>
+                  <p className="text-xs text-muted-foreground">Sin datos.</p>
                 ) : (
                   <div className="flex items-end gap-2 h-32">
                     {data.evolucionAnual.map((y, i) => (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-xs text-gray-500">{y.count}</span>
+                        <span className="text-xs text-muted-foreground">{y.count}</span>
                         <div className="w-full bg-orange-500 rounded-t"
                           style={{ height: `${Math.round((y.count / maxYear) * 96)}px`, minHeight: "2px" }} />
-                        <span className="text-xs text-gray-500">{y.year}</span>
+                        <span className="text-xs text-muted-foreground">{y.year}</span>
                       </div>
                     ))}
                   </div>
@@ -332,8 +332,8 @@ export default function ContaminationStatsPage() {
             </div>
 
             {/* Regulatory footer */}
-            <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-xs text-gray-400 leading-relaxed">
-              <p className="font-semibold text-gray-500 mb-1">Marco normativo aplicable</p>
+            <div className="rounded-xl border border-border bg-background px-5 py-4 text-xs text-muted-foreground leading-relaxed">
+              <p className="font-semibold text-muted-foreground mb-1">Marco normativo aplicable</p>
               <p>
                 Decreto Supremo N°3/1985 MINSAL Art. 60-64 — Monitoreo de contaminación superficial en instalaciones radiactivas.
                 DS N°594/1999 MINSAL — Límites de contaminación superficial en lugares de trabajo.

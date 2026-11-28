@@ -95,7 +95,7 @@ const YEAR_COLORS = [
 
 function ServiceComparisonChart({ data }: { data: MultiYearData }) {
   if (data.rows.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-10">Sin datos multi-año para mostrar</p>;
+    return <p className="text-sm text-muted-foreground text-center py-10">Sin datos multi-año para mostrar</p>;
   }
 
   // Transform: one entry per service, years as keys
@@ -110,13 +110,13 @@ function ServiceComparisonChart({ data }: { data: MultiYearData }) {
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-xs space-y-1">
-        <div className="font-semibold text-gray-800 mb-1">{label}</div>
+      <div className="bg-background border border-border rounded-xl shadow-lg px-4 py-3 text-xs space-y-1">
+        <div className="font-semibold text-foreground mb-1">{label}</div>
         {payload.map((p) => (
           <div key={p.name} className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
-            <span className="text-gray-600">{p.name}:</span>
-            <span className="font-mono font-semibold text-gray-800">{p.value.toFixed(2)} mSv</span>
+            <span className="text-muted-foreground">{p.name}:</span>
+            <span className="font-mono font-semibold text-foreground">{p.value.toFixed(2)} mSv</span>
           </div>
         ))}
       </div>
@@ -186,15 +186,15 @@ function KPI({
   return (
     <div
       className={`rounded-xl border p-4 text-center ${
-        alert ? "border-red-200 bg-red-50" : "border-gray-200 bg-white"
+        alert ? "border-red-200 bg-red-50" : "border-border bg-background"
       } shadow-sm`}
     >
-      <div className={`text-2xl font-bold ${alert ? "text-red-600" : "text-gray-900"}`}>
+      <div className={`text-2xl font-bold ${alert ? "text-red-600" : "text-foreground"}`}>
         {value}
-        {unit && <span className="text-sm font-normal ml-1 text-gray-500">{unit}</span>}
+        {unit && <span className="text-sm font-normal ml-1 text-muted-foreground">{unit}</span>}
       </div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
-      {sub && <div className="text-xs text-gray-400 mt-0.5">{sub}</div>}
+      <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -202,7 +202,7 @@ function KPI({
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
       <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -214,12 +214,12 @@ function PctBar({ pct, limit }: { pct: number; limit: number }) {
     pct >= 100 ? "bg-red-500" : pct >= 75 ? "bg-orange-400" : pct >= 50 ? "bg-yellow-400" : "bg-green-400";
   return (
     <div className="flex items-center gap-2">
-      <div className="h-2 flex-1 rounded-full bg-gray-100 overflow-hidden">
+      <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${clamped}%` }} />
       </div>
       <span
         className={`text-xs font-semibold w-12 text-right ${
-          pct >= 100 ? "text-red-600" : pct >= 75 ? "text-orange-500" : "text-gray-600"
+          pct >= 100 ? "text-red-600" : pct >= 75 ? "text-orange-500" : "text-muted-foreground"
         }`}
       >
         {pct.toFixed(0)}%
@@ -294,7 +294,7 @@ export default function DosimetryStatsPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dosimetry"
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground/80"
           >
             <ChevronLeft className="h-4 w-4" /> Dosimetría
           </Link>
@@ -302,10 +302,10 @@ export default function DosimetryStatsPage() {
           <div className="flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-blue-500" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-foreground">
                 Estadísticas de Dosis por Servicio
               </h1>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 DS 3/1985 Art. 7 · ICRP 103 · NS-06.0 — Dosis efectiva cuerpo entero
               </p>
             </div>
@@ -315,7 +315,7 @@ export default function DosimetryStatsPage() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {years.map((y) => (
               <option key={y} value={y}>{y}</option>
@@ -324,7 +324,7 @@ export default function DosimetryStatsPage() {
           <button
             onClick={() => fetchStats(year)}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50 disabled:opacity-50 transition"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm shadow-sm hover:bg-muted/50 disabled:opacity-50 transition"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -332,7 +332,7 @@ export default function DosimetryStatsPage() {
       </div>
 
       {loading && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-muted-foreground">
           <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-2" />
           Calculando estadísticas…
         </div>
@@ -380,24 +380,24 @@ export default function DosimetryStatsPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* By service */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+            <section className="rounded-xl border border-border bg-background shadow-sm p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mb-4">
                 <Users className="h-4 w-4 text-blue-500" />
                 Dosis colectiva por servicio ({year})
               </h2>
               {data.by_service.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">Sin datos para {year}</p>
+                <p className="text-sm text-muted-foreground text-center py-6">Sin datos para {year}</p>
               ) : (
                 <div className="space-y-3">
                   {data.by_service.map((s) => (
                     <div key={s.service}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700 truncate max-w-[200px]">
+                        <span className="text-xs font-medium text-foreground/80 truncate max-w-[200px]">
                           {s.service}
                         </span>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400">{s.workers} TOE</span>
-                          <span className="text-xs font-semibold text-gray-800">
+                          <span className="text-xs text-muted-foreground">{s.workers} TOE</span>
+                          <span className="text-xs font-semibold text-foreground">
                             {Number(s.collective_dose).toFixed(1)} mSv
                           </span>
                         </div>
@@ -434,22 +434,22 @@ export default function DosimetryStatsPage() {
             </section>
 
             {/* Histogram */}
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+            <section className="rounded-xl border border-border bg-background shadow-sm p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mb-4">
                 <Activity className="h-4 w-4 text-blue-500" />
                 Distribución de dosis individual ({year})
               </h2>
               {data.histogram.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-6">Sin datos para {year}</p>
+                <p className="text-sm text-muted-foreground text-center py-6">Sin datos para {year}</p>
               ) : (
                 <div className="space-y-3">
                   {data.histogram.map((h) => (
                     <div key={h.range}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700">{h.range}</span>
-                        <span className="text-xs text-gray-500">{h.workers} trabajadores</span>
+                        <span className="text-xs font-medium text-foreground/80">{h.range}</span>
+                        <span className="text-xs text-muted-foreground">{h.workers} trabajadores</span>
                       </div>
-                      <div className="h-6 w-full rounded bg-gray-100 overflow-hidden relative">
+                      <div className="h-6 w-full rounded bg-muted overflow-hidden relative">
                         <div
                           className={`h-full rounded ${HIST_COLORS[h.range] ?? "bg-gray-400"}`}
                           style={{ width: `${Math.max(4, (h.workers / maxHistWorkers) * 100)}%` }}
@@ -462,7 +462,7 @@ export default function DosimetryStatsPage() {
                   ))}
                 </div>
               )}
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-500">
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <span className="h-2.5 w-2.5 rounded-full bg-green-400 inline-block" /> Normal
                 </span>
@@ -478,8 +478,8 @@ export default function DosimetryStatsPage() {
 
           {/* Trend chart */}
           {data.trend.length > 0 && (
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4">
+            <section className="rounded-xl border border-border bg-background shadow-sm p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80 mb-4">
                 <TrendingUp className="h-4 w-4 text-blue-500" />
                 Tendencia dosis colectiva mensual (últimos 12 meses)
               </h2>
@@ -495,7 +495,7 @@ export default function DosimetryStatsPage() {
                           title={`${t.month}: ${Number(t.collective_dose).toFixed(1)} mSv · ${t.workers_monitored} TOE`}
                         />
                       </div>
-                      <span className="text-[9px] text-gray-400 mt-1 rotate-45 origin-left truncate">
+                      <span className="text-[9px] text-muted-foreground mt-1 rotate-45 origin-left truncate">
                         {t.month.slice(5)}
                       </span>
                     </div>
@@ -506,16 +506,16 @@ export default function DosimetryStatsPage() {
           )}
 
           {/* Multi-year service comparison */}
-          <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+          <section className="rounded-xl border border-border bg-background shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                 <Layers className="h-4 w-4 text-indigo-500" />
                 Comparación inter-servicios multi-año — Dosis colectiva (mSv)
               </h2>
               <button
                 onClick={fetchMultiYear}
                 disabled={multiYearLoading}
-                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground/80 border border-border rounded-lg px-2 py-1 hover:bg-muted/50 transition disabled:opacity-50"
                 title="Actualizar gráfico"
               >
                 <RefreshCw className={`h-3.5 w-3.5 ${multiYearLoading ? "animate-spin" : ""}`} />
@@ -523,19 +523,19 @@ export default function DosimetryStatsPage() {
               </button>
             </div>
             {multiYearLoading ? (
-              <div className="flex items-center justify-center py-16 text-gray-400 gap-2">
+              <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
                 <RefreshCw className="animate-spin h-5 w-5" />
                 <span className="text-sm">Cargando comparación multi-año…</span>
               </div>
             ) : multiYear ? (
               <>
                 <ServiceComparisonChart data={multiYear} />
-                <div className="mt-2 text-xs text-gray-400 text-center">
+                <div className="mt-2 text-xs text-muted-foreground text-center">
                   Top 8 servicios por dosis colectiva total · {multiYearYears[0]}–{multiYearYears[multiYearYears.length - 1]}
                 </div>
               </>
             ) : (
-              <div className="text-center py-10 text-sm text-gray-400">
+              <div className="text-center py-10 text-sm text-muted-foreground">
                 Haz clic en &ldquo;Actualizar&rdquo; para cargar la comparación
               </div>
             )}
@@ -543,9 +543,9 @@ export default function DosimetryStatsPage() {
 
           {/* At-risk workers */}
           {data.at_risk.length > 0 && (
-            <section className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
+            <section className="rounded-xl border border-border bg-background shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
                   <ShieldAlert className="h-4 w-4 text-orange-500" />
                   Trabajadores con mayor porcentaje de límite anual ({year})
                 </h2>
@@ -559,22 +559,22 @@ export default function DosimetryStatsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left text-xs font-semibold text-gray-500 pb-2">Trabajador</th>
-                      <th className="text-left text-xs font-semibold text-gray-500 pb-2">Servicio</th>
-                      <th className="text-center text-xs font-semibold text-gray-500 pb-2">Cat.</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 pb-2">Dosis</th>
-                      <th className="text-right text-xs font-semibold text-gray-500 pb-2">Límite</th>
+                    <tr className="border-b border-border/50">
+                      <th className="text-left text-xs font-semibold text-muted-foreground pb-2">Trabajador</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground pb-2">Servicio</th>
+                      <th className="text-center text-xs font-semibold text-muted-foreground pb-2">Cat.</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground pb-2">Dosis</th>
+                      <th className="text-right text-xs font-semibold text-muted-foreground pb-2">Límite</th>
                       <th className="pb-2 w-32"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {data.at_risk.map((w) => (
-                      <tr key={`${w.worker_rut ?? w.worker_name}`} className="hover:bg-gray-50">
-                        <td className="py-2 font-medium text-gray-900 max-w-[180px] truncate">
+                      <tr key={`${w.worker_rut ?? w.worker_name}`} className="hover:bg-muted/50">
+                        <td className="py-2 font-medium text-foreground max-w-[180px] truncate">
                           {w.worker_name}
                         </td>
-                        <td className="py-2 text-gray-500 text-xs max-w-[120px] truncate">
+                        <td className="py-2 text-muted-foreground text-xs max-w-[120px] truncate">
                           {w.service}
                         </td>
                         <td className="py-2 text-center">
@@ -582,16 +582,16 @@ export default function DosimetryStatsPage() {
                             className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-bold ${
                               w.category === "A"
                                 ? "bg-purple-100 text-purple-700"
-                                : "bg-gray-100 text-gray-700"
+                                : "bg-muted text-foreground/80"
                             }`}
                           >
                             {w.category}
                           </span>
                         </td>
-                        <td className="py-2 text-right font-semibold text-gray-800">
+                        <td className="py-2 text-right font-semibold text-foreground">
                           {Number(w.annual_dose).toFixed(2)}
                         </td>
-                        <td className="py-2 text-right text-gray-400 text-xs">
+                        <td className="py-2 text-right text-muted-foreground text-xs">
                           {w.limit_msv} mSv
                         </td>
                         <td className="py-2 pl-3">
@@ -616,8 +616,8 @@ export default function DosimetryStatsPage() {
           )}
 
           {/* Regulatory footer */}
-          <div className="rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-xs text-gray-500">
-            <span className="font-medium text-gray-600">Límites DS 3/1985 Art. 7:</span>{" "}
+          <div className="rounded-lg bg-muted/50 border border-border px-4 py-3 text-xs text-muted-foreground">
+            <span className="font-medium text-muted-foreground">Límites DS 3/1985 Art. 7:</span>{" "}
             Categoría A: 50 mSv/año cuerpo entero, 150 mSv/año cristalino, 500 mSv/año extremidades.{" "}
             Categoría B: 15 mSv/año cuerpo entero. Umbral investigación: 20 mSv/año. ICRP 103 (2007).
           </div>

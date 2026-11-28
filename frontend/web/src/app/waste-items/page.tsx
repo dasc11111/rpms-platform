@@ -103,7 +103,7 @@ function fmtNum(n: number | null | undefined, unit = "") {
   return `${n}${unit}`;
 }
 
-const inp = "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
+const inp = "w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300";
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -301,24 +301,24 @@ export default function WasteItemsPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-muted/50 p-4 md:p-6">
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
             <Package className="h-4 w-4 text-purple-500" />
             <span>Gestión de Residuos</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             Fichas Individuales de Residuos Radiactivos
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Registro individual con código RR-YYYY-NNNNNN, seguimiento de estado y trazabilidad de disposición.
             DS 133/1984 · NS-06.0 · IAEA GSR Part 5.
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
+          <button onClick={load} className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50">
             <RefreshCw className="h-4 w-4" />
             Actualizar
           </button>
@@ -337,10 +337,10 @@ export default function WasteItemsPage() {
           { label: "Almacenados", value: almacenados, cls: "text-yellow-700", dotCls: "bg-yellow-500" },
           { label: "En disposición", value: enDisposicion, cls: "text-orange-700", dotCls: "bg-orange-500" },
         ].map((k) => (
-          <div key={k.label} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div key={k.label} className="rounded-xl border border-border bg-background p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-1">
               <span className={`h-2 w-2 rounded-full ${k.dotCls}`} />
-              <span className="text-xs text-gray-500">{k.label}</span>
+              <span className="text-xs text-muted-foreground">{k.label}</span>
             </div>
             <span className={`text-2xl font-bold ${k.cls}`}>{k.value}</span>
           </div>
@@ -354,33 +354,33 @@ export default function WasteItemsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar código, radionúclido, descripción…"
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 min-w-[220px]"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80 min-w-[220px]"
         />
-        <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value as "" | Estado)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterEstado} onChange={(e) => setFilterEstado(e.target.value as "" | Estado)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los estados</option>
           {ESTADOS.map((s) => <option key={s} value={s}>{ESTADO_CFG[s].label}</option>)}
         </select>
-        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterRn} onChange={(e) => setFilterRn(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los radionúclidos</option>
           {radionuclides.map((r) => <option key={r.code} value={r.code}>{r.code}</option>)}
         </select>
-        <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)} className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+        <select value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground/80">
           <option value="">Todos los tipos</option>
           {TIPO_RESIDUO_OPTS.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <span className="ml-auto self-center text-xs text-gray-400">
+        <span className="ml-auto self-center text-xs text-muted-foreground">
           {filtered.length} de {items.length} ficha{items.length !== 1 ? "s" : ""}
         </span>
       </div>
 
       {/* ── Content ── */}
-      {loading && <div className="rounded-xl border border-gray-200 bg-white p-12 text-center text-gray-400">Cargando…</div>}
+      {loading && <div className="rounded-xl border border-border bg-background p-12 text-center text-muted-foreground">Cargando…</div>}
       {error && !loading && <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">{error}</div>}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
+        <div className="rounded-xl border border-dashed border-border bg-background p-12 text-center">
           <Package className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted-foreground text-sm">
             {items.length === 0 ? "No hay fichas de residuos registradas." : "No hay fichas que coincidan con los filtros."}
           </p>
           {items.length === 0 && (
@@ -397,20 +397,20 @@ export default function WasteItemsPage() {
             const isOpen = expanded.has(it.id);
             const cfg = ESTADO_CFG[it.estado] ?? ESTADO_CFG.registrado;
             return (
-              <div key={it.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                <button onClick={() => toggle(it.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+              <div key={it.id} className="rounded-xl border border-border bg-background shadow-sm overflow-hidden">
+                <button onClick={() => toggle(it.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors">
                   <Package className="h-5 w-5 text-purple-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-sm font-bold text-gray-900">{it.item_code}</span>
+                      <span className="font-mono text-sm font-bold text-foreground">{it.item_code}</span>
                       <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-xs font-mono text-indigo-700">{it.radionuclide_code}</span>
-                      <span className="rounded bg-gray-50 px-2 py-0.5 text-xs text-gray-600">{it.tipo_residuo}</span>
+                      <span className="rounded bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">{it.tipo_residuo}</span>
                       <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${cfg.cls}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
                         {cfg.label}
                       </span>
                     </div>
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{fmtDatetime(it.fecha_hora_generacion)}</span>
                       {it.actividad_inicial !== null && it.actividad_inicial !== undefined && (
                         <span className="flex items-center gap-1"><Activity className="h-3 w-3" />{it.actividad_inicial} {it.unidad_actividad}</span>
@@ -420,18 +420,18 @@ export default function WasteItemsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); openEdit(it); }} className="rounded p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50">
+                    <button onClick={(e) => { e.stopPropagation(); openEdit(it); }} className="rounded p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-50">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(it.id); }} className="rounded p-1 text-gray-400 hover:text-red-600 hover:bg-red-50">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(it.id); }} className="rounded p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50">
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    {isOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+                  <div className="border-t border-border/50 px-4 py-4 bg-muted/50">
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 text-sm">
                       <Field label="Código" value={it.item_code} mono />
                       <Field label="Radionúclido" value={`${it.radionuclide_code}${it.radionuclide_name ? ` — ${it.radionuclide_name}` : ""}`} />
@@ -458,11 +458,11 @@ export default function WasteItemsPage() {
       )}
 
       {/* ── Regulatory footer ── */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
+      <div className="mt-8 rounded-xl border border-border bg-background p-4">
         <div className="flex items-start gap-3">
-          <FileText className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-gray-500 space-y-0.5">
-            <p className="font-medium text-gray-600">Marco normativo aplicable</p>
+          <FileText className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-muted-foreground space-y-0.5">
+            <p className="font-medium text-muted-foreground">Marco normativo aplicable</p>
             <p>DS 133/1984 (MINSAL) — Registro y trazabilidad de residuos radiactivos generados en instalaciones</p>
             <p>NS-06.0 §9.3 — Obligación de ficha individual por cada residuo con identificación, actividad y destino</p>
             <p>IAEA GSR Part 5 — Predisposal waste management: individual waste record requirements (§4.12)</p>
@@ -474,10 +474,10 @@ export default function WasteItemsPage() {
       {/* ── Create modal ── */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <h2 className="text-lg font-semibold text-gray-900">Registrar residuo radiactivo</h2>
-              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+          <div className="w-full max-w-2xl rounded-2xl bg-background shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+              <h2 className="text-lg font-semibold text-foreground">Registrar residuo radiactivo</h2>
+              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="overflow-y-auto px-6 py-4 space-y-4">
               {createError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{createError}</div>}
@@ -504,7 +504,7 @@ export default function WasteItemsPage() {
                 <FormField label="Actividad inicial">
                   <div className="flex gap-2">
                     <input type="number" step="any" min="0" value={createForm.actividad_inicial} onChange={(e) => setCreateForm((p) => ({ ...p, actividad_inicial: e.target.value }))} placeholder="Valor" className={`${inp} flex-1`} />
-                    <select value={createForm.unidad_actividad} onChange={(e) => setCreateForm((p) => ({ ...p, unidad_actividad: e.target.value }))} className="rounded-lg border border-gray-200 px-2 py-2 text-sm">
+                    <select value={createForm.unidad_actividad} onChange={(e) => setCreateForm((p) => ({ ...p, unidad_actividad: e.target.value }))} className="rounded-lg border border-border px-2 py-2 text-sm">
                       {["mCi", "MBq", "GBq", "kBq", "Bq"].map((u) => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
@@ -537,8 +537,8 @@ export default function WasteItemsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
-              <button onClick={() => setShowCreate(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <div className="flex justify-end gap-3 border-t border-border/50 px-6 py-4">
+              <button onClick={() => setShowCreate(false)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={handleCreate} disabled={creating} className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-60">
                 <Save className="h-4 w-4" />
                 {creating ? "Registrando…" : "Registrar residuo"}
@@ -551,27 +551,27 @@ export default function WasteItemsPage() {
       {/* ── Edit modal ── */}
       {editItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div className="w-full max-w-lg rounded-2xl bg-background shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Actualizar ficha</h2>
-                <p className="text-xs text-gray-500 mt-0.5 font-mono">{editItem.item_code}</p>
+                <h2 className="text-lg font-semibold text-foreground">Actualizar ficha</h2>
+                <p className="text-xs text-muted-foreground mt-0.5 font-mono">{editItem.item_code}</p>
               </div>
-              <button onClick={() => setEditItem(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+              <button onClick={() => setEditItem(null)} className="text-muted-foreground hover:text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="overflow-y-auto px-6 py-4 space-y-4">
               {editError && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{editError}</div>}
 
               {/* Estado transition */}
-              <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-                <p className="text-xs font-medium text-gray-500 mb-2">Cambio de estado</p>
+              <div className="rounded-lg border border-border/50 bg-muted/50 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Cambio de estado</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${ESTADO_CFG[editItem.estado].cls}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_CFG[editItem.estado].dot}`} />
                     {ESTADO_CFG[editItem.estado].label}
                   </span>
-                  <ArrowRight className="h-3.5 w-3.5 text-gray-400" />
-                  <select value={editForm.estado} onChange={(e) => setEditForm((p) => ({ ...p, estado: e.target.value as Estado }))} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                  <select value={editForm.estado} onChange={(e) => setEditForm((p) => ({ ...p, estado: e.target.value as Estado }))} className="rounded-lg border border-border px-2 py-1 text-xs">
                     {ESTADOS.map((s) => <option key={s} value={s}>{ESTADO_CFG[s].label}</option>)}
                   </select>
                 </div>
@@ -604,8 +604,8 @@ export default function WasteItemsPage() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
-              <button onClick={() => setEditItem(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+            <div className="flex justify-end gap-3 border-t border-border/50 px-6 py-4">
+              <button onClick={() => setEditItem(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={handleEdit} disabled={editSaving} className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-60">
                 <Save className="h-4 w-4" />
                 {editSaving ? "Guardando…" : "Guardar cambios"}
@@ -618,16 +618,16 @@ export default function WasteItemsPage() {
       {/* ── Delete confirm ── */}
       {deleteId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6">
+          <div className="w-full max-w-sm rounded-2xl bg-background shadow-2xl p-6">
             <div className="flex items-start gap-3 mb-4">
               <div className="rounded-full bg-red-100 p-2"><Trash2 className="h-5 w-5 text-red-600" /></div>
               <div>
-                <h3 className="font-semibold text-gray-900">Marcar como eliminado</h3>
-                <p className="mt-1 text-sm text-gray-500">La ficha quedará con estado "Eliminado" (soft delete). No se borra de la base de datos para mantener trazabilidad.</p>
+                <h3 className="font-semibold text-foreground">Marcar como eliminado</h3>
+                <p className="mt-1 text-sm text-muted-foreground">La ficha quedará con estado "Eliminado" (soft delete). No se borra de la base de datos para mantener trazabilidad.</p>
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-muted/50">Cancelar</button>
               <button onClick={() => handleDelete(deleteId)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Confirmar</button>
             </div>
           </div>
@@ -642,8 +642,8 @@ export default function WasteItemsPage() {
 function Field({ label, value, mono = false, className = "" }: { label: string; value: string | number; mono?: boolean; className?: string }) {
   return (
     <div className={className}>
-      <dt className="text-xs text-gray-400 mb-0.5">{label}</dt>
-      <dd className={`text-sm text-gray-800 font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
+      <dt className="text-xs text-muted-foreground mb-0.5">{label}</dt>
+      <dd className={`text-sm text-foreground font-medium ${mono ? "font-mono text-xs" : ""}`}>{value}</dd>
     </div>
   );
 }
@@ -651,7 +651,7 @@ function Field({ label, value, mono = false, className = "" }: { label: string; 
 function FormField({ label, required = false, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">
+      <label className="block text-xs font-medium text-muted-foreground mb-1">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
