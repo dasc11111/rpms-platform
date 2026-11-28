@@ -30,6 +30,26 @@ interface BackendDoc {
 const inputClass = 'w-full px-3 py-2 border border-border bg-background rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent';
 const labelClass = 'block text-xs font-medium text-muted-foreground mb-1';
 
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  // Radiodiagnóstico
+  { value: 'xray', label: 'Rayos X' },
+  { value: 'ct', label: 'Tomografía Computada (CT)' },
+  { value: 'mri', label: 'Resonancia Magnética (RM)' },
+  { value: 'mammography', label: 'Mamografía' },
+  { value: 'densitometry', label: 'Densitometría' },
+  { value: 'fluoroscopy', label: 'Fluoroscopía' },
+  { value: 'ultrasound', label: 'Ecografía / Ultrasonido' },
+  // Medicina Nuclear
+  { value: 'gamma_camera', label: 'Gammacámara' },
+  { value: 'pet_ct', label: 'PET/CT' },
+  { value: 'dose_calibrator', label: 'Calibrador de Dosis' },
+  { value: 'survey_meter', label: 'Monitor de Área (Survey Meter)' },
+  // Radioterapia
+  { value: 'rad_therapy', label: 'Radioterapia (Linac/Braquiterapia)' },
+  // Otro
+  { value: 'other', label: 'Otro' },
+];
+
 const NEW_EQUIPMENT: Equipment = {
     id: '',
     inventoryNumber: '',
@@ -39,6 +59,7 @@ const NEW_EQUIPMENT: Equipment = {
     equipmentName: '',
     brand: '',
     model: '',
+    category: 'other',
     equipmentSerialNumber: '',
     tubeSerialNumber: '',
     resolutionNumber: '',
@@ -225,6 +246,32 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                               <input className={inputClass} value={formData.location} onChange={(e) => handleInputChange('location', e.target.value)} />
                             </div>
                             <div>
+                              <label className={labelClass}>Tipo de Equipo</label>
+                              <select className={inputClass} value={(formData as any).category ?? 'other'} onChange={(e) => handleInputChange('category', e.target.value)}>
+                                <optgroup label="Radiodiagnóstico">
+                                  <option value="xray">Rayos X</option>
+                                  <option value="ct">Tomografía Computada (CT)</option>
+                                  <option value="mri">Resonancia Magnética (RM)</option>
+                                  <option value="mammography">Mamografía</option>
+                                  <option value="densitometry">Densitometría</option>
+                                  <option value="fluoroscopy">Fluoroscopía</option>
+                                  <option value="ultrasound">Ecografía / Ultrasonido</option>
+                                </optgroup>
+                                <optgroup label="Medicina Nuclear">
+                                  <option value="gamma_camera">Gammacámara</option>
+                                  <option value="pet_ct">PET/CT</option>
+                                  <option value="dose_calibrator">Calibrador de Dosis</option>
+                                  <option value="survey_meter">Monitor de Área (Survey Meter)</option>
+                                </optgroup>
+                                <optgroup label="Radioterapia">
+                                  <option value="rad_therapy">Radioterapia (Linac/Braquiterapia)</option>
+                                </optgroup>
+                                <optgroup label="Otro">
+                                  <option value="other">Otro</option>
+                                </optgroup>
+                              </select>
+                            </div>
+                            <div>
                               <label className={labelClass}>Estado</label>
                               <select className={inputClass} value={formData.status} onChange={(e) => handleInputChange('status', e.target.value)}>
                                 <option value="operativo">Operativo</option>
@@ -249,23 +296,112 @@ export function EquipmentDetailModal({ equipment, isOpen, onClose, onSave }: Equ
                         )}
 
                         {activeTab === 'auth' && (
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className={labelClass}>Numero Resolucion</label>
-                              <input className={inputClass} value={formData.resolutionNumber} onChange={(e) => handleInputChange('resolutionNumber', e.target.value)} />
+                          <div className="space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className={labelClass}>Numero Resolucion</label>
+                                <input className={inputClass} value={formData.resolutionNumber} onChange={(e) => handleInputChange('resolutionNumber', e.target.value)} />
+                              </div>
+                              <div>
+                                <label className={labelClass}>Fecha Resolucion</label>
+                                <input type="date" className={inputClass} value={formData.resolutionDate} onChange={(e) => handleInputChange('resolutionDate', e.target.value)} />
+                              </div>
+                              <div>
+                                <label className={labelClass}>Estado Autorizacion</label>
+                                <select className={inputClass} value={formData.authorizationStatus} onChange={(e) => handleInputChange('authorizationStatus', e.target.value)}>
+                                  <option value="vigente">Vigente</option>
+                                  <option value="vencida">Vencida</option>
+                                  <option value="en_tramite">En tramite</option>
+                                  <option value="suspendida">Suspendida</option>
+                                </select>
+                              </div>
                             </div>
-                            <div>
-                              <label className={labelClass}>Fecha Resolucion</label>
-                              <input type="date" className={inputClass} value={formData.resolutionDate} onChange={(e) => handleInputChange('resolutionDate', e.target.value)} />
-                            </div>
-                            <div>
-                              <label className={labelClass}>Estado Autorizacion</label>
-                              <select className={inputClass} value={formData.authorizationStatus} onChange={(e) => handleInputChange('authorizationStatus', e.target.value)}>
-                                <option value="vigente">Vigente</option>
-                                <option value="vencida">Vencida</option>
-                                <option value="en_tramite">En tramite</option>
-                                <option value="suspendida">Suspendida</option>
-                              </select>
+
+                            <div className="border-t border-border pt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-sm font-medium text-foreground">
+                                  Autorizacion de Operacion (PDF)
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {backendDocs.filter(d => d.category === 'autorizacion').length} documento(s)
+                                </span>
+                              </div>
+
+                              {isNewEquipment ? (
+                                <p className="text-sm text-muted-foreground bg-muted/40 p-4 rounded">
+                                  Guarda el equipo primero para poder adjuntar la autorizacion.
+                                </p>
+                              ) : (
+                                <>
+                                  <div className="border-2 border-dashed border-border rounded-lg p-4 mb-3">
+                                    <input
+                                      type="file"
+                                      accept=".pdf"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file || !equipment?.id) return;
+                                        const body = new FormData();
+                                        body.append('files', file);
+                                        body.append('categories', 'autorizacion');
+                                        await fetch(`/api/equipment/documents?equipmentId=${equipment.id}`, { method: 'POST', body });
+                                        const res = await fetch(`/api/equipment/${equipment.id}`);
+                                        if (res.ok) {
+                                          const data = await res.json();
+                                          setBackendDocs(data.documents ?? []);
+                                        }
+                                        e.target.value = '';
+                                      }}
+                                      className="hidden"
+                                      id="auth-upload"
+                                    />
+                                    <label htmlFor="auth-upload" className="flex flex-col items-center gap-2 cursor-pointer">
+                                      <Upload className="w-6 h-6 text-muted-foreground" />
+                                      <span className="text-sm text-muted-foreground">Subir PDF de Autorizacion</span>
+                                    </label>
+                                  </div>
+
+                                  {backendDocs.filter(d => d.category === 'autorizacion').length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No hay documentos de autorizacion adjuntos.</p>
+                                  ) : (
+                                    <div className="space-y-2">
+                                      {backendDocs.filter(d => d.category === 'autorizacion').map((doc) => (
+                                        <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                                            <span className="text-sm text-foreground truncate">{doc.original_name}</span>
+                                          </div>
+                                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                                            <button
+                                              onClick={() => setPreviewDoc(doc)}
+                                              className="p-1.5 text-muted-foreground hover:text-accent"
+                                              title="Vista previa"
+                                            >
+                                              <Eye className="w-4 h-4" />
+                                            </button>
+                                            <a
+                                              href={`/api/equipment/documents/${doc.id}/download?dl=1`}
+                                              className="p-1.5 text-muted-foreground hover:text-accent"
+                                              title="Descargar"
+                                            >
+                                              <Download className="w-4 h-4" />
+                                            </a>
+                                            <button
+                                              onClick={async () => {
+                                                await fetch(`/api/equipment/documents/${doc.id}`, { method: 'DELETE' });
+                                                setBackendDocs(prev => prev.filter(d => d.id !== doc.id));
+                                              }}
+                                              className="p-1.5 text-muted-foreground hover:text-danger"
+                                              title="Eliminar"
+                                            >
+                                              <Trash2 className="w-4 h-4" />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
                         )}
